@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KU MCQ Challenge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="background-gradient"></div>
+    <div class="app-shell">
+      <header class="hero">
+        <div class="brand">
+          <div class="pill">KU • Sundhed &amp; Informatik</div>
+          <h1>MCQ Game Lab</h1>
+          <p>
+            24 tilfældige eksamensspørgsmål, 3 point for korrekt, -1 for forkert, 0 for at springe over.
+            Designet til hurtig træning med et stort datasæt fra tidligere år.
+          </p>
+          <div class="cta-row">
+            <button id="start-btn" class="btn primary">Start spil</button>
+            <button id="rules-btn" class="btn ghost">Se regler</button>
+            <div class="stat-chip" id="question-count-chip">Indlæser spørgsmål …</div>
+          </div>
+        </div>
+        <div class="hero-card">
+          <h2>Spillets flow</h2>
+          <ol>
+            <li>Bland en ny stak på 24 spørgsmål fra hele databasen.</li>
+            <li>Tryk på et svar for at få øjeblikkelig feedback, eller spring over uden straf.</li>
+            <li>Se din score, tempo og en venlig kommentar på resultatskærmen.</li>
+          </ol>
+          <div class="callout">
+            Tip: Spillet gemmer din bedste score lokalt, så du kan slå din egen rekord.
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section id="start-screen" class="screen active">
+          <div class="card grid">
+            <div>
+              <div class="eyebrow">Perfekt til repetition før eksamen</div>
+              <h3>Brugerfokuseret oplevelse</h3>
+              <p>
+                Hurtige interaktioner, tydelige farver og responsiv layout. Du kan spille fra laptop eller mobil,
+                uden login og uden friktion.
+              </p>
+              <div class="pill-row">
+                <span class="pill soft">Progress bar og tempo</span>
+                <span class="pill soft">Feedback efter hvert spørgsmål</span>
+                <span class="pill soft">Mulighed for at springe over</span>
+              </div>
+            </div>
+            <div class="rules">
+              <h4>Pointregler</h4>
+              <ul>
+                <li><strong>+3</strong> point: rigtigt svar</li>
+                <li><strong>-1</strong> point: forkert svar</li>
+                <li><strong>0</strong> point: spring over</li>
+              </ul>
+              <h4>Runder</h4>
+              <p>Hver runde består af 24 spørgsmål på tværs af alle årgange og emner.</p>
+              <button class="btn primary" id="start-btn-secondary">Start en runde</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="quiz-screen" class="screen hidden">
+          <div class="toolbar">
+            <button class="btn ghost" id="back-to-menu">Til menu</button>
+            <div class="progress-wrapper">
+              <div class="progress-label">
+                <span id="progress-text">0 / 24</span>
+                <span class="tempo" id="tempo-text">Tempo: —</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+              </div>
+            </div>
+            <div class="scoreboard">
+              <div class="score">Score: <span id="score-value">0</span></div>
+              <div class="best">Bedste: <span id="best-score-value">0</span></div>
+            </div>
+          </div>
+
+          <div class="card question-card">
+            <div class="question-meta">
+              <span class="pill soft" id="question-category"></span>
+              <span class="pill" id="question-year"></span>
+              <span class="pill soft" id="question-number"></span>
+            </div>
+            <h3 id="question-text">Spørgsmålet indlæses …</h3>
+            <div id="options-container" class="options"></div>
+            <div class="actions">
+              <button class="btn ghost" id="skip-btn">Spring over (0 point)</button>
+              <div class="spacer"></div>
+              <button class="btn secondary" id="next-btn" disabled>Næste</button>
+            </div>
+            <div class="feedback" id="feedback-area"></div>
+          </div>
+        </section>
+
+        <section id="result-screen" class="screen hidden">
+          <div class="card result-card">
+            <div class="result-header">
+              <div>
+                <div class="eyebrow">Resultat</div>
+                <h3>Din score: <span id="final-score">0</span></h3>
+                <p id="final-message"></p>
+              </div>
+              <div class="pill highlight" id="best-badge">Ny personlig rekord!</div>
+            </div>
+            <div class="stat-grid">
+              <div class="stat">
+                <div class="label">Korrekte</div>
+                <div class="value" id="stat-correct">0</div>
+              </div>
+              <div class="stat">
+                <div class="label">Forkerte</div>
+                <div class="value" id="stat-wrong">0</div>
+              </div>
+              <div class="stat">
+                <div class="label">Sprunget over</div>
+                <div class="value" id="stat-skipped">0</div>
+              </div>
+              <div class="stat">
+                <div class="label">Tempo</div>
+                <div class="value" id="stat-pace">—</div>
+              </div>
+            </div>
+            <div class="actions result-actions">
+              <button class="btn primary" id="play-again-btn">Spil igen</button>
+              <button class="btn ghost" id="return-menu-btn">Til menu</button>
+            </div>
+            <div class="review">
+              <h4>Din runde</h4>
+              <div id="review-list" class="review-list"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal hidden" id="rules-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Regler &amp; tips</h3>
+          <button class="icon-btn" id="close-modal">&times;</button>
+        </div>
+        <ul class="rules-list">
+          <li>24 spørgsmål per runde, altid blandet på ny.</li>
+          <li>+3 point for korrekt svar, -1 point for et forkert, 0 point for at springe over.</li>
+          <li>Få øjeblikkelig farve-feedback og se den rigtige mulighed med det samme.</li>
+          <li>Bedste score gemmes i din browser, så du kan jagte din egen rekord.</li>
+        </ul>
+        <button class="btn primary" id="modal-start-btn">Start spil</button>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
