@@ -1,0 +1,6701 @@
+[
+  {
+    "year": 2025,
+    "number": 1,
+    "category": "Anatomi",
+    "text": "Hvilket led er placeret mellem humerus, radius og ulna?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Albueleddet",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Knæleddet",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Hofteleddet",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Skulderleddet",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2025,
+    "number": 2,
+    "category": "Cellebiologi",
+    "text": "Størstedelen af cellens DNA er lokaliseret i?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Lysosomet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Peroxisomet",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Ribosomet",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Cellekernen",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2025,
+    "number": 3,
+    "category": "Cellebiologi",
+    "text": "Hvilken af følgende fungerer IKKE som en sammenkoblingsmekanisme mellem celler?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Stærke sammenkoblinger (desmosomer)",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Løse sammenkoblinger (slack junctions)",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Tætte sammenkoblinger (tight junctions)",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Åbne sammenkoblinger (gap junctions)",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2025,
+    "number": 4,
+    "category": "Reproduktion",
+    "text": "Befrugtningen af en ægcelle sker normalt?",
+    "options": [
+      {
+        "label": "A",
+        "text": "På ovariets overflade",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "I den første 1/3 af æggelederen set fra ovariet",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "I den sidste 1/3 af æggelederen set fra ovariet",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "I livmoderen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2025,
+    "number": 5,
+    "category": "Bevægeapparatet",
+    "text": "Efter en muskelkontraktion i en skeletmuskelcelle pumper ionpumper Ca²⁺ tilbage fra cytosollen ind i hvilket organel?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Mitokondriet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Ribosomet",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Sarkoplasmatisk reticulum",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Cellekernen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2025,
+    "number": 6,
+    "category": "Bevægeapparatet",
+    "text": "Nyttevirkningen i tværstribet skeletmuskulatur er ca.?",
+    "options": [
+      {
+        "label": "A",
+        "text": "0,05",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "0,25",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "0,55",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "0,85",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2025,
+    "number": 7,
+    "category": "Respirationssystemet",
+    "text": "Hvilket molekyle binder ilt i blodet og øger blodets iltbindingskapacitet mere end 50 gange?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Oxytocin",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Myoglobin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Hæmoglobin",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Hæmatokrit",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2025,
+    "number": 8,
+    "category": "Respirationssystemet",
+    "text": "Hvad er volumen af det døde rum ca. i voksne?",
+    "options": [
+      {
+        "label": "A",
+        "text": "5 ml",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "150 ml",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "500 ml",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "1500 ml",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2025,
+    "number": 9,
+    "category": "Nervesystemet",
+    "text": "Trommehindens vibrationer overføres til det indre øre via?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Knoglerne i mellemøret",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Otolitorganerne",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Tindingebenet",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Cupula",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2025,
+    "number": 10,
+    "category": "Nervesystemet",
+    "text": "De lysfølsomme sanseceller i retina, stave, har følgende egenskab?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Stave er ikke særlig lysfølsomme",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Stave giver farvelys",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Stave er meget lysfølsomme",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Kan skelne mellem forskellig lysintensitet og bidrager til detaljer i synet",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2025,
+    "number": 11,
+    "category": "Endokrinologi",
+    "text": "Hvilket stof indgår i dannelsen af thyroideahormonerne?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Magnesium",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Zink",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Iod",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Selen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2025,
+    "number": 12,
+    "category": "Endokrinologi",
+    "text": "Fra binyremarven udskilles?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Noradrenalin",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Glukagon",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Kortisol",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Oxytocin",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2025,
+    "number": 13,
+    "category": "Hjerte og kredsløb",
+    "text": "Hvilken del af hjertets elektriske ledningssystem har højest egenfrekvens?",
+    "options": [
+      {
+        "label": "A",
+        "text": "AV-knuden",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Sinusknuden",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Purkinjefibrene",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Cosinusknuden",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2025,
+    "number": 14,
+    "category": "Hjerte og kredsløb",
+    "text": "Hvilket stimulus øger hjertefrekvensen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Øget parasympatisk aktivitet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Øget glukagonkoncentration i blodet",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Øget sympatisk aktivitet",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Nedsat adrenalin-koncentration i blodet",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2025,
+    "number": 15,
+    "category": "Hjerte og kredsløb",
+    "text": "I hvilket kar er blodtrykket lavest?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Arterier",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Kapillærer",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Venoler",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Vener",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2025,
+    "number": 16,
+    "category": "Fordøjelseskanalen",
+    "text": "Pancreas lipase bidrager i tarmen til spaltning og absorption af?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kulhydrater",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Proteiner",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Fedtstoffer",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Alkohol",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2025,
+    "number": 17,
+    "category": "Fordøjelseskanalen",
+    "text": "Hvilket enzym omdanner trypsinogen til trypsin?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Sekretin",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Kolecystokinin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Lipase",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Enteropeptidase",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2025,
+    "number": 18,
+    "category": "Metabolisme",
+    "text": "Insulin dannes i?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Epitelceller i galdeblæren",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Beta-celler i pankreas",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Glatte muskelceller i tyndtarmen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Parietalceller i maven",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2025,
+    "number": 19,
+    "category": "Metabolisme",
+    "text": "Hvilket organ lagrer kulhydrat som glykogen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Skeletmusklen",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Nyren",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Fedtvæv",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Hjernen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2025,
+    "number": 20,
+    "category": "Nyrer og urinveje",
+    "text": "Hvor meget blod modtager nyrerne ca. pr. minut hos et raskt ungt menneske?",
+    "options": [
+      {
+        "label": "A",
+        "text": "20 ml",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "200 ml",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "1200 ml",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "12 liter",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2025,
+    "number": 21,
+    "category": "Nyrer og urinveje",
+    "text": "I hvilken del af nyren reabsorberes mest Na⁺ og vand?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Proksimale tubuli",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Henles slynge",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Distale tubuli og samlerør",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "AV-knuden",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2025,
+    "number": 22,
+    "category": "Blod og immunsystemet",
+    "text": "Hvad kaldes makrofager i leveren?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hepatocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Kupffer-celler",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "B-lymfocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "T-hjælpeceller",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2025,
+    "number": 23,
+    "category": "Blod og immunsystemet",
+    "text": "Hvilket protein igangsætter nedbrydning af fibrin?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Fibrinogen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Trombin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Protrombin",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Plasmin",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2025,
+    "number": 24,
+    "category": "Reproduktion",
+    "text": "Hvor er det genetiske materiale placeret i spermatozoen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hovedet",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Centriolen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Midterstykket",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Halen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2024,
+    "number": 1,
+    "category": "Anatomi",
+    "text": "Hvilken type led er hofteleddet?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Cirkelled",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Kugleled",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Hængselled",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Glideled",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2024,
+    "number": 2,
+    "category": "Cellebiologi",
+    "text": "Hvilken af følgende er ikke en kvælstofbase i nukleotiderne?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Adenin",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Thymin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Cytosin",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Glycin",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2024,
+    "number": 3,
+    "category": "Cellebiologi",
+    "text": "Hvad dækker celledifferentiering over?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Specialisering",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Celledød",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Nedbrydning",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Dannelse",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2024,
+    "number": 4,
+    "category": "Cellulære transportmekanismer",
+    "text": "Na⁺/K⁺-pumpens transport af natriumioner ud af og kaliumioner ind i cellen foregår ved?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Endocytose",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Osmose",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Aktiv transport",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Faciliteret diffusion",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2024,
+    "number": 5,
+    "category": "Bevægeapparatet",
+    "text": "I tillæg til m. biceps brachii, hvilken af følgende muskler findes også i overarmen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "M. quadriceps femoris",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "M. biceps femoris",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "M. temporalis",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "M. triceps brachii",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2024,
+    "number": 6,
+    "category": "Bevægeapparatet",
+    "text": "Hvad hedder cellerne, der nedbryder knoglemasse?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Osteoblaster",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Osteocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Osteoklaster",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Osteopater",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2024,
+    "number": 7,
+    "category": "Lunger",
+    "text": "Hvor meget ilt bruges af en voksen person i hvile?",
+    "options": [
+      {
+        "label": "A",
+        "text": "100 ml O₂/min",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "250 ml O₂/min",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "1000 ml O₂/min",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "2500 ml O₂/min",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2024,
+    "number": 8,
+    "category": "Lunger",
+    "text": "Hvilket molekyle binder ilt i blodet og øger blodets iltbindingskapacitet mere end 50 gange?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Oxytocin",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Myoglobin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Hæmoglobin",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Hæmatokrit",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2024,
+    "number": 9,
+    "category": "Nervesystemet",
+    "text": "Hvilken kranienerve innerverer tyggemusklerne og huden i ansigtet?",
+    "options": [
+      {
+        "label": "A",
+        "text": "N. olfactorius (I)",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "N. opticus (II)",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "N. trigeminus (V)",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "N. facialis (VII)",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2024,
+    "number": 10,
+    "category": "Nervesystemet",
+    "text": "Hvilket udsagn er ikke korrekt om tappe og stave?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Stave og tappe findes i retina",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Stavene er ansvarlige for farvesyn",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Tappene er ansvarlige for farvesyn",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Stavene er meget lysfølsomme",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2024,
+    "number": 11,
+    "category": "Endokrinologi",
+    "text": "Hvad er ikke sandt om parathyroideahormons (PTH) effekt?",
+    "options": [
+      {
+        "label": "A",
+        "text": "PTH sænker absorptionen af Ca²⁺ fra tarmen",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "PTH øger koncentrationen af calcitriol i plasma",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "PTH reducerer tab af Ca²⁺ i urinen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "PTH mobiliserer Ca²⁺ fra knoglerne",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2024,
+    "number": 12,
+    "category": "Endokrinologi",
+    "text": "Hvilket hormon produceres i hypofysens baglap?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Væksthormon (GH)",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Antidiuretisk hormon (ADH)",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Adrenalin",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Kortisol",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2024,
+    "number": 13,
+    "category": "Hjerte og kredsløb",
+    "text": "Hvilken af følgende arterier finder man i skinnebenet?",
+    "options": [
+      {
+        "label": "A",
+        "text": "A. radialis",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "A. carotis communis",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "A. femoralis",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "A. tibialis anterior",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2024,
+    "number": 14,
+    "category": "Hjerte og kredsløb",
+    "text": "Hvilket hjertekammer pumper blod ud i det systemiske kredsløb?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Venstre atrium",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Venstre ventrikel",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Højre atrium",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Højre ventrikel",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2024,
+    "number": 15,
+    "category": "Hjerte og kredsløb",
+    "text": "Hvilken af følgende ændringer medvirker ikke til øget hjertefrekvens?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Øget sympatisk aktivitet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Øget parasympatisk aktivitet",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Øget adrenalinniveau i blodet",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Nedsat parasympatisk aktivitet",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2024,
+    "number": 16,
+    "category": "Fordøjelseskanalen",
+    "text": "Hvilket hormon får galdeblæren til at trække sig sammen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kolecystokinin (CCK)",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Sekretin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Gastrin",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Histamin",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2024,
+    "number": 17,
+    "category": "Fordøjelseskanalen",
+    "text": "Hvad producerer parietalcellerne?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Pepsinogen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Pepsin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Mucus",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "HCl",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2024,
+    "number": 18,
+    "category": "Metabolisme",
+    "text": "Hvilken proces foregår i den inderste mitokondriemembran og danner ATP?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Elektrontransportkæden",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Glykolyse",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Citronsyrecyklus",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Beta-oxidation",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2024,
+    "number": 19,
+    "category": "Skelettet",
+    "text": "Hvad hedder knoglen, der forbinder hofteled og knæled?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Tibia",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Fibula",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Femur",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Ulna",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2024,
+    "number": 20,
+    "category": "Nyrer og urinveje",
+    "text": "Hvilket af følgende udsagn er ikke korrekt?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Det kolloidosmotiske tryk i glomeruluskapillærerne falder, når plasma filtreres",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Øget hydrostatisk tryk i glomeruluskapillærer øger filtrationen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Øget kolloidosmotisk tryk i plasma reducerer filtrationen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Øget hydrostatisk tryk i Bowmans rum nedsætter filtrationen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2024,
+    "number": 21,
+    "category": "Blod og immunsystemet",
+    "text": "Hvilke leukocytter er der flest af i blodet?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Eosinofile granulocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Neutrofile granulocytter",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Basofile granulocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Monocytter",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2024,
+    "number": 22,
+    "category": "Blod og immunsystemet",
+    "text": "Hvad kaldes processen, hvor neutrofile granulocytter optager og fordøjer bakterier?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Klonekspansion",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Exocytose",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Endocytose",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Fagocytose",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2024,
+    "number": 23,
+    "category": "Reproduktion",
+    "text": "Hvilket hormon produceres i Leydig-cellerne?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Inhibin",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Luteiniserende hormon (LH)",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Testosteron",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Progesteron",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2024,
+    "number": 24,
+    "category": "Reproduktion",
+    "text": "Hvor ligger det genetiske materiale (DNA) placeret i spermatozoen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hovedet",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Centriolen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Midterstykket",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Halen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2022,
+    "number": 1,
+    "category": "Cellebiologi",
+    "text": "Hvilket af følgende organeller reguleres i antal/mængde efter cellens ATP-behov?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Golgi-apparatet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Peroxysomet",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Mitokondriet",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Det glatte endoplasmatiske retikulum",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2022,
+    "number": 2,
+    "category": "Reproduktion",
+    "text": "Hvilket af følgende hormoner er IKKE direkte involveret i den kvindelige reproduktion?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Glucagon",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Progesteron",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Luteiniserende hormon (LH)",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Oxytocin",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2022,
+    "number": 3,
+    "category": "Bevægeapparatet",
+    "text": "Hvilken af følgende muskler er IKKE en lårmuskel?",
+    "options": [
+      {
+        "label": "A",
+        "text": "M. tibialis anterior",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "M. adductor magnus",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "M. quadriceps femoris",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "M. biceps femoris",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2022,
+    "number": 4,
+    "category": "Bevægeapparatet",
+    "text": "Mineralet i knoglevæv består overvejende af:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Natrium-salte",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Kalium-salte",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Calcium-salte",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Lithium-salte",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2022,
+    "number": 5,
+    "category": "Sanserne",
+    "text": "I hvilken af øjets hinder findes de lysfølsomme sanseceller?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Retina (nethinden)",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Cornea (hornhinden)",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Sclera (senehinden)",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Iris (regnbuehinden)",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2022,
+    "number": 6,
+    "category": "Sanserne",
+    "text": "Hvilken af følgende kranienerver er tilknyttet lugtesansen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Nervus olfactorius",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Nervus trigeminus",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Nervus vestibulocochlearis",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Nervus vagus",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2022,
+    "number": 7,
+    "category": "Det respiratoriske system",
+    "text": "Stemmebåndene (plicae vocales): Hvilken faktor har IKKE betydning for tonens højde (frekvens)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hvor meget luft man har i lungerne",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Stemmebåndenes tykkelse",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Stemmebåndenes udspænding",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Stemmebåndenes længde",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2022,
+    "number": 8,
+    "category": "Anatomi",
+    "text": "Trommehinden (membrana tympani) adskiller:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Mellemøret fra det indre øre",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Ydre øregang fra det indre øre",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Mellemøret fra tuba auditiva",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Ydre øregang fra mellemøret",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2022,
+    "number": 9,
+    "category": "Nervesystemet",
+    "text": "Hvilken af følgende kranienerver er tilknyttet det indre øre?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Nervus olfactorius",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Nervus trigeminus",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Nervus vestibulocochlearis",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Nervus vagus",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2022,
+    "number": 10,
+    "category": "Nervesystemet",
+    "text": "Hvilken af følgende hinder omslutter IKKE hjernen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Arachnoidea mater",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Peritoneum viscerale",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Dura mater",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Pia mater",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2022,
+    "number": 11,
+    "category": "Det respiratoriske system",
+    "text": "Hvilket lungevolumen er størst hos en voksen person i hvile?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Inspiratorisk reservevolumen",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Ekspiratorisk reservevolumen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Tidalvolumen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Residualvolumen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2022,
+    "number": 12,
+    "category": "Det respiratoriske system",
+    "text": "Hvilken af følgende strukturer er ikke en del af larynx (struben)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Ringbrusken (cartilago cricoidea)",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Skjoldbrusken (cartilago thyroidea)",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Plicae vocales (stemmebåndene)",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Pharynx (svælget)",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2022,
+    "number": 13,
+    "category": "Immunsystemet",
+    "text": "Hvad kendetegner et primært immunrespons sammenlignet med et sekundært?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kommer hurtigere og er kraftigere",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Kommer hurtigere men er svagere",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Kommer langsommere men er kraftigere",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Kommer langsommere og er svagere",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2022,
+    "number": 14,
+    "category": "Fordøjelseskanalen",
+    "text": "Hvilken celletype producerer mavesyre?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kupfferceller",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Parietalceller",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Fibroblaster",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Osteoklaster",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2022,
+    "number": 15,
+    "category": "Fordøjelseskanalen",
+    "text": "Hvilken celletype producerer galde?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kupfferceller",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Bægerceller",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Betaceller",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Leverceller",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2022,
+    "number": 16,
+    "category": "Nervesystemet",
+    "text": "Myelinskeder i det perifere nervesystem dannes af:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Astrocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Oligodendrocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Schwann’ske celler",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Neuroner",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2022,
+    "number": 17,
+    "category": "Syre-base-regulering",
+    "text": "Den normale gennemsnitlige pH-værdi for ekstracellulærfasen er:",
+    "options": [
+      {
+        "label": "A",
+        "text": "6,2",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "7,0",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "7,4",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "7,9",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2022,
+    "number": 18,
+    "category": "Blodet",
+    "text": "Blodplader (trombocytter) dannes fra:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Neutrofile granulocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Eosinofile granulocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Monocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Megakaryocytter",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2022,
+    "number": 19,
+    "category": "Det respiratoriske system",
+    "text": "Hos en voksen på 70 kg i hvile er størrelsen af det døde rum ca.:",
+    "options": [
+      {
+        "label": "A",
+        "text": "50 ml",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "150 ml",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "350 ml",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "550 ml",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2022,
+    "number": 20,
+    "category": "Nyrer og urinveje",
+    "text": "Hvor stor en del af det filtrerede vand udskilles normalt som urin?",
+    "options": [
+      {
+        "label": "A",
+        "text": "1 %",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "10 %",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "25 %",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "55 %",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2022,
+    "number": 21,
+    "category": "Anatomi",
+    "text": "Hvilken struktur ligger ikke i mediastinum?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hjertet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Milten",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Spiserøret",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Luftrøret",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2022,
+    "number": 22,
+    "category": "Histologi",
+    "text": "Funktionen af tight junctions i et epitel er at:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Skabe en tæt barriere hen over epitelet",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Skabe tæt elektrisk kontakt mellem cellerne",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Binde cellerne til basalmembranen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Fremme næringsstofudveksling",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2022,
+    "number": 23,
+    "category": "Histologi",
+    "text": "Hvilket af følgende væv er ikke et støttevæv?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Knoglevæv",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Brusk",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Fast fibrøst bindevæv",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Cylinderepitel",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2022,
+    "number": 24,
+    "category": "Endokrinologi",
+    "text": "Adrenocorticotropt hormon (ACTH) stimulerer:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Nyrens produktion af erythropoietin",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Pancreas’ produktion af insulin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Binyrens produktion af kortisol",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Binyrens produktion af adrenalin",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 1,
+    "category": "Anatomi",
+    "text": "For colons (tyktarmens) forskellige afsnit i retning mod endetarmen – hvilken rækkefølge er korrekt?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Transversum, sigmoideum, ascendens, descendens",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Sigmoideum, ascendens, transversum, descendens",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Descendens, transversum, sigmoideum, ascendens",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Ascendens, transversum, descendens, sigmoideum",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 2,
+    "category": "Cellebiologi",
+    "text": "Hvilket af følgende organeller reguleres i antal/mængde efter cellens ATP-behov?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Golgi-apparatet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Peroxysomet",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Mitokondriet",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Det glatte endoplasmatiske retikulum",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 3,
+    "category": "Cellebiologi",
+    "text": "Hvor mange kromosom-par er der i en almindelig legemscelle (med én kerne)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "26",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "25",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "24",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "23",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 4,
+    "category": "Cellebiologi",
+    "text": "Den type molekyler der bærer genetisk information i cellen kaldes:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Aminosyrer",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Monosakkarider",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Fedtsyrer",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Nukleinsyrer",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 5,
+    "category": "Reproduktion",
+    "text": "Hvilket af følgende hormoner er IKKE direkte involveret i den kvindelige reproduktion?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Glucagon",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Progesteron",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Luteiniserende hormon (LH)",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Oxytocin",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 6,
+    "category": "Bevægeapparatet",
+    "text": "Hvilken af følgende muskler er IKKE en lårmuskel?",
+    "options": [
+      {
+        "label": "A",
+        "text": "M. tibialis anterior",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "M. adductor magnus",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "M. quadriceps femoris",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "M. biceps femoris",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 7,
+    "category": "Bevægeapparatet",
+    "text": "Mineralet i knoglevæv består overvejende af:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Natrium-salte",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Kalium-salte",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Calcium-salte",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Lithium-salte",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 8,
+    "category": "Bevægeapparatet",
+    "text": "Hvilken af følgende knogler finder man allerøverst i columna vertebralis (rygsøjlen)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Axis",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Os coccygis",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Os sacrum",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Atlas",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 9,
+    "category": "Nervesystemet",
+    "text": "I hvilken af øjets hinder findes de lysfølsomme sanseceller?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Retina (nethinden)",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Cornea (hornhinden)",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Sclera (senehinden)",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Iris (regnbuehinden)",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 10,
+    "category": "Nervesystemet",
+    "text": "Hvilken af følgende kranienerver er tilknyttet lugtesansen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Nervus olfactorius",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Nervus trigeminus",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Nervus vestibulocochlearis",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Nervus vagus",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 11,
+    "category": "Respiration",
+    "text": "Stemmebåndene (plicae vocales): hvilken faktor har IKKE betydning for tonens højde (frekvens)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hvor meget luft man har i lungerne",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Stemmebåndenes tykkelse",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Stemmebåndenes udspænding",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Stemmebåndenes længde",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 12,
+    "category": "Anatomi",
+    "text": "Trommehinden (membrana tympani) adskiller:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Mellemøret fra det indre øre",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Ydre øregang fra det indre øre",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Mellemøret fra tuba auditiva",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Ydre øregang fra mellemøret",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 13,
+    "category": "Nervesystemet",
+    "text": "Hvilken af følgende hinder omslutter IKKE hjernen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Arachnoidea mater",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Peritoneum viscerale",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Dura mater",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Pia mater",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 14,
+    "category": "Respiration",
+    "text": "Hvilket lungevolumen er størst hos en voksen person i hvile?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Inspiratorisk reservevolumen",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Ekspiratorisk reservevolumen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Tidalvolumen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Residualvolumen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 15,
+    "category": "Hjerte og kredsløb",
+    "text": "I hvilken af følgende kartyper fra det systemiske kredsløb er blodtrykket højest?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kapillærer",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Arterioler",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Store vener",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Aorta",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 16,
+    "category": "Respiration",
+    "text": "Hvilken celletype er karakteristisk for epithelet i bronchierne?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Osteocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Chondrocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Hovedceller",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Ciliebeklædte celler",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 17,
+    "category": "Fordøjelseskanalen",
+    "text": "Hvilken celletype producerer mavesyre?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kupfferceller",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Parietalceller",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Fibroblaster",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Osteoklaster",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 18,
+    "category": "Respiration",
+    "text": "Funktionen af surfaktant er at:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Stimulere ventilationen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Nedsætte overfladespændingen i alveoler og små luftveje",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Opløse fremmede partikler i lungen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Gøre lungens ydre overflade helt glat",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 19,
+    "category": "Syre-base-regulering",
+    "text": "Den normale gennemsnitlige pH-værdi for ekstracellulærfasen er:",
+    "options": [
+      {
+        "label": "A",
+        "text": "6,2",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "7,0",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "7,4",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "7,9",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 20,
+    "category": "Respiration",
+    "text": "Hos en voksen på 70 kg i hvile er størrelsen af det døde rum ca.:",
+    "options": [
+      {
+        "label": "A",
+        "text": "50 ml",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "150 ml",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "350 ml",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "550 ml",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 21,
+    "category": "Nyrer og urinveje",
+    "text": "Hvor stor en del af den udfiltrerede vandmængde udskilles normalt som urin?",
+    "options": [
+      {
+        "label": "A",
+        "text": "1 %",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "10 %",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "25 %",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "55 %",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 22,
+    "category": "Endokrinologi",
+    "text": "Hvilken påvirkning hæmmer frigivelse af insulin fra betaceller i pancreas?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Høj glukosekoncentration i blodet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Høj parasympatisk aktivitet",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Høj aminosyrekoncentration i blodet",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Høj sympatisk aktivitet",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 23,
+    "category": "Reproduktion",
+    "text": "En primær spermatocyt giver ophav til:",
+    "options": [
+      {
+        "label": "A",
+        "text": "2 sædceller",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "4 sædceller",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "8 sædceller",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "1 sædcelle",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 24,
+    "category": "Kredsløb/respiration",
+    "text": "Hvad er iltningsgraden (saturation) i hvile af det blandede veneblod, der kommer tilbage til højre forkammer?",
+    "options": [
+      {
+        "label": "A",
+        "text": "15 %",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "25 %",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "50 %",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "75 %",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 1,
+    "category": "Anatomi",
+    "text": "Hvilken af følgende hulrum er beklædt med en serøs membran (serosa)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Næsehulen (cavum nasi)",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Mundhulen (cavum oris)",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Bughulen (cavum abdominis)",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Næsesvælget (nasopharynx)",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 2,
+    "category": "Cellebiologi",
+    "text": "Hvilken af følgende typer molekyler er ikke en normal bestanddel af cellemembranen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Fosfolipid",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "RNA",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Kolesterol",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Protein",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 3,
+    "category": "Cellens byggesten",
+    "text": "De væsentligste byggesten i proteiner er:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Monosakkarider",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Nukleotider",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Fedtsyrer",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Aminosyrer",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 4,
+    "category": "Cellebiologi",
+    "text": "Hvilket af følgende organeller indeholder cellens arvemateriale?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Mitokondriet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Ribosomet",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Cellekernen",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Det glatte endoplasmatiske retikulum",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 5,
+    "category": "Bevægeapparatet",
+    "text": "Hvilken af følgende knogler indgår i underarmen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Femur",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Tibia",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Ulna",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Fibula",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 6,
+    "category": "Bevægeapparatet",
+    "text": "Hvilken type muskelvæv er tværstribet og viljestyret?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Glat muskulatur",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Hjertemuskulatur",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Skeletmuskulatur",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Visceral muskulatur",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 7,
+    "category": "Respiration",
+    "text": "Hvor foregår gasudvekslingen i lungerne?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Bronkierne",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Bronkiolerne",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Alveolerne",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Trachea",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 8,
+    "category": "Kredsløb",
+    "text": "Hvilket kar fører iltet blod fra lungerne til hjertet?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Pulmonalarterier",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Vena cava",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Aorta",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Lungevener",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 9,
+    "category": "Nervesystemet",
+    "text": "Hvilken del af nervesystemet er ansvarlig for viljestyrede bevægelser?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Det autonome nervesystem",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Det parasympatiske nervesystem",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Det somatiske nervesystem",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Det enteriske nervesystem",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 10,
+    "category": "Endokrinologi",
+    "text": "Hvilket hormon sænker blodsukkerkoncentrationen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Glukagon",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Adrenalin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Kortisol",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Insulin",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 11,
+    "category": "Fordøjelseskanalen",
+    "text": "Hvor produceres galde?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Galdeblæren",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Pancreas",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Leveren",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Tyndtarmen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 12,
+    "category": "Nyrer og urinveje",
+    "text": "Hvor i nefronet reabsorberes størstedelen af filtreret vand?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Henles slynge",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Distale tubulus",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Samlerør",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Proksimale tubulus",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 13,
+    "category": "Blodet",
+    "text": "Hvilken celletype står for den primære hæmostase?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Erytrocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Leukocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Trombocytter",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Monocytter",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 14,
+    "category": "Immunsystemet",
+    "text": "Hvilken celletype producerer antistoffer?",
+    "options": [
+      {
+        "label": "A",
+        "text": "T-lymfocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Makrofager",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "B-lymfocytter",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Neutrofile granulocytter",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 15,
+    "category": "Reproduktion",
+    "text": "Hvor produceres testosteron?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Sertoliceller",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Hypofysen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Leydig-celler",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Binyrerne",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 1,
+    "category": "Anatomi",
+    "text": "Hvilken af følgende strukturer ligger ikke i mediastinum (brystskillevæggen)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hjertet (cor)",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Milten (splen)",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Spiserøret (Esophagus)",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Luftrøret (Trachea)",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 2,
+    "category": "Histologi",
+    "text": "Funktionen af tight-junctions i et epitel er at:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Skabe en tæt barriere hen over epitelet",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Skabe tæt elektrisk kontakt mellem epitelcellerne",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Binde epithelcellerne tæt til basalmembranen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Fremme udveksling af næringsstoffer mellem naboceller",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 3,
+    "category": "Histologi",
+    "text": "Hvilket af følgende væv er ikke et støttevæv:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Knoglevæv",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Brusk",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Fast fibrøst bindevæv",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Cylinderepitel",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 4,
+    "category": "Cellebiologi",
+    "text": "Hvilken af følgende organeller reguleres i antal/mængde efter cellens ATP-behov?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Golgi-apparatet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Peroxysomet",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Mitokondriet",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Det glatte endoplasmatiske retikulum",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 5,
+    "category": "Cellebiologi",
+    "text": "Hvilken af følgende typer molekyler er ikke en normal bestanddel af cellemembranen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Fosfolipid",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "RNA",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Kolesterol",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Protein",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 6,
+    "category": "Anatomi",
+    "text": "Hvor mange korsbånd findes i knæleddet:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Et",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "To",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Tre",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Fire",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 7,
+    "category": "Bevægeapparatet",
+    "text": "Hvilken type led er knæleddet:",
+    "options": [
+      {
+        "label": "A",
+        "text": "En saddelled",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "En kugleled",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "En hængselled",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "En glideled",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 8,
+    "category": "Fordøjelse",
+    "text": "Hvilket af følgende enzymer produceres i pancreas:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Pepsin",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Trypsinogen",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Enteropeptidase",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Salivary amylase",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 9,
+    "category": "Fordøjelse",
+    "text": "Galde produceres i:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Galdeblæren",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Leveren",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Duodenum",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Pancreas",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 10,
+    "category": "Lunger",
+    "text": "Hvor foregår gasudvekslingen mellem luft og blod?",
+    "options": [
+      {
+        "label": "A",
+        "text": "I bronkierne",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "I bronkiolerne",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "I alveolerne",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "I trachea",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 11,
+    "category": "Lunger",
+    "text": "Hvilket af følgende lungevolumener er størst hos en voksen person i hvile?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Inspiratorisk reservevolumen",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Ekspiratorisk reservevolumen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Tidalvolumen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Residualvolumen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 12,
+    "category": "Kredsløb",
+    "text": "Hvilket af følgende kar fører blod fra højre ventrikel til lungerne?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Aorta",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Lungearterierne",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Lungevenerne",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Vena cava",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 13,
+    "category": "Kredsløb",
+    "text": "Hvilket af følgende udsagn er korrekt:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Det systemiske kredsløb er en del af lungekredsløbet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Vener fører altid iltfattigt blod",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Arterier fører altid iltet blod",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Lungevenerne fører iltet blod til venstre forkammer",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 14,
+    "category": "Nervesystemet",
+    "text": "Hvilken af følgende kranienerver er tilknyttet lugtesansen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Nervus olfactorius",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Nervus trigeminus",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Nervus vestibulocochlearis",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Nervus vagus",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 15,
+    "category": "Nervesystemet",
+    "text": "Hvilken af følgende kranienerver er tilknyttet det indre øre?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Nervus olfactorius",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Nervus trigeminus",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Nervus vestibulocochlearis",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Nervus vagus",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 16,
+    "category": "Syre-base",
+    "text": "Den normale, gennemsnitlige pH-værdi for ekstracellulærfasen (inkl. blodet) er:",
+    "options": [
+      {
+        "label": "A",
+        "text": "6,2",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "7,0",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "7,4",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "7,9",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 17,
+    "category": "Nyrer",
+    "text": "Hvor stor en del af den mængde vand der udfiltreres i glomerulus vil normalt blive udskilt som urin?",
+    "options": [
+      {
+        "label": "A",
+        "text": "1%",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "10%",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "25%",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "55%",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 18,
+    "category": "Endokrinologi",
+    "text": "Hvilket af følgende hormoner sænker blodsukkeret:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Glucagon",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Insulin",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Adrenalin",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Kortisol",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 19,
+    "category": "Endokrinologi",
+    "text": "Hvilket af følgende hormoner produceres i hypofysens baglap:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Væksthormon (GH)",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Antidiuretisk hormon (ADH)",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Kortisol",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Insulin",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 20,
+    "category": "Reproduktion",
+    "text": "Hvor sker befrugtningen af ægcellen normalt:",
+    "options": [
+      {
+        "label": "A",
+        "text": "I livmoderen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "I ovariet",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "I den første 1/3 af æggelederen set fra ovariet",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "I den sidste 1/3 af æggelederen set fra ovariet",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 21,
+    "category": "Reproduktion",
+    "text": "Hvilket af følgende hormoner er IKKE direkte involveret i den kvindelige reproduktion?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Glucagon",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Progesteron",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Luteiniserende hormon (LH)",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Oxytocin",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 22,
+    "category": "Reproduktion",
+    "text": "Hvis der ikke sker befrugtning efter ovulationen, hvad sker der så med corpus luteum:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Det omdannes til corpus albicans (arvæv)",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Det bliver til en ny follikel",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Det udvikler sig til en placenta",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Det forbliver uændret indtil næste ovulation",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 23,
+    "category": "Reproduktion",
+    "text": "Hos manden frisættes luteiniserende hormon (LH) fra:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Testes",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Hypofysen",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Hypothalamus",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Prostata",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 24,
+    "category": "Hormoner",
+    "text": "Hvilket af følgende hormoner produceres i binyrebarken:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Væksthormon",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Aldosteron",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Insulin",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Antidiuretisk hormon",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 1,
+    "category": "Cellebiologi",
+    "text": "Hvilken af følgende typer molekyler er ikke en normal bestanddel af cellemembranen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kulhydrat",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Nukleinsyre",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Kolesterol",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Protein",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 2,
+    "category": "Cellebiologi",
+    "text": "Hvilket af følgende organeller har sit eget DNA?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Golgi-apparatet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Mitokondriet",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Lysosomet",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Det glatte endoplasmatiske retikulum",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 3,
+    "category": "Cellebiologi",
+    "text": "Translation af mRNA til polypeptidkæde foregår på:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Nukleolen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Overfladen af sekretoriske vesikler",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Ribosomet",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Det glatte endoplasmatiske retikulum",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 4,
+    "category": "Cellebiologi",
+    "text": "Hvor mange nukleotider danner tilsammen anticodon på et tRNA-molekyle?",
+    "options": [
+      {
+        "label": "A",
+        "text": "2",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "3",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "4",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "6",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 5,
+    "category": "Metabolisme",
+    "text": "Hvilket af følgende udsagn er ikke korrekt?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kroppen kan selv producere essentielle vitaminer ud fra kulhydrater",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Ved vitaminmangel kan der opstå alvorlige sygdomme",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Der findes både vand- og fedtopløselige vitaminer",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Nogle vitaminer kan dannes ud fra provitaminer",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 6,
+    "category": "Histologi",
+    "text": "Funktionen af tight-junctions i et epitel er at:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Binde epithelcellerne tæt til basalmembranen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Skabe tæt elektrisk kontakt mellem epithelcellerne",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Skabe en tæt barriere hen over epitelet",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Holde desmosomerne tæt sammen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 7,
+    "category": "Histologi",
+    "text": "Hvilket af følgende væv er ikke et bindevæv (connective tissue)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kompakt knoglevæv",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Lagdelt pladeepitel",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Fedtvæv",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Hyalin brusk",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 8,
+    "category": "Bevægeapparatet",
+    "text": "Hvilken type led er albueleddet?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Et drejeled (pivot joint)",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Et hængselled (hinge joint)",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Et saddel-led (saddle joint)",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Et kugleled (ball-and-socket joint)",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 9,
+    "category": "Bevægeapparatet",
+    "text": "Hvilken knogle (latin: Os) er ikke en del af pelvis (bækkenet)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Os coxae (coxal bone)",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Os sacrum (sacrum)",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Os coccygis (coccyx)",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Femur",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 10,
+    "category": "Nervesystemet",
+    "text": "Hvilken af følgende strukturer er ikke en del af et neuron?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Cellekrop",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Axon",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Dendrit",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Mikrovillus",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 11,
+    "category": "Nervesystemet",
+    "text": "Hvilken celletype er ikke en gliacelle?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Osteoclast",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Ependymal celle",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Astrocyt",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Oligodendrocyt",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 12,
+    "category": "Nervesystemet",
+    "text": "Myelin-skeder i det perifere nervesystem dannes af:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Astrocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Oligodendrocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Schwann’ske celler",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Neuroner",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 13,
+    "category": "Nervesystemet",
+    "text": "Ved en nervecelles repolarisering forstås:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Den fase hvor nervecellen stimuleres til at opnå tærskelværdien",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Fasen fra tærskelværdien er opnået til aktionspotentialets top",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Den samlede varighed af aktionspotentialet",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Den fase hvor membranpotentialet falder fra aktionspotentialets top til under tærskelværdien",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 14,
+    "category": "Endokrinologi",
+    "text": "Hvilket af følgende hormoner udskilles fra hypofysens baglap?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Antidiuretisk hormon (ADH)",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Væksthormon (GH)",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Adrenocorticotropt hormon (ACTH)",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Prolaktin",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 15,
+    "category": "Endokrinologi",
+    "text": "Oxytocin stimulerer:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Udskillelse af slim fra mave-tarmkanalens slimproducerende celler",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Ovarier og testes til dannelse af kønshormoner",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Nyren til at øge re-absorptionen af kalium",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Kontraktion af den glatte muskulatur i livmodervæggen",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 16,
+    "category": "Endokrinologi",
+    "text": "Paratyroidea hormon (PTH):",
+    "options": [
+      {
+        "label": "A",
+        "text": "Stimulerer osteoblastens knogledannelse",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Stimulerer osteoclastens knoglenedbrydning",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Stimulerer den røde knoglemarvs dannelse af erytrocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Hæmmer dannelsen af aktivt vitamin D i nyrerne",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 17,
+    "category": "Endokrinologi",
+    "text": "Hormoner fra hypothalamus når hypofysens forlap via:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Et port-åre-system (portal system)",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Et netværk af nerveforbindelser",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Et netværk af lymfekar",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Et netværk af små muskulære arterier og arterioler",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 18,
+    "category": "Hjerte og kredsløb",
+    "text": "Hjertets minutvolumen hos en rask, voksen person af gennemsnitsstørrelse er i hvile ca.:",
+    "options": [
+      {
+        "label": "A",
+        "text": "5 liter",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "7 liter",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "9 liter",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "11 liter",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 19,
+    "category": "Hjerte og kredsløb",
+    "text": "Pulstrykket er størst i:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Arterioler",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Kapillærer",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Store arterier",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Store vener",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 20,
+    "category": "Hjerte og kredsløb",
+    "text": "For lungekredsløbet gælder:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Netto bevægelsen af kuldioxid er fra alveolen til lungekapillæret",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Truncus pulmonalis bærer fuldt iltet blod",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "4 pulmonal-vener munder ind i venstre atrium",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Pulmonal-venerne bærer af-iltet blod",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 21,
+    "category": "Lever og kredsløb",
+    "text": "Leverens port-åre (hepatic portal vein) leder blod:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Fra leveren til vena cava inferior",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Fra mave-tarmkanalen til leveren",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Fra leveren til vena iliaca communis",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Fra arteria hepatica til lever-venerne",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 22,
+    "category": "Lungefysiologi",
+    "text": "Trachea (luftrøret) er hos den voksne:",
+    "options": [
+      {
+        "label": "A",
+        "text": "4–5 cm langt",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "10–11 cm langt",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "20–21 cm langt",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "30–31 cm langt",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 23,
+    "category": "Lungefysiologi",
+    "text": "Hvilken af disse celler findes ikke i alveolen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Type I pneumocyt",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Makrofag",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Type II pneumocyt",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Ciliebærende celle",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 24,
+    "category": "Lungefysiologi",
+    "text": "Den muskel hvis kontraktion giver den største ændring i brystkassens volumen under indånding er:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Pectoralis minor",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Diaphragma",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Externe intercostal muskler",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Sternocleidomastoideus",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 1,
+    "category": "Mave-tarmkanalen",
+    "text": "Hvilken af følgende strukturer er ikke en del af tyndtarmen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Jejunum",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Duodenum",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Ileum",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Cecum (caecum)",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 2,
+    "category": "Mave-tarmkanalen",
+    "text": "Hvilken celletype fra mavesækkens slimhinde producerer saltsyre?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Mukøse overflade- og halsceller",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Parietalceller",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Endokrine celler",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Hovedceller (chief cells)",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 3,
+    "category": "Mave-tarmkanalen",
+    "text": "Secretins virkning på pancreas er stimulation til sekretion af:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Bicarbonat",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Lipase",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Pepsinogen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Intrinsic factor",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 4,
+    "category": "Mave-tarmkanalen",
+    "text": "Ca. 9 liter væske indtages dagligt i tyndtarmen. Hvor stor en del absorberes igen i tyndtarmen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Mindre end 30 %",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Mellem 30 og 60 %",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Mellem 60 og 90 %",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Mere end 90 %",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 5,
+    "category": "Mave-tarmkanalen",
+    "text": "Galdesalte er vigtige for optagelsen af hvilken fødekomponent?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kulhydrat",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Fedtstof",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Nukleinsyre",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Protein",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 6,
+    "category": "Mave-tarmkanalen",
+    "text": "Hvilken af følgende er ikke indeholdt i pancreas-saften der udskilles til tyndtarmen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Lipase",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Chymotrypsin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Insulin",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Bicarbonat",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 7,
+    "category": "Metabolisme",
+    "text": "Hvilket udsagn om den basale metaboliske rate (BMR) er ikke sandt?",
+    "options": [
+      {
+        "label": "A",
+        "text": "BMR er højere for mænd end for kvinder på samme alder",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "BMR er højere for gamle end for unge af samme køn",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "BMR øges under feber",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "BMR falder ved langvarig faste",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 8,
+    "category": "Metabolisme",
+    "text": "Kroppens temperatur reguleres fra:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hypofysen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Hypothalamus",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Medulla oblongata",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Temporallappen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 9,
+    "category": "Metabolisme",
+    "text": "Hvilket udsagn gælder for den post-absorptive tilstand?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kroppens energibehov dækkes primært af glukose fra tarmen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Fedt fra kroppens fedtvæv er en vigtig energikilde",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Leveren opbygger sit lager af glykogen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Kroppen optager en stor mængde protein fra tarmen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 10,
+    "category": "Metabolisme",
+    "text": "Hvilke af følgende stoffer kan ikke omdannes til glukose i leveren?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Mælkesyre",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Frie fedtsyrer",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Glycerol",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Alfa-keto syrer",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 11,
+    "category": "Reproduktion",
+    "text": "En primær spermatocyt giver ophav til:",
+    "options": [
+      {
+        "label": "A",
+        "text": "2 spermatider",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "4 spermatider",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "1 spermatid + 1 pol-legeme",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "2 spermatider + 2 pol-legemer",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 12,
+    "category": "Reproduktion",
+    "text": "Acrosomet indeholder:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Enzymer som sædcellen anvender til at trænge ind i ægget",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Glykogen til energilager",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Mitokondrier til hale-bevægelse",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Sædcellens arvemateriale",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 13,
+    "category": "Reproduktion",
+    "text": "Gonadotropin-releasing hormone (GnRH) frisættes fra:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Testes",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Hypofysen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Hypothalamus",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Prostata",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 14,
+    "category": "Reproduktion",
+    "text": "Ægcellens første meiotiske deling påbegyndes før fødslen men færdiggøres først:",
+    "options": [
+      {
+        "label": "A",
+        "text": "I ugerne efter fødslen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Omkring 4-års alderen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Lige før ovulationen",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Lige efter befrugtningen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 15,
+    "category": "Reproduktion",
+    "text": "Den højeste koncentration af humant chorion gonadotropin (hCG) i moderens blod nås:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Mellem fertilisation og implantation",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Mod slutningen af første trimester",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Mod slutningen af andet trimester",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Mod slutningen af tredje trimester",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 16,
+    "category": "Reproduktion",
+    "text": "Implantation af blastocysten i livmoderslimhinden finder sted ca.:",
+    "options": [
+      {
+        "label": "A",
+        "text": "2 dage efter befrugtningen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "3 dage efter befrugtningen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "4 dage efter befrugtningen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "7 dage efter befrugtningen",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 17,
+    "category": "Bevægeapparatet",
+    "text": "Leddet mellem humerus og scapula er et:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Drejeled",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Kugleled",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Hængselled",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Saddelled",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 18,
+    "category": "Bevægeapparatet",
+    "text": "En motorisk enhed består af:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Alle motorneuroner der innerverer en muskel",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Et motorneuron og alle de fibre der innerveres af dette neuron",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Alle muskler der fremkalder samme bevægelse",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Et område i motor-cortex",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 19,
+    "category": "Bevægeapparatet",
+    "text": "Skeletmuskulaturens tykke filamenter med hoveder består af proteinet:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Actin",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Myosin",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Troponin",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Tropomyosin",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 20,
+    "category": "Bevægeapparatet",
+    "text": "Når et aktionspotentiale når den præsynaptiske terminal i den neuromuskulære kontakt frisættes:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Acetylcholin (ACh)",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Acetylen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Acetat",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Acetyl-CoA",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 21,
+    "category": "Blodet og immunsystemet",
+    "text": "Hvilket udsagn gælder ikke for antistoffer?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Produceres af hjælper-T-celler",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Har bindingssteder for komplement-proteiner",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Indeholder regioner med høj variabilitet",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Består af 2 lette og 2 tunge kæder",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 22,
+    "category": "Blodet og immunsystemet",
+    "text": "Trombocytternes primære funktion er:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Transport af natrium",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Deltagelse i immunforsvaret",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Transport af ilt og kuldioxid",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Deltagelse i hæmostase",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 23,
+    "category": "Blodet og immunsystemet",
+    "text": "Hvad kendetegner et primært antistofrespons sammenlignet med et sekundært respons?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hurtigere og kraftigere",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Hurtigere men svagere",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Langsommere men kraftigere",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Langsommere og svagere",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 24,
+    "category": "Blodet og immunsystemet",
+    "text": "Hvilken celle-type kan fagocytere?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Neutrofile granulocytter",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "NK-celler",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Basofile granulocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Mastceller",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 1,
+    "category": "Histologi / anatomi",
+    "text": "Hvilken af følgende hulheder er ikke beklædt med en serøs membran?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Perikardiehulen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Lungehulen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Bughulen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Livmoderhulen (uterine cavity)",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 2,
+    "category": "Histologi / anatomi",
+    "text": "Hvilken af følgende strukturer ligger ikke i mediastinum?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hjertet",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Milten (spleen)",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Esophagus",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Trachea",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 3,
+    "category": "Histologi / anatomi",
+    "text": "Hånden er placeret:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Proximalt for albuen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Distalt for albuen",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Posteriort for albuen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Anteriort for albuen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 4,
+    "category": "Den kemiske basis for liv",
+    "text": "De væsentligste byggesten i proteiner er:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Monosaccharider",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Fedtsyrer",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Nukleinsyrer",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Aminosyrer",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 5,
+    "category": "Den kemiske basis for liv",
+    "text": "Faciliteret diffusion – hvilket udsagn er korrekt?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Foregår op imod en koncentrationsgradient",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Foregår ned ad en koncentrationsgradient",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Kan kun foregå under ATP-forbrug",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Kan ikke foregå over en membran",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 6,
+    "category": "Bevægeapparatet",
+    "text": "Hvilken celletype har funktionen at fjerne knoglemateriale (matrix og mineral)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Osteoblast",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Osteocyt",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Chondrocyt",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Osteoclast",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 7,
+    "category": "Bevægeapparatet",
+    "text": "Hvilket udsagn er ikke korrekt omkring parathyroidea hormon (PTH)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Bevirker øget aktivitet af Natrium-Kalium pumpen",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Bevirker øget knogleresorption",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Bevirker øget Ca²⁺-reabsorption i nyrerne",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Øger dannelsen af aktivt vitamin D",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 8,
+    "category": "Bevægeapparatet",
+    "text": "Hvilken af følgende muskler er placeret på kroppens forside?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Latissimus dorsi",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Pectoralis major",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Gluteus maximus",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Trapezius",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 9,
+    "category": "Nervesystemet",
+    "text": "Cerebrospinalvæsken produceres af:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Arachnoidea mater",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Pia mater",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Celler i canalis centralis",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Plexus choroideus i hjernens ventrikler",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 10,
+    "category": "Nervesystemet",
+    "text": "Hvilken kranienerve forsyner organerne i bryst- og bughule med parasympatisk innervation?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Nervus olfactorius",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Nervus trigeminus",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Nervus vagus",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Nervus hypoglossus",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 11,
+    "category": "Nervesystemet",
+    "text": "Rækkefølgen af væv/strukturer i øjet som lyset passerer igennem er:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Cornea – linse – pupil – corpus vitreum",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Cornea – pupil – corpus vitreum – linse",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Cornea – pupil – linse – corpus vitreum",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Cornea – corpus vitreum – pupil – linse",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 12,
+    "category": "Nervesystemet",
+    "text": "Trommehinden adskiller:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Mellemøret fra det indre øre",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Ydre øregang fra det indre øre",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Mellemøret fra tuba auditiva",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Ydre øregang fra mellemøret",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 13,
+    "category": "Blodet",
+    "text": "Hvilken af følgende er ikke et af blodets formede elementer?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Blodplader",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Neutrofile granulocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Lymfocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Globuliner",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 14,
+    "category": "Blodet",
+    "text": "Hvilket udsagn er korrekt?",
+    "options": [
+      {
+        "label": "A",
+        "text": "EPO produceres i leveren",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "EPO-produktion stimuleres af højt iltindhold",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "EPO stimulerer dannelsen af blodplader",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Erythropoietin produceres i nyrerne",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 15,
+    "category": "Hjerte og kredsløb",
+    "text": "Hvilket udsagn er ikke korrekt?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Højre ventrikel pumper af-iltet blod til truncus pulmonalis",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Lungevenerne fører iltet blod til venstre ventrikel",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Venstre ventrikel pumper iltet blod ud i aorta",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Venstre ventrikel genererer højere tryk end højre",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 16,
+    "category": "Hjerte og kredsløb",
+    "text": "I det systemiske kredsløb dæmpes pulstrykket mest i:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Aorta",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Små arterier og arterioler",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Kapillærer",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Vener",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 17,
+    "category": "Fordøjelseskanalen",
+    "text": "Hvilken celletype fra mavesækkens slimhinde producerer saltsyre?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Mukøse overflade- og halsceller",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Parietalceller",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Endokrine celler",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Hovedceller",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 18,
+    "category": "Fordøjelseskanalen",
+    "text": "Hvilken af følgende er ikke indeholdt i pancreas-saften?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Lipase",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Chymotrypsin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Insulin",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Bicarbonat",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 19,
+    "category": "Metabolisme",
+    "text": "Hvilket udsagn gælder for den post-absorptive tilstand?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Fedt fra kroppens fedtvæv er en vigtig energikilde",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Energi dækkes primært af glukose fra tarmen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Leveren opbygger glykogen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Kroppen optager store mængder protein",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 20,
+    "category": "Metabolisme",
+    "text": "Kroppens temperatur reguleres fra:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Hypofysen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Hypothalamus",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Medulla oblongata",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Temporallappen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 21,
+    "category": "Nyrer og urinveje",
+    "text": "Hvor stor en del af det filtrerede vand reabsorberes i gennemsnit i glomerulus?",
+    "options": [
+      {
+        "label": "A",
+        "text": "99 %",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "89 %",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "75 %",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "63 %",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 22,
+    "category": "Nyrer og urinveje",
+    "text": "Ureteres leder urinen:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Fra calyces til pelvis renalis",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Fra pelvis renalis til blæren",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Fra blæren til kroppens overflade",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Fra distale tubulus til papilla renalis",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 23,
+    "category": "Reproduktion",
+    "text": "En primær spermatocyt giver ophav til:",
+    "options": [
+      {
+        "label": "A",
+        "text": "2 sædceller",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "4 sædceller",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "1 sædcelle + 1 pol-legeme",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "2 sædceller + 2 pol-legemer",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 24,
+    "category": "Reproduktion",
+    "text": "Acrosomet indeholder:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Enzymer som sædcellen anvender til at trænge ind i ægget",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Glykogen",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Mitokondrier",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Arvemateriale",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 1,
+    "category": "Cellebiologi",
+    "text": "Hvilken af følgende typer molekyler er ikke en normal bestanddel af cellemembranen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Kulhydrat",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Nukleinsyre",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Kolesterol",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Protein",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 2,
+    "category": "Cellebiologi",
+    "text": "Funktionen af ribosomet er:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Protein-syntese",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Fedtsyre-syntese",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Kulhydrat-syntese",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Kolesterol-syntese",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 3,
+    "category": "Cellebiologi",
+    "text": "Apoptose (apoptosis) er betegnelsen for:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Celledeling",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Fusion af sekretoriske vesikler",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "At cellen optager vand og svulmer op",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Programmeret celledød",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 4,
+    "category": "Histologi",
+    "text": "Funktionen af tight-junctions i et epitel er at:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Binde epithelcellerne tæt til basalmembranen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Skabe tæt elektrisk kontakt mellem epithelcellerne",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Skabe en tæt barriere hen over epitelet",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Holde desmosomerne tæt sammen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 5,
+    "category": "Nyrer",
+    "text": "De celler der dækker glomerulus-kapillæret og udgør det viscerale lag af Bowmans kapsel benævnes:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Podocytter",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Juxtaglomerulære celler",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Melanocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Macula densa celler",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 6,
+    "category": "Bevægeapparatet",
+    "text": "Hvilken type led er albueleddet?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Drejeled",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Hængselled",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Saddelled",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Kugleled",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 7,
+    "category": "Bevægeapparatet",
+    "text": "Hvor sidder sacrum (os sacrum, korsbenet)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "I foden",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "I bunden af kraniet",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "I hånden",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "I bækkenet",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 8,
+    "category": "Bevægeapparatet",
+    "text": "Skeletmuskelceller indeholder tykke filamenter med hoveder, disse betegnes:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Tropomyosin",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Troponin",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Actin",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Myosin",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 9,
+    "category": "Nervesystemet",
+    "text": "I centralnervesystemet dannes myelin-skeder af:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Astrocytter",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Oligodendrocytter",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Schwann’ske celler",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Neuroner",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 10,
+    "category": "Nervesystemet (udgået spørgsmål)",
+    "text": "Hvilket ion-par er vigtigst for nervecellens depolarisering og repolarisering under et aktionspotentiale?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Na⁺ og K⁺",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Mg²⁺ og K⁺",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Ca²⁺ og Mg²⁺",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Ca²⁺ og Na⁺",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 11,
+    "category": "Mave-tarmkanalen",
+    "text": "Hvilken af følgende strukturer er ikke en del af tyndtarmen?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Jejunum",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Duodenum",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Ileum",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Cecum (caecum)",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 12,
+    "category": "Mave-tarmkanalen",
+    "text": "Hvilken celletype i ventriklen (mavesækken) danner saltsyre?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Mukøse halsceller",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Endokrine celler",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Hovedceller",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Parietal celler",
+        "isCorrect": true
+      }
+    ],
+    "correctLabel": "D"
+  },
+  {
+    "year": 2021,
+    "number": 13,
+    "category": "Mave-tarmkanalen",
+    "text": "Hvilket af følgende stoffer produceres ikke i pancreas?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Bicarbonat",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Glucagon",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Galdesalte",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Trypsin",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 14,
+    "category": "Metabolisme",
+    "text": "Hvilket udsagn gælder for den post-absorptive tilstand?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Energibehov dækkes primært af glukose fra tarmen",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Fedt fra kroppens fedtvæv er en vigtig energikilde",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Leveren opbygger glykogen",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Kroppen optager store mængder protein",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 15,
+    "category": "Metabolisme",
+    "text": "Hvilket begreb er ikke relateret til kroppens udveksling af varme med omgivelserne?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Radiation",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Propulsion",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Konduktion",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Konvektion",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 16,
+    "category": "Hormoner",
+    "text": "Hvilket af følgende hormoner produceres ikke i binyrebarken (adrenal cortex)?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Væksthormon",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Aldosteron",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Cortisol",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Androgen",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 17,
+    "category": "Hjerte og kredsløb",
+    "text": "Hjertets minutvolumen hos en rask, voksen person i hvile er ca.:",
+    "options": [
+      {
+        "label": "A",
+        "text": "5 liter",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "7 liter",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "9 liter",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "11 liter",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 18,
+    "category": "Hjerte og kredsløb",
+    "text": "Hvor højt er det diastoliske blodtryk hos en rask yngre person?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Ca. 40 mmHg",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Ca. 80 mmHg",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Ca. 100 mmHg",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Ca. 120 mmHg",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 19,
+    "category": "Blodet",
+    "text": "Diameteren af et normalt rødt blodlegeme er:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Ca. 3,5 µm",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Ca. 7,5 µm",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Ca. 11,5 µm",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Ca. 15,5 µm",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  },
+  {
+    "year": 2021,
+    "number": 20,
+    "category": "Blodet",
+    "text": "Erytropoietin dannes overvejende i:",
+    "options": [
+      {
+        "label": "A",
+        "text": "Nyren",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Milten",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Leveren",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Pancreas",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 21,
+    "category": "Det respiratoriske system",
+    "text": "Hvilken af følgende funktioner har larynx ikke?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Lyddannelse",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Adskillelse af luft og føde",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Produktion af surfactant",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "At holde luftvejen åben",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 22,
+    "category": "Det respiratoriske system",
+    "text": "Hvilken muskel er af størst betydning for volumenændringen af brystkassen under rolig vejrtrækning?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Diaphragma",
+        "isCorrect": true
+      },
+      {
+        "label": "B",
+        "text": "Intercostalmusklerne",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Pectoralis minor",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Sternocleidomastoideus",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "A"
+  },
+  {
+    "year": 2021,
+    "number": 23,
+    "category": "Reproduktion",
+    "text": "Hvilken virkning har LH (luteinizing hormone) hos manden?",
+    "options": [
+      {
+        "label": "A",
+        "text": "Stimulerer muskelvækst",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Stimulerer spermatogenese via Sertoli-celler",
+        "isCorrect": false
+      },
+      {
+        "label": "C",
+        "text": "Stimulerer interstitielle celler i testiklerne til testosteronproduktion",
+        "isCorrect": true
+      },
+      {
+        "label": "D",
+        "text": "Stimulerer kropsbehåring",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "C"
+  },
+  {
+    "year": 2021,
+    "number": 24,
+    "category": "Reproduktion",
+    "text": "Menstruationscyklus – hvilket udsagn er ikke korrekt?",
+    "options": [
+      {
+        "label": "A",
+        "text": "LH har en top omkring ovulation",
+        "isCorrect": false
+      },
+      {
+        "label": "B",
+        "text": "Progesteronkoncentrationen er højest i første halvdel af cyklus",
+        "isCorrect": true
+      },
+      {
+        "label": "C",
+        "text": "Endometriet øges gradvist i tykkelse frem mod ovulation",
+        "isCorrect": false
+      },
+      {
+        "label": "D",
+        "text": "Corpus luteum dannes efter ovulation",
+        "isCorrect": false
+      }
+    ],
+    "correctLabel": "B"
+  }
+]
