@@ -76,6 +76,34 @@
 
               <div class="toggle-grid">
                 <label class="toggle">
+                  <input type="checkbox" id="toggle-include-mcq" checked />
+                  <span>
+                    Inkluder MCQ
+                    <span
+                      class="info"
+                      data-tooltip="Tager multiple choice-spørgsmål med i runden."
+                      tabindex="0"
+                      aria-label="Info om MCQ"
+                      >i</span
+                    >
+                  </span>
+                  <small>Multiple choice</small>
+                </label>
+                <label class="toggle">
+                  <input type="checkbox" id="toggle-include-short" checked />
+                  <span>
+                    Inkluder kortsvar
+                    <span
+                      class="info"
+                      data-tooltip="Tager kortsvarsopgaver med i runden."
+                      tabindex="0"
+                      aria-label="Info om kortsvar"
+                      >i</span
+                    >
+                  </span>
+                  <small>Åbne spørgsmål</small>
+                </label>
+                <label class="toggle">
                   <input type="checkbox" id="toggle-shuffle-questions" checked />
                   <span>
                     Shuffle spørgsmål
@@ -289,8 +317,10 @@
               <div class="session-pill" id="session-pill">Session</div>
             </div>
             <div class="scoreboard">
-              <div class="score">Score <span id="score-value">0</span></div>
-              <div class="best">Bedste <span id="best-score-value">0</span></div>
+              <div class="score">MCQ <span id="mcq-score-value">0</span></div>
+              <div class="score">Kortsvar <span id="short-score-value">0</span></div>
+              <div class="score">Total <span id="score-value">0%</span></div>
+              <div class="best">Bedste <span id="best-score-value">0%</span></div>
             </div>
           </header>
 
@@ -323,12 +353,59 @@
             <main class="question-wrap reveal" style="--delay: 0.1s">
               <div class="question-card">
                 <div class="question-meta" id="question-meta">
+                  <span class="chip soft" id="question-type"></span>
                   <span class="chip soft" id="question-category"></span>
                   <span class="chip" id="question-year"></span>
                   <span class="chip soft" id="question-number"></span>
                 </div>
+                <p class="question-intro hidden" id="question-intro"></p>
                 <h2 id="question-text">Spørgsmålet indlæses …</h2>
+                <div class="figure-toolbar hidden" id="figure-toolbar">
+                  <button class="btn ghost small" id="figure-toggle-btn" type="button">Vis figur</button>
+                  <span class="figure-note" id="figure-toggle-hint">
+                    Figuren er skjult indtil du vælger at se den.
+                  </span>
+                </div>
+                <figure class="question-figure hidden" id="question-figure">
+                  <div class="figure-media" id="question-figure-media"></div>
+                  <figcaption id="question-figure-caption"></figcaption>
+                </figure>
                 <div id="options-container" class="options-grid"></div>
+                <div id="short-answer-container" class="short-answer hidden">
+                  <label class="field-label" for="short-answer-text">Dit svar</label>
+                  <textarea
+                    id="short-answer-text"
+                    rows="6"
+                    placeholder="Skriv dit svar her. Brug gerne punktform og nævn nøglebegreber."
+                  ></textarea>
+                  <div class="short-sketch-hint hidden" id="short-sketch-hint"></div>
+                  <div class="short-toolbar">
+                    <div class="score-control">
+                      <div class="score-label">
+                        Point <span class="score-max">/ <span id="short-max-points">0</span></span>
+                      </div>
+                      <div class="score-inputs">
+                        <input type="range" id="short-score-range" min="0" max="10" step="0.5" value="0" />
+                        <input type="number" id="short-score-input" min="0" max="10" step="0.5" value="0" />
+                      </div>
+                      <div class="score-hint" id="short-score-hint"></div>
+                    </div>
+                    <div class="short-buttons">
+                      <button class="btn secondary small" id="short-ai-grade-btn" type="button">
+                        AI-bedøm
+                      </button>
+                      <button class="btn ghost small" id="short-show-answer-btn" type="button">
+                        Vis facit
+                      </button>
+                    </div>
+                  </div>
+                  <div class="short-ai-feedback" id="short-ai-feedback"></div>
+                  <div class="short-model hidden" id="short-model-answer">
+                    <h4>Modelbesvarelse</h4>
+                    <p></p>
+                    <div class="short-sources" id="short-sources"></div>
+                  </div>
+                </div>
                 <div class="actions">
                   <button class="btn ghost" id="skip-btn" type="button">Spring over (0 point)</button>
                   <button class="btn secondary" id="next-btn" type="button" disabled>Næste</button>
@@ -345,12 +422,34 @@
           <div class="result-header">
             <div>
               <div class="eyebrow">Resultat</div>
-              <h2>Din score <span id="final-score">0</span></h2>
+              <h2>Din score <span id="final-score">0%</span></h2>
+              <div class="result-metrics">
+                <div class="grade-pill">Karakter <span id="final-grade">-</span></div>
+                <div class="grade-pill">Samlet <span id="final-percent">0%</span></div>
+              </div>
               <p id="final-message"></p>
             </div>
             <div class="result-badge">
               <img class="brand-logo small" src="Logo.png" alt="KU MCQ Studio logo" />
               <div class="pill highlight" id="best-badge">Ny personlig rekord!</div>
+            </div>
+          </div>
+
+          <div class="result-breakdown">
+            <div class="result-card">
+              <div class="label">MCQ-point</div>
+              <div class="value" id="result-mcq-points">0</div>
+              <div class="meta" id="result-mcq-percent">0%</div>
+            </div>
+            <div class="result-card">
+              <div class="label">Kortsvar point</div>
+              <div class="value" id="result-short-points">0</div>
+              <div class="meta" id="result-short-percent">0%</div>
+            </div>
+            <div class="result-card highlight">
+              <div class="label">Karakter</div>
+              <div class="value" id="result-grade">-</div>
+              <div class="meta">7-trinsskala</div>
             </div>
           </div>
 
@@ -366,6 +465,10 @@
             <div class="stat">
               <div class="label">Sprunget over</div>
               <div class="value" id="stat-skipped">0</div>
+            </div>
+            <div class="stat">
+              <div class="label">Kortsvar point</div>
+              <div class="value" id="stat-short-score">0 / 72</div>
             </div>
             <div class="stat">
               <div class="label">Tempo</div>
@@ -401,6 +504,10 @@
             <h4>Point &amp; flow</h4>
             <ul class="rules-list">
               <li>+3 point for korrekt, -1 for forkert, 0 for at springe over.</li>
+              <li>Kortsvar bedømmes på 0–max point pr. delspørgsmål (med eller uden AI-hjælp).</li>
+              <li>Samlet score og 7-trin karakter beregnes 50/50 mellem MCQ og kortsvar.</li>
+              <li>Kortsvar under 5 point tæller som fejlet.</li>
+              <li>Figurer er skjult – brug “Vis figur” når du har brug for dem.</li>
               <li>Du kan skræddersy runden med emner, årgange og mixer.</li>
               <li>Spillet gemmer din bedste score og dine seneste fejl lokalt.</li>
             </ul>
