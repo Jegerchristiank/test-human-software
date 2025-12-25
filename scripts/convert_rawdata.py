@@ -22,6 +22,7 @@ class Option:
 class Question:
     year: int
     number: int
+    session: Optional[str]
     category: str
     text: str
     options: List[Option]
@@ -38,9 +39,21 @@ def parse_raw_data(raw_text: str) -> List[Question]:
     lines = [line.rstrip("\n") for line in raw_text.splitlines()]
     questions: List[Question] = []
     current_year: Optional[int] = None
+    current_session: Optional[str] = None
     i = 0
 
     question_header_re = re.compile(r"^Spørgsmål\s+(\d+)\s+–\s+(.*)$")
+    year_header_re = re.compile(r"^(\d{4})(?:\s*[-–]\s*(.*))?$")
+
+    def normalize_session(label: str) -> Optional[str]:
+        cleaned = label.strip().lower()
+        if not cleaned:
+            return None
+        if "syge" in cleaned:
+            return "sygeeksamen"
+        if "ordin" in cleaned:
+            return "ordinær"
+        return cleaned
 
     while i < len(lines):
         line = lines[i].strip()
@@ -49,8 +62,10 @@ def parse_raw_data(raw_text: str) -> List[Question]:
             i += 1
             continue
 
-        if re.fullmatch(r"\d{4}", line):
-            current_year = int(line)
+        year_match = year_header_re.match(line)
+        if year_match:
+            current_year = int(year_match.group(1))
+            current_session = normalize_session(year_match.group(2) or "")
             i += 1
             continue
 
@@ -99,6 +114,7 @@ def parse_raw_data(raw_text: str) -> List[Question]:
                 Question(
                     year=current_year,
                     number=number,
+                    session=current_session,
                     category=category,
                     text=" ".join(question_lines),
                     options=options,
@@ -116,6 +132,7 @@ def write_questions(questions: List[Question], output_path: Path) -> None:
         {
             "year": question.year,
             "number": question.number,
+            "session": question.session,
             "category": question.category,
             "text": question.text,
             "options": [

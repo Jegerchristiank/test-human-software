@@ -10,9 +10,7 @@ En simpel, men designfokuseret webapp til at øve multiple choice-spørgsmål fr
 
 ## Kom i gang
 1. Start en simpel server i projektmappen:
-   ```bash
-   python -m http.server 8000
-   ```
+python3 -m http.server 8000
 2. Åbn http://localhost:8000 i din browser og tryk “Start spil”.
 
 ## Data
