@@ -14,7 +14,7 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 ## Kom i gang
 1. Start en server i projektmappen:
    - Uden AI: `python3 -m http.server 8000`
-   - Med AI: `python3 scripts/dev_server.py`
+   - Med AI: `env -u OPENAI_API_KEY -u OPENAI_MODEL python3 scripts/dev_server.py`
 2. Åbn http://localhost:8000 i din browser og tryk “Byg runde” eller “Hurtig start”.
 
 ## Data
