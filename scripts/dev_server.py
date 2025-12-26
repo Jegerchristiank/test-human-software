@@ -10,6 +10,8 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
+DEFAULT_MODEL = "gpt-5.2"
+DEFAULT_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 
 
 def load_env() -> None:
@@ -37,6 +39,56 @@ def parse_ai_response(text: str) -> Dict[str, Any]:
         return json.loads(match.group(0))
 
 
+def parse_openai_error(error: HTTPError) -> str:
+    detail = f"OpenAI error: {error.code}"
+    try:
+        raw = error.read().decode("utf-8")
+        data = json.loads(raw)
+        message = data.get("error", {}).get("message")
+        if message:
+            detail = f"OpenAI error {error.code}: {message}"
+    except Exception:
+        pass
+    return detail
+
+
+def call_openai(api_key: str, endpoint: str, model: str, system_prompt: str, user_prompt: str) -> Dict[str, Any]:
+    request_payload = {
+        "model": model,
+        "temperature": 0.2,
+        "response_format": {"type": "json_object"},
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+    }
+
+    request = Request(
+        endpoint,
+        data=json.dumps(request_payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+
+    try:
+        with urlopen(request, timeout=30) as response:
+            raw = response.read().decode("utf-8")
+    except HTTPError as error:
+        raise RuntimeError(parse_openai_error(error)) from error
+    except URLError as error:
+        raise RuntimeError("Could not reach OpenAI") from error
+
+    try:
+        data = json.loads(raw)
+        content = data["choices"][0]["message"]["content"]
+        return parse_ai_response(content)
+    except Exception as error:
+        raise RuntimeError("Could not parse AI response") from error
+
+
 class AppHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, directory=str(ROOT_PATH), **kwargs)
@@ -61,7 +113,7 @@ class AppHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         if self.path == "/api/health":
-            model = os.environ.get("OPENAI_MODEL") or "gpt-4.1-mini"
+            model = os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
             if not os.environ.get("OPENAI_API_KEY"):
                 self.send_json(503, {"status": "missing_key", "model": model})
                 return
@@ -70,7 +122,7 @@ class AppHandler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self) -> None:
-        if self.path != "/api/grade":
+        if self.path not in {"/api/grade", "/api/explain"}:
             self.send_json(404, {"error": "Not found"})
             return
 
@@ -87,95 +139,154 @@ class AppHandler(SimpleHTTPRequestHandler):
             self.send_json(400, {"error": "Could not read JSON"})
             return
 
-        prompt = str(payload.get("prompt", "")).strip()
-        model_answer = str(payload.get("modelAnswer", "")).strip()
-        user_answer = str(payload.get("userAnswer", "")).strip()
-        max_points = float(payload.get("maxPoints", 0) or 0)
-        ignore_sketch = bool(payload.get("ignoreSketch"))
+        model = os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
+        endpoint = os.environ.get("OPENAI_API_BASE") or DEFAULT_ENDPOINT
+
+        if self.path == "/api/grade":
+            prompt = str(payload.get("prompt", "")).strip()
+            model_answer = str(payload.get("modelAnswer", "")).strip()
+            user_answer = str(payload.get("userAnswer", "")).strip()
+            max_points = float(payload.get("maxPoints", 0) or 0)
+            ignore_sketch = bool(payload.get("ignoreSketch"))
+            language = str(payload.get("language", "da")).strip().lower()
+
+            if not prompt or not user_answer:
+                self.send_json(400, {"error": "Missing prompt or userAnswer"})
+                return
+
+            system_prompt = (
+                "You are a strict but fair examiner. "
+                "Assess the student's answer against the model answer. "
+                "Return JSON only with fields: "
+                "score (number), feedback (short text), missing (list), matched (list). "
+                f"Score must be between 0 and {max_points}. "
+                "Feedback must be concise and concrete."
+            )
+
+            if ignore_sketch:
+                system_prompt += " Ignore any sketch/drawing requirement; evaluate only the text response."
+
+            user_prompt = (
+                f"Language: {language}\n"
+                f"Question: {prompt}\n"
+                f"Model answer: {model_answer}\n"
+                f"Student answer: {user_answer}\n"
+                f"Max points: {max_points}\n"
+                "Respond with JSON only."
+            )
+
+            try:
+                result = call_openai(api_key, endpoint, model, system_prompt, user_prompt)
+            except RuntimeError as error:
+                self.send_json(502, {"error": str(error)})
+                return
+
+            score = float(result.get("score", 0) or 0)
+            score = max(0, min(score, max_points))
+            feedback = str(result.get("feedback", "")).strip()
+            missing = result.get("missing") or []
+            matched = result.get("matched") or []
+
+            self.send_json(
+                200,
+                {
+                    "score": score,
+                    "feedback": feedback,
+                    "missing": missing,
+                    "matched": matched,
+                    "model": model,
+                },
+            )
+            return
+
+        question_type = str(payload.get("type", "")).strip().lower()
+        question = str(payload.get("question", "")).strip()
         language = str(payload.get("language", "da")).strip().lower()
 
-        if not prompt or not user_answer:
-            self.send_json(400, {"error": "Missing prompt or userAnswer"})
+        if not question_type or not question:
+            self.send_json(400, {"error": "Missing type or question"})
             return
 
-        model = os.environ.get("OPENAI_MODEL") or "gpt-4.1-mini"
-        endpoint = os.environ.get("OPENAI_API_BASE") or "https://api.openai.com/v1/chat/completions"
+        if question_type == "mcq":
+            options = payload.get("options") or []
+            correct_label = str(payload.get("correctLabel", "")).strip().upper()
+            user_label = str(payload.get("userLabel", "")).strip().upper()
+            if not correct_label or not user_label:
+                self.send_json(400, {"error": "Missing correctLabel or userLabel"})
+                return
 
-        system_prompt = (
-            "You are a strict but fair examiner. "
-            "Assess the student's answer against the model answer. "
-            "Return JSON only with fields: "
-            "score (number), feedback (short text), missing (list), matched (list). "
-            f"Score must be between 0 and {max_points}. "
-            "Feedback must be concise and concrete."
-        )
+            formatted_options = []
+            for option in options:
+                label = str(option.get("label", "")).strip().upper()
+                text = str(option.get("text", "")).strip()
+                if label:
+                    formatted_options.append(f"{label}. {text}")
 
-        if ignore_sketch:
-            system_prompt += " Ignore any sketch/drawing requirement; evaluate only the text response."
+            def find_option_text(label: str) -> str:
+                for option in options:
+                    if str(option.get("label", "")).strip().upper() == label:
+                        return str(option.get("text", "")).strip()
+                return ""
 
-        user_prompt = (
-            f"Language: {language}\n"
-            f"Question: {prompt}\n"
-            f"Model answer: {model_answer}\n"
-            f"Student answer: {user_answer}\n"
-            f"Max points: {max_points}\n"
-            "Respond with JSON only."
-        )
+            correct_text = find_option_text(correct_label)
+            user_text = find_option_text(user_label)
 
-        request_payload = {
-            "model": model,
-            "temperature": 0.2,
-            "response_format": {"type": "json_object"},
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-        }
+            system_prompt = (
+                "You are a concise tutor. "
+                "Explain why the student's answer is wrong and why the correct answer is right. "
+                "Keep it short (1-3 sentences). "
+                "Return JSON only with field: explanation."
+            )
 
-        request = Request(
-            endpoint,
-            data=json.dumps(request_payload).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}",
-            },
-            method="POST",
-        )
+            user_prompt = (
+                f"Language: {language}\n"
+                f"Question: {question}\n"
+                f"Options: {' | '.join(formatted_options)}\n"
+                f"Correct answer: {correct_label}. {correct_text}\n"
+                f"Student answer: {user_label}. {user_text}\n"
+                "Respond with JSON only."
+            )
+        elif question_type == "short":
+            model_answer = str(payload.get("modelAnswer", "")).strip()
+            user_answer = str(payload.get("userAnswer", "")).strip()
+            max_points = float(payload.get("maxPoints", 0) or 0)
+            awarded_points = float(payload.get("awardedPoints", 0) or 0)
+            ignore_sketch = bool(payload.get("ignoreSketch"))
+
+            if not user_answer:
+                self.send_json(400, {"error": "Missing userAnswer"})
+                return
+
+            system_prompt = (
+                "You are a concise tutor. "
+                "Explain briefly what is missing or incorrect in the student's answer. "
+                "Keep it short (1-3 sentences). "
+                "Return JSON only with field: explanation."
+            )
+
+            if ignore_sketch:
+                system_prompt += " Ignore any sketch/drawing requirement; evaluate only the text response."
+
+            user_prompt = (
+                f"Language: {language}\n"
+                f"Question: {question}\n"
+                f"Model answer: {model_answer}\n"
+                f"Student answer: {user_answer}\n"
+                f"Score: {awarded_points} / {max_points}\n"
+                "Respond with JSON only."
+            )
+        else:
+            self.send_json(400, {"error": "Unknown type"})
+            return
 
         try:
-            with urlopen(request, timeout=30) as response:
-                raw = response.read().decode("utf-8")
-        except HTTPError as error:
-            self.send_json(502, {"error": f"OpenAI error: {error.code}"})
-            return
-        except URLError:
-            self.send_json(502, {"error": "Could not reach OpenAI"})
+            result = call_openai(api_key, endpoint, model, system_prompt, user_prompt)
+        except RuntimeError as error:
+            self.send_json(502, {"error": str(error)})
             return
 
-        try:
-            data = json.loads(raw)
-            content = data["choices"][0]["message"]["content"]
-            result = parse_ai_response(content)
-        except Exception:
-            self.send_json(502, {"error": "Could not parse AI response"})
-            return
-
-        score = float(result.get("score", 0) or 0)
-        score = max(0, min(score, max_points))
-        feedback = str(result.get("feedback", "")).strip()
-        missing = result.get("missing") or []
-        matched = result.get("matched") or []
-
-        self.send_json(
-            200,
-            {
-                "score": score,
-                "feedback": feedback,
-                "missing": missing,
-                "matched": matched,
-                "model": model,
-            },
-        )
+        explanation = str(result.get("explanation", "")).strip()
+        self.send_json(200, {"explanation": explanation, "model": model})
 
 
 def main() -> None:

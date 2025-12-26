@@ -132,7 +132,9 @@
                   <input type="range" id="question-count" min="5" max="40" step="1" value="24" />
                   <input type="number" id="question-count-input" min="5" max="40" step="1" value="24" />
                 </div>
-                <div class="control-hint">Tip: I mixet styrer tallet MCQ-mængden; kortsvar følger ratioen.</div>
+                <div class="control-hint">
+                  Tip: I mixet styrer tallet MCQ-mængden; kortsvar følger ratioen. I uendelig mode er tallet batch-størrelse.
+                </div>
               </div>
 
               <div class="control-row">
@@ -252,6 +254,20 @@
                     >
                   </span>
                   <small>Går videre automatisk</small>
+                </label>
+                <label class="toggle">
+                  <input type="checkbox" id="toggle-infinite-mode" />
+                  <span>
+                    Uendelig mode
+                    <span
+                      class="info"
+                      data-tooltip="Fortsæt med nye spørgsmål, indtil du selv afslutter runden."
+                      tabindex="0"
+                      aria-label="Info om uendelig mode"
+                      >i</span
+                    >
+                  </span>
+                  <small>Slut når du vil</small>
                 </label>
                 <label class="toggle">
                   <input type="checkbox" id="toggle-avoid-repeats" />
@@ -446,6 +462,7 @@
                 <button class="btn secondary small" id="flag-btn" type="button">Marker spørgsmål</button>
                 <button class="btn ghost small" id="toggle-focus" type="button">Fokus</button>
                 <button class="btn ghost small" id="toggle-meta" type="button">Skjul metadata</button>
+                <button class="btn ghost small hidden" id="end-round-btn" type="button">Afslut runde</button>
                 <div class="shortcut-card">
                   <div class="shortcut">A–D · Svar</div>
                   <div class="shortcut">N · Næste</div>
@@ -615,6 +632,7 @@
               <li>Kortsvar under 5 point tæller som fejlet.</li>
               <li>Figurer er skjult – brug “Vis figur” når du har brug for dem.</li>
               <li>Du kan skræddersy runden med emner, årgange og mixer.</li>
+              <li>Uendelig mode fortsætter, indtil du afslutter runden.</li>
               <li>Spillet gemmer din bedste score og dine seneste fejl lokalt.</li>
             </ul>
           </div>

@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS = {
   showMeta: true,
   autoAdvance: false,
   autoAdvanceDelay: 1200,
+  infiniteMode: false,
   avoidRepeats: false,
   focusMistakes: false,
   focusMode: false,
@@ -226,6 +227,7 @@ const state = {
   flaggedKeys: new Set(),
   autoAdvanceTimer: null,
   sessionSettings: { ...DEFAULT_SETTINGS },
+  infiniteState: null,
   search: {
     category: "",
   },
@@ -289,6 +291,7 @@ const elements = {
   toggleBalanced: document.getElementById("toggle-balanced"),
   toggleShowMeta: document.getElementById("toggle-show-meta"),
   toggleAutoAdvance: document.getElementById("toggle-auto-advance"),
+  toggleInfiniteMode: document.getElementById("toggle-infinite-mode"),
   toggleAvoidRepeats: document.getElementById("toggle-avoid-repeats"),
   toggleFocusMistakes: document.getElementById("toggle-focus-mistakes"),
   toggleFocusMode: document.getElementById("toggle-focus-mode"),
@@ -299,6 +302,7 @@ const elements = {
   autoAdvanceDelay: document.getElementById("auto-advance-delay"),
   autoAdvanceLabel: document.getElementById("auto-advance-label"),
   backToMenu: document.getElementById("back-to-menu"),
+  endRoundBtn: document.getElementById("end-round-btn"),
   sessionPill: document.getElementById("session-pill"),
   progressText: document.getElementById("progress-text"),
   tempoText: document.getElementById("tempo-text"),
@@ -546,6 +550,12 @@ function isShortFailed(entry) {
   return entry.type === "short" && !entry.skipped && entry.awardedPoints < SHORT_FAIL_THRESHOLD;
 }
 
+function isReviewWrong(entry) {
+  if (entry.skipped) return false;
+  if (entry.type === "mcq") return !entry.isCorrect;
+  return entry.awardedPoints < entry.maxPoints;
+}
+
 function requiresSketch(question) {
   if (!question) return false;
   return (
@@ -559,8 +569,15 @@ function updateTopBar() {
   const total = state.activeQuestions.length || 0;
   const current = Math.min(state.currentIndex + 1, total);
   state.scoreSummary = calculateScoreSummary();
-  elements.progressText.textContent = `${current} / ${total}`;
-  elements.progressFill.style.width = total ? `${(state.currentIndex / total) * 100}%` : "0%";
+  if (state.sessionSettings.infiniteMode) {
+    elements.progressText.textContent = `${current} / ∞`;
+    elements.progressFill.style.width = "100%";
+    elements.progressFill.classList.add("infinite");
+  } else {
+    elements.progressText.textContent = `${current} / ${total}`;
+    elements.progressFill.style.width = total ? `${(state.currentIndex / total) * 100}%` : "0%";
+    elements.progressFill.classList.remove("infinite");
+  }
   if (elements.mcqScoreValue) {
     elements.mcqScoreValue.textContent = state.scoreBreakdown.mcq;
   }
@@ -1248,8 +1265,16 @@ function clearAutoAdvance() {
 function goToNextQuestion() {
   const finalQuestion = state.currentIndex >= state.activeQuestions.length - 1;
   if (finalQuestion) {
-    showResults();
-    return;
+    if (state.sessionSettings.infiniteMode) {
+      const extended = extendInfiniteQuestionSet();
+      if (!extended) {
+        showResults();
+        return;
+      }
+    } else {
+      showResults();
+      return;
+    }
   }
   state.currentIndex += 1;
   renderQuestion();
@@ -1273,6 +1298,92 @@ function toggleFlag() {
     state.flaggedKeys.add(key);
   }
   updateFlagButton();
+}
+
+function buildExplainPayload(entry) {
+  if (entry.type === "mcq") {
+    return {
+      type: "mcq",
+      question: entry.question.text,
+      options: entry.question.options || [],
+      correctLabel: entry.question.correctLabel,
+      userLabel: entry.selected,
+      language: "da",
+    };
+  }
+  return {
+    type: "short",
+    question: entry.question.text,
+    modelAnswer: entry.question.answer,
+    userAnswer: entry.response,
+    maxPoints: entry.maxPoints,
+    awardedPoints: entry.awardedPoints,
+    language: "da",
+    ignoreSketch: requiresSketch(entry.question),
+  };
+}
+
+function toggleExplanationDisplay(entry, textEl, button) {
+  if (!entry.aiExplanation) return false;
+  const isHidden = textEl.classList.contains("hidden");
+  if (isHidden) {
+    textEl.textContent = entry.aiExplanation;
+    textEl.classList.remove("hidden");
+    button.textContent = "Skjul forklaring";
+  } else {
+    textEl.classList.add("hidden");
+    button.textContent = "Få forklaring";
+  }
+  return true;
+}
+
+async function handleExplainClick(entry, textEl, button) {
+  if (toggleExplanationDisplay(entry, textEl, button)) return;
+  if (entry.type === "short" && !entry.response) {
+    textEl.textContent = "Du svarede ikke på spørgsmålet.";
+    textEl.classList.remove("hidden");
+    return;
+  }
+  if (!state.aiStatus.available) {
+    textEl.textContent = state.aiStatus.message || "AI offline. Tjek server og API-nøgle.";
+    textEl.classList.remove("hidden");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Henter forklaring …";
+  textEl.textContent = "Henter forklaring …";
+  textEl.classList.add("loading");
+  textEl.classList.remove("hidden");
+
+  try {
+    const res = await fetch("/api/explain", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(buildExplainPayload(entry)),
+    });
+    if (!res.ok) {
+      let detail = `AI response ${res.status}`;
+      try {
+        const data = await res.json();
+        if (data.error) detail = data.error;
+      } catch (error) {
+        detail = `AI response ${res.status}`;
+      }
+      throw new Error(detail);
+    }
+    const data = await res.json();
+    const explanation = String(data.explanation || "").trim();
+    entry.aiExplanation = explanation || "AI kunne ikke lave en forklaring.";
+    textEl.textContent = entry.aiExplanation;
+    button.textContent = "Skjul forklaring";
+  } catch (error) {
+    textEl.textContent = `Kunne ikke hente forklaring. ${error.message || "Tjek server og API-nøgle."}`;
+    button.textContent = "Prøv igen";
+  } finally {
+    textEl.classList.remove("loading");
+    button.disabled = !state.aiStatus.available && !entry.aiExplanation;
+  }
 }
 
 function buildReviewList(results) {
@@ -1391,6 +1502,46 @@ function buildReviewList(results) {
     card.appendChild(title);
     card.appendChild(meta);
     lines.forEach((line) => card.appendChild(line));
+
+    if (isReviewWrong(entry)) {
+      const explainWrap = document.createElement("div");
+      explainWrap.className = "review-explain";
+
+      const explainActions = document.createElement("div");
+      explainActions.className = "review-explain-actions";
+
+      const explainBtn = document.createElement("button");
+      explainBtn.type = "button";
+      explainBtn.className = "btn ghost small";
+      explainBtn.textContent = entry.aiExplanation ? "Skjul forklaring" : "Få forklaring";
+      explainBtn.disabled = !state.aiStatus.available && !entry.aiExplanation;
+      if (!state.aiStatus.available && !entry.aiExplanation) {
+        explainBtn.title = state.aiStatus.message || "AI offline. Start scripts/dev_server.py.";
+      }
+
+      const explainStatus = document.createElement("span");
+      explainStatus.className = "review-explain-status";
+      explainStatus.textContent = state.aiStatus.available ? "AI-forklaring" : "AI offline";
+
+      const explainText = document.createElement("div");
+      explainText.className = "review-explain-text";
+      if (entry.aiExplanation) {
+        explainText.textContent = entry.aiExplanation;
+      } else {
+        explainText.classList.add("hidden");
+      }
+
+      explainBtn.addEventListener("click", () => {
+        handleExplainClick(entry, explainText, explainBtn);
+      });
+
+      explainActions.appendChild(explainBtn);
+      explainActions.appendChild(explainStatus);
+      explainWrap.appendChild(explainActions);
+      explainWrap.appendChild(explainText);
+      card.appendChild(explainWrap);
+    }
+
     elements.reviewList.appendChild(card);
   });
 }
@@ -1681,17 +1832,24 @@ function updateSummary() {
 
   elements.poolCount.textContent = pool.length;
   elements.poolCountChip.textContent = `${pool.length} i puljen · ${poolMcq} MCQ · ${poolShort} kortsvar`;
+  const isInfinite = state.settings.infiniteMode;
   let roundLabel = String(roundSize);
   if (state.settings.includeMcq && state.settings.includeShort && roundSize > 0) {
     const mcqTarget = Math.min(state.settings.questionCount, mcqPoolCount);
     const shortTarget = getShortTargetFromRatio(mcqTarget, shortPoolCount, state.settings);
     roundLabel = `${roundSize} (${mcqTarget} MCQ / ${shortTarget} kortsvar)`;
+    if (isInfinite) {
+      roundLabel = `Uendelig · batch ${roundLabel}`;
+    }
+  } else if (isInfinite) {
+    roundLabel = roundSize > 0 ? `Uendelig · batch ${roundSize}` : "Uendelig";
   }
   elements.roundCount.textContent = roundLabel;
 
   const mixParts = [];
   if (state.settings.balancedMix) mixParts.push("Balanceret");
   if (state.settings.shuffleQuestions) mixParts.push("Shuffle");
+  if (state.settings.infiniteMode) mixParts.push("Uendelig");
   if (state.settings.includeMcq && state.settings.includeShort) {
     mixParts.push(`Ratio ${formatRatioLabel(state.settings)}`);
   }
@@ -1735,7 +1893,9 @@ function updateSummary() {
     hint = "Ingen spørgsmål matcher dine filtre.";
     canStart = false;
   } else if (pool.length < roundSize) {
-    hint = `Kun ${pool.length} spørgsmål matcher – runden forkortes.`;
+    hint = state.settings.infiniteMode
+      ? `Puljen har kun ${pool.length} spørgsmål – uendelig mode gentager efter en runde.`
+      : `Kun ${pool.length} spørgsmål matcher – runden forkortes.`;
   }
 
   elements.selectionHint.textContent = hint;
@@ -1752,7 +1912,10 @@ function updateSessionPill() {
   const categoryCount = state.filters.categories.size;
   const mcqCount = state.activeQuestions.filter((q) => q.type === "mcq").length;
   const shortCount = state.activeQuestions.filter((q) => q.type === "short").length;
-  const label = `${state.activeQuestions.length} spørgsmål · ${mcqCount} MCQ · ${shortCount} kortsvar · ${yearCount} sæt · ${categoryCount} emner`;
+  const totalLabel = state.sessionSettings.infiniteMode
+    ? "∞ spørgsmål"
+    : `${state.activeQuestions.length} spørgsmål`;
+  const label = `${totalLabel} · ${mcqCount} MCQ · ${shortCount} kortsvar · ${yearCount} sæt · ${categoryCount} emner`;
   elements.sessionPill.textContent = label;
 }
 
@@ -1761,6 +1924,51 @@ function applySessionDisplaySettings() {
   document.body.classList.toggle("meta-hidden", !state.sessionSettings.showMeta);
   elements.toggleFocus.textContent = state.sessionSettings.focusMode ? "Fokus: Til" : "Fokus";
   elements.toggleMeta.textContent = state.sessionSettings.showMeta ? "Skjul metadata" : "Vis metadata";
+  if (elements.endRoundBtn) {
+    elements.endRoundBtn.classList.toggle("hidden", !state.sessionSettings.infiniteMode);
+  }
+}
+
+function initInfiniteState(pool, activeQuestions) {
+  const usedKeys = new Set(activeQuestions.map((question) => question.key));
+  return {
+    pool: [...pool],
+    remaining: pool.filter((question) => !usedKeys.has(question.key)),
+    usedKeys,
+    cycle: 0,
+  };
+}
+
+function extendInfiniteQuestionSet() {
+  if (!state.infiniteState) return false;
+  let batch = buildQuestionSet(state.infiniteState.remaining);
+  if (!batch.length) {
+    if (!state.infiniteState.pool.length) return false;
+    state.infiniteState.cycle += 1;
+    state.infiniteState.usedKeys = new Set();
+    state.infiniteState.remaining = [...state.infiniteState.pool];
+    batch = buildQuestionSet(state.infiniteState.remaining);
+  }
+  if (!batch.length) return false;
+  assignShortPoints(batch);
+  batch.forEach((question) => state.infiniteState.usedKeys.add(question.key));
+  state.infiniteState.remaining = state.infiniteState.remaining.filter(
+    (question) => !state.infiniteState.usedKeys.has(question.key)
+  );
+  state.activeQuestions = state.activeQuestions.concat(batch);
+  updateSessionScoreMeta(state.activeQuestions);
+  updateSessionPill();
+  return true;
+}
+
+function finishSession() {
+  if (!state.results.length) {
+    setFeedback("Svar mindst et spørgsmål før du afslutter runden.");
+    return;
+  }
+  state.activeQuestions = state.results.map((result) => result.question);
+  updateSessionScoreMeta(state.activeQuestions);
+  showResults();
 }
 
 function startGame() {
@@ -1781,6 +1989,9 @@ function startGame() {
   state.shortAnswerAI = new Map();
   state.startTime = Date.now();
   state.locked = false;
+  state.infiniteState = state.sessionSettings.infiniteMode
+    ? initInfiniteState(pool, state.activeQuestions)
+    : null;
 
   updateSessionPill();
   applySessionDisplaySettings();
@@ -1997,6 +2208,9 @@ function attachEvents() {
   elements.returnMenuBtn.addEventListener("click", goToMenu);
   elements.playAgainBtn.addEventListener("click", startGame);
   elements.flagBtn.addEventListener("click", toggleFlag);
+  if (elements.endRoundBtn) {
+    elements.endRoundBtn.addEventListener("click", finishSession);
+  }
   if (elements.figureToggleBtn) {
     elements.figureToggleBtn.addEventListener("click", toggleFigure);
   }
@@ -2091,6 +2305,11 @@ function attachEvents() {
   elements.toggleAutoAdvance.addEventListener("change", (event) => {
     handleSettingToggle("autoAdvance", event.target.checked);
   });
+  if (elements.toggleInfiniteMode) {
+    elements.toggleInfiniteMode.addEventListener("change", (event) => {
+      handleSettingToggle("infiniteMode", event.target.checked);
+    });
+  }
   elements.toggleAvoidRepeats.addEventListener("change", (event) => {
     handleSettingToggle("avoidRepeats", event.target.checked);
   });
@@ -2145,6 +2364,9 @@ function syncSettingsToUI() {
   elements.toggleBalanced.checked = state.settings.balancedMix;
   elements.toggleShowMeta.checked = state.settings.showMeta;
   elements.toggleAutoAdvance.checked = state.settings.autoAdvance;
+  if (elements.toggleInfiniteMode) {
+    elements.toggleInfiniteMode.checked = state.settings.infiniteMode;
+  }
   elements.toggleAvoidRepeats.checked = state.settings.avoidRepeats;
   elements.toggleFocusMistakes.checked = state.settings.focusMistakes;
   elements.toggleFocusMode.checked = state.settings.focusMode;

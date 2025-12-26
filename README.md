@@ -7,6 +7,8 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 - 7-trinsskala beregnet ud fra samlet procent.
 - Pointsystem for MCQ: **+3** korrekt, **-1** forkert, **0** spring over.
 - Kortsvar med manuel point, valgfri AI-bedømmelse og facit.
+- AI-forklaringer for forkerte svar på resultatskærmen (hentes på klik).
+- Uendelig mode: fortsæt med nye spørgsmål indtil du afslutter.
 - Øjeblikkelig feedback, gennemgang af dine svar og gemt bedste score lokalt.
 
 ## Kom i gang
@@ -25,5 +27,6 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 ## AI-bedømmelse
 - Opret `.env` i projektroden og udfyld:
   - `OPENAI_API_KEY=...`
-  - `OPENAI_MODEL=gpt-4.1-mini` (kan ændres)
-- Start derefter `python3 scripts/dev_server.py` for at få `/api/grade`.
+  - `OPENAI_MODEL=gpt-5.2` (kan ændres)
+- Start derefter `python3 scripts/dev_server.py` for at få `/api/grade` og `/api/explain`.
+- Fejlsøgning: En 401-fejl betyder typisk forkert eller inaktiv API-nøgle.
