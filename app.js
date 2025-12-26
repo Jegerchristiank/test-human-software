@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   seen: "ku_mcq_seen_questions",
   mistakes: "ku_mcq_last_mistakes",
   theme: "ku_mcq_theme",
+  history: "ku_mcq_history",
 };
 
 const DEFAULT_SETTINGS = {
@@ -19,10 +20,14 @@ const DEFAULT_SETTINGS = {
   focusMode: false,
   includeMcq: true,
   includeShort: true,
+  ratioMcq: 4,
+  ratioShort: 1,
 };
 
 const SHORT_TOTAL_POINTS = 72;
 const SHORT_FAIL_THRESHOLD = 5;
+const HISTORY_LIMIT = 12;
+const TARGET_GRADE_PERCENT = 92;
 
 const GRADE_SCALE = [
   { min: 92, grade: "12" },
@@ -194,6 +199,7 @@ const state = {
   aiStatus: {
     available: false,
     model: null,
+    message: "AI tjekkes...",
   },
   figureVisible: false,
   shortAnswerDrafts: new Map(),
@@ -216,6 +222,7 @@ const state = {
   },
   seenKeys: new Set(loadStoredArray(STORAGE_KEYS.seen)),
   lastMistakeKeys: new Set(loadStoredArray(STORAGE_KEYS.mistakes)),
+  history: loadStoredArray(STORAGE_KEYS.history),
   flaggedKeys: new Set(),
   autoAdvanceTimer: null,
   sessionSettings: { ...DEFAULT_SETTINGS },
@@ -225,6 +232,7 @@ const state = {
 };
 
 const screens = {
+  landing: document.getElementById("landing-screen"),
   menu: document.getElementById("menu-screen"),
   quiz: document.getElementById("quiz-screen"),
   result: document.getElementById("result-screen"),
@@ -235,6 +243,8 @@ const elements = {
     document.getElementById("start-btn"),
     document.getElementById("modal-start-btn"),
   ].filter(Boolean),
+  landingStartBtn: document.getElementById("landing-start-btn"),
+  landingQuickBtn: document.getElementById("landing-quick-btn"),
   rulesButton: document.getElementById("rules-btn"),
   closeModal: document.getElementById("close-modal"),
   modalClose: document.getElementById("modal-close-btn"),
@@ -251,6 +261,22 @@ const elements = {
   categorySummary: document.getElementById("category-summary"),
   repeatSummary: document.getElementById("repeat-summary"),
   selectionHint: document.getElementById("selection-hint"),
+  aiStatusPill: document.getElementById("ai-status-pill"),
+  historyLatest: document.getElementById("history-latest"),
+  historyLatestMeta: document.getElementById("history-latest-meta"),
+  historyTrend: document.getElementById("history-trend"),
+  historyTrendMeta: document.getElementById("history-trend-meta"),
+  historyBest: document.getElementById("history-best"),
+  historyBestMeta: document.getElementById("history-best-meta"),
+  historyList: document.getElementById("history-list"),
+  landingHistoryList: document.getElementById("landing-history-list"),
+  heroRank: document.getElementById("hero-rank"),
+  heroRankMeta: document.getElementById("hero-rank-meta"),
+  heroTarget: document.getElementById("hero-target"),
+  heroTargetMeta: document.getElementById("hero-target-meta"),
+  heroProgressFill: document.getElementById("hero-progress-fill"),
+  heroStreak: document.getElementById("hero-streak"),
+  heroStreakMeta: document.getElementById("hero-streak-meta"),
   yearChips: document.getElementById("year-chips"),
   categoryChips: document.getElementById("category-chips"),
   categorySearch: document.getElementById("category-search"),
@@ -268,6 +294,8 @@ const elements = {
   toggleFocusMode: document.getElementById("toggle-focus-mode"),
   toggleIncludeMcq: document.getElementById("toggle-include-mcq"),
   toggleIncludeShort: document.getElementById("toggle-include-short"),
+  ratioMcqInput: document.getElementById("ratio-mcq"),
+  ratioShortInput: document.getElementById("ratio-short"),
   autoAdvanceDelay: document.getElementById("auto-advance-delay"),
   autoAdvanceLabel: document.getElementById("auto-advance-label"),
   backToMenu: document.getElementById("back-to-menu"),
@@ -299,6 +327,7 @@ const elements = {
   shortAnswerMaxPoints: document.getElementById("short-max-points"),
   shortAnswerAiButton: document.getElementById("short-ai-grade-btn"),
   shortAnswerAiFeedback: document.getElementById("short-ai-feedback"),
+  shortAnswerAiStatus: document.getElementById("ai-status-inline"),
   shortAnswerShowAnswer: document.getElementById("short-show-answer-btn"),
   shortAnswerModel: document.getElementById("short-model-answer"),
   shortAnswerSources: document.getElementById("short-sources"),
@@ -389,6 +418,8 @@ function showScreen(target) {
     }
   });
 
+  document.body.classList.toggle("mode-landing", target === "landing");
+  document.body.classList.toggle("mode-menu", target === "menu");
   document.body.classList.toggle("mode-game", target === "quiz");
   document.body.classList.toggle("mode-result", target === "result");
   if (target !== "quiz") {
@@ -616,6 +647,10 @@ function resetShortAnswerUI() {
   elements.shortAnswerScoreInput.value = "0";
   elements.shortAnswerMaxPoints.textContent = "0";
   elements.shortAnswerAiFeedback.textContent = "";
+  if (elements.shortAnswerAiStatus) {
+    elements.shortAnswerAiStatus.textContent = "";
+    elements.shortAnswerAiStatus.classList.remove("warn");
+  }
   elements.shortAnswerHint.textContent = "";
   elements.shortAnswerModel.classList.add("hidden");
   elements.shortAnswerModel.querySelector("p").textContent = "";
@@ -675,6 +710,13 @@ function renderShortQuestion(question) {
     elements.shortAnswerAiFeedback.textContent = aiState.feedback;
   } else {
     elements.shortAnswerAiFeedback.textContent = "";
+  }
+  if (elements.shortAnswerAiStatus) {
+    const label = state.aiStatus.available
+      ? `AI klar${state.aiStatus.model ? ` (${state.aiStatus.model})` : ""}`
+      : state.aiStatus.message || "AI offline";
+    elements.shortAnswerAiStatus.textContent = label;
+    elements.shortAnswerAiStatus.classList.toggle("warn", !state.aiStatus.available);
   }
 
   if (elements.shortSketchHint) {
@@ -823,6 +865,250 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+function clampInt(value, min, max, fallback) {
+  const numeric = Math.round(Number(value));
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.min(Math.max(numeric, min), max);
+}
+
+function getRatioValues(settings) {
+  const mcqRatio = clampInt(settings.ratioMcq, 1, 12, DEFAULT_SETTINGS.ratioMcq);
+  const shortRatio = clampInt(settings.ratioShort, 1, 12, DEFAULT_SETTINGS.ratioShort);
+  return { mcqRatio, shortRatio };
+}
+
+function getShortTargetFromRatio(mcqTarget, shortPoolCount, settings) {
+  if (shortPoolCount <= 0) return 0;
+  const { mcqRatio, shortRatio } = getRatioValues(settings);
+  const raw = Math.round((mcqTarget * shortRatio) / mcqRatio);
+  return Math.min(Math.max(raw, 1), shortPoolCount);
+}
+
+function formatRatioLabel(settings) {
+  const { mcqRatio, shortRatio } = getRatioValues(settings);
+  return `${mcqRatio}:${shortRatio}`;
+}
+
+function formatPercent(value) {
+  return `${Number(value || 0).toFixed(1)}%`;
+}
+
+function formatHistoryDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const day = date.toLocaleDateString("da-DK", { day: "2-digit", month: "short" });
+  const time = date.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+  return `${day} · ${time}`;
+}
+
+function setAiStatus(status) {
+  state.aiStatus = {
+    available: status.available,
+    model: status.model || null,
+    message: status.message || "",
+  };
+
+  if (elements.shortAnswerAiButton) {
+    elements.shortAnswerAiButton.disabled = !status.available;
+  }
+  if (elements.aiStatusPill) {
+    const label = status.available
+      ? `AI klar${status.model ? ` · ${status.model}` : ""}`
+      : status.message || "AI offline";
+    elements.aiStatusPill.textContent = label;
+    elements.aiStatusPill.classList.toggle("warn", !status.available);
+  }
+  if (elements.shortAnswerAiStatus) {
+    const label = status.available
+      ? `AI klar${status.model ? ` (${status.model})` : ""}`
+      : status.message || "AI offline";
+    elements.shortAnswerAiStatus.textContent = label;
+    elements.shortAnswerAiStatus.classList.toggle("warn", !status.available);
+  }
+}
+
+function getHistoryEntries() {
+  const entries = Array.isArray(state.history) ? state.history : [];
+  return entries.filter((entry) => entry && typeof entry.overallPercent === "number");
+}
+
+function saveHistoryEntries(entries) {
+  state.history = entries.slice(-HISTORY_LIMIT);
+  localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(state.history));
+}
+
+function getBestHistoryEntry(entries) {
+  if (!entries.length) return null;
+  return entries.reduce((best, current) =>
+    current.overallPercent > best.overallPercent ? current : best
+  );
+}
+
+function getImprovementStreak(entries) {
+  if (entries.length < 2) return 0;
+  let streak = 0;
+  for (let i = entries.length - 1; i > 0; i -= 1) {
+    if (entries[i].overallPercent > entries[i - 1].overallPercent) {
+      streak += 1;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function renderHistoryList(container, entries) {
+  if (!container) return;
+  container.innerHTML = "";
+  if (!entries.length) {
+    const empty = document.createElement("div");
+    empty.className = "history-empty";
+    empty.textContent = "Ingen runder endnu. Start en runde for at låse progressionen op.";
+    container.appendChild(empty);
+    return;
+  }
+
+  const visible = entries.slice(-6).reverse();
+  visible.forEach((entry, index) => {
+    const row = document.createElement("div");
+    row.className = "history-item";
+    if (index === 0) row.classList.add("latest");
+
+    const title = document.createElement("div");
+    title.className = "history-title";
+    title.textContent = `${entry.grade || "-"} · ${formatPercent(entry.overallPercent)}`;
+
+    const meta = document.createElement("div");
+    meta.className = "history-meta";
+    const mcqPoints = Number(entry.mcqPoints) || 0;
+    const mcqMax = Number(entry.mcqMax) || 0;
+    const shortPoints = Number(entry.shortPoints) || 0;
+    const shortMax = Number(entry.shortMax) || 0;
+    const mcqMeta = mcqMax
+      ? `MCQ ${mcqPoints}/${mcqMax}`
+      : "MCQ —";
+    const shortMeta = shortMax
+      ? `Kortsvar ${shortPoints.toFixed(1)}/${shortMax.toFixed(1)}`
+      : "Kortsvar —";
+    meta.textContent = `${formatHistoryDate(entry.date)} · ${mcqMeta} · ${shortMeta}`;
+
+    row.appendChild(title);
+    row.appendChild(meta);
+    container.appendChild(row);
+  });
+}
+
+function renderHistory() {
+  const entries = getHistoryEntries();
+  const latest = entries[entries.length - 1] || null;
+  const prev = entries[entries.length - 2] || null;
+  const fallbackBest = !entries.length && state.bestScore > 0
+    ? { overallPercent: state.bestScore, grade: getGradeForPercent(state.bestScore) }
+    : null;
+  const best = getBestHistoryEntry(entries) || fallbackBest;
+
+  if (elements.historyLatest) {
+    elements.historyLatest.textContent = latest
+      ? `${latest.grade || "-"} · ${formatPercent(latest.overallPercent)}`
+      : "—";
+  }
+  if (elements.historyLatestMeta) {
+    if (latest) {
+      const mcqPoints = Number(latest.mcqPoints) || 0;
+      const mcqMax = Number(latest.mcqMax) || 0;
+      const shortPoints = Number(latest.shortPoints) || 0;
+      const shortMax = Number(latest.shortMax) || 0;
+      const mcqMeta = mcqMax ? `${mcqPoints}/${mcqMax} MCQ` : "MCQ —";
+      const shortMeta = shortMax ? `${shortPoints.toFixed(1)}/${shortMax.toFixed(1)} kortsvar` : "Kortsvar —";
+      elements.historyLatestMeta.textContent = `${mcqMeta} · ${shortMeta}`;
+    } else {
+      elements.historyLatestMeta.textContent = "Ingen runder endnu";
+    }
+  }
+  if (elements.historyBest) {
+    elements.historyBest.textContent = best
+      ? `${best.grade || "-"} · ${formatPercent(best.overallPercent)}`
+      : "—";
+  }
+  if (elements.historyBestMeta) {
+    elements.historyBestMeta.textContent = `Mål: 12 (${TARGET_GRADE_PERCENT}%)`;
+  }
+
+  if (elements.historyTrend) {
+    if (latest && prev) {
+      const delta = latest.overallPercent - prev.overallPercent;
+      const prefix = delta > 0 ? "+" : "";
+      elements.historyTrend.textContent = `${prefix}${delta.toFixed(1)}%`;
+      elements.historyTrend.classList.toggle("positive", delta > 0);
+      elements.historyTrend.classList.toggle("negative", delta < 0);
+    } else {
+      elements.historyTrend.textContent = "—";
+      elements.historyTrend.classList.remove("positive", "negative");
+    }
+  }
+  if (elements.historyTrendMeta) {
+    elements.historyTrendMeta.textContent = latest && prev ? "Siden sidste runde" : "Afventer 2 runder";
+  }
+
+  if (elements.heroRank) {
+    const rankSource = best || latest;
+    elements.heroRank.textContent = rankSource ? `Niveau ${rankSource.grade || "-"}` : "Niveau —";
+  }
+  if (elements.heroRankMeta) {
+    elements.heroRankMeta.textContent = best
+      ? `Personlig rekord: ${formatPercent(best.overallPercent)}`
+      : "Ingen rekord endnu";
+  }
+  if (elements.heroTarget) {
+    elements.heroTarget.textContent = `Mål: 12`;
+  }
+  if (elements.heroTargetMeta) {
+    if (latest) {
+      const missing = Math.max(0, TARGET_GRADE_PERCENT - latest.overallPercent);
+      elements.heroTargetMeta.textContent = missing > 0
+        ? `${missing.toFixed(1)}% fra topkarakter`
+        : "Du er i målzonen!";
+    } else {
+      elements.heroTargetMeta.textContent = `${TARGET_GRADE_PERCENT}% for topkarakter`;
+    }
+  }
+  if (elements.heroProgressFill) {
+    const progressValue = latest ? Math.min((latest.overallPercent / TARGET_GRADE_PERCENT) * 100, 100) : 0;
+    elements.heroProgressFill.style.width = `${progressValue.toFixed(1)}%`;
+  }
+  if (elements.heroStreak) {
+    const streak = getImprovementStreak(entries);
+    elements.heroStreak.textContent = `${streak}`;
+  }
+  if (elements.heroStreakMeta) {
+    const streak = getImprovementStreak(entries);
+    elements.heroStreakMeta.textContent = streak > 0 ? "Runder i streg med fremgang" : "Ingen streak endnu";
+  }
+
+  renderHistoryList(elements.historyList, entries);
+  renderHistoryList(elements.landingHistoryList, entries);
+}
+
+function recordHistoryEntry() {
+  const entry = {
+    date: new Date().toISOString(),
+    overallPercent: state.scoreSummary.overallPercent,
+    grade: state.scoreSummary.grade,
+    mcqPercent: state.scoreSummary.mcqPercent,
+    shortPercent: state.scoreSummary.shortPercent,
+    mcqPoints: state.scoreBreakdown.mcq,
+    shortPoints: state.scoreBreakdown.short,
+    mcqMax: state.sessionScoreMeta.mcqMax,
+    shortMax: state.sessionScoreMeta.shortMax,
+    mcqCount: state.sessionScoreMeta.mcqCount,
+    shortCount: state.sessionScoreMeta.shortCount,
+    totalQuestions: state.activeQuestions.length,
+  };
+  const entries = getHistoryEntries().concat(entry);
+  saveHistoryEntries(entries);
+  renderHistory();
+}
+
 function saveShortDraft(questionKey, data) {
   state.shortAnswerDrafts.set(questionKey, data);
 }
@@ -872,7 +1158,8 @@ async function gradeShortAnswer() {
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
   if (!state.aiStatus.available) {
-    elements.shortAnswerAiFeedback.textContent = "AI-bedømmelse er ikke sat op endnu.";
+    elements.shortAnswerAiFeedback.textContent =
+      state.aiStatus.message || "AI-bedømmelse er ikke sat op endnu.";
     return;
   }
   const userAnswer = elements.shortAnswerInput.value.trim();
@@ -899,7 +1186,14 @@ async function gradeShortAnswer() {
       }),
     });
     if (!res.ok) {
-      throw new Error(`AI response ${res.status}`);
+      let detail = `AI response ${res.status}`;
+      try {
+        const data = await res.json();
+        if (data.error) detail = data.error;
+      } catch (error) {
+        detail = `AI response ${res.status}`;
+      }
+      throw new Error(detail);
     }
     const data = await res.json();
     const suggested = clamp(Number(data.score) || 0, 0, question.maxPoints || 0);
@@ -914,7 +1208,7 @@ async function gradeShortAnswer() {
     });
   } catch (error) {
     elements.shortAnswerAiFeedback.textContent =
-      "Kunne ikke hente AI-bedømmelse. Tjek serveren og din API-nøgle.";
+      `Kunne ikke hente AI-bedømmelse. ${error.message || "Tjek serveren og din API-nøgle."}`;
   } finally {
     elements.shortAnswerAiButton.disabled = !state.aiStatus.available;
   }
@@ -1170,6 +1464,8 @@ function showResults() {
   elements.bestBadge.style.display = isNewBest ? "inline-flex" : "none";
   elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
 
+  recordHistoryEntry();
+
   const mistakeKeys = state.results
     .filter((result) => {
       if (result.type === "short") {
@@ -1256,7 +1552,11 @@ function buildQuestionSet(pool) {
     const mcqPool = pool.filter((q) => q.type === "mcq");
     const shortPool = pool.filter((q) => q.type === "short");
     let mcqTarget = Math.min(state.sessionSettings.questionCount, mcqPool.length);
-    let shortTarget = Math.min(Math.max(1, Math.round(mcqTarget / 4)), shortPool.length);
+    let shortTarget = getShortTargetFromRatio(
+      mcqTarget,
+      shortPool.length,
+      state.sessionSettings
+    );
 
     let selectedShort = pickFromPool(shortPool, shortTarget);
     let selectedMcq = pickFromPool(mcqPool, mcqTarget);
@@ -1373,7 +1673,7 @@ function updateSummary() {
   let roundSize = Math.min(state.settings.questionCount, pool.length);
   if (state.settings.includeMcq && state.settings.includeShort) {
     const mcqTarget = Math.min(state.settings.questionCount, mcqPoolCount);
-    const shortTarget = Math.min(Math.max(1, Math.round(mcqTarget / 4)), shortPoolCount);
+    const shortTarget = getShortTargetFromRatio(mcqTarget, shortPoolCount, state.settings);
     roundSize = mcqTarget + shortTarget;
   }
   const poolMcq = mcqPoolCount;
@@ -1384,7 +1684,7 @@ function updateSummary() {
   let roundLabel = String(roundSize);
   if (state.settings.includeMcq && state.settings.includeShort && roundSize > 0) {
     const mcqTarget = Math.min(state.settings.questionCount, mcqPoolCount);
-    const shortTarget = Math.min(Math.max(1, Math.round(mcqTarget / 4)), shortPoolCount);
+    const shortTarget = getShortTargetFromRatio(mcqTarget, shortPoolCount, state.settings);
     roundLabel = `${roundSize} (${mcqTarget} MCQ / ${shortTarget} kortsvar)`;
   }
   elements.roundCount.textContent = roundLabel;
@@ -1393,7 +1693,7 @@ function updateSummary() {
   if (state.settings.balancedMix) mixParts.push("Balanceret");
   if (state.settings.shuffleQuestions) mixParts.push("Shuffle");
   if (state.settings.includeMcq && state.settings.includeShort) {
-    mixParts.push("Ratio 4:1");
+    mixParts.push(`Ratio ${formatRatioLabel(state.settings)}`);
   }
   if (!mixParts.length) mixParts.push("Fast rækkefølge");
   elements.mixSummary.textContent = mixParts.join(" · ");
@@ -1443,6 +1743,7 @@ function updateSummary() {
     btn.disabled = !canStart;
   });
 
+  updateRatioControls();
   updateAutoAdvanceLabel();
 }
 
@@ -1498,6 +1799,11 @@ function hideRules() {
 function goToMenu() {
   clearAutoAdvance();
   showScreen("menu");
+}
+
+function goToLanding() {
+  clearAutoAdvance();
+  showScreen("landing");
 }
 
 function renderChips(container, values, selectedSet, counts, type) {
@@ -1581,6 +1887,31 @@ function updateQuestionCount(value) {
   updateSummary();
 }
 
+function updateRatioSettings(mcqValue, shortValue) {
+  const mcqRatio = clampInt(mcqValue, 1, 12, DEFAULT_SETTINGS.ratioMcq);
+  const shortRatio = clampInt(shortValue, 1, 12, DEFAULT_SETTINGS.ratioShort);
+  state.settings.ratioMcq = mcqRatio;
+  state.settings.ratioShort = shortRatio;
+  if (elements.ratioMcqInput) {
+    elements.ratioMcqInput.value = String(mcqRatio);
+  }
+  if (elements.ratioShortInput) {
+    elements.ratioShortInput.value = String(shortRatio);
+  }
+  saveSettings();
+  updateSummary();
+}
+
+function updateRatioControls() {
+  const enabled = state.settings.includeMcq && state.settings.includeShort;
+  if (elements.ratioMcqInput) {
+    elements.ratioMcqInput.disabled = !enabled;
+  }
+  if (elements.ratioShortInput) {
+    elements.ratioShortInput.disabled = !enabled;
+  }
+}
+
 function updateAutoAdvanceLabel() {
   const seconds = state.settings.autoAdvanceDelay / 1000;
   elements.autoAdvanceLabel.textContent = `${seconds.toFixed(1)}s`;
@@ -1592,16 +1923,31 @@ async function checkAiAvailability() {
   try {
     const res = await fetch("/api/health");
     if (!res.ok) {
-      state.aiStatus = { available: false, model: null };
-      elements.shortAnswerAiButton.disabled = true;
+      let message = "AI offline. Start scripts/dev_server.py.";
+      if (res.status === 503) {
+        try {
+          const data = await res.json();
+          if (data.status === "missing_key") {
+            message = "AI mangler OPENAI_API_KEY i .env.";
+          }
+        } catch (error) {
+          message = "AI offline. Tjek .env og server.";
+        }
+      }
+      if (res.status === 404) {
+        message = "AI offline. Kør scripts/dev_server.py i stedet for http.server.";
+      }
+      setAiStatus({ available: false, model: null, message });
       return;
     }
     const data = await res.json();
-    state.aiStatus = { available: true, model: data.model || null };
-    elements.shortAnswerAiButton.disabled = false;
+    setAiStatus({ available: true, model: data.model || null, message: "" });
   } catch (error) {
-    state.aiStatus = { available: false, model: null };
-    elements.shortAnswerAiButton.disabled = true;
+    setAiStatus({
+      available: false,
+      model: null,
+      message: "AI offline. Tjek server og netværk.",
+    });
   }
 }
 
@@ -1635,6 +1981,12 @@ function handleKeyDown(event) {
 }
 
 function attachEvents() {
+  if (elements.landingStartBtn) {
+    elements.landingStartBtn.addEventListener("click", () => showScreen("menu"));
+  }
+  if (elements.landingQuickBtn) {
+    elements.landingQuickBtn.addEventListener("click", startGame);
+  }
   elements.startButtons.forEach((btn) => btn.addEventListener("click", startGame));
   elements.skipBtn.addEventListener("click", skipQuestion);
   elements.nextBtn.addEventListener("click", handleNextClick);
@@ -1710,6 +2062,13 @@ function attachEvents() {
   elements.questionCountInput.addEventListener("change", (event) => {
     updateQuestionCount(event.target.value);
   });
+  if (elements.ratioMcqInput && elements.ratioShortInput) {
+    const handleRatioChange = () => {
+      updateRatioSettings(elements.ratioMcqInput.value, elements.ratioShortInput.value);
+    };
+    elements.ratioMcqInput.addEventListener("change", handleRatioChange);
+    elements.ratioShortInput.addEventListener("change", handleRatioChange);
+  }
 
   elements.autoAdvanceDelay.addEventListener("input", (event) => {
     state.settings.autoAdvanceDelay = Number(event.target.value);
@@ -1795,8 +2154,14 @@ function syncSettingsToUI() {
   if (elements.toggleIncludeShort) {
     elements.toggleIncludeShort.checked = state.settings.includeShort;
   }
+  if (elements.ratioMcqInput && elements.ratioShortInput) {
+    const { mcqRatio, shortRatio } = getRatioValues(state.settings);
+    elements.ratioMcqInput.value = String(mcqRatio);
+    elements.ratioShortInput.value = String(shortRatio);
+  }
   elements.autoAdvanceDelay.value = state.settings.autoAdvanceDelay;
   updateAutoAdvanceLabel();
+  updateRatioControls();
 }
 
 async function loadQuestions() {
@@ -1896,10 +2261,12 @@ async function loadQuestions() {
 
 async function init() {
   attachEvents();
+  showScreen("landing");
   updateTopBar();
   elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
   applyTheme(getInitialTheme());
   syncSettingsToUI();
+  setAiStatus(state.aiStatus);
   try {
     await loadQuestions();
   } catch (err) {
@@ -1908,6 +2275,7 @@ async function init() {
     elements.poolCountChip.textContent = "Ingen data";
   }
   await checkAiAvailability();
+  renderHistory();
 }
 
 document.addEventListener("DOMContentLoaded", init);

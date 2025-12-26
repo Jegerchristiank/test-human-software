@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>KU MCQ Studio</title>
+    <title>Human Biologi Studio</title>
     <link rel="icon" href="Logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -27,16 +27,76 @@
     </div>
 
     <div class="app">
-      <section id="menu-screen" class="screen active">
+      <section id="landing-screen" class="screen active">
+        <div class="landing-shell">
+          <header class="landing-header reveal" style="--delay: 0s">
+            <div class="brand-block">
+              <div class="brand-mark">
+                <img class="brand-logo" src="Logo.png" alt="Københavns Universitet logo" />
+              </div>
+              <div>
+                <div class="brand-subtitle">Københavns Universitet · Sundhed &amp; Informatik</div>
+                <h1>Human Biologi Studio</h1>
+                <p>
+                  Spil dig gennem tidligere eksamenssæt. Saml point, jagt 12-tallet og se din udvikling over tid.
+                </p>
+              </div>
+            </div>
+            <div class="landing-actions">
+              <button id="landing-start-btn" class="btn primary" type="button">Byg runde</button>
+              <button id="landing-quick-btn" class="btn ghost" type="button">Hurtig start</button>
+            </div>
+          </header>
+
+          <div class="landing-grid">
+            <section class="panel hero-panel reveal" style="--delay: 0.05s">
+              <div class="panel-header">
+                <h2>Din mission</h2>
+                <p>Hver runde giver XP i form af point og karakter. Sigt mod 12 og hold streaken kørende.</p>
+              </div>
+              <div class="hero-grid">
+                <div class="hero-card primary">
+                  <div class="hero-label">Niveau</div>
+                  <div class="hero-value" id="hero-rank">Niveau —</div>
+                  <div class="hero-meta" id="hero-rank-meta">Ingen rekord endnu</div>
+                </div>
+                <div class="hero-card">
+                  <div class="hero-label">Måltavle</div>
+                  <div class="hero-value" id="hero-target">Mål: 12</div>
+                  <div class="hero-meta" id="hero-target-meta">92% for topkarakter</div>
+                  <div class="hero-progress">
+                    <div class="hero-progress-fill" id="hero-progress-fill"></div>
+                  </div>
+                </div>
+                <div class="hero-card">
+                  <div class="hero-label">Streak</div>
+                  <div class="hero-value" id="hero-streak">0</div>
+                  <div class="hero-meta" id="hero-streak-meta">Ingen streak endnu</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel history-panel reveal" style="--delay: 0.1s">
+              <div class="panel-header">
+                <h2>Seneste runder</h2>
+                <p>Følg med i hvordan du udvikler dig over tid.</p>
+              </div>
+              <div class="history-list" id="landing-history-list"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section id="menu-screen" class="screen hidden">
         <div class="menu-shell">
           <header class="menu-header reveal" style="--delay: 0s">
             <div class="brand-block">
               <div class="brand-mark">
-                <img class="brand-logo" src="Logo.png" alt="KU MCQ Studio logo" />
+                <img class="brand-logo" src="Logo.png" alt="Københavns Universitet logo" />
               </div>
               <div>
-                <div class="brand-subtitle">KU · Sundhed &amp; Informatik</div>
-                <h1>MCQ Studio</h1>
+                <div class="brand-subtitle">Københavns Universitet · Sundhed &amp; Informatik</div>
+                <h1>Human Biologi Studio</h1>
                 <p>
                   Byg en runde, der passer til din repetition. Filtrer på årgang og emner, miks dine spørgsmål og
                   sæt tempoet selv.
@@ -46,6 +106,7 @@
             <div class="menu-stats">
               <div class="stat-pill" id="question-count-chip">Indlæser …</div>
               <div class="stat-pill" id="pool-count-chip">0 i puljen</div>
+              <div class="stat-pill" id="ai-status-pill">AI: Tjekker …</div>
             </div>
           </header>
 
@@ -71,7 +132,26 @@
                   <input type="range" id="question-count" min="5" max="40" step="1" value="24" />
                   <input type="number" id="question-count-input" min="5" max="40" step="1" value="24" />
                 </div>
-                <div class="control-hint">Tip: Kortere runder giver højere fokus.</div>
+                <div class="control-hint">Tip: I mixet styrer tallet MCQ-mængden; kortsvar følger ratioen.</div>
+              </div>
+
+              <div class="control-row">
+                <label class="control-label" for="ratio-mcq">
+                  MCQ / kortsvar ratio
+                  <span
+                    class="info"
+                    data-tooltip="Sæt forholdet mellem MCQ og kortsvar. 4:1 giver ca. 24 MCQ og 6 kortsvar."
+                    tabindex="0"
+                    aria-label="Info om ratio"
+                    >i</span
+                  >
+                </label>
+                <div class="ratio-control">
+                  <input type="number" id="ratio-mcq" min="1" max="12" step="1" value="4" />
+                  <span class="ratio-divider">:</span>
+                  <input type="number" id="ratio-short" min="1" max="12" step="1" value="1" />
+                </div>
+                <div class="control-hint">MCQ-tallet styrer længden; kortsvar følger ratioen.</div>
               </div>
 
               <div class="toggle-grid">
@@ -304,6 +384,31 @@
               </div>
               <div class="hint" id="selection-hint">Vælg mindst ét emne og ét sæt for at starte.</div>
             </section>
+
+            <section class="panel history-panel wide reveal" style="--delay: 0.2s">
+              <div class="panel-header">
+                <h2>Din udvikling</h2>
+                <p>Se dine seneste runder og om du går frem mod 12.</p>
+              </div>
+              <div class="history-grid">
+                <div class="history-card">
+                  <div class="history-label">Seneste</div>
+                  <div class="history-value" id="history-latest">—</div>
+                  <div class="history-meta" id="history-latest-meta">Ingen runder endnu</div>
+                </div>
+                <div class="history-card">
+                  <div class="history-label">Trend</div>
+                  <div class="history-value" id="history-trend">—</div>
+                  <div class="history-meta" id="history-trend-meta">Afventer 2 runder</div>
+                </div>
+                <div class="history-card highlight">
+                  <div class="history-label">Bedste</div>
+                  <div class="history-value" id="history-best">—</div>
+                  <div class="history-meta" id="history-best-meta">Mål: 12 (92%)</div>
+                </div>
+              </div>
+              <div class="history-list" id="history-list"></div>
+            </section>
           </div>
         </div>
       </section>
@@ -312,7 +417,7 @@
         <div class="game-shell">
           <header class="game-header reveal" style="--delay: 0s">
             <div class="game-left">
-              <img class="brand-logo small" src="Logo.png" alt="KU MCQ Studio logo" />
+              <img class="brand-logo small" src="Logo.png" alt="Københavns Universitet logo" />
               <button class="btn ghost small" id="back-to-menu" type="button">Til menu</button>
               <div class="session-pill" id="session-pill">Session</div>
             </div>
@@ -399,6 +504,7 @@
                       </button>
                     </div>
                   </div>
+                  <div class="ai-status" id="ai-status-inline"></div>
                   <div class="short-ai-feedback" id="short-ai-feedback"></div>
                   <div class="short-model hidden" id="short-model-answer">
                     <h4>Modelbesvarelse</h4>
@@ -430,7 +536,7 @@
               <p id="final-message"></p>
             </div>
             <div class="result-badge">
-              <img class="brand-logo small" src="Logo.png" alt="KU MCQ Studio logo" />
+              <img class="brand-logo small" src="Logo.png" alt="Københavns Universitet logo" />
               <div class="pill highlight" id="best-badge">Ny personlig rekord!</div>
             </div>
           </div>

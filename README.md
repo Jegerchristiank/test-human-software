@@ -1,6 +1,6 @@
-# KU Exam Studio
+# Human Biologi Studio
 
-En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidligere KU-eksamener i sundhed og informatik.
+En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidligere eksamener i sundhed og informatik (Københavns Universitet).
 
 ## Funktioner
 - MCQ + kortsvar i samme session med 50/50 vægtning.
@@ -13,7 +13,7 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 1. Start en server i projektmappen:
    - Uden AI: `python3 -m http.server 8000`
    - Med AI: `python3 scripts/dev_server.py`
-2. Åbn http://localhost:8000 i din browser og tryk “Start spil”.
+2. Åbn http://localhost:8000 i din browser og tryk “Byg runde” eller “Hurtig start”.
 
 ## Data
 - MCQ rådata ligger i `rawdata`.
