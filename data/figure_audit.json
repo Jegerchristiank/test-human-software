@@ -1,0 +1,612 @@
+[
+  {
+    "key": "2025-3a",
+    "image": "billeder/opgaver/2025-03-a.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv processen hvormed blodets ilttransport normaliseres efter hurtig opstigning til store højder, f.eks. 5000 meter over havet, hvor der er reduceret ilttransport i blodet.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Illustrationen viser processen, hvor blodets ilttransport normaliseres efter hurtig opstigning til store højder. Først er der et normalt antal erytrocytter og reduceret ilttransport (1). Nyren øger udskillelsen af erythropoietin (2), som transporteres via blodet til knoglemarven (3). Dette stimulerer produktionen af flere erytrocytter, hvilket efter nogle dage fører til et forhøjet antal erytrocytter og normal ilttransport (4)."
+  },
+  {
+    "key": "2025-3b",
+    "image": "billeder/opgaver/2025-03-b.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv hvorledes gamle og beskadigede erytrocytter ødelægges. Forklar herunder hvad der sker med hæmoglobinmolekylerne efter denne ødelæggelse.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Ingen væsentlige problemer. Diagrammet illustrerer tydeligt ødelæggelsen af erytrocytter og hæmoglobinets videre skæbne, som efterspurgt.",
+    "description": "Illustrationen viser processen, hvor gamle og beskadigede erytrocytter ødelægges af makrofager. Hæmoglobinmolekylerne nedbrydes til jernioner (Fe2+), bilirubin og aminosyrer. Jernionerne genbruges til nydannelse af erytrocytter i knoglemarven eller oplagres som ferritin i leveren. Bilirubin udskilles med galden. Aminosyrerne genbruges også i kroppen."
+  },
+  {
+    "key": "2025-4c",
+    "image": "billeder/opgaver/2025-04-c.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv de stimulerende signaler til H⁺-produktionen i parietalcellerne.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Diagrammet viser de stimulerende signaler til H⁺-produktionen i parietalcellerne. Gastrin stimulerer histamin-producerende ECL-celler, som frigiver histamin. Histamin binder til receptorer på parietalcellen og stimulerer H⁺-pumpen. Acetylkolin virker også direkte på parietalcellen for at stimulere H⁺-pumpen. Resultatet er øget produktion og sekretion af H⁺ i kirtellumen."
+  },
+  {
+    "key": "2025-5b",
+    "image": "billeder/opgaver/2025-05-b.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv hvor disse hormoner produceres, og hvordan de frisættes fra hypofysens baglap.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Illustrationen viser hypofysen og hypothalamus med fokus på hormonproduktion og frigivelse. Neuroendokrine celler i hypothalamus producerer neurohormoner, som transporteres via hypofysestilken til hypofysens baglap. Her lagres hormonerne ADH og oxytocin i nerveenderne, før de frisættes til blodbanen. Neurohormonerne fra hypothalamus binder til receptorer på endokrine celler i hypofysens forlap, som derefter frigiver deres egne hormoner."
+  },
+  {
+    "key": "2025-5d",
+    "image": "billeder/opgaver/2025-05-d1.jpg",
+    "image_index": 0,
+    "question": "None\nRedegør for de stimuli, der stimulerer udskillelsen af de to hormoner.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Diagrammet beskriver kun stimuli og udskillelse af ADH, men nævner ikke eksplicit det andet hormon, som spørgsmålet refererer til. Hvis spørgsmålet omhandler to hormoner, mangler information om det andet hormon.",
+    "description": "Diagrammet viser stimuli, der stimulerer udskillelsen af ADH (antidiuretisk hormon). Øget osmolaritet, tørst og nedsat blodvolumen fungerer som positive stimuli, der aktiverer ADH-producerende neuroendokrine celler i hypothalamus. ADH opbevares i vesikler og udskilles fra hypofysens baglap ved eksocytose. ADH øger vandresorptionen i nyrerne, hvilket normaliserer osmolaritet og blodvolumen."
+  },
+  {
+    "key": "2025-5d",
+    "image": "billeder/opgaver/2025-05-d2.jpg",
+    "image_index": 1,
+    "question": "None\nRedegør for de stimuli, der stimulerer udskillelsen af de to hormoner.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Diagrammet beskriver kun stimuli og udskillelse af ét hormon, oxytocin, ikke to hormoner som nævnt i spørgsmålet.",
+    "description": "Diagrammet viser stimuli, der stimulerer udskillelsen af oxytocin. Berøringsfølsomme sanseceller i brystvorterne og strækfølsomme sanseceller i uterus aktiverer oxytocinproducerende neuroendokrine celler. Oxytocin udskilles ved eksocytose fra hypofysens baglap og påvirker glatte muskelceller i mælkekirtlerne og uterus, hvilket presser mælk ud og øger veaktiviteten."
+  },
+  {
+    "key": "2025-6a",
+    "image": "billeder/opgaver/2025-06-a.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv den kaskade af processer, der sker fra et aktionspotentiale i en nervecelleende til depolarisering af en postsynaptisk nervecelle.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Billedet viser en nervecelleende (præsynaptisk membran) og en postsynaptisk membran adskilt af en synapsespalte. Det illustrerer processen, hvor et aktionspotentiale (1) fører til åbning af spændingsstyrede Ca2+-kanaler (2), hvilket medfører Ca2+-indstrømning (3). Dette udløser Ca2+-afhængig eksocytose af vesikler med neurotransmittere, som diffunderer over synapsespalten (4). Neurotransmitterne binder til receptorer på den postsynaptiske membran (5), hvilket åbner ligandstyrede ionkanaler og tillader Na+-indstrømning (6), der resulterer i depolarisering af den postsynaptiske nervecelle. Neurotransmitterne fjernes derefter fra synapsespalten (7)."
+  },
+  {
+    "key": "2024-2a",
+    "image": "billeder/opgaver/2024-02-a.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv med ord, gerne suppleret med en skitse, hvorledes en ægcelle befrugtes.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Billedet viser en sekvens i fire trin, der illustrerer befrugtningen af en ægcelle. Først binder sædcellen til zona pellucida, som er et beskyttende lag omkring ægget. Dernæst sker den akrosomale reaktion, hvor enzymholdige vesikler frigives for at nedbryde zona pellucida. Tredje trin viser sædcellens penetration gennem zona pellucida. Til sidst fusionerer sædcellens membran med oocyttens membran, og sædcellens kerne optages i oocytten, hvilket markerer befrugtningen. Illustrationerne inkluderer også granulosa-celler omkring ægget og oocyttens membran og kerne."
+  },
+  {
+    "key": "2024-3b",
+    "image": "billeder/opgaver/2024-03-b.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv kort hvordan gentagne dannelser af krydsbroer mellem myosin og aktin fører til muskelkontraktion af tværstribede skeletmuskler.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Illustrationen viser cyklussen af krydsbrodannelse mellem myosin og aktin i tværstribede skeletmuskler. Fire trin er vist: (1) Myosin frigiver ATP og binder til aktin, (2) ATP hydrolyseres til ADP og uorganisk fosfat (Pi), hvilket forbereder myosin til kraftslag, (3) Pi frigives, hvilket udløser kraftslaget, hvor myosin trækker aktinfilamentet, (4) ADP frigives, og myosin forbliver bundet til aktin indtil nyt ATP binder, hvilket starter cyklussen forfra. Gentagne cyklusser af disse krydsbrodannelser og kraftslag fører til muskelkontraktion ved at trække aktinfilamenterne mod midten af sarkomeren."
+  },
+  {
+    "key": "2024-4a",
+    "image": "billeder/opgaver/2024-04-a.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv kort hvordan lymfocytter dannes, modnes og aktiveres.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Diagrammet er detaljeret og dækker alle trin i dannelse, modning og aktivering af lymfocytter som efterspurgt. Ingen væsentlige mangler fundet.",
+    "description": "Diagrammet viser processen for dannelse, modning og aktivering af lymfocytter. Umodne lymfocytter dannes i knoglemarven og modnes enten til T-lymfocytter i thymus eller til B-lymfocytter i knoglemarven. De modne T- og B-lymfocytter bevæger sig til sekundære lymfoide organer, hvor de aktiveres ved genkendelse af epitoper. Aktiveringen fører til klonselektions- og klonekspansionsprocesser, som resulterer i dannelse af T-angrebsceller, T-hjælpeceller, plasmaceller og hukommelsesceller, der er specifikke for epitoperne."
+  },
+  {
+    "key": "2024-5a",
+    "image": "billeder/opgaver/2024-05-a.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv kort hvorledes jodid (I⁻) i blodet kan lede til syntese og udskillelse af thyroideahormonerne T₃ og T₄.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Diagrammet viser processen hvor jodid (I⁻) i blodet transporteres ind i follikelcellen via en Na⁺-I⁻ symporter (1). Inde i cellen oxideres jodid til jod (I⁰) ved hjælp af enzymet thyroperoxidase (TPO) og H2O2 (2). Jodet inkorporeres i thyreoglobulin i kolloidet (3), hvor det danner joderet thyreoglobulin. Dette optages tilbage i follikelcellen via endocytose (4), hvor lysosomer nedbryder thyreoglobulinet og frigiver T3 og T4 hormonerne (5). Disse hormoner frigives til kapillærerne og bindes til thyroxinbindende globulin (TBG) i blodet (6). Diagrammet illustrerer således tydeligt syntese og udskillelse af T3 og T4 fra jodid i blodet."
+  },
+  {
+    "key": "2024-5b",
+    "image": "billeder/opgaver/2024-05-b.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv kort hvordan udskillelsen af thyroideahormonerne er reguleret.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Diagrammet viser reguleringen af udskillelsen af thyroideahormoner. Andre områder i hjernen påvirker hypothalamus, som udskiller TRH (thyrotropin-releasing hormone). TRH stimulerer hypofysens forlap til at udskille TSH (thyreoidea-stimulerende hormon). TSH stimulerer thyroidea til at producere og udskille T4 og T3 hormoner. T4 omdannes til T3 i målorganerne. Der er også negative feedback mekanismer, hvor T4 og T3 hæmmer udskillelsen af TRH og TSH."
+  },
+  {
+    "key": "2024-6a",
+    "image": "billeder/opgaver/2024-06-a.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv kort hvordan konstriktion af de afferente og de efferente arterioler påvirker nyrernes filtration og blodgennemstrømning.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Ingen væsentlige problemer. Diagrammet illustrerer klart hvordan konstriktion af afferente og efferente arterioler påvirker filtration og blodgennemstrømning i nyrerne, som efterspurgt i spørgsmålet.",
+    "description": "Billedet viser to diagrammer af nyrernes arterioler og glomeruluskapillærer. I det øverste diagram (a) er den afferente arteriole konstrikeret, hvilket fører til nedsat hydrostatisk tryk og blodgennemstrømning i glomeruluskapillærerne, hvilket resulterer i nedsat filtration. I det nederste diagram (b) er den efferente arteriole konstrikeret, hvilket øger det hydrostatiske tryk i glomeruluskapillærerne, men blodgennemstrømningen falder, og resultatet er næsten uændret filtration."
+  },
+  {
+    "key": "2024-6b",
+    "image": "billeder/opgaver/2024-06-b.jpg",
+    "image_index": 0,
+    "question": "None\nHvilken effekt har aldosteron på nyrernes udskillelse af Na⁺, og hvordan effektueres dette via proteiner i den basolaterale og den apikale membran i den distale tubulus og i samlerørene?",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Diagrammet viser transportprocesser i distale tubuli og samlerørene i nyrerne, herunder effekten af aldosteron på natrium- og kaliumkanaler. Aldosteron øger antallet af K+-kanaler i den apikale membran og Na+-kanaler i den apikale membran, samt stimulerer Na+-K+-pumpen i den basolaterale membran, hvilket fremmer aktiv transport af Na+ fra tubuluslumen til vævsvæsken og videre til kapillærlumen. Dette illustrerer, hvordan aldosteron reducerer Na+ udskillelse ved at øge reabsorptionen via specifikke proteiner i cellemembraner i distale tubulus og samlerør."
+  },
+  {
+    "key": "2022-1a",
+    "image": "billeder/opgaver/2022-01-a.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv mitochondriets struktur og angiv det vigtigste produkt som mitochondriet producerer.",
+    "match": false,
+    "confidence": 0.7,
+    "issues": "Billedet beskriver kun mitochondriets struktur og nævner ikke det vigtigste produkt (ATP), som mitochondriet producerer, hvilket var en del af spørgsmålet.",
+    "description": "Billedet viser en mitochondrie med to membraner: den yderste membran og den inderste membran, som er foldet indad i cristae. Dette illustrerer mitochondriets struktur, men nævner ikke det vigtigste produkt, som mitochondriet producerer, nemlig ATP."
+  },
+  {
+    "key": "2022-2None",
+    "image": "billeder/opgaver/2022-02-a.png",
+    "image_index": 0,
+    "question": "None\nRedegør for hvilke kar der fører til og fra hvert af hjertets fire kamre.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Illustrationen viser hjertets fire kamre: højre atrium, højre ventrikel, venstre atrium og venstre ventrikel. De store kar, der fører til og fra hvert kammer, er markeret. V. cava superior og V. cava inferior fører blod til højre atrium. Fra højre ventrikel fører Aa. pulmonales blod til lungerne. Vv. pulmonales fører iltet blod til venstre atrium. Fra venstre ventrikel fører aorta blod ud til kroppen. Klapper som trikuspidalklappen, pulmonalklappen, bikuspidalklappen og aortaklappen er også vist, hvilket understøtter forståelsen af blodets flow gennem hjertet."
+  },
+  {
+    "key": "2022-3a",
+    "image": "billeder/opgaver/2022-03-a.jpg",
+    "image_index": 0,
+    "question": "None\nLav en tegning af en moden spermatozo og redegør for funktionen af de forskellige dele.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Billedet viser kun en tegning og navngivning af spermatozoens dele, men redegør ikke for funktionen af de forskellige dele.",
+    "description": "Billedet viser en tegning af en moden spermatozo med tre hoveddele: Hovedet (5 µm), midterstykket (5 µm) og halen (55 µm). Hovedet indeholder en kerne og et akrosom, midterstykket indeholder mitokondrier og en centriole, og halen er lang og tynd."
+  },
+  {
+    "key": "2022-3b",
+    "image": "billeder/opgaver/2022-03-b.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv eller tegn en tertiær/præovulatorisk follikel og angiv placeringen af ægcelle, zona pellucida, theca-celler og granulosa-celler. Beskriv endvidere hvad der sker med resten af folliklen efter ægløsning, hvis der ikke sker befrugtning.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Ingen væsentlige problemer. Billedet illustrerer korrekt de ønskede strukturer og processen efter ægløsning.",
+    "description": "Billedet viser udviklingen af en follikel i ovariet fra sekundær follikel til corpus albicans. En tertiær/præovulatorisk follikel er tydeligt markeret med ægcellen placeret centralt, omgivet af zona pellucida. Granulosa-cellerne danner et lag omkring zona pellucida, og theca-cellerne findes yderst omkring folliklen. Efter ægløsning omdannes resten af folliklen til corpus luteum, som senere bliver til corpus albicans, hvis der ikke sker befrugtning."
+  },
+  {
+    "key": "2022-4e",
+    "image": "billeder/opgaver/2022-04-e.jpg",
+    "image_index": 0,
+    "question": "None\nAngiv mindst fem af kraniets knogler.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Ingen problemer. Billedet viser tydeligt mindst fem knogler i kraniet, som efterspurgt.",
+    "description": "Illustration af et menneskeligt kranium set fra siden med navne på forskellige knogler markeret. Kraniets knogler inkluderer Os temporale, Os parietale, Os sphenoidale, Os frontale, Os nasale, Os occipitale, Kæbeled, Maxilla, Os zygomaticum og Mandibula."
+  },
+  {
+    "key": "2022-6None",
+    "image": "billeder/opgaver/2022-06-a.jpg",
+    "image_index": 0,
+    "question": "None\nLav en skitse eller beskriv på hvilke måder en person kan tabe varme til omgivelserne.",
+    "match": true,
+    "confidence": 1.0,
+    "issues": "",
+    "description": "Illustrationen viser tre måder, hvorpå en person kan tabe varme til omgivelserne: a) Varmestråling, hvor kroppen udsender langbølget stråling til omgivelserne og modtager kortbølget solstråling; b) Varmeledning og varmestrømning, hvor varme overføres fra kroppen til underlaget og via luftstrømme (vind); c) Fordampning, hvor vanddamp afgives fra huden og udåndet luft, hvilket medfører varmetab."
+  },
+  {
+    "key": "2021-1None",
+    "image": "billeder/opgaver/2021-01-a.jpg",
+    "image_index": 0,
+    "question": "None\nRedegør for funktionerne af henholdsvis det ru (kornede) endoplasmatiske reticulum og Golgi-apparatet.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Illustrationen viser en celle med det ru (kornede) endoplasmatiske reticulum og Golgi-apparatet markeret. Det ru endoplasmatiske reticulum (blå struktur) er forbundet med cellekernen og har ribosomer på overfladen, hvilket indikerer dets rolle i proteinsyntese. Golgi-apparatet (rød struktur) er vist som en serie af membranøse sække, der modtager vesikler fra det ru endoplasmatiske reticulum, bearbejder og pakker proteiner, og sender dem videre ud af cellen. Illustrationens fokus på disse organeller og deres interaktion understøtter en forklaring af deres funktioner."
+  },
+  {
+    "key": "2021-2None",
+    "image": "billeder/opgaver/2021-02-a.jpg",
+    "image_index": 0,
+    "question": "None\nRedegør for kæden af begivenheder fra et aktionspotentiale når frem til en neuromuskulær synapse på en skeletmuskel, til calcium stiger i muskelfiberen.",
+    "match": true,
+    "confidence": 0.9,
+    "issues": "Billedet viser ikke direkte den neuromuskulære synapse eller acetylcholinfrigivelsen, som er det første trin i kæden fra aktionspotentiale til calciumstigning. Fokus er på T-rør og sarkoplasmatisk reticulum, men det overordnede forløb er korrekt illustreret.",
+    "description": "Billedet viser en skematisk fremstilling af, hvordan et aktionspotentiale bevæger sig gennem T-rør (transversale rør) og påvirker det sarkoplasmatiske reticulum i en skeletmuskelcelle. Aktionspotentialet (markeret med rød pil) bevæger sig ned gennem T-røret (1), hvilket fører til en signaloverførsel til det sarkoplasmatiske reticulum (2). Dette resulterer i frigivelse af calciumioner (Ca2+) fra det sarkoplasmatiske reticulum til cytosolen (3). Calciumionerne aktiverer muskelfiberen til kontraktion. Calciumionerne pumpes derefter tilbage ind i det sarkoplasmatiske reticulum ved hjælp af ATP (4), hvilket afslutter signalet. Illustrationens trin og elementer stemmer overens med kæden af begivenheder fra aktionspotentiale til calciumstigning i muskelfiberen."
+  },
+  {
+    "key": "2021-3a",
+    "image": "billeder/opgaver/2021-03-a.jpg",
+    "image_index": 0,
+    "question": "None\nAngiv i korrekt rækkefølge hvilke kamre og blodkar et rødt blodlegeme passerer fra vena cava superior eller inferior til aorta.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Ingen væsentlige problemer. Diagrammet illustrerer korrekt rækkefølgen af kamre og blodkar fra vena cava til aorta som efterspurgt.",
+    "description": "Diagrammet viser blodets kredsløb gennem hjertet og kroppen. Blodet kommer ind i hjertet via vena cava superior eller inferior til højre atrium, videre til højre ventrikel, derfra til lungearterierne og videre til lungerne. Fra lungerne returnerer blodet via lungevenerne til venstre atrium, videre til venstre ventrikel, og ud gennem aorta til kroppen. Diagrammet inkluderer også detaljer om blodkarrene i forskellige organer og kapillærer."
+  },
+  {
+    "key": "2021-3b",
+    "image": "billeder/opgaver/2021-03-b.jpg",
+    "image_index": 0,
+    "question": "None\nAngiv hvornår i hjertets cyklus aortaklappen og pulmonalklappen er åbne.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Diagrammet viser kun aortaklappen eksplicit, men pulmonalklappen antages at have en lignende åbningstid i systole. Der er ingen direkte illustration af pulmonalklappen, hvilket kunne skabe lidt forvirring.",
+    "description": "Diagrammet viser hjertets cyklus med tilhørende tryk- og volumenændringer i aorta, venstre ventrikel og venstre atrium. Det illustrerer også åbning og lukning af aortaklappen og bikuspidalklappen i forhold til hjertets faser (diastole og systole). Aortaklappen og pulmonalklappen (repræsenteret som aortaklappen i diagrammet) er åbne i systole, hvor trykket i venstre ventrikel overstiger trykket i aorta, hvilket tillader blod at strømme ud i aorta og lungearterien. Dette ses i den gule markerede del af diagrammet, hvor aortaklappen er åben, og trykket i ventriklen og aorta stiger parallelt."
+  },
+  {
+    "key": "2021-4a",
+    "image": "billeder/opgaver/2021-04-a.jpg",
+    "image_index": 0,
+    "question": "Sekretionen af kortisol er under hormonel kontrol.\nLav en skitse der viser hvilke kirtler der direkte og indirekte er involveret i kortisolsekretionen.",
+    "match": false,
+    "confidence": 0.9,
+    "issues": "Diagrammet viser hormonel kontrol af skjoldbruskkirtlen (thyroidea) og ikke kortisolsekretion. Kortisolsekretion involverer hypothalamus, hypofysens forlappens ACTH, og binyrerne, som ikke er vist her.",
+    "description": "Diagrammet viser hormonel kontrol via hypothalamus, hypofysens forlap, og thyroidea, med hormonerne TRH, TSH, T4 og T3, der regulerer skjoldbruskkirtlen og dens målorganer."
+  },
+  {
+    "key": "2021-4b",
+    "image": "billeder/opgaver/2021-04-a.jpg",
+    "image_index": 0,
+    "question": "Sekretionen af kortisol er under hormonel kontrol.\nAngiv navnene på de involverede hormoner.",
+    "match": false,
+    "confidence": 0.9,
+    "issues": "Diagrammet omhandler hormonel regulering af skjoldbruskkirtlen og ikke kortisolsekretion. De involverede hormoner i kortisolsekretion (CRH, ACTH, kortisol) er ikke vist.",
+    "description": "Diagrammet viser hormonel kontrol af skjoldbruskkirtlen med hormonerne TRH, TSH, T4 og T3, men indeholder ikke hormoner relateret til kortisolsekretion."
+  },
+  {
+    "key": "2021-4c",
+    "image": "billeder/opgaver/2021-04-a.jpg",
+    "image_index": 0,
+    "question": "Sekretionen af kortisol er under hormonel kontrol.\nVis feedback-styringen mellem kirtlerne.",
+    "match": false,
+    "confidence": 0.9,
+    "issues": "Diagrammet viser feedbackmekanismen for skjoldbruskkirtelhormoner, ikke for kortisolsekretion. Kortisolsekretion styres primært af hypothalamus-hypofyse-binyrebark-aksen (CRH, ACTH, kortisol), som ikke er vist her.",
+    "description": "Diagrammet viser hormonel feedback mellem hjernen (hypothalamus og hypofyse) og skjoldbruskkirtlen (thyroidea) med hormonerne TRH, TSH, T4 og T3. Det illustrerer reguleringen af skjoldbruskkirtelhormoner, ikke kortisolsekretion."
+  },
+  {
+    "key": "2021-5a",
+    "image": "billeder/opgaver/2021-05-a.jpg",
+    "image_index": 0,
+    "question": "Langt størstedelen af de absorberbare bestanddele i føden optages i tyndtarmen.\nLav en skitse der viser de forskellige lag i et tværsnit gennem tyndtarmens væg.",
+    "match": false,
+    "confidence": 0.8,
+    "issues": "Billedet viser ikke en klar skitse af de forskellige lag i et tværsnit gennem tyndtarmens væg som efterspurgt. Det fokuserer mere på overfladestrukturer og mikroskopiske detaljer som tarmtotter og mikrovilli, men mangler en tydelig fremstilling af lagene i væggen (fx slimhinde, submucosa, muskellag, serosa).",
+    "description": "Billedet viser en detaljeret illustration af tyndtarmens struktur med fokus på de forskellige lag i et tværsnit. Det inkluderer en oversigt over tyndtarmen (a), cirkulære folder i tyndtarmens væg (b), tarmtotter med epitelceller og kryptter (c og d), samt mikrovilli på epitelcellerne (e). Illustrationerne viser lagene fra den ydre cirkulære fold til de mikroskopiske strukturer, der øger overfladearealet for absorption i tyndtarmen."
+  },
+  {
+    "key": "2021-5c",
+    "image": "billeder/opgaver/2021-05-c.jpg",
+    "image_index": 0,
+    "question": "Langt størstedelen af de absorberbare bestanddele i føden optages i tyndtarmen.\nBeskriv de bevægelsestyper, der er karakteristiske for tyndtarmen og som medvirker til at opblande føden og flytte den fremad.",
+    "match": true,
+    "confidence": 0.9,
+    "issues": "",
+    "description": "Illustrationen viser segmenteringsbevægelser i tarmen, hvor muskelkontraktioner skaber segmenter, der blander føden ved at opdele og flytte den frem og tilbage. Dette er karakteristisk for tyndtarmens bevægelsestyper, som hjælper med at opblande føden og fremme absorption ved at bringe føden i kontakt med tarmvæggen."
+  },
+  {
+    "key": "2021-6None",
+    "image": "billeder/opgaver/2021-06-a.jpg",
+    "image_index": 0,
+    "question": "None\nLav en tegning af en moden spermatozo inklusive de relevante organeller og redegør for funktionen af de forskellige dele af spermatozoen.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Tegningen viser de relevante organeller og hoveddele af en moden spermatozo, men der mangler en mere detaljeret forklaring af hver del i teksten.",
+    "description": "Tegningen viser en moden spermatozo opdelt i tre hoveddele: hoved, midterstykke og hale. Hovedet indeholder kernen og akrosomet, som er vigtigt for at trænge ind i ægget. Midterstykket indeholder centriolen og mitokondrier, som producerer energi til bevægelse. Halen er lang og tynd og bruges til at bevæge spermatozoen fremad."
+  },
+  {
+    "key": "2020-1a",
+    "image": "billeder/opgaver/2020-01-a.jpg",
+    "image_index": 0,
+    "question": "None\nLav en skitse af mitokondriets struktur.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Der mangler dog en markering af matrix og eventuelt ribosomer eller DNA, som også kan være relevante for en komplet skitse af mitokondriet.",
+    "description": "Billedet viser en skitse af mitokondriets struktur med to membraner markeret: den yderste membran og den inderste membran, som er foldet indad for at danne cristae. Skitsen illustrerer den karakteristiske form og opbygning af en mitokondrie."
+  },
+  {
+    "key": "2020-3a",
+    "image": "billeder/opgaver/2020-03-a.jpg",
+    "image_index": 0,
+    "question": "None\nRedegør for sammenhængen mellem sarkomerlængde og udvikling af kontraktionskraft.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Grafen viser sammenhængen mellem sarkomerlængde (i mikrometer) og kontraktionskraft (i procent af maksimum). Kurven stiger fra lav kontraktionskraft ved kort sarkomerlængde, når sarkomerlængden øges, når kontraktionskraften maksimum omkring 2,0 til 2,5 mikrometer, hvorefter kontraktionskraften falder igen ved længere sarkomerlængder. Diagrammet inkluderer illustrationer af sarkomerer ved forskellige længder, der viser overlapningen mellem aktin- og myosinfilamenter, som forklarer variationen i kontraktionskraft. Dette illustrerer den fysiologiske sammenhæng mellem sarkomerlængde og udvikling af kontraktionskraft i muskler."
+  },
+  {
+    "key": "2020-4None",
+    "image": "billeder/opgaver/2020-04-a1.jpg",
+    "image_index": 0,
+    "question": "None\nBeskriv rækkefølgen af kamre, klapper og kar blodet passerer fra vena cava superior og inferior til aorta.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Spørgsmålet mangler eksplicit tekst, men billedet indeholder alle nødvendige anatomiske strukturer og klapper til at beskrive blodets vej fra vena cava til aorta.",
+    "description": "Illustrationen viser hjertets anatomi med blodets vej fra vena cava superior og inferior gennem hjertets kamre og klapper til aorta. Blodet kommer ind i højre atrium via vena cava superior og inferior, passerer gennem trikuspidalklappen til højre ventrikel, videre gennem pulmonalklappen til arteria pulmonalis, der fører blodet til lungerne. Fra lungerne vender blodet tilbage via vv. pulmonales til venstre atrium, passerer gennem bikuspidalklappen (mitralklappen) til venstre ventrikel, og endelig gennem aortaklappen til aorta, som fører blodet ud til kroppen. Illustrationerne b og c viser detaljer af hjerteklapperne."
+  },
+  {
+    "key": "2020-4None",
+    "image": "billeder/opgaver/2020-04-a2.jpg",
+    "image_index": 1,
+    "question": "None\nBeskriv rækkefølgen af kamre, klapper og kar blodet passerer fra vena cava superior og inferior til aorta.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Der er ingen direkte tekst, der beskriver rækkefølgen i ét samlet svar, men illustrationens trin og forklaringer dækker processen fuldstændigt og korrekt.",
+    "description": "Illustrationen viser hjertets pumpecyklus i fem trin (a-e), hvor blodets bevægelse gennem kamre, klapper og kar beskrives. Blodet strømmer fra vena cava superior og inferior ind i højre atrium, gennem AV-klappen til højre ventrikel (a). Atrierne kontraherer og presser mere blod ned i ventriklerne (b). Ventriklerne trækker sig sammen, hvilket lukker AV-klapperne (c). Trykket i ventriklerne stiger, hvilket åbner klapperne til arterierne, og blodet strømmer ud i aorta og pulmonalis (d). Ventriklerne slapper af, arterieklapperne lukkes, og AV-klapperne åbnes igen for at starte en ny cyklus (e). Dette svarer til rækkefølgen af kamre, klapper og kar blodet passerer fra vena cava til aorta."
+  },
+  {
+    "key": "2020-5a",
+    "image": "billeder/opgaver/2020-05-a.png",
+    "image_index": 0,
+    "question": "None\nBeskriv ventriklens makroskopiske anatomi.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Billedet viser ventriklens makroskopiske anatomi med tydelig mærkning af forskellige dele: Cardia, Fundus, Corpus, Antrum, Pylorus (ringmuskel), Den lille kurvatur og Den store kurvatur. Disse er de væsentlige strukturer, der udgør ventriklen, og de er korrekt placeret og navngivet i henhold til anatomiske standarder."
+  },
+  {
+    "key": "2020-5b",
+    "image": "billeder/opgaver/2020-05-b.png",
+    "image_index": 0,
+    "question": "None\nBeskriv ventrikelslimhindens histologi.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Der mangler en tekstbeskrivelse, men billedet indeholder alle nødvendige elementer til at besvare spørgsmålet om ventrikelslimhindens histologi.",
+    "description": "Billedet viser en histologisk skitse af ventrikelslimhindens opbygning med tydelig mærkning af lumen, udmunding af kirtler, mucin-producerende celler, parietalceller, hovedceller og endokrine celler. Det illustrerer de forskellige celletyper og deres placering i ventrikelkirtlerne, hvilket er centralt for at beskrive ventrikelslimhindens histologi."
+  },
+  {
+    "key": "2020-6None",
+    "image": "billeder/opgaver/2020-06-a.png",
+    "image_index": 0,
+    "question": "None\nRedegør for hovedtrækkene i regulering af ventilationen.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Diagrammet viser hovedtrækkene i reguleringen af ventilationen, herunder hvordan arterielt ilttryk (pO2), kuldioxidtryk (pCO2) og hydrogenionkoncentration (H+) påvirker perifere og centrale kemoreceptorer, som sender signaler til respirationscentret i medulla oblongata. Respirationscentret styrer respirationsmusklerne, som regulerer ventilationen, der igen påvirker arterielt pO2, pCO2 og H+ niveauer i en feedback-loop."
+  },
+  {
+    "key": "2020-3a",
+    "image": "billeder/opgaver/2020syg-03-a.png",
+    "image_index": 0,
+    "question": "None\nAngiv navnene på de markerede strukturer i et udsnit af en rørknogles væg.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Der er ingen spørgsmål angivet i billedteksten, men billedet passer til en opgave, hvor man skal angive navnene på de markerede strukturer i et udsnit af en rørknogles væg.",
+    "description": "Billedet viser et tværsnit af en rørknogles væg med markerede strukturer såsom arterie, vene, osteocytter, periost, spongiøst knoglevæv og kompakt knoglevæv. Disse strukturer er korrekt navngivet i forhold til knoglens anatomi."
+  },
+  {
+    "key": "2020-3d",
+    "image": "billeder/opgaver/2020syg-03-d.jpg",
+    "image_index": 0,
+    "question": "None\nAngiv navnene på de markerede kranieknogler.",
+    "match": true,
+    "confidence": 1.0,
+    "issues": "",
+    "description": "Billedet viser en sidevisning af et menneskeligt kranie med forskellige knogler markeret og navngivet på dansk. De markerede knogler inkluderer Os temporale, Os parietale, Os sphenoidale, Os frontale, Os nasale, Os occipitale, Maxilla, Os zygomaticum, Mandibula, samt Ydre øregangsåbning og Kæbeled."
+  },
+  {
+    "key": "2020-4a",
+    "image": "billeder/opgaver/2020syg-04-a1.jpg",
+    "image_index": 0,
+    "question": "None\nLav en tegning af en nervecelle og benævn de karakteristiske strukturer.",
+    "match": true,
+    "confidence": 0.8,
+    "issues": "Ikke alle karakteristiske strukturer er benævnt i alle tegninger (f.eks. mangler dendritter i b). Stavningen af 'dendrit' i c er i ental, hvor det burde være flertal 'dendritter' for konsistens. Der mangler benævnelse af cellekrop og eventuelt andre strukturer som axon terminaler.",
+    "description": "Billedet viser tre tegninger af nerveceller (a, b, c) med nogle af deres karakteristiske strukturer benævnt. Tegning a viser en nervecelle med dendritter og akson korrekt markeret. Tegning b viser også en nervecelle med akson markeret, men mangler benævnelse af dendritter. Tegning c viser en nervecelle med både dendrit og akson markeret, men dendrit er stavet i ental, mens det korrekte flertal er dendritter. Samlet set viser billedet en tegning af nerveceller med nogle karakteristiske strukturer benævnt, men ikke alle strukturer er korrekt eller fuldstændigt benævnt i alle tegninger."
+  },
+  {
+    "key": "2020-4a",
+    "image": "billeder/opgaver/2020syg-04-a2.jpg",
+    "image_index": 1,
+    "question": "None\nLav en tegning af en nervecelle og benævn de karakteristiske strukturer.",
+    "match": true,
+    "confidence": 1.0,
+    "issues": "",
+    "description": "Billedet viser en detaljeret tegning af en nervecelle med de karakteristiske strukturer benævnt på dansk. Strukturerne inkluderer Cellelegeme, Nerveende, Dendrit, Aksonhalsen, Akson, Synapse, Akson med myelinskede, Neuromuskulær synapse og Tværstribet skeletmuskelcelle. Tegningen illustrerer også forbindelsen mellem nervecellen og en skeletmuskelcelle via den neuromuskulære synapse."
+  },
+  {
+    "key": "2020-6a",
+    "image": "billeder/opgaver/2020syg-06-a.jpg",
+    "image_index": 0,
+    "question": "None\nAngiv navnet på den vigtigste respirationsmuskel.",
+    "match": false,
+    "confidence": 0.9,
+    "issues": "Billedet viser en graf over lungevolumener, men besvarer ikke spørgsmålet om navnet på den vigtigste respirationsmuskel.",
+    "description": "Grafen viser forskellige respirationsvolumener og kapaciteter over tid, herunder inspiratorisk reservevolumen, eksspiratorisk reservevolumen, residualvolumen, tidalvolumen i hvile og vitalkapacitet. Der er ingen information eller illustration af respirationsmuskler i billedet."
+  },
+  {
+    "key": "2020-6b",
+    "image": "billeder/opgaver/2020syg-06-a.jpg",
+    "image_index": 0,
+    "question": "None\nTegn en spirometerkurve og angiv navn og omtrentlig størrelse på mindst tre lungevolumina og mindst én kapacitet.",
+    "match": true,
+    "confidence": 1.0,
+    "issues": "",
+    "description": "Billedet viser en spirometerkurve med angivelse af lungevolumina og kapaciteter. Kurven illustrerer volumen (ml) over tid og markerer inspiratorisk reservevolumen (3.000 ml), eksspiratorisk reservevolumen (1.500 ml), residualvolumen (1.000 ml), tidalvolumen i hvile (500 ml) og vitalkapacitet (5.000 ml). Disse er tydeligt navngivet og deres omtrentlige størrelser angivet på grafen."
+  },
+  {
+    "key": "2017-4None",
+    "image": "billeder/opgaver/2017-04-a.jpg",
+    "image_index": 0,
+    "question": "None\nEn forsøgsperson ånder normalt i et spirometer og foretager en maksimal ind- og udånding. Lav en skitse af spirogrammet og angiv navne og omtrentlige størrelser på de forskellige lungevolumina samt navn og størrelse på mindst to lungekapaciteter.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Spirogrammet viser en kurve over lungevolumen (ml) mod tid, hvor en forsøgsperson ånder normalt og foretager maksimal ind- og udånding. Kurven indeholder mærkede lungevolumina: Tidalvolumen (500 ml), Inspiratorisk reservevolumen (3.000 ml), Eksspiratorisk reservevolumen (1.500 ml) og Residualvolumen (1.000 ml). To lungekapaciteter er også angivet: Vitalkapacitet (5.000 ml) og Tidalvolumen i hvile (500 ml). Diagrammet illustrerer tydeligt de forskellige volumina og kapaciteter som anmodet i spørgsmålet."
+  },
+  {
+    "key": "2017-2None",
+    "image": "billeder/opgaver/2017syg-02-a.png",
+    "image_index": 0,
+    "question": "None\nBeskriv de celler og væv der indgår i vores lugtesans.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Der er ingen direkte tekstbeskrivelse i billedet, men illustrationens labels og strukturer svarer meget godt til spørgsmålet om celler og væv i lugtesansen.",
+    "description": "Billedet viser en anatomisk illustration af næsehulen og de strukturer, der er involveret i lugtesansen. Det inkluderer olfaktorisk epitel med lugteceller (olfactory neurons) med cilier, mucous lag på epiteloverfladen, olfaktorisk nerve, olfaktorisk pære (olfactory bulb), olfaktorisk trakt og interneuroner. Der er også mærkater for kribriformpladen (cribriform plate) og bindevæv (connective tissue). Illustrationens fokus er på de celler og væv, der indgår i lugtesansen, herunder lugteceller, nervefibre og støttevæv."
+  },
+  {
+    "key": "2018-1None",
+    "image": "billeder/opgaver/2018-01-a.png",
+    "image_index": 0,
+    "question": "None\nBeskriv den overordnede proces ved nedbrydning af glukose i fravær af tilstrækkelig ilt (anaerobe forhold). Angiv om det samlede ATP-udbytte er stort eller lille i forhold til aerob forbrænding.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Der står ikke eksplicit i billedet, at ATP-udbyttet er lille i forhold til aerob forbrænding, men det kan udledes ud fra den angivne ATP-mængde (2 ATP).",
+    "description": "Billedet viser en trinvis proces for nedbrydning af glukose under anaerobe forhold. Først omdannes glukose til to pyruvatmolekyler via glykolyse, hvilket giver en netto gevinst på to ATP og to NADH. Dernæst omdannes pyruvat til mælkesyre (laktat), hvor NADH bruges, og der frigives H+ ioner, som danner laktat. Diagrammet viser også, at ATP-udbyttet er lille sammenlignet med aerob forbrænding, da kun 2 ATP produceres pr. glukosemolekyle under anaerobe forhold."
+  },
+  {
+    "key": "2018-2None",
+    "image": "billeder/opgaver/2018-02-a.png",
+    "image_index": 0,
+    "question": "None\nBeskriv den normale impulsudbredelse gennem hjertets ledningssystem.",
+    "match": true,
+    "confidence": 0.9,
+    "issues": "Billedet viser en visuel repræsentation af impulsudbredelsen gennem hjertets ledningssystem, hvilket svarer til spørgsmålet om den normale impulsudbredelse. Dog mangler der en tekstbeskrivelse, som kunne gøre forklaringen mere komplet.",
+    "description": "Illustrationen viser hjertets ledningssystem med markeringer af Sinoatrial (SA) node, Atrioventrikulær (AV) node, AV bundle, højre og venstre bundle grene samt Purkinje-fibre. Pile angiver impulsens udbredelse fra SA-node til AV-node, videre gennem AV-bundtet, bundle grene og Purkinje-fibre til hjertets apex og ventrikler."
+  },
+  {
+    "key": "2018-3None",
+    "image": "billeder/opgaver/2018-03-a.png",
+    "image_index": 0,
+    "question": "None\nRedegør for struktur og funktion af leverens portåresystem, herunder hvilke organer der dræneres, og hvilken betydning systemet har for blodets sammensætning.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "The image consists of two detailed anatomical diagrams related to the liver's portal venous system. The left diagram shows the hepatic portal vein and its tributaries draining blood from various abdominal organs including the stomach, spleen, pancreas, intestines, and colon. The right diagram illustrates the microanatomy of the liver lobule, highlighting the hepatic portal vein, hepatic artery, bile duct, hepatic sinusoids, hepatocytes, and the flow of blood from the portal vein and artery through the liver tissue to the central vein and hepatic veins. This visual representation effectively covers the structure and function of the liver's portal venous system, the organs drained by it, and the significance for blood composition as it passes through the liver for processing."
+  },
+  {
+    "key": "2018-4None",
+    "image": "billeder/opgaver/2018-04-a.png",
+    "image_index": 0,
+    "question": "None\nRedegør for hvordan renin-angiotensin-aldosteron-systemet bidrager til at reetablere normalt blodtryk ved hypotension.",
+    "match": true,
+    "confidence": 1.0,
+    "issues": "",
+    "description": "Diagrammet viser renin-angiotensin-aldosteron-systemet (RAAS) og dets rolle i reguleringen af blodtryk ved hypotension. Det starter med, at nyrerne registrerer faldende blodtryk og øger reninsekretionen (1). Renin omdanner angiotensinogen fra leveren til angiotensin I (2). Angiotensin I omdannes i lungerne til angiotensin II via angiotensin-konverterende enzym (3). Angiotensin II virker som en potent vasokonstriktor, hvilket øger blodtrykket (4). Det stimulerer også binyrebarken til at udskille aldosteron (5), som øger natriumreabsorptionen i nyrerne, hvilket mindsker urinvolumen og øger blodvolumen og dermed blodtrykket (6). Diagrammet illustrerer klart, hvordan RAAS bidrager til at reetablere normalt blodtryk ved hypotension."
+  },
+  {
+    "key": "2018-5None",
+    "image": "billeder/opgaver/2018-05-a.png",
+    "image_index": 0,
+    "question": "None\nBeskriv den generelle opbygning af tyndtarmens væg både makroskopisk og mikroskopisk.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Ingen væsentlige problemer. Billedet matcher spørgsmålet godt ved at vise både makroskopisk og mikroskopisk opbygning af tyndtarmens væg.",
+    "description": "Billedet viser en detaljeret anatomisk og histologisk opbygning af tyndtarmens væg. Makroskopisk ses cirkulære folder, epitel, submucosa, cirkulært muskel lag, longitudinelt muskel lag og serosa. Mikroskopisk vises villi med epitelceller, blodkapillærer, lymfekar (lacteal) og mikrovilli på epitelcellernes overflade. Der er også illustration af duodenale kirtler og intestinale kirtler. Billedet dækker både makroskopiske strukturer og mikroskopiske detaljer af tyndtarmens væg."
+  },
+  {
+    "key": "2018-6None",
+    "image": "billeder/opgaver/2018-06-a.png",
+    "image_index": 0,
+    "question": "None\nBeskriv opbygningen af en alveole samt den respiratoriske membran.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Billedet viser en detaljeret illustration af en alveole og den respiratoriske membran. Øverst ses alveolens opbygning med makrofager, luftplads, cellekerne, mitokondrier, surfaktant-secernerende celler, alveolepitel (enlaget pladeepitel), samt kapillærendotel med røde blodlegemer. Nederst er en forstørret sektion, der viser alveolevæske med surfaktant, alveolepitel, basalmembran af alveolepitel, interstitielt rum, basalmembran af kapillærendotel, kapillærendotel, og diffusion af ilt (O2) og kuldioxid (CO2) over den respiratoriske membran. Røde blodlegemer i kapillæren er også markeret. Illustrationerne forklarer strukturen og funktion af alveolen og den respiratoriske membran i forbindelse med gasudveksling."
+  },
+  {
+    "key": "2018-1None",
+    "image": "billeder/opgaver/2018syg-01-a.png",
+    "image_index": 0,
+    "question": "None\nBeskriv processen i den neuro-muskulære kontakt (neuromuscular junction) i skeletmuskulatur fra et aktionspotential når den presynaptiske terminal til et aktionspotential er genereret i muskelcellens membran.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Ingen væsentlige problemer. Teksten og billedet beskriver klart og korrekt processen fra aktionspotentiale i den presynaptiske terminal til generering af aktionspotentiale i muskelcellen.",
+    "description": "Illustrationen viser processen i den neuromuskulære kontakt ved en skeletmuskel. Et aktionspotentiale ankommer til den presynaptiske terminal, hvilket får Ca2+ kanaler til at åbne. Calciumioner (Ca2+) trænger ind i den presynaptiske terminal og initierer frigivelsen af neurotransmitteren acetylcholin (ACh) fra synaptiske vesikler ud i den synaptiske kløft. ACh diffunderer over kløften og binder til ACh-receptorer på den postsynaptiske muskelmembran (sarcolemma), hvilket åbner Na+ kanaler. Natriumioner (Na+) diffunderer ind i muskelfiberen, hvilket fører til depolarisering af membranen og generering af et postsynaptisk aktionspotentiale, hvis tærskelværdien nås."
+  },
+  {
+    "key": "2018-2a",
+    "image": "billeder/opgaver/2018syg-02-a.png",
+    "image_index": 0,
+    "question": "None\nAngiv hvor stor en del af kropsvægten der udgøres af blod (i %).",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Billedet viser en illustration af blodets sammensætning og indeholder teksten 'Blood makes up about 8% of total body weight', hvilket svarer til spørgsmålet om, hvor stor en del af kropsvægten der udgøres af blod i procent."
+  },
+  {
+    "key": "2018-2b",
+    "image": "billeder/opgaver/2018syg-02-a.png",
+    "image_index": 0,
+    "question": "None\nAngiv den omtrentlige andel (i %) af blodet der udgøres af henholdsvis formede elementer (blodceller og blodplader) og af plasma.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Billedet viser en figur, der illustrerer blodets sammensætning i en normal voksen. Figuren angiver, at plasma udgør cirka 55% af blodets volumen, mens formede elementer (blodceller og blodplader) udgør cirka 45%. Derudover er plasmaets sammensætning detaljeret med 91% vand, 7% proteiner og 2% andre opløste stoffer. Formede elementer inkluderer røde blodlegemer, hvide blodlegemer og blodplader med angivne antal pr. kubikmillimeter."
+  },
+  {
+    "key": "2018-2c",
+    "image": "billeder/opgaver/2018syg-02-a.png",
+    "image_index": 0,
+    "question": "None\nAngiv mindst to typer blodceller.",
+    "match": true,
+    "confidence": 0.9,
+    "issues": "Spørgsmålet beder om mindst to typer blodceller, og billedet indeholder flere typer blodceller, herunder røde blodlegemer og forskellige typer hvide blodlegemer, så det matcher godt.",
+    "description": "Billedet viser en grafisk fremstilling af blodets sammensætning, herunder plasma og dannede elementer. Dannede elementer inkluderer blodplader, hvide blodlegemer og røde blodlegemer. Specifikt nævnes typer af hvide blodlegemer som neutrofiler, lymfocytter, monocytter, eosinofiler og basofiler."
+  },
+  {
+    "key": "2018-2d",
+    "image": "billeder/opgaver/2018syg-02-a.png",
+    "image_index": 0,
+    "question": "None\nAngiv mindst to typer ioner der findes i blodet.",
+    "match": false,
+    "confidence": 0.7,
+    "issues": "The image mentions 'Ions' as a component of blood plasma but does not specify any types of ions. The question asks for at least two types of ions found in blood, which the image does not provide.",
+    "description": "The image shows a detailed diagram of the composition of blood, including plasma, formed elements, and their subcomponents. It lists plasma components by weight, including water, proteins, and other solutes. Among the other solutes, 'Ions' are specifically mentioned as a component of plasma. However, the image does not specify the types of ions present in the blood."
+  },
+  {
+    "key": "2018-2e",
+    "image": "billeder/opgaver/2018syg-02-a.png",
+    "image_index": 0,
+    "question": "None\nAngiv mindst to typer proteiner der findes i blodet.",
+    "match": true,
+    "confidence": 1.0,
+    "issues": "",
+    "description": "The image shows a detailed diagram of the composition of blood, including plasma and formed elements. It breaks down plasma into water (91%), proteins (7%), and other solutes (2%). The proteins are further divided into albumins (58%), globulins (38%), and fibrinogen (4%)."
+  },
+  {
+    "key": "2018-3None",
+    "image": "billeder/opgaver/2018syg-03-a.jpg",
+    "image_index": 0,
+    "question": "None\nEn forsøgsperson (voksen, almindelig størrelse, i hvile) tilsluttes et spirometer og ånder normalt. Undervejs foretager vedkommende en maksimalt dyb indånding og senere en maksimalt dyb udånding. Lav en skitse af spirogrammet, anfør navne og omtrentlige størrelser for de forskellige lungevolumina (volumes). Angiv tillige navn og størrelse på mindst to lungekapaciteter (capacities) der kan dannes som en sum af to eller flere lungevolumina.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Grafen viser et spirogram med volumen (ml) på y-aksen og tid på x-aksen. Den illustrerer forskellige lungevolumina: Tidalvolumen i hvile (500 ml), inspiratorisk reservevolumen (3.000 ml), eksspiratorisk reservevolumen (1.500 ml) og residualvolumen (1.000 ml). Vitalkapaciteten (5.000 ml) er markeret som summen af inspiratorisk reservevolumen, tidalvolumen og eksspiratorisk reservevolumen. Volumina er korrekt navngivet og omtrentlige størrelser er angivet i overensstemmelse med typiske værdier for en voksen person i hvile. Spirogrammet viser også normale vejrtrækninger, en maksimal dyb indånding og en maksimal dyb udånding som beskrevet i spørgsmålet."
+  },
+  {
+    "key": "2018-4None",
+    "image": "billeder/opgaver/2018syg-04-a.png",
+    "image_index": 0,
+    "question": "None\nBeskriv rækkefølgen af kamre og kar blodet flyder igennem på dets vej fra indmundingen af vena cava superior og vena cava inferior (hulvenerne) til aorta (legemets hovedpulsåre).",
+    "match": true,
+    "confidence": 1.0,
+    "issues": "",
+    "description": "Billedet viser hjertets anatomi med en detaljeret illustration af blodets flow gennem hjertets kamre og kar. Det starter ved vena cava superior og inferior, går til højre atrium, passerer tricuspidalklappen til højre ventrikel, videre gennem pulmonal semilunarklappen til pulmonal trunk og pulmonalarterier, der fører blod til lungerne. Fra lungerne returnerer blodet via pulmonalvenerne til venstre atrium, passerer bicuspidalklappen til venstre ventrikel, og pumpes ud gennem aortaklappen til aorta og videre til kroppens væv. Diagrammet indeholder også labels for hjerteklapper og blodkar, og viser både systemisk og pulmonal cirkulation."
+  },
+  {
+    "key": "2018-5None",
+    "image": "billeder/opgaver/2018syg-05-a.png",
+    "image_index": 0,
+    "question": "None\nRedegør for hvorledes nerveceller i hypothalamus stimulerer eller hæmmer den forreste hypofyselap (anterior pituitary lobe) til hormonsekretion eller ophør af hormonsekretion.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "",
+    "description": "Illustrationen viser, hvordan nerveceller i hypothalamus regulerer hormonsekretion i den forreste hypofyselap. Hypothalamiske neuroner frigiver stimulerende (grønne cirkler) og hæmmende hormoner (røde cirkler), som passerer gennem hypothalamohypofysial portalsystemet til den forreste hypofyse. Her forlader disse hormoner kapillærer og påvirker hypofyseceller til enten at stimulere eller hæmme frigivelsen af hypofysehormoner (gule firkanter). Disse hypofysehormoner transporteres derefter via blodet til målorganer eller endokrine kirtler (markeret med grøn pil). Diagrammet forklarer således, hvordan hypothalamus nerveceller kan stimulere eller hæmme hormonsekretion i den forreste hypofyse."
+  },
+  {
+    "key": "2018-6None",
+    "image": "billeder/opgaver/2018syg-06-a.png",
+    "image_index": 0,
+    "question": "None\nAngiv hvilke hormoner der frisættes fra hypofysen til det systemiske kredsløb som reaktion på at spædbarnet sutter på brystvorten. Redegør for disse hormoners virkning på brystvævet.",
+    "match": true,
+    "confidence": 0.95,
+    "issues": "Teksten og billedet er på engelsk, mens spørgsmålet er på dansk, hvilket kan kræve oversættelse for fuld forståelse.",
+    "description": "Billedet viser en procesdiagram over hormonel kontrol af amning, hvor stimulering af brystvorten ved spædbarnets sutning aktiverer sensoriske neuroner, som sender signaler til hypothalamus. Hypothalamus stimulerer derefter den bageste hypofyse til at frigive oxytocin og den forreste hypofyse til at frigive prolaktin. Oxytocin fremmer mælkeuddrivning fra brystet, mens prolaktin stimulerer yderligere mælkeproduktion i brystvævet."
+  }
+]

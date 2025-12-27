@@ -5,6 +5,8 @@ const STORAGE_KEYS = {
   mistakes: "ku_mcq_last_mistakes",
   theme: "ku_mcq_theme",
   history: "ku_mcq_history",
+  performance: "ku_mcq_performance",
+  figureCaptions: "ku_mcq_figure_captions",
 };
 
 const DEFAULT_SETTINGS = {
@@ -12,6 +14,7 @@ const DEFAULT_SETTINGS = {
   shuffleQuestions: true,
   shuffleOptions: true,
   balancedMix: true,
+  adaptiveMix: false,
   showMeta: true,
   autoAdvance: false,
   autoAdvanceDelay: 1200,
@@ -23,6 +26,13 @@ const DEFAULT_SETTINGS = {
   includeShort: true,
   ratioMcq: 4,
   ratioShort: 1,
+  ttsEnabled: true,
+  ttsAuto: false,
+  ttsIncludeOptions: true,
+  ttsVoice: "alloy",
+  ttsSpeed: 1.0,
+  ttsCollapsed: false,
+  autoFigureCaptions: true,
 };
 
 const SHORT_TOTAL_POINTS = 72;
@@ -164,6 +174,23 @@ const SESSION_ORDER = {
 };
 
 const SKETCH_CUE = /\b(skitse|skitser|tegn|tegning|diagram)\b/i;
+const FIGURE_ANSWER_CUE = /\b(tegning|figur|angivet nedenfor|se figur|vist i figuren|tilhørende figur)\b/i;
+
+const TTS_VOICES = [
+  { value: "alloy", label: "Alloy · Klar" },
+  { value: "nova", label: "Nova · Varm" },
+  { value: "echo", label: "Echo · Tydelig" },
+  { value: "fable", label: "Fable · Rolig" },
+  { value: "onyx", label: "Onyx · Dyb" },
+  { value: "shimmer", label: "Shimmer · Lys" },
+];
+const TTS_SAMPLE_TEXT = "Hej! Jeg kan læse spørgsmål og svarmuligheder op.";
+const TTS_SPEED_MIN = 0.7;
+const TTS_SPEED_MAX = 1.3;
+const TTS_SPEED_STEP = 0.05;
+const TTS_MAX_CHARS = 2000;
+const SKETCH_MAX_BYTES = 5 * 1024 * 1024;
+const FIGURE_CAPTION_QUEUE_DELAY = 450;
 
 const state = {
   allQuestions: [],
@@ -202,9 +229,47 @@ const state = {
     model: null,
     message: "AI tjekkes...",
   },
+  ttsStatus: {
+    available: false,
+    model: null,
+    message: "Oplæsning tjekkes...",
+  },
+  ttsPlayer: {
+    audio: null,
+    objectUrl: null,
+    isPlaying: false,
+    isLoading: false,
+    requestId: 0,
+    abortController: null,
+    autoTimer: null,
+  },
+  ttsPrefetch: {
+    key: null,
+    text: "",
+    voice: null,
+    speed: null,
+    includeOptions: null,
+    blob: null,
+    promise: null,
+    requestId: 0,
+    abortController: null,
+    timer: null,
+    defer: false,
+  },
+  optionOrder: new Map(),
   figureVisible: false,
   shortAnswerDrafts: new Map(),
   shortAnswerAI: new Map(),
+  figureCaptions: loadFigureCaptions(),
+  figureCaptionLibrary: {},
+  figureCaptionRequests: new Map(),
+  figureCaptionQueue: [],
+  figureCaptionQueued: new Set(),
+  figureCaptionProcessing: false,
+  figureCaptionTimer: null,
+  sketchUploads: new Map(),
+  sketchAnalysis: new Map(),
+  performance: loadPerformance(),
   filters: {
     years: new Set(),
     categories: new Set(),
@@ -226,6 +291,7 @@ const state = {
   history: loadStoredArray(STORAGE_KEYS.history),
   flaggedKeys: new Set(),
   autoAdvanceTimer: null,
+  questionStartedAt: null,
   sessionSettings: { ...DEFAULT_SETTINGS },
   infiniteState: null,
   search: {
@@ -289,6 +355,7 @@ const elements = {
   toggleShuffleQuestions: document.getElementById("toggle-shuffle-questions"),
   toggleShuffleOptions: document.getElementById("toggle-shuffle-options"),
   toggleBalanced: document.getElementById("toggle-balanced"),
+  toggleAdaptiveMix: document.getElementById("toggle-adaptive-mix"),
   toggleShowMeta: document.getElementById("toggle-show-meta"),
   toggleAutoAdvance: document.getElementById("toggle-auto-advance"),
   toggleInfiniteMode: document.getElementById("toggle-infinite-mode"),
@@ -297,6 +364,8 @@ const elements = {
   toggleFocusMode: document.getElementById("toggle-focus-mode"),
   toggleIncludeMcq: document.getElementById("toggle-include-mcq"),
   toggleIncludeShort: document.getElementById("toggle-include-short"),
+  toggleTts: document.getElementById("toggle-tts"),
+  toggleAutoFigure: document.getElementById("toggle-auto-figure"),
   ratioMcqInput: document.getElementById("ratio-mcq"),
   ratioShortInput: document.getElementById("ratio-short"),
   autoAdvanceDelay: document.getElementById("auto-advance-delay"),
@@ -317,6 +386,18 @@ const elements = {
   questionType: document.getElementById("question-type"),
   questionIntro: document.getElementById("question-intro"),
   questionText: document.getElementById("question-text"),
+  ttsToolbar: document.getElementById("tts-toolbar"),
+  ttsPlayBtn: document.getElementById("tts-play-btn"),
+  ttsStopBtn: document.getElementById("tts-stop-btn"),
+  ttsPreviewBtn: document.getElementById("tts-preview-btn"),
+  ttsAutoToggle: document.getElementById("tts-auto-toggle"),
+  ttsOptionsToggle: document.getElementById("tts-options-toggle"),
+  ttsVoiceSelect: document.getElementById("tts-voice"),
+  ttsSpeedRange: document.getElementById("tts-speed"),
+  ttsSpeedLabel: document.getElementById("tts-speed-label"),
+  ttsStatus: document.getElementById("tts-status"),
+  ttsCollapseBtn: document.getElementById("tts-collapse-btn"),
+  ttsBody: document.getElementById("tts-body"),
   questionFigure: document.getElementById("question-figure"),
   questionFigureMedia: document.getElementById("question-figure-media"),
   questionFigureCaption: document.getElementById("question-figure-caption"),
@@ -334,9 +415,24 @@ const elements = {
   shortAnswerAiStatus: document.getElementById("ai-status-inline"),
   shortAnswerShowAnswer: document.getElementById("short-show-answer-btn"),
   shortAnswerModel: document.getElementById("short-model-answer"),
+  shortModelTitle: document.getElementById("short-model-title"),
+  shortModelText: document.getElementById("short-model-text"),
+  shortModelTag: document.getElementById("short-model-tag"),
+  shortFigureAnswer: document.getElementById("short-figure-answer"),
+  shortFigureText: document.getElementById("short-figure-text"),
+  shortFigureStatus: document.getElementById("short-figure-status"),
+  shortFigureGenerateBtn: document.getElementById("short-figure-generate-btn"),
   shortAnswerSources: document.getElementById("short-sources"),
   shortAnswerHint: document.getElementById("short-score-hint"),
   shortSketchHint: document.getElementById("short-sketch-hint"),
+  sketchPanel: document.getElementById("sketch-panel"),
+  sketchToggleBtn: document.getElementById("sketch-toggle-btn"),
+  sketchPanelBody: document.getElementById("sketch-panel-body"),
+  sketchUpload: document.getElementById("sketch-upload"),
+  sketchAnalyzeBtn: document.getElementById("sketch-analyze-btn"),
+  sketchStatus: document.getElementById("sketch-status"),
+  sketchFeedback: document.getElementById("sketch-feedback"),
+  sketchPreview: document.getElementById("sketch-preview"),
   feedbackArea: document.getElementById("feedback-area"),
   skipBtn: document.getElementById("skip-btn"),
   nextBtn: document.getElementById("next-btn"),
@@ -379,6 +475,38 @@ function loadSettings() {
 
 function saveSettings() {
   localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(state.settings));
+}
+
+function loadPerformance() {
+  const stored = localStorage.getItem(STORAGE_KEYS.performance);
+  if (!stored) return {};
+  try {
+    const parsed = JSON.parse(stored);
+    if (parsed && typeof parsed === "object") return parsed;
+    return {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function savePerformance() {
+  localStorage.setItem(STORAGE_KEYS.performance, JSON.stringify(state.performance));
+}
+
+function loadFigureCaptions() {
+  const stored = localStorage.getItem(STORAGE_KEYS.figureCaptions);
+  if (!stored) return {};
+  try {
+    const parsed = JSON.parse(stored);
+    if (parsed && typeof parsed === "object") return parsed;
+    return {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveFigureCaptions() {
+  localStorage.setItem(STORAGE_KEYS.figureCaptions, JSON.stringify(state.figureCaptions));
 }
 
 function loadStoredArray(key) {
@@ -565,6 +693,82 @@ function requiresSketch(question) {
   );
 }
 
+function isFigureAnswer(answer) {
+  const text = String(answer || "").trim();
+  if (!text) return false;
+  if (text.length > 240) return false;
+  return FIGURE_ANSWER_CUE.test(text);
+}
+
+function getQuestionImagePaths(question) {
+  if (!question || !Array.isArray(question.images)) return [];
+  return question.images.filter(Boolean);
+}
+
+function getFigureCaptionForImage(imagePath) {
+  if (!imagePath) return "";
+  const library = state.figureCaptionLibrary;
+  if (library && typeof library === "object") {
+    const libraryEntry = library[imagePath];
+    if (typeof libraryEntry === "string") return libraryEntry;
+    if (libraryEntry && typeof libraryEntry.description === "string") {
+      return libraryEntry.description;
+    }
+  }
+  const cached = state.figureCaptions[imagePath];
+  if (typeof cached === "string") return cached;
+  if (cached && typeof cached.description === "string") return cached.description;
+  return "";
+}
+
+function setFigureCaptionForImage(imagePath, description) {
+  if (!imagePath || !description) return;
+  state.figureCaptions[imagePath] = description;
+  saveFigureCaptions();
+}
+
+function getCombinedFigureCaption(question) {
+  const images = getQuestionImagePaths(question);
+  if (!images.length) return "";
+  const parts = images
+    .map((path, index) => {
+      const caption = getFigureCaptionForImage(path);
+      if (!caption) return "";
+      if (images.length > 1) {
+        return `Figur ${index + 1}: ${caption}`;
+      }
+      return caption;
+    })
+    .filter(Boolean);
+  return parts.join("\n");
+}
+
+function shouldUseFigureCaption(question) {
+  if (!question) return false;
+  if (!getQuestionImagePaths(question).length) return false;
+  return isFigureAnswer(question.answer);
+}
+
+function getEffectiveModelAnswer(question) {
+  if (!question) return "";
+  const answer = String(question.answer || "").trim();
+  if (shouldUseFigureCaption(question)) {
+    const caption = getCombinedFigureCaption(question);
+    if (caption) return caption;
+  }
+  return answer;
+}
+
+function buildSketchModelAnswer(question) {
+  if (!question) return "";
+  const answer = String(question.answer || "").trim();
+  const caption = getCombinedFigureCaption(question);
+  if (!caption) return answer;
+  if (isFigureAnswer(answer)) return caption;
+  if (!answer) return caption;
+  return `${answer}\n\nFigurbeskrivelse: ${caption}`;
+}
+
 function updateTopBar() {
   const total = state.activeQuestions.length || 0;
   const current = Math.min(state.currentIndex + 1, total);
@@ -657,6 +861,117 @@ function updateQuestionFigure(question) {
   setFigureVisibility(false);
 }
 
+function setShortFigureStatus(message, isWarn = false) {
+  if (!elements.shortFigureStatus) return;
+  elements.shortFigureStatus.textContent = message;
+  elements.shortFigureStatus.classList.toggle("warn", Boolean(isWarn));
+}
+
+function updateShortAnswerModel(question) {
+  if (!question || !elements.shortAnswerModel) return;
+  const rawAnswer = String(question.answer || "").trim();
+  const fallbackAnswer = rawAnswer || "Ingen facit tilgængelig.";
+  const hasImages = getQuestionImagePaths(question).length > 0;
+  const useFigureCaption = shouldUseFigureCaption(question);
+  const figureCaption = getCombinedFigureCaption(question);
+
+  let modelTitle = "Modelbesvarelse";
+  let modelText = fallbackAnswer;
+  let showTag = false;
+
+  if (useFigureCaption) {
+    modelTitle = figureCaption ? "Facit (AI-figur)" : "Facit (figur)";
+    if (figureCaption) {
+      modelText = figureCaption;
+      showTag = true;
+    }
+  }
+
+  if (elements.shortModelTitle) {
+    elements.shortModelTitle.textContent = modelTitle;
+  }
+  if (elements.shortModelText) {
+    elements.shortModelText.textContent = modelText;
+  } else {
+    const textEl = elements.shortAnswerModel.querySelector("p");
+    if (textEl) textEl.textContent = modelText;
+  }
+  if (elements.shortModelTag) {
+    elements.shortModelTag.classList.toggle("hidden", !showTag);
+  }
+
+  if (elements.shortFigureGenerateBtn) {
+    elements.shortFigureGenerateBtn.disabled = !state.aiStatus.available;
+    elements.shortFigureGenerateBtn.textContent = figureCaption ? "Opdater" : "Generér";
+  }
+
+  if (elements.shortFigureAnswer) {
+    const showFigureBlock = hasImages && (!useFigureCaption || !figureCaption);
+    elements.shortFigureAnswer.classList.toggle("hidden", !showFigureBlock);
+    if (showFigureBlock) {
+      if (!useFigureCaption && figureCaption) {
+        if (elements.shortFigureText) {
+          elements.shortFigureText.textContent = figureCaption;
+        }
+        setShortFigureStatus("AI-beskrivelse klar.", false);
+      } else if (useFigureCaption) {
+        if (elements.shortFigureText) {
+          elements.shortFigureText.textContent = "";
+        }
+        setShortFigureStatus(
+          state.aiStatus.available
+            ? "Facit henviser til figuren. Generér en beskrivelse."
+            : "AI offline. Start scripts/dev_server.py.",
+          !state.aiStatus.available
+        );
+      } else {
+        if (elements.shortFigureText) {
+          elements.shortFigureText.textContent = "";
+        }
+        setShortFigureStatus(
+          state.aiStatus.available
+            ? "Generér en figurbeskrivelse hvis du vil."
+            : "AI offline. Start scripts/dev_server.py.",
+          !state.aiStatus.available
+        );
+      }
+    } else {
+      setShortFigureStatus("", false);
+    }
+  }
+
+  elements.shortAnswerSources.textContent = question.sources?.length
+    ? `Kilder: ${question.sources.join(" ")}`
+    : "";
+}
+
+function updateSketchPanel(question) {
+  if (!elements.sketchPanel) return;
+  if (!question || !requiresSketch(question)) {
+    elements.sketchPanel.classList.add("hidden");
+    return;
+  }
+  elements.sketchPanel.classList.remove("hidden");
+  if (elements.sketchAnalyzeBtn) {
+    elements.sketchAnalyzeBtn.disabled = !state.aiStatus.available;
+  }
+  if (elements.sketchStatus && !state.aiStatus.available) {
+    elements.sketchStatus.textContent = state.aiStatus.message || "AI offline";
+  }
+  const analysis = state.sketchAnalysis.get(question.key);
+  if (analysis && elements.sketchFeedback) {
+    elements.sketchFeedback.textContent = formatSketchFeedback(analysis);
+  }
+  const upload = state.sketchUploads.get(question.key);
+  if (upload && elements.sketchStatus) {
+    elements.sketchStatus.textContent = upload.label || "Skitse valgt";
+  }
+  if (upload && elements.sketchPreview) {
+    elements.sketchPreview.src = upload.dataUrl;
+    elements.sketchPreview.classList.remove("hidden");
+  }
+}
+
 function resetShortAnswerUI() {
   if (!elements.shortAnswerContainer) return;
   elements.shortAnswerInput.value = "";
@@ -670,7 +985,27 @@ function resetShortAnswerUI() {
   }
   elements.shortAnswerHint.textContent = "";
   elements.shortAnswerModel.classList.add("hidden");
-  elements.shortAnswerModel.querySelector("p").textContent = "";
+  if (elements.shortModelTitle) {
+    elements.shortModelTitle.textContent = "Modelbesvarelse";
+  }
+  if (elements.shortModelText) {
+    elements.shortModelText.textContent = "";
+  } else {
+    elements.shortAnswerModel.querySelector("p").textContent = "";
+  }
+  if (elements.shortModelTag) {
+    elements.shortModelTag.classList.add("hidden");
+  }
+  if (elements.shortFigureAnswer) {
+    elements.shortFigureAnswer.classList.add("hidden");
+  }
+  if (elements.shortFigureText) {
+    elements.shortFigureText.textContent = "";
+  }
+  if (elements.shortFigureStatus) {
+    elements.shortFigureStatus.textContent = "";
+    elements.shortFigureStatus.classList.remove("warn");
+  }
   elements.shortAnswerSources.textContent = "";
   if (elements.shortAnswerShowAnswer) {
     elements.shortAnswerShowAnswer.textContent = "Vis facit";
@@ -679,6 +1014,67 @@ function resetShortAnswerUI() {
     elements.shortSketchHint.classList.add("hidden");
     elements.shortSketchHint.textContent = "";
   }
+  if (elements.sketchPanel) {
+    elements.sketchPanel.classList.add("hidden");
+  }
+  if (elements.sketchPanelBody) {
+    elements.sketchPanelBody.classList.add("hidden");
+  }
+  if (elements.sketchToggleBtn) {
+    elements.sketchToggleBtn.textContent = "Vis";
+  }
+  if (elements.sketchUpload) {
+    elements.sketchUpload.value = "";
+  }
+  if (elements.sketchStatus) {
+    elements.sketchStatus.textContent = "";
+  }
+  if (elements.sketchFeedback) {
+    elements.sketchFeedback.textContent = "";
+  }
+  if (elements.sketchPreview) {
+    elements.sketchPreview.src = "";
+    elements.sketchPreview.classList.add("hidden");
+  }
+}
+
+function getDisplayLabels(count) {
+  const labels = [];
+  for (let i = 0; i < count; i += 1) {
+    if (i < 26) {
+      labels.push(String.fromCharCode(65 + i));
+    } else {
+      const suffix = Math.floor(i / 26);
+      const letter = String.fromCharCode(65 + (i % 26));
+      labels.push(`${letter}${suffix}`);
+    }
+  }
+  return labels;
+}
+
+function getOptionMapping(question) {
+  if (!question?.options) {
+    return { options: [], correctLabel: "" };
+  }
+  const key = question.key || getQuestionKey(question);
+  if (!state.optionOrder.has(key)) {
+    const shouldShuffle =
+      state.sessionSettings?.shuffleOptions ?? state.settings.shuffleOptions;
+    const baseOptions = shouldShuffle ? shuffle(question.options) : question.options;
+    const labels = getDisplayLabels(baseOptions.length);
+    const displayOptions = baseOptions.map((option, index) => ({
+      label: labels[index],
+      text: option.text,
+      originalLabel: option.label,
+    }));
+    const correctIndex = baseOptions.findIndex(
+      (option) =>
+        String(option.label || "").toUpperCase() === String(question.correctLabel || "").toUpperCase()
+    );
+    const correctLabel = labels[correctIndex] || labels[0] || "";
+    state.optionOrder.set(key, { options: displayOptions, correctLabel });
+  }
+  return state.optionOrder.get(key);
 }
 
 function renderMcqQuestion(question) {
@@ -688,11 +1084,13 @@ function renderMcqQuestion(question) {
   elements.nextBtn.disabled = true;
   elements.questionText.textContent = question.text;
 
-  const options = state.sessionSettings.shuffleOptions ? shuffle(question.options) : question.options;
+  const mapping = getOptionMapping(question);
+  const options = mapping.options || [];
   options.forEach((option) => {
     const btn = document.createElement("button");
     btn.className = "option-btn";
     btn.dataset.label = option.label;
+    btn.dataset.text = option.text;
     btn.innerHTML = `<span class="label">${option.label}</span>${option.text}`;
     btn.addEventListener("click", () => handleMcqAnswer(option.label));
     elements.optionsContainer.appendChild(btn);
@@ -748,11 +1146,8 @@ function renderShortQuestion(question) {
   }
 
   elements.shortAnswerModel.classList.add("hidden");
-  const modelAnswer = question.answer && question.answer.trim() ? question.answer : "Ingen facit tilgængelig.";
-  elements.shortAnswerModel.querySelector("p").textContent = modelAnswer;
-  elements.shortAnswerSources.textContent = question.sources?.length
-    ? `Kilder: ${question.sources.join(" ")}`
-    : "";
+  updateShortAnswerModel(question);
+  updateSketchPanel(question);
 
   if (elements.shortAnswerAiButton) {
     elements.shortAnswerAiButton.disabled = !state.aiStatus.available;
@@ -761,6 +1156,7 @@ function renderShortQuestion(question) {
 
 function renderQuestion() {
   clearAutoAdvance();
+  stopTts();
   state.locked = false;
   elements.skipBtn.disabled = false;
   setFeedback("");
@@ -782,6 +1178,7 @@ function renderQuestion() {
     elements.questionIntro.classList.toggle("hidden", !currentQuestion.opgaveIntro);
   }
   updateQuestionFigure(currentQuestion);
+  queueFigureCaptionsForQuestions(currentQuestion);
 
   if (currentQuestion.type === "short") {
     renderShortQuestion(currentQuestion);
@@ -791,6 +1188,294 @@ function renderQuestion() {
 
   updateFlagButton();
   updateTopBar();
+  state.questionStartedAt = Date.now();
+  maybeAutoReadQuestion();
+  scheduleTtsPrefetch();
+}
+
+function enqueueFigureCaption(imagePath) {
+  if (!imagePath) return;
+  if (getFigureCaptionForImage(imagePath)) return;
+  if (state.figureCaptionRequests.has(imagePath)) return;
+  if (state.figureCaptionQueued.has(imagePath)) return;
+  state.figureCaptionQueue.push(imagePath);
+  state.figureCaptionQueued.add(imagePath);
+}
+
+function queueFigureCaptionsForQuestions(questions) {
+  if (!state.settings.autoFigureCaptions || !state.aiStatus.available) return;
+  const list = Array.isArray(questions) ? questions : [questions];
+  list.forEach((question) => {
+    getQuestionImagePaths(question).forEach((path) => enqueueFigureCaption(path));
+  });
+  scheduleFigureCaptionQueue();
+}
+
+function clearFigureCaptionQueue() {
+  if (state.figureCaptionTimer) {
+    clearTimeout(state.figureCaptionTimer);
+    state.figureCaptionTimer = null;
+  }
+  state.figureCaptionQueue = [];
+  state.figureCaptionQueued.clear();
+}
+
+function scheduleFigureCaptionQueue(delay = FIGURE_CAPTION_QUEUE_DELAY) {
+  if (state.figureCaptionTimer || state.figureCaptionProcessing) return;
+  state.figureCaptionTimer = setTimeout(() => {
+    state.figureCaptionTimer = null;
+    processFigureCaptionQueue();
+  }, delay);
+}
+
+async function processFigureCaptionQueue() {
+  if (!state.settings.autoFigureCaptions || !state.aiStatus.available || document.hidden) return;
+  if (state.figureCaptionProcessing) return;
+  const next = state.figureCaptionQueue.shift();
+  if (!next) return;
+  state.figureCaptionQueued.delete(next);
+  state.figureCaptionProcessing = true;
+  await fetchFigureCaptionByPath(next, { silent: true });
+  state.figureCaptionProcessing = false;
+  if (state.figureCaptionQueue.length) {
+    scheduleFigureCaptionQueue();
+  }
+}
+
+async function fetchFigureCaptionByPath(imagePath, { force = false, silent = false } = {}) {
+  if (!imagePath) return "";
+  const existing = getFigureCaptionForImage(imagePath);
+  if (existing && !force) return existing;
+
+  const inFlight = state.figureCaptionRequests.get(imagePath);
+  if (inFlight) return inFlight;
+
+  if (!state.aiStatus.available) {
+    if (!silent) {
+      setShortFigureStatus(state.aiStatus.message || "AI offline", true);
+    }
+    return "";
+  }
+
+  const promise = (async () => {
+    try {
+      const res = await fetch("/api/vision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          task: "figure",
+          imagePath,
+          language: "da",
+        }),
+      });
+      if (!res.ok) {
+        let detail = `AI response ${res.status}`;
+        try {
+          const data = await res.json();
+          if (data.error) detail = data.error;
+        } catch (error) {
+          detail = `AI response ${res.status}`;
+        }
+        throw new Error(detail);
+      }
+      const data = await res.json();
+      const description = String(data.description || "").trim();
+      if (!description) {
+        return "";
+      }
+      setFigureCaptionForImage(imagePath, description);
+      const current = state.activeQuestions[state.currentIndex];
+      if (current && getQuestionImagePaths(current).includes(imagePath)) {
+        updateShortAnswerModel(current);
+      }
+      return description;
+    } catch (error) {
+      if (!silent) {
+        setShortFigureStatus(
+          `Kunne ikke hente figurbeskrivelse. ${error.message || "Tjek serveren."}`,
+          true
+        );
+      }
+      return "";
+    } finally {
+      if (state.figureCaptionRequests.get(imagePath) === promise) {
+        state.figureCaptionRequests.delete(imagePath);
+      }
+    }
+  })();
+
+  state.figureCaptionRequests.set(imagePath, promise);
+  return promise;
+}
+
+async function fetchFigureCaptionForQuestion(question, { force = false, silent = false } = {}) {
+  if (!question) return "";
+  const images = getQuestionImagePaths(question);
+  if (!images.length) return "";
+  if (!state.aiStatus.available) {
+    if (!silent) {
+      setShortFigureStatus(state.aiStatus.message || "AI offline", true);
+    }
+    return "";
+  }
+
+  if (!silent) {
+    setShortFigureStatus("Genererer figurbeskrivelse …");
+  }
+  let gotAny = false;
+  for (const imagePath of images) {
+    const description = await fetchFigureCaptionByPath(imagePath, { force, silent: true });
+    if (description) gotAny = true;
+  }
+  if (!silent) {
+    setShortFigureStatus(
+      gotAny ? "AI-beskrivelse klar." : "Kunne ikke aflæse figuren.",
+      !gotAny
+    );
+  }
+  return getCombinedFigureCaption(question);
+}
+
+function formatSketchFeedback(result) {
+  const lines = [];
+  if (result.description) {
+    lines.push(`Beskrivelse: ${result.description}`);
+  }
+  if (Array.isArray(result.matched) && result.matched.length) {
+    lines.push(`Matcher: ${result.matched.join(", ")}`);
+  }
+  if (Array.isArray(result.missing) && result.missing.length) {
+    lines.push(`Mangler: ${result.missing.join(", ")}`);
+  }
+  if (typeof result.match === "number" && Number.isFinite(result.match)) {
+    lines.push(`Match: ${(result.match * 100).toFixed(0)}%`);
+  }
+  if (result.feedback) {
+    lines.push(`Vurdering: ${result.feedback}`);
+  }
+  return lines.join("\n");
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Kunne ikke læse filen."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleSketchUpload(file) {
+  const question = state.activeQuestions[state.currentIndex];
+  if (!question || question.type !== "short") return;
+  if (!file) return;
+  if (file.size > SKETCH_MAX_BYTES) {
+    if (elements.sketchStatus) {
+      elements.sketchStatus.textContent = "Filen er for stor. Vælg en mindre fil.";
+    }
+    return;
+  }
+  try {
+    const dataUrl = await readFileAsDataUrl(file);
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    const label = `${file.name} · ${sizeMb} MB`;
+    state.sketchUploads.set(question.key, { dataUrl, label });
+    state.sketchAnalysis.delete(question.key);
+    if (elements.sketchStatus) {
+      elements.sketchStatus.textContent = `Valgt: ${label}`;
+    }
+    if (elements.sketchFeedback) {
+      elements.sketchFeedback.textContent = "";
+    }
+    if (elements.sketchPreview) {
+      elements.sketchPreview.src = dataUrl;
+      elements.sketchPreview.classList.remove("hidden");
+    }
+  } catch (error) {
+    if (elements.sketchStatus) {
+      elements.sketchStatus.textContent = error.message || "Kunne ikke læse filen.";
+    }
+  }
+}
+
+async function analyzeSketch() {
+  const question = state.activeQuestions[state.currentIndex];
+  if (!question || question.type !== "short") return;
+  if (!state.aiStatus.available) {
+    if (elements.sketchStatus) {
+      elements.sketchStatus.textContent = state.aiStatus.message || "AI offline";
+    }
+    return;
+  }
+  const upload = state.sketchUploads.get(question.key);
+  if (!upload) {
+    if (elements.sketchStatus) {
+      elements.sketchStatus.textContent = "Vælg en skitse først.";
+    }
+    return;
+  }
+  if (elements.sketchAnalyzeBtn) {
+    elements.sketchAnalyzeBtn.disabled = true;
+  }
+  if (elements.sketchStatus) {
+    elements.sketchStatus.textContent = "Analyserer skitse …";
+  }
+
+  let modelAnswer = buildSketchModelAnswer(question);
+  if (getQuestionImagePaths(question).length && !getCombinedFigureCaption(question)) {
+    const generated = await fetchFigureCaptionForQuestion(question, { silent: true });
+    if (generated) {
+      modelAnswer = buildSketchModelAnswer(question);
+    }
+  }
+
+  try {
+    const res = await fetch("/api/vision", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        task: "sketch",
+        imageData: upload.dataUrl,
+        question: question.text,
+        modelAnswer,
+        language: "da",
+      }),
+    });
+    if (!res.ok) {
+      let detail = `AI response ${res.status}`;
+      try {
+        const data = await res.json();
+        if (data.error) detail = data.error;
+      } catch (error) {
+        detail = `AI response ${res.status}`;
+      }
+      throw new Error(detail);
+    }
+    const data = await res.json();
+    const result = {
+      description: String(data.description || "").trim(),
+      match: Number(data.match || 0),
+      matched: Array.isArray(data.matched) ? data.matched : [],
+      missing: Array.isArray(data.missing) ? data.missing : [],
+      feedback: String(data.feedback || "").trim(),
+    };
+    state.sketchAnalysis.set(question.key, result);
+    if (elements.sketchFeedback) {
+      elements.sketchFeedback.textContent = formatSketchFeedback(result);
+    }
+    if (elements.sketchStatus) {
+      elements.sketchStatus.textContent = "AI-vurdering klar.";
+    }
+  } catch (error) {
+    if (elements.sketchStatus) {
+      elements.sketchStatus.textContent =
+        `Kunne ikke analysere skitsen. ${error.message || "Tjek serveren."}`;
+    }
+  } finally {
+    if (elements.sketchAnalyzeBtn) {
+      elements.sketchAnalyzeBtn.disabled = !state.aiStatus.available;
+    }
+  }
 }
 
 function lockOptions() {
@@ -812,9 +1497,12 @@ function highlightOptions(selectedLabel, correctLabel) {
 
 function handleMcqAnswer(label) {
   if (state.locked) return;
+  stopTts();
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "mcq") return;
-  const isCorrect = question.correctLabel === label;
+  const mapping = getOptionMapping(question);
+  const correctLabel = mapping?.correctLabel || "";
+  const isCorrect = correctLabel === label;
   const delta = isCorrect ? 3 : -1;
   state.score += delta;
   state.scoreBreakdown.mcq += delta;
@@ -826,13 +1514,14 @@ function handleMcqAnswer(label) {
     skipped: false,
     delta,
   });
+  recordPerformance(question, isCorrect ? 1 : 0, getQuestionTimeMs());
 
   state.locked = true;
   setFeedback(
-    isCorrect ? "Korrekt! +3 point" : `Forkert. Rigtigt svar: ${question.correctLabel} (-1)`,
+    isCorrect ? "Korrekt! +3 point" : `Forkert. Rigtigt svar: ${correctLabel} (-1)`,
     isCorrect ? "success" : "error"
   );
-  highlightOptions(label, question.correctLabel);
+  highlightOptions(label, correctLabel);
   lockOptions();
   elements.nextBtn.disabled = false;
   elements.skipBtn.disabled = true;
@@ -842,6 +1531,7 @@ function handleMcqAnswer(label) {
 
 function skipQuestion() {
   if (state.locked) return;
+  stopTts();
   const question = state.activeQuestions[state.currentIndex];
   if (!question) return;
   if (question.type === "short") {
@@ -854,6 +1544,7 @@ function skipQuestion() {
       skipped: true,
       ai: state.shortAnswerAI.get(question.key) || null,
     });
+    recordPerformance(question, 0, getQuestionTimeMs());
     setFeedback("Sprunget over – 0 point.");
     state.locked = true;
     elements.nextBtn.disabled = false;
@@ -869,6 +1560,7 @@ function skipQuestion() {
     skipped: true,
     delta: 0,
   });
+  recordPerformance(question, 0, getQuestionTimeMs());
   setFeedback("Sprunget over – ingen point ændret.");
   state.locked = true;
   elements.nextBtn.disabled = false;
@@ -886,6 +1578,45 @@ function clampInt(value, min, max, fallback) {
   const numeric = Math.round(Number(value));
   if (!Number.isFinite(numeric)) return fallback;
   return Math.min(Math.max(numeric, min), max);
+}
+
+function getQuestionTimeMs() {
+  const startedAt = state.questionStartedAt;
+  state.questionStartedAt = null;
+  if (!startedAt) return 0;
+  return Math.max(0, Date.now() - startedAt);
+}
+
+function recordPerformance(question, score, timeMs) {
+  if (!question?.key) return;
+  const key = question.key;
+  const entry = state.performance[key] || {
+    seen: 0,
+    totalScore: 0,
+    totalTimeMs: 0,
+    lastSeen: 0,
+  };
+  const normalizedScore = clamp(Number(score) || 0, 0, 1);
+  entry.seen += 1;
+  entry.totalScore += normalizedScore;
+  entry.totalTimeMs += Math.max(0, Number(timeMs) || 0);
+  entry.lastSeen = Date.now();
+  state.performance[key] = entry;
+  savePerformance();
+}
+
+function getQuestionWeight(question) {
+  if (!question?.key) return 1;
+  const stats = state.performance[question.key];
+  if (!stats || !stats.seen) return 1.15;
+  const avgScore = stats.totalScore / stats.seen;
+  const errorBoost = 1 + (1 - avgScore) * 2;
+  const avgTimeMs = stats.totalTimeMs / stats.seen;
+  const timeBoost = 1 + Math.min(avgTimeMs / 45000, 0.7);
+  const ageDays = stats.lastSeen ? (Date.now() - stats.lastSeen) / 86400000 : 7;
+  const recencyBoost = 1 + Math.min(ageDays / 7, 0.6);
+  const weight = errorBoost * timeBoost * recencyBoost;
+  return Number.isFinite(weight) && weight > 0 ? weight : 1;
 }
 
 function getRatioValues(settings) {
@@ -942,6 +1673,534 @@ function setAiStatus(status) {
     elements.shortAnswerAiStatus.textContent = label;
     elements.shortAnswerAiStatus.classList.toggle("warn", !status.available);
   }
+
+  const current = state.activeQuestions[state.currentIndex];
+  if (current && current.type === "short") {
+    updateShortAnswerModel(current);
+    updateSketchPanel(current);
+  }
+  if (status.available && state.settings.autoFigureCaptions) {
+    queueFigureCaptionsForQuestions(state.activeQuestions);
+  }
+}
+
+function getTtsBaseLabel() {
+  if (!state.ttsStatus.available) {
+    return state.ttsStatus.message || "Oplæsning offline";
+  }
+  return `Oplæsning klar${state.ttsStatus.model ? ` (${state.ttsStatus.model})` : ""}`;
+}
+
+function updateTtsLabel(message, isWarn = false) {
+  if (!elements.ttsStatus) return;
+  elements.ttsStatus.textContent = message;
+  elements.ttsStatus.classList.toggle("warn", isWarn);
+}
+
+function updateTtsControls() {
+  const enabled = Boolean(state.settings.ttsEnabled);
+  const available = enabled && state.ttsStatus.available;
+  const isLoading = state.ttsPlayer.isLoading;
+  const isPlaying = state.ttsPlayer.isPlaying;
+  if (elements.ttsToolbar) {
+    if (isLoading) {
+      elements.ttsToolbar.dataset.state = "loading";
+    } else if (isPlaying) {
+      elements.ttsToolbar.dataset.state = "playing";
+    } else {
+      elements.ttsToolbar.dataset.state = "";
+    }
+  }
+  if (elements.ttsPlayBtn) {
+    elements.ttsPlayBtn.disabled = !available || isLoading;
+  }
+  if (elements.ttsStopBtn) {
+    elements.ttsStopBtn.disabled = !isPlaying && !isLoading;
+  }
+  if (elements.ttsPreviewBtn) {
+    elements.ttsPreviewBtn.disabled = !available || isLoading;
+  }
+  if (elements.ttsAutoToggle) {
+    elements.ttsAutoToggle.disabled = !available;
+  }
+  if (elements.ttsOptionsToggle) {
+    elements.ttsOptionsToggle.disabled = !available;
+  }
+  if (elements.ttsVoiceSelect) {
+    elements.ttsVoiceSelect.disabled = !available;
+  }
+  if (elements.ttsSpeedRange) {
+    elements.ttsSpeedRange.disabled = !available;
+  }
+}
+
+function applyTtsVisibility() {
+  const enabled = Boolean(state.settings.ttsEnabled);
+  if (elements.ttsToolbar) {
+    elements.ttsToolbar.classList.toggle("hidden", !enabled);
+  }
+  if (!enabled) {
+    stopTts();
+    clearTtsPrefetch();
+  }
+  updateTtsControls();
+  applyTtsCollapsedState();
+}
+
+function applyTtsCollapsedState() {
+  const collapsed = Boolean(state.settings.ttsCollapsed);
+  if (elements.ttsToolbar) {
+    elements.ttsToolbar.dataset.collapsed = collapsed ? "true" : "false";
+  }
+  if (elements.ttsCollapseBtn) {
+    elements.ttsCollapseBtn.textContent = collapsed ? "Vis" : "Skjul";
+    elements.ttsCollapseBtn.setAttribute("aria-expanded", String(!collapsed));
+  }
+  if (elements.ttsBody) {
+    elements.ttsBody.setAttribute("aria-hidden", String(collapsed));
+  }
+}
+
+function setTtsStatus(status) {
+  state.ttsStatus = {
+    available: status.available,
+    model: status.model || null,
+    message: status.message || "",
+  };
+
+  if (!state.ttsStatus.available) {
+    stopTts();
+    clearTtsPrefetch();
+    return;
+  }
+
+  updateTtsControls();
+  updateTtsLabel(getTtsBaseLabel(), false);
+}
+
+function normalizeTtsVoice(value) {
+  const match = TTS_VOICES.find((voice) => voice.value === value);
+  return match ? match.value : TTS_VOICES[0].value;
+}
+
+function updateTtsSpeedLabel(value = state.settings.ttsSpeed) {
+  if (!elements.ttsSpeedLabel) return;
+  const speed = Number(value) || 1;
+  const formatted = speed.toFixed(2).replace(/\.?0+$/, "");
+  elements.ttsSpeedLabel.textContent = `${formatted}x`;
+}
+
+function sanitizeTtsText(text) {
+  return String(text || "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function getOptionLinesForQuestion(question) {
+  if (!question || question.type !== "mcq" || !question.options) return [];
+  const mapping = getOptionMapping(question);
+  const options = mapping.options || [];
+  return options
+    .map((option) => {
+      const optionText = String(option.text || "").trim();
+      if (!optionText) return "";
+      return optionText;
+    })
+    .filter(Boolean);
+}
+
+function buildTtsText(question) {
+  if (!question) return "";
+  const parts = [];
+  if (question.opgaveIntro) {
+    parts.push(`Opgaveintro: ${question.opgaveIntro}`);
+  }
+  if (question.text) {
+    parts.push(question.text);
+  }
+  if (question.images?.length) {
+    parts.push("Der er en figur til dette spørgsmål.");
+  }
+  if (question.type === "short") {
+    parts.push("Skriv dit svar i tekstfeltet.");
+  } else if (state.settings.ttsIncludeOptions) {
+    const optionLines = getOptionLinesForQuestion(question);
+    if (optionLines.length) {
+      parts.push("");
+      optionLines.forEach((line) => parts.push(line));
+    }
+  }
+  return sanitizeTtsText(parts.join("\n"));
+}
+
+function clearTtsPrefetch() {
+  const prefetch = state.ttsPrefetch;
+  if (prefetch.abortController) {
+    prefetch.abortController.abort();
+  }
+  if (prefetch.timer) {
+    clearTimeout(prefetch.timer);
+  }
+  prefetch.requestId += 1;
+  prefetch.key = null;
+  prefetch.text = "";
+  prefetch.voice = null;
+  prefetch.speed = null;
+  prefetch.includeOptions = null;
+  prefetch.blob = null;
+  prefetch.promise = null;
+  prefetch.abortController = null;
+  prefetch.timer = null;
+  prefetch.defer = false;
+}
+
+function consumeTtsPrefetch(questionKey) {
+  const prefetch = state.ttsPrefetch;
+  if (!questionKey || prefetch.key !== questionKey) return;
+  const shouldReschedule = prefetch.defer;
+  prefetch.key = null;
+  prefetch.text = "";
+  prefetch.voice = null;
+  prefetch.speed = null;
+  prefetch.includeOptions = null;
+  prefetch.blob = null;
+  prefetch.promise = null;
+  prefetch.abortController = null;
+  prefetch.defer = false;
+  if (shouldReschedule) {
+    scheduleTtsPrefetch();
+  }
+}
+
+function shouldDeferTtsPrefetch() {
+  const currentQuestion = state.activeQuestions[state.currentIndex];
+  if (!currentQuestion) return false;
+  const prefetch = state.ttsPrefetch;
+  if (prefetch.key !== currentQuestion.key) return false;
+  return Boolean(prefetch.promise || prefetch.blob);
+}
+
+function scheduleTtsPrefetch() {
+  if (!state.settings.ttsEnabled || !state.settings.ttsAuto || !state.ttsStatus.available || document.hidden) {
+    clearTtsPrefetch();
+    return;
+  }
+  const prefetch = state.ttsPrefetch;
+  if (prefetch.timer) {
+    clearTimeout(prefetch.timer);
+  }
+  prefetch.timer = setTimeout(() => {
+    prefetch.timer = null;
+    if (shouldDeferTtsPrefetch()) {
+      prefetch.defer = true;
+      return;
+    }
+    prefetchNextQuestionTts();
+  }, 350);
+}
+
+function isPrefetchMatch(question, text, voice, speed, includeOptions) {
+  const prefetch = state.ttsPrefetch;
+  return (
+    prefetch.key === question.key &&
+    prefetch.voice === voice &&
+    prefetch.speed === speed &&
+    prefetch.includeOptions === includeOptions &&
+    prefetch.text === text
+  );
+}
+
+function prefetchNextQuestionTts() {
+  if (!state.settings.ttsEnabled || !state.settings.ttsAuto || !state.ttsStatus.available || document.hidden) {
+    clearTtsPrefetch();
+    return;
+  }
+  const nextIndex = state.currentIndex + 1;
+  if (nextIndex >= state.activeQuestions.length) {
+    clearTtsPrefetch();
+    return;
+  }
+  const question = state.activeQuestions[nextIndex];
+  if (!question) {
+    clearTtsPrefetch();
+    return;
+  }
+  const text = buildTtsText(question);
+  if (!text || text.length > TTS_MAX_CHARS) {
+    clearTtsPrefetch();
+    return;
+  }
+
+  const voice = normalizeTtsVoice(state.settings.ttsVoice);
+  const speed = Math.min(
+    Math.max(Number(state.settings.ttsSpeed) || 1, TTS_SPEED_MIN),
+    TTS_SPEED_MAX
+  );
+  const includeOptions = state.settings.ttsIncludeOptions;
+
+  const prefetch = state.ttsPrefetch;
+  if (isPrefetchMatch(question, text, voice, speed, includeOptions)) {
+    if (prefetch.blob || prefetch.promise) return;
+  }
+
+  clearTtsPrefetch();
+
+  const controller = new AbortController();
+  const requestId = prefetch.requestId + 1;
+  prefetch.requestId = requestId;
+  prefetch.key = question.key;
+  prefetch.text = text;
+  prefetch.voice = voice;
+  prefetch.speed = speed;
+  prefetch.includeOptions = includeOptions;
+  prefetch.abortController = controller;
+
+  const promise = fetch("/api/tts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, voice, speed }),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        let detail = `TTS response ${res.status}`;
+        try {
+          const data = await res.json();
+          if (data.error) detail = data.error;
+        } catch (error) {
+          detail = `TTS response ${res.status}`;
+        }
+        throw new Error(detail);
+      }
+      return res.blob();
+    })
+    .then((blob) => {
+      if (state.ttsPrefetch.requestId !== requestId) return null;
+      state.ttsPrefetch.blob = blob;
+      state.ttsPrefetch.abortController = null;
+      state.ttsPrefetch.promise = null;
+      return blob;
+    })
+    .catch((error) => {
+      if (error.name === "AbortError") return null;
+      if (state.ttsPrefetch.requestId === requestId) {
+        state.ttsPrefetch.abortController = null;
+        state.ttsPrefetch.promise = null;
+        state.ttsPrefetch.blob = null;
+        state.ttsPrefetch.key = null;
+        state.ttsPrefetch.text = "";
+      }
+      return null;
+    });
+
+  prefetch.promise = promise;
+}
+
+function stopTts(message, isWarn = false) {
+  if (state.ttsPlayer.abortController) {
+    state.ttsPlayer.abortController.abort();
+    state.ttsPlayer.abortController = null;
+  }
+  if (state.ttsPlayer.autoTimer) {
+    clearTimeout(state.ttsPlayer.autoTimer);
+    state.ttsPlayer.autoTimer = null;
+  }
+  if (state.ttsPlayer.audio) {
+    state.ttsPlayer.audio.pause();
+    state.ttsPlayer.audio.src = "";
+  }
+  if (state.ttsPlayer.objectUrl) {
+    URL.revokeObjectURL(state.ttsPlayer.objectUrl);
+  }
+  state.ttsPlayer.audio = null;
+  state.ttsPlayer.objectUrl = null;
+  state.ttsPlayer.isPlaying = false;
+  state.ttsPlayer.isLoading = false;
+  updateTtsControls();
+  if (message) {
+    updateTtsLabel(message, isWarn);
+  } else {
+    updateTtsLabel(getTtsBaseLabel(), !state.ttsStatus.available);
+  }
+}
+
+async function playTtsBlob(audioBlob, { source = "manual" } = {}) {
+  if (!audioBlob || !audioBlob.size) {
+    stopTts("Ingen lyd at afspille.", true);
+    return;
+  }
+  stopTts();
+  const url = URL.createObjectURL(audioBlob);
+  const audio = new Audio(url);
+  state.ttsPlayer.audio = audio;
+  state.ttsPlayer.objectUrl = url;
+  state.ttsPlayer.isLoading = false;
+  state.ttsPlayer.isPlaying = true;
+  updateTtsControls();
+  updateTtsLabel("Afspiller oplæsning …");
+
+  audio.addEventListener("ended", () => {
+    stopTts();
+  });
+  audio.addEventListener("error", () => {
+    stopTts("Kunne ikke afspille lyd.", true);
+  });
+
+  try {
+    await audio.play();
+  } catch (error) {
+    const isAuto = source === "auto";
+    stopTts(
+      isAuto
+        ? "Browseren blokerer auto-oplæsning. Klik \"Læs op\" for at starte."
+        : "Browseren blokerer lyd. Klik \"Læs op\" igen.",
+      true
+    );
+  }
+}
+
+async function playTtsText(text, { source = "manual" } = {}) {
+  if (!state.settings.ttsEnabled) return;
+  const cleanText = sanitizeTtsText(text);
+  if (!cleanText) {
+    stopTts("Ingen tekst at læse op.", true);
+    return;
+  }
+  if (!state.ttsStatus.available) {
+    stopTts(getTtsBaseLabel(), true);
+    return;
+  }
+  if (cleanText.length > TTS_MAX_CHARS) {
+    stopTts("Teksten er for lang til oplæsning. Slå evt. svarmuligheder fra.", true);
+    return;
+  }
+
+  stopTts();
+  const controller = new AbortController();
+  state.ttsPlayer.abortController = controller;
+  state.ttsPlayer.isLoading = true;
+  updateTtsControls();
+  updateTtsLabel("Henter oplæsning …");
+
+  const voice = normalizeTtsVoice(state.settings.ttsVoice);
+  const speed = Math.min(
+    Math.max(Number(state.settings.ttsSpeed) || 1, TTS_SPEED_MIN),
+    TTS_SPEED_MAX
+  );
+
+  try {
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: cleanText, voice, speed }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      let detail = `TTS response ${res.status}`;
+      try {
+        const data = await res.json();
+        if (data.error) detail = data.error;
+      } catch (error) {
+        detail = `TTS response ${res.status}`;
+      }
+      throw new Error(detail);
+    }
+    const audioBlob = await res.blob();
+    state.ttsPlayer.abortController = null;
+    if (!audioBlob || !audioBlob.size) {
+      throw new Error("Tom lydfil");
+    }
+    const url = URL.createObjectURL(audioBlob);
+    const audio = new Audio(url);
+    state.ttsPlayer.audio = audio;
+    state.ttsPlayer.objectUrl = url;
+    state.ttsPlayer.isLoading = false;
+    state.ttsPlayer.isPlaying = true;
+    updateTtsControls();
+    updateTtsLabel("Afspiller oplæsning …");
+
+    audio.addEventListener("ended", () => {
+      stopTts();
+    });
+    audio.addEventListener("error", () => {
+      stopTts("Kunne ikke afspille lyd.", true);
+    });
+
+    try {
+      await audio.play();
+    } catch (error) {
+      const isAuto = source === "auto";
+      stopTts(
+        isAuto
+          ? "Browseren blokerer auto-oplæsning. Klik \"Læs op\" for at starte."
+          : "Browseren blokerer lyd. Klik \"Læs op\" igen.",
+        true
+      );
+    }
+  } catch (error) {
+    if (error.name === "AbortError") return;
+    state.ttsPlayer.abortController = null;
+    stopTts(`Kunne ikke hente oplæsning. ${error.message || "Tjek serveren."}`, true);
+  }
+}
+
+async function getPrefetchedBlob(question, text, voice, speed, includeOptions) {
+  if (!isPrefetchMatch(question, text, voice, speed, includeOptions)) return null;
+  const prefetch = state.ttsPrefetch;
+  if (prefetch.blob) return prefetch.blob;
+  if (!prefetch.promise) return null;
+  try {
+    const blob = await prefetch.promise;
+    if (!blob) return null;
+    if (!isPrefetchMatch(question, text, voice, speed, includeOptions)) return null;
+    return blob;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function playTtsForCurrentQuestion(source = "manual") {
+  if (!state.settings.ttsEnabled) return;
+  const question = state.activeQuestions[state.currentIndex];
+  if (!question) return;
+  const text = buildTtsText(question);
+  const voice = normalizeTtsVoice(state.settings.ttsVoice);
+  const speed = Math.min(
+    Math.max(Number(state.settings.ttsSpeed) || 1, TTS_SPEED_MIN),
+    TTS_SPEED_MAX
+  );
+  const includeOptions = state.settings.ttsIncludeOptions;
+  const prefetched = await getPrefetchedBlob(question, text, voice, speed, includeOptions);
+  if (prefetched) {
+    consumeTtsPrefetch(question.key);
+    await playTtsBlob(prefetched, { source });
+    return;
+  }
+  playTtsText(text, { source });
+}
+
+function toggleTtsPlayback() {
+  if (!state.settings.ttsEnabled) return;
+  if (state.ttsPlayer.isLoading || state.ttsPlayer.isPlaying) {
+    stopTts();
+    return;
+  }
+  playTtsForCurrentQuestion("manual");
+}
+
+function maybeAutoReadQuestion() {
+  if (!state.settings.ttsEnabled) return;
+  if (!state.settings.ttsAuto) return;
+  if (!state.ttsStatus.available) return;
+  if (document.hidden) return;
+  if (state.ttsPlayer.autoTimer) {
+    clearTimeout(state.ttsPlayer.autoTimer);
+  }
+  state.ttsPlayer.autoTimer = setTimeout(() => {
+    state.ttsPlayer.autoTimer = null;
+    playTtsForCurrentQuestion("auto");
+  }, 200);
 }
 
 function getHistoryEntries() {
@@ -1145,6 +2404,7 @@ function syncShortScoreInputs(value) {
 
 function finalizeShortAnswer() {
   if (state.locked) return;
+  stopTts();
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
   const response = elements.shortAnswerInput.value.trim();
@@ -1161,6 +2421,8 @@ function finalizeShortAnswer() {
     skipped: false,
     ai: state.shortAnswerAI.get(question.key) || null,
   });
+  const ratio = maxPoints > 0 ? awardedPoints / maxPoints : 0;
+  recordPerformance(question, ratio, getQuestionTimeMs());
   state.locked = true;
   elements.skipBtn.disabled = true;
   setFeedback(`Svar gemt: ${awardedPoints.toFixed(1)} / ${maxPoints.toFixed(1)} point.`, "success");
@@ -1188,13 +2450,21 @@ async function gradeShortAnswer() {
   elements.shortAnswerAiButton.disabled = true;
   elements.shortAnswerAiFeedback.textContent = "AI vurderer dit svar …";
 
+  let modelAnswer = getEffectiveModelAnswer(question);
+  if (shouldUseFigureCaption(question) && !getCombinedFigureCaption(question)) {
+    const generated = await fetchFigureCaptionForQuestion(question, { silent: true });
+    if (generated) {
+      modelAnswer = getEffectiveModelAnswer(question);
+    }
+  }
+
   try {
     const res = await fetch("/api/grade", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         prompt: question.text,
-        modelAnswer: question.answer,
+        modelAnswer,
         userAnswer,
         maxPoints: question.maxPoints || 0,
         sources: question.sources || [],
@@ -1302,11 +2572,12 @@ function toggleFlag() {
 
 function buildExplainPayload(entry) {
   if (entry.type === "mcq") {
+    const mapping = getOptionMapping(entry.question);
     return {
       type: "mcq",
       question: entry.question.text,
-      options: entry.question.options || [],
-      correctLabel: entry.question.correctLabel,
+      options: mapping.options || [],
+      correctLabel: mapping.correctLabel || entry.question.correctLabel,
       userLabel: entry.selected,
       language: "da",
     };
@@ -1314,7 +2585,7 @@ function buildExplainPayload(entry) {
   return {
     type: "short",
     question: entry.question.text,
-    modelAnswer: entry.question.answer,
+    modelAnswer: getEffectiveModelAnswer(entry.question),
     userAnswer: entry.response,
     maxPoints: entry.maxPoints,
     awardedPoints: entry.awardedPoints,
@@ -1471,11 +2742,13 @@ function buildReviewList(results) {
         lines.push(aiLine);
       }
     } else {
+      const mapping = getOptionMapping(entry.question);
+      const displayOptions = mapping.options || [];
       const selectedOption = entry.selected
-        ? entry.question.options.find((option) => option.label === entry.selected)
+        ? displayOptions.find((option) => option.label === entry.selected)
         : null;
-      const correctOption = entry.question.options.find(
-        (option) => option.label === entry.question.correctLabel
+      const correctOption = displayOptions.find(
+        (option) => option.label === mapping.correctLabel
       );
 
       const selectedLine = document.createElement("div");
@@ -1493,7 +2766,7 @@ function buildReviewList(results) {
 
       const correctLine = document.createElement("div");
       correctLine.className = "answer-line correct";
-      correctLine.textContent = `Korrekt svar: ${entry.question.correctLabel}. ${
+      correctLine.textContent = `Korrekt svar: ${mapping.correctLabel || "-"}. ${
         correctOption?.text || ""
       }`;
       lines.push(selectedLine, correctLine);
@@ -1554,6 +2827,10 @@ function getFeedbackText(percent) {
 }
 
 function showResults() {
+  stopTts();
+  clearTtsPrefetch();
+  clearFigureCaptionQueue();
+  state.questionStartedAt = null;
   state.scoreSummary = calculateScoreSummary();
   const correct = state.results.filter((r) => r.type === "mcq" && r.isCorrect).length;
   const wrong = state.results.filter((r) => r.type === "mcq" && !r.isCorrect && !r.skipped).length;
@@ -1652,6 +2929,35 @@ function sortQuestions(questions) {
   });
 }
 
+function pickWeightedOne(list) {
+  if (!list.length) return null;
+  const weights = list.map((item) => getQuestionWeight(item));
+  const total = weights.reduce((sum, value) => sum + value, 0);
+  if (!Number.isFinite(total) || total <= 0) {
+    const index = Math.floor(Math.random() * list.length);
+    return list.splice(index, 1)[0];
+  }
+  let roll = Math.random() * total;
+  for (let i = 0; i < list.length; i += 1) {
+    roll -= weights[i];
+    if (roll <= 0) {
+      return list.splice(i, 1)[0];
+    }
+  }
+  return list.pop();
+}
+
+function pickWeightedQuestions(pool, count) {
+  const remaining = [...pool];
+  const selected = [];
+  while (selected.length < count && remaining.length) {
+    const picked = pickWeightedOne(remaining);
+    if (!picked) break;
+    selected.push(picked);
+  }
+  return selected;
+}
+
 function pickBalancedQuestions(pool, count) {
   const groups = new Map();
   pool.forEach((question) => {
@@ -1661,8 +2967,9 @@ function pickBalancedQuestions(pool, count) {
     groups.get(question.category).push(question);
   });
 
+  const useAdaptive = state.sessionSettings.adaptiveMix;
   const groupList = shuffle(
-    [...groups.values()].map((group) => shuffle(group))
+    [...groups.values()].map((group) => (useAdaptive ? [...group] : shuffle(group)))
   );
 
   const selected = [];
@@ -1670,7 +2977,10 @@ function pickBalancedQuestions(pool, count) {
     for (let i = 0; i < groupList.length && selected.length < count; i += 1) {
       const group = groupList[i];
       if (group.length) {
-        selected.push(group.pop());
+        const picked = useAdaptive ? pickWeightedOne(group) : group.pop();
+        if (picked) {
+          selected.push(picked);
+        }
       }
     }
     for (let i = groupList.length - 1; i >= 0; i -= 1) {
@@ -1685,6 +2995,13 @@ function pickBalancedQuestions(pool, count) {
 
 function pickFromPool(pool, count) {
   if (count <= 0) return [];
+  if (state.sessionSettings.adaptiveMix && state.sessionSettings.balancedMix) {
+    return pickBalancedQuestions(pool, count);
+  }
+  if (state.sessionSettings.adaptiveMix) {
+    const selection = pickWeightedQuestions(pool, count);
+    return state.sessionSettings.shuffleQuestions ? shuffle(selection) : selection;
+  }
   if (state.sessionSettings.balancedMix) {
     return pickBalancedQuestions(pool, count);
   }
@@ -1848,6 +3165,7 @@ function updateSummary() {
 
   const mixParts = [];
   if (state.settings.balancedMix) mixParts.push("Balanceret");
+  if (state.settings.adaptiveMix) mixParts.push("Adaptiv");
   if (state.settings.shuffleQuestions) mixParts.push("Shuffle");
   if (state.settings.infiniteMode) mixParts.push("Uendelig");
   if (state.settings.includeMcq && state.settings.includeShort) {
@@ -1958,6 +3276,7 @@ function extendInfiniteQuestionSet() {
   state.activeQuestions = state.activeQuestions.concat(batch);
   updateSessionScoreMeta(state.activeQuestions);
   updateSessionPill();
+  queueFigureCaptionsForQuestions(batch);
   return true;
 }
 
@@ -1987,6 +3306,12 @@ function startGame() {
   state.flaggedKeys = new Set();
   state.shortAnswerDrafts = new Map();
   state.shortAnswerAI = new Map();
+  state.optionOrder = new Map();
+  state.sketchUploads = new Map();
+  state.sketchAnalysis = new Map();
+  clearFigureCaptionQueue();
+  clearTtsPrefetch();
+  state.questionStartedAt = null;
   state.startTime = Date.now();
   state.locked = false;
   state.infiniteState = state.sessionSettings.infiniteMode
@@ -1995,6 +3320,8 @@ function startGame() {
 
   updateSessionPill();
   applySessionDisplaySettings();
+  applyTtsVisibility();
+  queueFigureCaptionsForQuestions(state.activeQuestions);
   showScreen("quiz");
   renderQuestion();
 }
@@ -2009,11 +3336,19 @@ function hideRules() {
 
 function goToMenu() {
   clearAutoAdvance();
+  stopTts();
+  clearTtsPrefetch();
+  clearFigureCaptionQueue();
+  state.questionStartedAt = null;
   showScreen("menu");
 }
 
 function goToLanding() {
   clearAutoAdvance();
+  stopTts();
+  clearTtsPrefetch();
+  clearFigureCaptionQueue();
+  state.questionStartedAt = null;
   showScreen("landing");
 }
 
@@ -2130,34 +3465,45 @@ function updateAutoAdvanceLabel() {
 }
 
 async function checkAiAvailability() {
-  if (!elements.shortAnswerAiButton) return;
+  if (!elements.shortAnswerAiButton && !elements.ttsPlayBtn) return;
   try {
     const res = await fetch("/api/health");
     if (!res.ok) {
-      let message = "AI offline. Start scripts/dev_server.py.";
+      let aiMessage = "AI offline. Start scripts/dev_server.py.";
+      let ttsMessage = "Oplæsning offline. Start scripts/dev_server.py.";
       if (res.status === 503) {
         try {
           const data = await res.json();
           if (data.status === "missing_key") {
-            message = "AI mangler OPENAI_API_KEY i .env.";
+            aiMessage = "AI mangler OPENAI_API_KEY i .env.";
+            ttsMessage = "Oplæsning mangler OPENAI_API_KEY i .env.";
           }
         } catch (error) {
-          message = "AI offline. Tjek .env og server.";
+          aiMessage = "AI offline. Tjek .env og server.";
+          ttsMessage = "Oplæsning offline. Tjek .env og server.";
         }
       }
       if (res.status === 404) {
-        message = "AI offline. Kør scripts/dev_server.py i stedet for http.server.";
+        aiMessage = "AI offline. Kør scripts/dev_server.py i stedet for http.server.";
+        ttsMessage = "Oplæsning offline. Kør scripts/dev_server.py i stedet for http.server.";
       }
-      setAiStatus({ available: false, model: null, message });
+      setAiStatus({ available: false, model: null, message: aiMessage });
+      setTtsStatus({ available: false, model: null, message: ttsMessage });
       return;
     }
     const data = await res.json();
     setAiStatus({ available: true, model: data.model || null, message: "" });
+    setTtsStatus({ available: true, model: data.tts_model || null, message: "" });
   } catch (error) {
     setAiStatus({
       available: false,
       model: null,
       message: "AI offline. Tjek server og netværk.",
+    });
+    setTtsStatus({
+      available: false,
+      model: null,
+      message: "Oplæsning offline. Tjek server og netværk.",
     });
   }
 }
@@ -2186,6 +3532,8 @@ function handleKeyDown(event) {
     }
   } else if (key === "k") {
     skipQuestion();
+  } else if (key === "l") {
+    toggleTtsPlayback();
   } else if (key === "f") {
     toggleFlag();
   }
@@ -2213,6 +3561,69 @@ function attachEvents() {
   }
   if (elements.figureToggleBtn) {
     elements.figureToggleBtn.addEventListener("click", toggleFigure);
+  }
+
+  if (elements.ttsPlayBtn) {
+    elements.ttsPlayBtn.addEventListener("click", () => playTtsForCurrentQuestion("manual"));
+  }
+  if (elements.ttsStopBtn) {
+    elements.ttsStopBtn.addEventListener("click", () => stopTts());
+  }
+  if (elements.ttsPreviewBtn) {
+    elements.ttsPreviewBtn.addEventListener("click", () => playTtsText(TTS_SAMPLE_TEXT));
+  }
+  if (elements.ttsCollapseBtn) {
+    elements.ttsCollapseBtn.addEventListener("click", () => {
+      state.settings.ttsCollapsed = !state.settings.ttsCollapsed;
+      saveSettings();
+      applyTtsCollapsedState();
+    });
+  }
+  if (elements.ttsAutoToggle) {
+    elements.ttsAutoToggle.addEventListener("change", (event) => {
+      state.settings.ttsAuto = event.target.checked;
+      saveSettings();
+      if (state.settings.ttsAuto) {
+        maybeAutoReadQuestion();
+        scheduleTtsPrefetch();
+      } else {
+        stopTts();
+        clearTtsPrefetch();
+      }
+    });
+  }
+  if (elements.ttsOptionsToggle) {
+    elements.ttsOptionsToggle.addEventListener("change", (event) => {
+      state.settings.ttsIncludeOptions = event.target.checked;
+      saveSettings();
+      clearTtsPrefetch();
+      scheduleTtsPrefetch();
+    });
+  }
+  if (elements.ttsVoiceSelect) {
+    elements.ttsVoiceSelect.addEventListener("change", (event) => {
+      const nextVoice = normalizeTtsVoice(event.target.value);
+      state.settings.ttsVoice = nextVoice;
+      event.target.value = nextVoice;
+      saveSettings();
+      clearTtsPrefetch();
+      scheduleTtsPrefetch();
+    });
+  }
+  if (elements.ttsSpeedRange) {
+    elements.ttsSpeedRange.addEventListener("input", (event) => {
+      const nextSpeed = Math.min(
+        Math.max(Number(event.target.value) || 1, TTS_SPEED_MIN),
+        TTS_SPEED_MAX
+      );
+      const normalized = Number(nextSpeed.toFixed(2));
+      state.settings.ttsSpeed = normalized;
+      elements.ttsSpeedRange.value = String(normalized);
+      updateTtsSpeedLabel(normalized);
+      saveSettings();
+      clearTtsPrefetch();
+      scheduleTtsPrefetch();
+    });
   }
 
   elements.toggleFocus.addEventListener("click", () => {
@@ -2255,13 +3666,48 @@ function attachEvents() {
     elements.shortAnswerAiButton.addEventListener("click", gradeShortAnswer);
   }
 
+  if (elements.shortFigureGenerateBtn) {
+    elements.shortFigureGenerateBtn.addEventListener("click", () => {
+      const question = state.activeQuestions[state.currentIndex];
+      if (!question || question.type !== "short") return;
+      fetchFigureCaptionForQuestion(question, { force: true });
+    });
+  }
+
   if (elements.shortAnswerShowAnswer) {
-    elements.shortAnswerShowAnswer.addEventListener("click", () => {
+    elements.shortAnswerShowAnswer.addEventListener("click", async () => {
       if (!elements.shortAnswerModel) return;
       elements.shortAnswerModel.classList.toggle("hidden");
       const isHidden = elements.shortAnswerModel.classList.contains("hidden");
       elements.shortAnswerShowAnswer.textContent = isHidden ? "Vis facit" : "Skjul facit";
+      if (!isHidden) {
+        const question = state.activeQuestions[state.currentIndex];
+        if (question && question.type === "short" && shouldUseFigureCaption(question)) {
+          if (!getCombinedFigureCaption(question)) {
+            await fetchFigureCaptionForQuestion(question);
+          }
+        }
+      }
     });
+  }
+
+  if (elements.sketchToggleBtn && elements.sketchPanelBody) {
+    elements.sketchToggleBtn.addEventListener("click", () => {
+      elements.sketchPanelBody.classList.toggle("hidden");
+      const isHidden = elements.sketchPanelBody.classList.contains("hidden");
+      elements.sketchToggleBtn.textContent = isHidden ? "Vis" : "Skjul";
+    });
+  }
+
+  if (elements.sketchUpload) {
+    elements.sketchUpload.addEventListener("change", (event) => {
+      const file = event.target.files && event.target.files[0];
+      handleSketchUpload(file);
+    });
+  }
+
+  if (elements.sketchAnalyzeBtn) {
+    elements.sketchAnalyzeBtn.addEventListener("click", analyzeSketch);
   }
 
   elements.modal.addEventListener("click", (evt) => {
@@ -2299,6 +3745,11 @@ function attachEvents() {
   elements.toggleBalanced.addEventListener("change", (event) => {
     handleSettingToggle("balancedMix", event.target.checked);
   });
+  if (elements.toggleAdaptiveMix) {
+    elements.toggleAdaptiveMix.addEventListener("change", (event) => {
+      handleSettingToggle("adaptiveMix", event.target.checked);
+    });
+  }
   elements.toggleShowMeta.addEventListener("change", (event) => {
     handleSettingToggle("showMeta", event.target.checked);
   });
@@ -2329,6 +3780,27 @@ function attachEvents() {
       handleSettingToggle("includeShort", event.target.checked);
     });
   }
+  if (elements.toggleTts) {
+    elements.toggleTts.addEventListener("change", (event) => {
+      state.settings.ttsEnabled = event.target.checked;
+      saveSettings();
+      applyTtsVisibility();
+      if (state.settings.ttsEnabled) {
+        maybeAutoReadQuestion();
+        scheduleTtsPrefetch();
+      }
+    });
+  }
+  if (elements.toggleAutoFigure) {
+    elements.toggleAutoFigure.addEventListener("change", (event) => {
+      handleSettingToggle("autoFigureCaptions", event.target.checked);
+      if (state.settings.autoFigureCaptions) {
+        queueFigureCaptionsForQuestions(state.activeQuestions);
+      } else {
+        clearFigureCaptionQueue();
+      }
+    });
+  }
 
   elements.selectAllYears.addEventListener("click", () => {
     setSelection("years", state.available.years);
@@ -2349,6 +3821,11 @@ function attachEvents() {
     elements.categorySearch.addEventListener("change", applyCategorySearch);
   }
   document.addEventListener("keydown", handleKeyDown);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      scheduleFigureCaptionQueue();
+    }
+  });
 
   if (elements.themeToggle) {
     elements.themeToggle.addEventListener("change", (event) => {
@@ -2362,6 +3839,9 @@ function syncSettingsToUI() {
   elements.toggleShuffleQuestions.checked = state.settings.shuffleQuestions;
   elements.toggleShuffleOptions.checked = state.settings.shuffleOptions;
   elements.toggleBalanced.checked = state.settings.balancedMix;
+  if (elements.toggleAdaptiveMix) {
+    elements.toggleAdaptiveMix.checked = state.settings.adaptiveMix;
+  }
   elements.toggleShowMeta.checked = state.settings.showMeta;
   elements.toggleAutoAdvance.checked = state.settings.autoAdvance;
   if (elements.toggleInfiniteMode) {
@@ -2376,23 +3856,57 @@ function syncSettingsToUI() {
   if (elements.toggleIncludeShort) {
     elements.toggleIncludeShort.checked = state.settings.includeShort;
   }
+  if (elements.toggleTts) {
+    elements.toggleTts.checked = state.settings.ttsEnabled;
+  }
+  if (elements.toggleAutoFigure) {
+    elements.toggleAutoFigure.checked = state.settings.autoFigureCaptions;
+  }
   if (elements.ratioMcqInput && elements.ratioShortInput) {
     const { mcqRatio, shortRatio } = getRatioValues(state.settings);
     elements.ratioMcqInput.value = String(mcqRatio);
     elements.ratioShortInput.value = String(shortRatio);
   }
+  if (elements.ttsAutoToggle) {
+    elements.ttsAutoToggle.checked = state.settings.ttsAuto;
+  }
+  if (elements.ttsOptionsToggle) {
+    elements.ttsOptionsToggle.checked = state.settings.ttsIncludeOptions;
+  }
+  if (elements.ttsVoiceSelect) {
+    const normalizedVoice = normalizeTtsVoice(state.settings.ttsVoice);
+    state.settings.ttsVoice = normalizedVoice;
+    elements.ttsVoiceSelect.value = normalizedVoice;
+  }
+  if (elements.ttsSpeedRange) {
+    const normalizedSpeed = Math.min(
+      Math.max(Number(state.settings.ttsSpeed) || 1, TTS_SPEED_MIN),
+      TTS_SPEED_MAX
+    );
+    state.settings.ttsSpeed = normalizedSpeed;
+    elements.ttsSpeedRange.min = String(TTS_SPEED_MIN);
+    elements.ttsSpeedRange.max = String(TTS_SPEED_MAX);
+    elements.ttsSpeedRange.step = String(TTS_SPEED_STEP);
+    elements.ttsSpeedRange.value = String(normalizedSpeed);
+    updateTtsSpeedLabel(normalizedSpeed);
+  }
   elements.autoAdvanceDelay.value = state.settings.autoAdvanceDelay;
   updateAutoAdvanceLabel();
   updateRatioControls();
+  applyTtsVisibility();
 }
 
 async function loadQuestions() {
-  const [mcqRes, shortRes] = await Promise.all([
+  const [mcqRes, shortRes, captionsRes] = await Promise.all([
     fetch("data/questions.json"),
     fetch("data/kortsvar.json"),
+    fetch("data/figure_captions.json"),
   ]);
   const mcqData = await mcqRes.json();
   const shortData = shortRes.ok ? await shortRes.json() : [];
+  const captionData = captionsRes.ok ? await captionsRes.json() : {};
+  state.figureCaptionLibrary =
+    captionData && typeof captionData === "object" ? captionData : {};
 
   const mcqQuestions = mcqData
     .map((question) => {
@@ -2447,11 +3961,33 @@ async function loadQuestions() {
     .filter(Boolean);
 
   state.allQuestions = [...mcqQuestions, ...shortQuestions];
+  const availableImages = new Set();
+  state.allQuestions.forEach((question) => {
+    if (Array.isArray(question.images)) {
+      question.images.forEach((path) => availableImages.add(path));
+    }
+  });
+  const filteredCaptions = {};
+  Object.entries(state.figureCaptions).forEach(([path, value]) => {
+    if (availableImages.has(path)) {
+      filteredCaptions[path] = value;
+    }
+  });
+  state.figureCaptions = filteredCaptions;
+  saveFigureCaptions();
   const availableKeys = new Set(state.allQuestions.map((question) => question.key));
   state.seenKeys = new Set([...state.seenKeys].filter((key) => availableKeys.has(key)));
   state.lastMistakeKeys = new Set(
     [...state.lastMistakeKeys].filter((key) => availableKeys.has(key))
   );
+  const filteredPerformance = {};
+  Object.entries(state.performance).forEach(([key, value]) => {
+    if (availableKeys.has(key)) {
+      filteredPerformance[key] = value;
+    }
+  });
+  state.performance = filteredPerformance;
+  savePerformance();
   localStorage.setItem(STORAGE_KEYS.seen, JSON.stringify([...state.seenKeys]));
   localStorage.setItem(STORAGE_KEYS.mistakes, JSON.stringify([...state.lastMistakeKeys]));
   state.counts = buildCounts(state.allQuestions);
@@ -2489,6 +4025,7 @@ async function init() {
   applyTheme(getInitialTheme());
   syncSettingsToUI();
   setAiStatus(state.aiStatus);
+  setTtsStatus(state.ttsStatus);
   try {
     await loadQuestions();
   } catch (err) {
