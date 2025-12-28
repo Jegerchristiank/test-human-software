@@ -103,396 +103,512 @@
                 </p>
               </div>
             </div>
-            <div class="menu-stats">
-              <div class="stat-pill" id="question-count-chip">Indlæser …</div>
-              <div class="stat-pill" id="pool-count-chip">0 i puljen</div>
-              <div class="stat-pill" id="ai-status-pill">AI: Tjekker …</div>
+            <div class="menu-right">
+              <div class="menu-stats">
+                <div class="stat-pill" id="question-count-chip">Indlæser …</div>
+                <div class="stat-pill" id="pool-count-chip">0 i puljen</div>
+                <div class="stat-pill" id="ai-status-pill">Assistent: Tjekker …</div>
+              </div>
+              <div class="menu-actions">
+                <button id="start-btn-top" class="btn primary" type="button">Start spil</button>
+              </div>
             </div>
           </header>
 
           <div class="menu-grid">
-            <section class="panel builder reveal" style="--delay: 0.05s">
-              <div class="panel-header">
-                <h2>Session builder</h2>
-                <p>Skru på længde, tempo og blanding, så runden matcher dit fokus.</p>
-              </div>
-
-              <div class="control-row">
-                <label class="control-label" for="question-count">
-                  Antal spørgsmål
-                  <span
-                    class="info"
-                    data-tooltip="Vælg hvor mange spørgsmål runden skal have. Hvis puljen er mindre, forkortes runden automatisk."
-                    tabindex="0"
-                    aria-label="Info om antal spørgsmål"
-                    >i</span
-                  >
-                </label>
-                <div class="range-control">
-                  <input type="range" id="question-count" min="5" max="40" step="1" value="24" />
-                  <input type="number" id="question-count-input" min="5" max="40" step="1" value="24" />
+            <div class="menu-column">
+              <section class="panel builder reveal" style="--delay: 0.05s">
+                <div class="panel-header">
+                  <h2>Session builder</h2>
+                  <p>Vælg en retning og finjustér længde, mix og flow på ét sted.</p>
                 </div>
-                <div class="control-hint">
-                  Tip: I mixet styrer tallet MCQ-mængden; kortsvar følger ratioen. I uendelig mode er tallet batch-størrelse.
-                </div>
-              </div>
 
-              <div class="control-row">
-                <label class="control-label" for="ratio-mcq">
-                  MCQ / kortsvar ratio
-                  <span
-                    class="info"
-                    data-tooltip="Sæt forholdet mellem MCQ og kortsvar. 4:1 giver ca. 24 MCQ og 6 kortsvar."
-                    tabindex="0"
-                    aria-label="Info om ratio"
-                    >i</span
-                  >
-                </label>
-                <div class="ratio-control">
-                  <input type="number" id="ratio-mcq" min="1" max="12" step="1" value="4" />
-                  <span class="ratio-divider">:</span>
-                  <input type="number" id="ratio-short" min="1" max="12" step="1" value="1" />
-                </div>
-                <div class="control-hint">MCQ-tallet styrer længden; kortsvar følger ratioen.</div>
-              </div>
-
-              <div class="settings-sections">
-                <div class="settings-section">
-                  <div class="settings-header">
-                    <h3>Indhold</h3>
-                    <p>Typer og visning af spørgsmål.</p>
+                <div class="builder-stack">
+                  <div class="builder-section">
+                    <div class="section-title">
+                      <h3>Hvad vil du træne?</h3>
+                      <p>Start med en profil, og justér bagefter efter behov.</p>
+                    </div>
+                    <div class="preset-grid" id="preset-grid">
+                      <button class="preset-card" type="button" data-preset="exam" aria-pressed="false">
+                        <div class="preset-title">Eksamen</div>
+                        <div class="preset-text">Balanceret mix med realistisk tempo.</div>
+                        <div class="preset-meta">24 spg · Standard</div>
+                      </button>
+                      <button class="preset-card" type="button" data-preset="review" aria-pressed="false">
+                        <div class="preset-title">Repetition</div>
+                        <div class="preset-text">Bred dækning med færre gentagelser.</div>
+                        <div class="preset-meta">30 spg · Bredt</div>
+                      </button>
+                      <button class="preset-card" type="button" data-preset="weak" aria-pressed="false">
+                        <div class="preset-title">Svage områder</div>
+                        <div class="preset-text">Fokus på fejl + adaptiv prioritet.</div>
+                        <div class="preset-meta">20 spg · Fokus</div>
+                      </button>
+                      <button class="preset-card" type="button" data-preset="tempo" aria-pressed="false">
+                        <div class="preset-title">Tempo</div>
+                        <div class="preset-text">Hurtig rytme med auto-videre.</div>
+                        <div class="preset-meta">18 spg · Tid</div>
+                      </button>
+                    </div>
                   </div>
-                  <div class="toggle-grid compact">
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-include-mcq" checked />
-                      <span>
-                        Inkluder MCQ
+
+                  <div class="builder-section">
+                    <div class="section-title">
+                      <h3>Din runde</h3>
+                      <p>Juster længde og fordeling mellem opgavetyper.</p>
+                    </div>
+                    <div class="control-row">
+                      <label class="control-label" for="question-count">
+                        Antal spørgsmål
                         <span
                           class="info"
-                          data-tooltip="Tager multiple choice-spørgsmål med i runden."
+                          data-tooltip="Vælg hvor mange spørgsmål runden skal have. Hvis puljen er mindre, forkortes runden automatisk."
                           tabindex="0"
-                          aria-label="Info om MCQ"
+                          aria-label="Info om antal spørgsmål"
                           >i</span
                         >
-                      </span>
-                      <small>Multiple choice</small>
-                    </label>
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-include-short" checked />
-                      <span>
-                        Inkluder kortsvar
+                      </label>
+                      <div class="range-control">
+                        <input type="range" id="question-count" min="5" max="40" step="1" value="24" />
+                        <input type="number" id="question-count-input" min="5" max="40" step="1" value="24" />
+                      </div>
+                      <div class="control-hint">
+                        MCQ-tallet styrer længden; kortsvar følger ratioen. I uendelig mode er tallet batch-størrelse.
+                      </div>
+                    </div>
+
+                    <div class="control-row">
+                      <label class="control-label" for="ratio-mcq">
+                        MCQ / kortsvar ratio
                         <span
                           class="info"
-                          data-tooltip="Tager kortsvarsopgaver med i runden."
+                          data-tooltip="Sæt forholdet mellem MCQ og kortsvar. 4:1 giver ca. 24 MCQ og 6 kortsvar."
                           tabindex="0"
-                          aria-label="Info om kortsvar"
+                          aria-label="Info om ratio"
                           >i</span
                         >
-                      </span>
-                      <small>Åbne spørgsmål</small>
-                    </label>
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-show-meta" checked />
-                      <span>
-                        Vis metadata
-                        <span
-                          class="info"
-                          data-tooltip="Viser år og emne direkte på spørgsmålet."
-                          tabindex="0"
-                          aria-label="Info om metadata"
-                          >i</span
-                        >
-                      </span>
-                      <small>År + emne på kortet</small>
-                    </label>
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-shuffle-options" checked />
-                      <span>
-                        Shuffle svarmuligheder
-                        <span
-                          class="info"
-                          data-tooltip="Blander indholdet mellem A–D, så bogstaverne altid står i samme rækkefølge."
-                          tabindex="0"
-                          aria-label="Info om shuffle svarmuligheder"
-                          >i</span
-                        >
-                      </span>
-                      <small>Blander indhold</small>
-                    </label>
+                      </label>
+                      <div class="ratio-control">
+                        <input type="number" id="ratio-mcq" min="1" max="12" step="1" value="4" />
+                        <span class="ratio-divider">:</span>
+                        <input type="number" id="ratio-short" min="1" max="12" step="1" value="1" />
+                      </div>
+                      <div class="control-hint">MCQ-tallet styrer længden; kortsvar følger ratioen.</div>
+                    </div>
+
+                    <div class="toggle-grid compact essentials">
+                      <label class="toggle">
+                        <input type="checkbox" id="toggle-include-mcq" checked />
+                        <span>
+                          Inkluder MCQ
+                          <span
+                            class="info"
+                            data-tooltip="Tager multiple choice-spørgsmål med i runden."
+                            tabindex="0"
+                            aria-label="Info om MCQ"
+                            >i</span
+                          >
+                        </span>
+                        <small>Multiple choice</small>
+                      </label>
+                      <label class="toggle">
+                        <input type="checkbox" id="toggle-include-short" checked />
+                        <span>
+                          Inkluder kortsvar
+                          <span
+                            class="info"
+                            data-tooltip="Tager kortsvarsopgaver med i runden."
+                            tabindex="0"
+                            aria-label="Info om kortsvar"
+                            >i</span
+                          >
+                        </span>
+                        <small>Åbne spørgsmål</small>
+                      </label>
+                      <label class="toggle">
+                        <input type="checkbox" id="toggle-shuffle-questions" checked />
+                        <span>
+                          Shuffle spørgsmål
+                          <span
+                            class="info"
+                            data-tooltip="Blander rækkefølgen af spørgsmålene i runden."
+                            tabindex="0"
+                            aria-label="Info om shuffle spørgsmål"
+                            >i</span
+                          >
+                        </span>
+                        <small>Nyt mix hver gang</small>
+                      </label>
+                      <label class="toggle">
+                        <input type="checkbox" id="toggle-balanced" checked />
+                        <span>
+                          Balancer emner
+                          <span
+                            class="info"
+                            data-tooltip="Fordeler spørgsmålene mere jævnt på tværs af emner i puljen."
+                            tabindex="0"
+                            aria-label="Info om balancer emner"
+                            >i</span
+                          >
+                        </span>
+                        <small>Fordeler bredt</small>
+                      </label>
+                    </div>
                   </div>
+
+                  <details class="settings-drawer">
+                    <summary>
+                      <span>Indhold &amp; visning</span>
+                      <small>Metadata og svarlayout</small>
+                    </summary>
+                    <div class="settings-body">
+                      <div class="toggle-grid compact">
+                        <label class="toggle">
+                          <input type="checkbox" id="toggle-show-meta" checked />
+                          <span>
+                            Vis metadata
+                            <span
+                              class="info"
+                              data-tooltip="Viser år og emne direkte på spørgsmålet."
+                              tabindex="0"
+                              aria-label="Info om metadata"
+                              >i</span
+                            >
+                          </span>
+                          <small>År + emne på kortet</small>
+                        </label>
+                        <label class="toggle">
+                          <input type="checkbox" id="toggle-shuffle-options" checked />
+                          <span>
+                            Shuffle svarmuligheder
+                            <span
+                              class="info"
+                              data-tooltip="Blander indholdet mellem A–D, så bogstaverne altid står i samme rækkefølge."
+                              tabindex="0"
+                              aria-label="Info om shuffle svarmuligheder"
+                              >i</span
+                            >
+                          </span>
+                          <small>Blander indhold</small>
+                        </label>
+                      </div>
+                    </div>
+                  </details>
+
+                  <details class="settings-drawer">
+                    <summary>
+                      <span>Mix &amp; gentagelser</span>
+                      <small>Adaptiv læring og fejl</small>
+                    </summary>
+                    <div class="settings-body">
+                      <div class="toggle-grid compact">
+                        <label class="toggle">
+                          <input type="checkbox" id="toggle-adaptive-mix" />
+                          <span>
+                            Adaptiv mix
+                            <span
+                              class="info"
+                              data-tooltip="Vægter spørgsmål baseret på fejl, tempo og seneste svar."
+                              tabindex="0"
+                              aria-label="Info om adaptiv mix"
+                              >i</span
+                            >
+                          </span>
+                          <small>Prioritér svage områder</small>
+                        </label>
+                        <label class="toggle">
+                          <input type="checkbox" id="toggle-avoid-repeats" />
+                          <span>
+                            Undgå gentagelser
+                            <span
+                              class="info"
+                              data-tooltip="Skjuler spørgsmål du allerede har set i tidligere runder."
+                              tabindex="0"
+                              aria-label="Info om undgå gentagelser"
+                              >i</span
+                            >
+                          </span>
+                          <small>Skjuler tidligere spørgsmål</small>
+                        </label>
+                        <label class="toggle">
+                          <input type="checkbox" id="toggle-prefer-unseen" checked />
+                          <span>
+                            Prioritér nye spørgsmål
+                            <span
+                              class="info"
+                              data-tooltip="Skubber runden mod spørgsmål du ikke har set før, uden at fjerne dem helt."
+                              tabindex="0"
+                              aria-label="Info om nye spørgsmål"
+                              >i</span
+                            >
+                          </span>
+                          <small>Færre gentagelser</small>
+                        </label>
+                        <label class="toggle">
+                          <input type="checkbox" id="toggle-focus-mistakes" />
+                          <span>
+                            Fokus på fejl
+                            <span
+                              class="info"
+                              data-tooltip="Bygger runden ud fra dine seneste fejl, hvis der er nogen."
+                              tabindex="0"
+                              aria-label="Info om fokus på fejl"
+                              >i</span
+                            >
+                          </span>
+                          <small>Gentag sidste fejl</small>
+                        </label>
+                      </div>
+                    </div>
+                  </details>
+
+                  <details class="settings-drawer">
+                    <summary>
+                      <span>Flow &amp; hjælp</span>
+                      <small>Tempo, fokus og hjælp</small>
+                    </summary>
+                    <div class="settings-body">
+                      <div class="toggle-grid compact">
+                        <label class="toggle">
+                          <input type="checkbox" id="toggle-tts" checked />
+                          <span>
+                            Læs højt
+                            <span
+                              class="info"
+                              data-tooltip="Aktivér oplæsning og vis indstillinger her i menuen."
+                              tabindex="0"
+                              aria-label="Info om oplæsning"
+                              >i</span
+                            >
+                          </span>
+                          <small>Oplæsning af spørgsmål</small>
+                        </label>
+                        <label class="toggle">
+                          <input type="checkbox" id="toggle-auto-figure" />
+                          <span>
+                            Auto-figurbeskrivelser
+                            <span
+                              class="info"
+                              data-tooltip="Genererer figurbeskrivelser automatisk i baggrunden, så facit matcher billederne."
+                              tabindex="0"
+                              aria-label="Info om figurbeskrivelser"
+                              >i</span
+                            >
+                          </span>
+                          <small>Batch i baggrunden</small>
+                        </label>
+                        <label class="toggle">
+                          <input type="checkbox" id="toggle-auto-advance" />
+                          <span>
+                            Auto-videre
+                            <span
+                              class="info"
+                              data-tooltip="Går automatisk videre efter svar eller spring."
+                              tabindex="0"
+                              aria-label="Info om auto-videre"
+                              >i</span
+                            >
+                          </span>
+                          <small>Går videre automatisk</small>
+                        </label>
+                        <label class="toggle">
+                          <input type="checkbox" id="toggle-infinite-mode" />
+                          <span>
+                            Uendelig mode
+                            <span
+                              class="info"
+                              data-tooltip="Fortsæt med nye spørgsmål, indtil du selv afslutter runden."
+                              tabindex="0"
+                              aria-label="Info om uendelig mode"
+                              >i</span
+                            >
+                          </span>
+                          <small>Slut når du vil</small>
+                        </label>
+                        <label class="toggle">
+                          <input type="checkbox" id="toggle-focus-mode" />
+                          <span>
+                            Fokus-tilstand
+                            <span
+                              class="info"
+                              data-tooltip="Fjerner sidepanelet og giver en roligere spilvisning."
+                              tabindex="0"
+                              aria-label="Info om fokus-tilstand"
+                              >i</span
+                            >
+                          </span>
+                          <small>Minimal spilvisning</small>
+                        </label>
+                      </div>
+
+                      <div class="tts-toolbar hidden" id="tts-toolbar" aria-label="Oplæsning" data-collapsed="false">
+                        <div class="tts-header">
+                          <div class="tts-title">
+                            <span class="tts-title-text">Oplæsning</span>
+                            <span class="tts-status" id="tts-status" role="status" aria-live="polite">
+                              Oplæsning tjekkes …
+                            </span>
+                          </div>
+                          <div class="tts-header-actions">
+                            <div class="tts-controls">
+                              <button class="btn ghost small" id="tts-preview-btn" type="button">Test stemme</button>
+                            </div>
+                            <button class="btn ghost small" id="tts-collapse-btn" type="button" aria-expanded="true">
+                              Skjul
+                            </button>
+                          </div>
+                        </div>
+                        <div class="tts-body" id="tts-body">
+                          <div class="tts-settings">
+                            <label class="tts-toggle">
+                              <input type="checkbox" id="tts-auto-toggle" />
+                              <span>Auto-oplæsning</span>
+                            </label>
+                            <label class="tts-toggle">
+                              <input type="checkbox" id="tts-options-toggle" checked />
+                              <span>Læs svarmuligheder</span>
+                            </label>
+                            <label class="tts-field" for="tts-voice">
+                              <span class="tts-label">Stemme</span>
+                              <select id="tts-voice">
+                                <option value="alloy">Alloy · Klar</option>
+                                <option value="nova">Nova · Varm</option>
+                                <option value="echo">Echo · Tydelig</option>
+                                <option value="fable">Fable · Rolig</option>
+                                <option value="onyx">Onyx · Dyb</option>
+                                <option value="shimmer">Shimmer · Lys</option>
+                              </select>
+                            </label>
+                            <label class="tts-field" for="tts-speed">
+                              <span class="tts-label">Hastighed</span>
+                              <div class="tts-speed">
+                                <input type="range" id="tts-speed" min="0.7" max="1.3" step="0.05" value="1" />
+                                <span id="tts-speed-label">1.0x</span>
+                              </div>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="control-row compact">
+                        <label class="control-label" for="auto-advance-delay">
+                          Auto-videre tempo
+                          <span
+                            class="info"
+                            data-tooltip="Sætter hvor hurtigt auto-videre hopper til næste spørgsmål."
+                            tabindex="0"
+                            aria-label="Info om auto-videre tempo"
+                            >i</span
+                          >
+                        </label>
+                        <div class="range-control">
+                          <input type="range" id="auto-advance-delay" min="600" max="2400" step="100" value="1200" />
+                          <div class="range-pill" id="auto-advance-label">1.2s</div>
+                        </div>
+                        <div class="control-hint">Aktiver auto-videre for at bruge tempoet.</div>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+              </section>
+
+              <section class="panel summary reveal" style="--delay: 0.15s">
+                <div class="panel-header">
+                  <h2>Din runde</h2>
+                  <p>Opsummering af din nuværende opsætning.</p>
+                </div>
+                <div class="summary-card">
+                  <div class="summary-item">Pulje: <strong id="pool-count">0</strong> spørgsmål</div>
+                  <div class="summary-item">Runde: <strong id="round-count">0</strong> spørgsmål</div>
+                  <div class="summary-item">Mix: <span id="mix-summary">—</span></div>
+                  <div class="summary-item">År: <span id="year-summary">—</span></div>
+                  <div class="summary-item">Emner: <span id="category-summary">—</span></div>
+                  <div class="summary-item">Genbrug: <span id="repeat-summary">—</span></div>
                 </div>
 
-                <div class="settings-section">
-                  <div class="settings-header">
-                    <h3>Mix &amp; læring</h3>
-                    <p>Balancer, adaptiv og gentagelser.</p>
-                  </div>
-                  <div class="toggle-grid compact">
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-shuffle-questions" checked />
-                      <span>
-                        Shuffle spørgsmål
-                        <span
-                          class="info"
-                          data-tooltip="Blander rækkefølgen af spørgsmålene i runden."
-                          tabindex="0"
-                          aria-label="Info om shuffle spørgsmål"
-                          >i</span
-                        >
-                      </span>
-                      <small>Nyt mix hver gang</small>
-                    </label>
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-balanced" checked />
-                      <span>
-                        Balancer emner
-                        <span
-                          class="info"
-                          data-tooltip="Fordeler spørgsmålene mere jævnt på tværs af emner i puljen."
-                          tabindex="0"
-                          aria-label="Info om balancer emner"
-                          >i</span
-                        >
-                      </span>
-                      <small>Fordeler bredt</small>
-                    </label>
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-adaptive-mix" />
-                      <span>
-                        Adaptiv mix
-                        <span
-                          class="info"
-                          data-tooltip="Vægter spørgsmål baseret på fejl, tempo og seneste svar."
-                          tabindex="0"
-                          aria-label="Info om adaptiv mix"
-                          >i</span
-                        >
-                      </span>
-                      <small>Prioritér svage områder</small>
-                    </label>
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-avoid-repeats" />
-                      <span>
-                        Undgå gentagelser
-                        <span
-                          class="info"
-                          data-tooltip="Skjuler spørgsmål du allerede har set i tidligere runder."
-                          tabindex="0"
-                          aria-label="Info om undgå gentagelser"
-                          >i</span
-                        >
-                      </span>
-                      <small>Skjuler tidligere spørgsmål</small>
-                    </label>
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-focus-mistakes" />
-                      <span>
-                        Fokus på fejl
-                        <span
-                          class="info"
-                          data-tooltip="Bygger runden ud fra dine seneste fejl, hvis der er nogen."
-                          tabindex="0"
-                          aria-label="Info om fokus på fejl"
-                          >i</span
-                        >
-                      </span>
-                      <small>Gentag sidste fejl</small>
-                    </label>
-                  </div>
+                <div class="cta-stack">
+                  <button id="start-btn" class="btn primary" type="button">Start spil</button>
+                  <button id="rules-btn" class="btn ghost" type="button">Spilguide</button>
+                </div>
+                <div class="hint" id="selection-hint">Vælg mindst ét emne og ét sæt for at starte.</div>
+              </section>
+            </div>
+
+            <div class="menu-column">
+              <section class="panel filters reveal" style="--delay: 0.1s">
+                <div class="panel-header">
+                  <h2>Filtrer spørgsmål</h2>
+                  <p>Vælg årgang og emner, så runden rammer det du læser op på.</p>
                 </div>
 
-                <div class="settings-section">
-                  <div class="settings-header">
-                    <h3>Flow</h3>
-                    <p>Tempo og fokus.</p>
+                <div class="filter-group">
+                  <div class="filter-header">
+                    <h3>
+                      Årgang / sæt
+                      <span
+                        class="info"
+                        data-tooltip="Vælg hvilke eksamensår og sæt der skal indgå i puljen."
+                        tabindex="0"
+                        aria-label="Info om årgangsfilter"
+                        >i</span
+                      >
+                    </h3>
+                    <div class="mini-actions">
+                      <button class="btn ghost small" id="select-all-years" type="button">Alle</button>
+                      <button class="btn ghost small" id="clear-years" type="button">Ingen</button>
+                    </div>
                   </div>
-                  <div class="toggle-grid compact">
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-tts" checked />
-                      <span>
-                        Læs højt
-                        <span
-                          class="info"
-                          data-tooltip="Vis oplæsningsboksen i spørgsmålet. Slå fra for helt at skjule den."
-                          tabindex="0"
-                          aria-label="Info om oplæsning"
-                          >i</span
-                        >
-                      </span>
-                      <small>Oplæsning af spørgsmål</small>
-                    </label>
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-auto-figure" />
-                      <span>
-                        Auto-figurbeskrivelser
-                        <span
-                          class="info"
-                          data-tooltip="Genererer AI-beskrivelser af figurer i baggrunden, så facit matcher billederne."
-                          tabindex="0"
-                          aria-label="Info om figurbeskrivelser"
-                          >i</span
-                        >
-                      </span>
-                      <small>Batch i baggrunden</small>
-                    </label>
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-auto-advance" />
-                      <span>
-                        Auto-videre
-                        <span
-                          class="info"
-                          data-tooltip="Går automatisk videre efter svar eller spring."
-                          tabindex="0"
-                          aria-label="Info om auto-videre"
-                          >i</span
-                        >
-                      </span>
-                      <small>Går videre automatisk</small>
-                    </label>
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-infinite-mode" />
-                      <span>
-                        Uendelig mode
-                        <span
-                          class="info"
-                          data-tooltip="Fortsæt med nye spørgsmål, indtil du selv afslutter runden."
-                          tabindex="0"
-                          aria-label="Info om uendelig mode"
-                          >i</span
-                        >
-                      </span>
-                      <small>Slut når du vil</small>
-                    </label>
-                    <label class="toggle">
-                      <input type="checkbox" id="toggle-focus-mode" />
-                      <span>
-                        Fokus-tilstand
-                        <span
-                          class="info"
-                          data-tooltip="Fjerner sidepanelet og giver en roligere spilvisning."
-                          tabindex="0"
-                          aria-label="Info om fokus-tilstand"
-                          >i</span
-                        >
-                      </span>
-                      <small>Minimal spilvisning</small>
-                    </label>
+                  <div class="chip-group" id="year-chips"></div>
+                </div>
+
+                <div class="filter-group">
+                  <div class="filter-header">
+                    <h3>
+                      Emner
+                      <span
+                        class="info"
+                        data-tooltip="Vælg præcis hvilke emner der skal trækkes spørgsmål fra."
+                        tabindex="0"
+                        aria-label="Info om emnefilter"
+                        >i</span
+                      >
+                    </h3>
+                    <input type="search" id="category-search" placeholder="Søg emne" />
                   </div>
-                </div>
-              </div>
-
-              <div class="control-row">
-                <label class="control-label" for="auto-advance-delay">
-                  Auto-videre tempo
-                  <span
-                    class="info"
-                    data-tooltip="Sætter hvor hurtigt auto-videre hopper til næste spørgsmål."
-                    tabindex="0"
-                    aria-label="Info om auto-videre tempo"
-                    >i</span
-                  >
-                </label>
-                <div class="range-control">
-                  <input type="range" id="auto-advance-delay" min="600" max="2400" step="100" value="1200" />
-                  <div class="range-pill" id="auto-advance-label">1.2s</div>
-                </div>
-                <div class="control-hint">Aktiver auto-videre for at bruge tempoet.</div>
-              </div>
-            </section>
-
-            <section class="panel filters reveal" style="--delay: 0.1s">
-              <div class="panel-header">
-                <h2>Filtrer spørgsmål</h2>
-                <p>Vælg årgang og emner, så runden rammer det du læser op på.</p>
-              </div>
-
-              <div class="filter-group">
-                <div class="filter-header">
-                  <h3>
-                    Årgang / sæt
-                    <span
-                      class="info"
-                      data-tooltip="Vælg hvilke eksamensår og sæt der skal indgå i puljen."
-                      tabindex="0"
-                      aria-label="Info om årgangsfilter"
-                      >i</span
-                    >
-                  </h3>
                   <div class="mini-actions">
-                    <button class="btn ghost small" id="select-all-years" type="button">Alle</button>
-                    <button class="btn ghost small" id="clear-years" type="button">Ingen</button>
+                    <button class="btn ghost small" id="select-all-categories" type="button">Alle</button>
+                    <button class="btn ghost small" id="clear-categories" type="button">Ingen</button>
+                  </div>
+                  <div class="chip-group" id="category-chips"></div>
+                </div>
+              </section>
+
+              <section class="panel history-panel reveal" style="--delay: 0.2s">
+                <div class="panel-header">
+                  <h2>Din udvikling</h2>
+                  <p>Se dine seneste runder og om du går frem mod 12.</p>
+                </div>
+                <div class="history-grid">
+                  <div class="history-card">
+                    <div class="history-label">Seneste</div>
+                    <div class="history-value" id="history-latest">—</div>
+                    <div class="history-meta" id="history-latest-meta">Ingen runder endnu</div>
+                  </div>
+                  <div class="history-card">
+                    <div class="history-label">Trend</div>
+                    <div class="history-value" id="history-trend">—</div>
+                    <div class="history-meta" id="history-trend-meta">Afventer 2 runder</div>
+                  </div>
+                  <div class="history-card highlight">
+                    <div class="history-label">Bedste</div>
+                    <div class="history-value" id="history-best">—</div>
+                    <div class="history-meta" id="history-best-meta">Mål: 12 (92%)</div>
                   </div>
                 </div>
-                <div class="chip-group" id="year-chips"></div>
-              </div>
-
-              <div class="filter-group">
-                <div class="filter-header">
-                  <h3>
-                    Emner
-                    <span
-                      class="info"
-                      data-tooltip="Vælg præcis hvilke emner der skal trækkes spørgsmål fra."
-                      tabindex="0"
-                      aria-label="Info om emnefilter"
-                      >i</span
-                    >
-                  </h3>
-                  <input type="search" id="category-search" placeholder="Søg emne" />
-                </div>
-                <div class="mini-actions">
-                  <button class="btn ghost small" id="select-all-categories" type="button">Alle</button>
-                  <button class="btn ghost small" id="clear-categories" type="button">Ingen</button>
-                </div>
-                <div class="chip-group" id="category-chips"></div>
-              </div>
-            </section>
-
-            <section class="panel summary reveal" style="--delay: 0.15s">
-              <div class="panel-header">
-                <h2>Din runde</h2>
-                <p>Opsummering af din nuværende opsætning.</p>
-              </div>
-              <div class="summary-card">
-                <div class="summary-item">Pulje: <strong id="pool-count">0</strong> spørgsmål</div>
-                <div class="summary-item">Runde: <strong id="round-count">0</strong> spørgsmål</div>
-                <div class="summary-item">Mix: <span id="mix-summary">—</span></div>
-                <div class="summary-item">År: <span id="year-summary">—</span></div>
-                <div class="summary-item">Emner: <span id="category-summary">—</span></div>
-                <div class="summary-item">Genbrug: <span id="repeat-summary">—</span></div>
-              </div>
-
-              <div class="cta-stack">
-                <button id="start-btn" class="btn primary" type="button">Start spil</button>
-                <button id="rules-btn" class="btn ghost" type="button">Spilguide</button>
-              </div>
-              <div class="hint" id="selection-hint">Vælg mindst ét emne og ét sæt for at starte.</div>
-            </section>
-
-            <section class="panel history-panel wide reveal" style="--delay: 0.2s">
-              <div class="panel-header">
-                <h2>Din udvikling</h2>
-                <p>Se dine seneste runder og om du går frem mod 12.</p>
-              </div>
-              <div class="history-grid">
-                <div class="history-card">
-                  <div class="history-label">Seneste</div>
-                  <div class="history-value" id="history-latest">—</div>
-                  <div class="history-meta" id="history-latest-meta">Ingen runder endnu</div>
-                </div>
-                <div class="history-card">
-                  <div class="history-label">Trend</div>
-                  <div class="history-value" id="history-trend">—</div>
-                  <div class="history-meta" id="history-trend-meta">Afventer 2 runder</div>
-                </div>
-                <div class="history-card highlight">
-                  <div class="history-label">Bedste</div>
-                  <div class="history-value" id="history-best">—</div>
-                  <div class="history-meta" id="history-best-meta">Mål: 12 (92%)</div>
-                </div>
-              </div>
-              <div class="history-list" id="history-list"></div>
-            </section>
+                <div class="history-list" id="history-list"></div>
+              </section>
+            </div>
           </div>
         </div>
       </section>
@@ -531,13 +647,6 @@
                 <button class="btn ghost small" id="toggle-focus" type="button">Fokus</button>
                 <button class="btn ghost small" id="toggle-meta" type="button">Skjul metadata</button>
                 <button class="btn ghost small hidden" id="end-round-btn" type="button">Afslut runde</button>
-                <div class="shortcut-card">
-                  <div class="shortcut">A–D · Svar</div>
-                  <div class="shortcut">N · Næste</div>
-                  <div class="shortcut">K · Spring over</div>
-                  <div class="shortcut">F · Marker</div>
-                  <div class="shortcut">L · Oplæsning</div>
-                </div>
               </div>
             </aside>
 
@@ -551,62 +660,6 @@
                 </div>
                 <p class="question-intro hidden" id="question-intro"></p>
                 <h2 id="question-text">Spørgsmålet indlæses …</h2>
-                <div class="tts-toolbar" id="tts-toolbar" aria-label="Oplæsning" data-collapsed="false">
-                  <div class="tts-header">
-                    <div class="tts-title">
-                      <span class="tts-title-text">Oplæsning</span>
-                      <span class="tts-status" id="tts-status" role="status" aria-live="polite">
-                        Oplæsning tjekkes …
-                      </span>
-                    </div>
-                    <div class="tts-header-actions">
-                      <div class="tts-controls">
-                        <button class="btn secondary small" id="tts-play-btn" type="button">Læs op</button>
-                        <button class="btn ghost small" id="tts-stop-btn" type="button" disabled>Stop</button>
-                        <button class="btn ghost small" id="tts-preview-btn" type="button">Test stemme</button>
-                      </div>
-                      <button class="btn ghost small" id="tts-collapse-btn" type="button" aria-expanded="true">
-                        Skjul
-                      </button>
-                    </div>
-                  </div>
-                  <div class="tts-body" id="tts-body">
-                    <div class="tts-settings">
-                      <label class="tts-toggle">
-                        <input type="checkbox" id="tts-auto-toggle" />
-                        <span>Auto-oplæsning</span>
-                      </label>
-                      <label class="tts-toggle">
-                        <input type="checkbox" id="tts-options-toggle" checked />
-                        <span>Læs svarmuligheder</span>
-                      </label>
-                      <label class="tts-field" for="tts-voice">
-                        <span class="tts-label">Stemme</span>
-                        <select id="tts-voice">
-                          <option value="alloy">Alloy · Klar</option>
-                          <option value="nova">Nova · Varm</option>
-                          <option value="echo">Echo · Tydelig</option>
-                          <option value="fable">Fable · Rolig</option>
-                          <option value="onyx">Onyx · Dyb</option>
-                          <option value="shimmer">Shimmer · Lys</option>
-                        </select>
-                      </label>
-                      <label class="tts-field" for="tts-speed">
-                        <span class="tts-label">Hastighed</span>
-                        <div class="tts-speed">
-                          <input type="range" id="tts-speed" min="0.7" max="1.3" step="0.05" value="1" />
-                          <span id="tts-speed-label">1.0x</span>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <div class="figure-toolbar hidden" id="figure-toolbar">
-                  <button class="btn ghost small" id="figure-toggle-btn" type="button">Vis figur</button>
-                  <span class="figure-note" id="figure-toggle-hint">
-                    Figuren er skjult indtil du vælger at se den.
-                  </span>
-                </div>
                 <figure class="question-figure hidden" id="question-figure">
                   <div class="figure-media" id="question-figure-media"></div>
                   <figcaption id="question-figure-caption"></figcaption>
@@ -622,10 +675,9 @@
                   <div class="short-sketch-hint hidden" id="short-sketch-hint"></div>
                   <div class="sketch-panel hidden" id="sketch-panel">
                     <div class="sketch-panel-head">
-                      <span>Skitse-analyse (AI)</span>
-                      <button class="btn ghost small" id="sketch-toggle-btn" type="button">Vis</button>
+                      <span id="sketch-panel-title">Skitse-analyse (auto)</span>
                     </div>
-                    <div class="sketch-panel-body hidden" id="sketch-panel-body">
+                    <div class="sketch-panel-body" id="sketch-panel-body">
                       <label class="sketch-upload" for="sketch-upload">
                         <input type="file" id="sketch-upload" accept="image/*" />
                         <span>Vælg billede af din skitse</span>
@@ -640,50 +692,62 @@
                       <div class="sketch-feedback" id="sketch-feedback"></div>
                     </div>
                   </div>
-                  <div class="short-toolbar">
-                    <div class="score-control">
-                      <div class="score-label">
-                        Point <span class="score-max">/ <span id="short-max-points">0</span></span>
+                  <div class="review-drawer" id="short-review-drawer" data-open="false">
+                    <div class="short-toolbar">
+                      <div class="score-control">
+                        <div class="score-label">
+                          Point <span class="score-max">/ <span id="short-max-points">0</span></span>
+                        </div>
+                        <div class="score-inputs">
+                          <input type="range" id="short-score-range" min="0" max="10" step="0.5" value="0" />
+                          <input type="number" id="short-score-input" min="0" max="10" step="0.5" value="0" />
+                        </div>
+                        <div class="score-hint" id="short-score-hint"></div>
                       </div>
-                      <div class="score-inputs">
-                        <input type="range" id="short-score-range" min="0" max="10" step="0.5" value="0" />
-                        <input type="number" id="short-score-input" min="0" max="10" step="0.5" value="0" />
+                      <div class="short-buttons">
+                        <button class="btn secondary small" id="short-ai-grade-btn" type="button">
+                          Auto-bedøm
+                        </button>
+                        <button class="btn ghost small" id="short-show-answer-btn" type="button">
+                          Vis facit
+                        </button>
                       </div>
-                      <div class="score-hint" id="short-score-hint"></div>
                     </div>
-                    <div class="short-buttons">
-                      <button class="btn secondary small" id="short-ai-grade-btn" type="button">
-                        AI-bedøm
-                      </button>
-                      <button class="btn ghost small" id="short-show-answer-btn" type="button">
-                        Vis facit
-                      </button>
+                    <div class="ai-status" id="ai-status-inline"></div>
+                    <div class="short-ai-feedback" id="short-ai-feedback"></div>
+                    <div class="short-model hidden" id="short-model-answer">
+                      <div class="short-model-head">
+                        <h4 id="short-model-title">Modelbesvarelse</h4>
+                        <span class="short-model-tag hidden" id="short-model-tag">Figurbeskrivelse</span>
+                      </div>
+                      <p id="short-model-text"></p>
+                      <div class="short-figure hidden" id="short-figure-answer">
+                        <div class="short-figure-head">
+                          <h5>Figurbeskrivelse</h5>
+                          <button class="btn ghost small" id="short-figure-generate-btn" type="button">Generér</button>
+                        </div>
+                        <div class="short-figure-status" id="short-figure-status"></div>
+                        <p id="short-figure-text"></p>
+                      </div>
+                      <div class="short-sources" id="short-sources"></div>
                     </div>
                   </div>
-                  <div class="ai-status" id="ai-status-inline"></div>
-                  <div class="short-ai-feedback" id="short-ai-feedback"></div>
-                  <div class="short-model hidden" id="short-model-answer">
-                    <div class="short-model-head">
-                      <h4 id="short-model-title">Modelbesvarelse</h4>
-                      <span class="short-model-tag hidden" id="short-model-tag">AI-figur</span>
-                    </div>
-                    <p id="short-model-text"></p>
-                    <div class="short-figure hidden" id="short-figure-answer">
-                      <div class="short-figure-head">
-                        <h5>Figurbeskrivelse (AI)</h5>
-                        <button class="btn ghost small" id="short-figure-generate-btn" type="button">Generér</button>
-                      </div>
-                      <div class="short-figure-status" id="short-figure-status"></div>
-                      <p id="short-figure-text"></p>
-                    </div>
-                    <div class="short-sources" id="short-sources"></div>
+                </div>
+                <div class="question-hint hidden" id="question-hint">
+                  <div class="question-hint-head">
+                    <span>Hint</span>
+                    <span class="question-hint-status" id="question-hint-status"></span>
                   </div>
+                  <div class="question-hint-text hidden" id="question-hint-text"></div>
                 </div>
                 <div class="actions">
                   <button class="btn ghost" id="skip-btn" type="button">Spring over (0 point)</button>
                   <button class="btn secondary" id="next-btn" type="button" disabled>Næste</button>
                 </div>
                 <div class="feedback" id="feedback-area"></div>
+                <div class="shortcut-inline" id="shortcut-inline">
+                  Taster: A–D svar · N næste · K spring over · F figur · H hint · L lyd · M marker
+                </div>
               </div>
             </main>
           </div>
@@ -758,8 +822,32 @@
             <button class="btn ghost" id="return-menu-btn" type="button">Til menu</button>
           </div>
 
+          <div class="review-queue hidden" id="review-queue">
+            <div class="review-queue-header">
+              <div>
+                <h3>Smart review</h3>
+                <p>Gennemgå kortsvar du missede med hurtige hints.</p>
+              </div>
+              <div class="review-queue-status" id="review-queue-status"></div>
+            </div>
+            <div id="review-queue-list" class="review-queue-list"></div>
+          </div>
+
           <div class="review">
-            <h3>Din runde</h3>
+            <div class="review-header">
+              <h3>Din runde</h3>
+              <div class="review-filters" role="group" aria-label="Filtrer din runde">
+                <button class="review-filter" id="review-filter-correct" type="button" aria-pressed="false">
+                  Rigtige
+                </button>
+                <button class="review-filter" id="review-filter-wrong" type="button" aria-pressed="true">
+                  Forkerte
+                </button>
+                <button class="review-filter" id="review-filter-skipped" type="button" aria-pressed="true">
+                  Sprunget over
+                </button>
+              </div>
+            </div>
             <div id="review-list" class="review-list"></div>
           </div>
         </div>
@@ -777,7 +865,7 @@
             <h4>Point &amp; flow</h4>
             <ul class="rules-list">
               <li>+3 point for korrekt, -1 for forkert, 0 for at springe over.</li>
-              <li>Kortsvar bedømmes på 0–max point pr. delspørgsmål (med eller uden AI-hjælp).</li>
+              <li>Kortsvar bedømmes på 0–max point pr. delspørgsmål (med eller uden hjælp).</li>
               <li>Samlet score og 7-trin karakter beregnes 50/50 mellem MCQ og kortsvar.</li>
               <li>Kortsvar under 5 point tæller som fejlet.</li>
               <li>Figurer er skjult – brug “Vis figur” når du har brug for dem.</li>
@@ -792,6 +880,8 @@
               <li>A, B, C, D: svar på spørgsmål</li>
               <li>N: gå videre når svar er givet</li>
               <li>K: spring over</li>
+              <li>F: vis/skjul figur</li>
+              <li>M: marker spørgsmål</li>
               <li>L: oplæsning</li>
             </ul>
           </div>

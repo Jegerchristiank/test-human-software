@@ -110,6 +110,12 @@ def clean_tts_text(text: str) -> str:
     return cleaned.strip()
 
 
+def language_instruction(language: str) -> str:
+    if language == "da":
+        return "Svar altid på dansk."
+    return f"Respond in {language}."
+
+
 def call_openai_tts(
     api_key: str,
     endpoint: str,
@@ -264,7 +270,7 @@ class AppHandler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self) -> None:
-        if self.path not in {"/api/grade", "/api/explain", "/api/tts", "/api/vision"}:
+        if self.path not in {"/api/grade", "/api/explain", "/api/hint", "/api/tts", "/api/vision"}:
             self.send_json(404, {"error": "Not found"})
             return
 
@@ -338,14 +344,15 @@ class AppHandler(SimpleHTTPRequestHandler):
 
             if task == "figure":
                 system_prompt = (
-                    "You are a precise medical illustration describer. "
-                    "Describe only what is visible in the image without guessing. "
-                    "Return JSON only with fields: description (string), labels (list), topics (list)."
+                    "Du er en præcis beskriver af medicinske illustrationer. "
+                    "Beskriv kun det, der er synligt i billedet, uden at gætte. "
+                    "Returnér kun JSON med felterne: description (string), labels (list), topics (list). "
+                    f"{language_instruction(language)}"
                 )
                 user_prompt = (
-                    f"Language: {language}\n"
-                    "Describe the figure for a student in 2-4 short sentences. "
-                    "Include key labels and relationships if shown."
+                    f"Sprog: {language}\n"
+                    "Beskriv figuren for en studerende i 2-4 korte sætninger. "
+                    "Inkludér nøgleetiketter og relationer, hvis de er vist."
                 )
             elif task == "sketch":
                 question = str(payload.get("question", "")).strip()
@@ -354,16 +361,17 @@ class AppHandler(SimpleHTTPRequestHandler):
                     self.send_json(400, {"error": "Missing question"})
                     return
                 system_prompt = (
-                    "You are a tutor evaluating a student's sketch. "
-                    "First describe what the sketch shows, then compare it to the model answer. "
-                    "Return JSON only with fields: description (string), match (number 0-1), "
-                    "matched (list), missing (list), feedback (string)."
+                    "Du er en underviser, der vurderer en studerendes skitse. "
+                    "Beskriv først hvad skitsen viser, og sammenlign derefter med modelsvaret. "
+                    "Returnér kun JSON med felterne: description (string), match (number 0-1), "
+                    "matched (list), missing (list), feedback (string). "
+                    f"{language_instruction(language)}"
                 )
                 user_prompt = (
-                    f"Language: {language}\n"
-                    f"Question: {question}\n"
-                    f"Model answer: {model_answer}\n"
-                    "Assess how well the sketch aligns with the model answer."
+                    f"Sprog: {language}\n"
+                    f"Spørgsmål: {question}\n"
+                    f"Modelbesvarelse: {model_answer}\n"
+                    "Vurdér hvor godt skitsen matcher modelbesvarelsen."
                 )
             else:
                 self.send_json(400, {"error": "Unknown task"})
@@ -390,6 +398,50 @@ class AppHandler(SimpleHTTPRequestHandler):
             self.send_json(200, response_payload)
             return
 
+        if self.path == "/api/hint":
+            question = str(payload.get("question", "")).strip()
+            model_answer = str(payload.get("modelAnswer", "")).strip()
+            user_answer = str(payload.get("userAnswer", "")).strip()
+            max_points = float(payload.get("maxPoints", 0) or 0)
+            awarded_points = float(payload.get("awardedPoints", 0) or 0)
+            ignore_sketch = bool(payload.get("ignoreSketch"))
+            language = str(payload.get("language", "da")).strip().lower()
+
+            if not question or not model_answer:
+                self.send_json(400, {"error": "Missing question or modelAnswer"})
+                return
+
+            system_prompt = (
+                "Du er en hjælpsom underviser. "
+                "Giv et kort hint, der hjælper den studerende mod det rigtige svar uden at afsløre facit. "
+                "Fokusér på det vigtigste, der mangler eller er misforstået. "
+                "Returnér kun JSON med feltet: hint (string). "
+                "Hint må være 1-2 korte sætninger. "
+                f"{language_instruction(language)}"
+            )
+
+            if ignore_sketch:
+                system_prompt += " Ignorér krav om skitse/tegning; giv kun hint til tekstsvaret."
+
+            user_prompt = (
+                f"Sprog: {language}\n"
+                f"Spørgsmål: {question}\n"
+                f"Modelbesvarelse: {model_answer}\n"
+                f"Studerendes svar: {user_answer}\n"
+                f"Point: {awarded_points} / {max_points}\n"
+                "Giv et hint (ikke facit). Returnér kun JSON."
+            )
+
+            try:
+                result = call_openai(api_key, endpoint, model, system_prompt, user_prompt)
+            except RuntimeError as error:
+                self.send_json(502, {"error": str(error)})
+                return
+
+            hint = str(result.get("hint", "")).strip()
+            self.send_json(200, {"hint": hint, "model": model})
+            return
+
         if self.path == "/api/grade":
             prompt = str(payload.get("prompt", "")).strip()
             model_answer = str(payload.get("modelAnswer", "")).strip()
@@ -403,24 +455,25 @@ class AppHandler(SimpleHTTPRequestHandler):
                 return
 
             system_prompt = (
-                "You are a strict but fair examiner. "
-                "Assess the student's answer against the model answer. "
-                "Return JSON only with fields: "
+                "Du er en streng, men fair eksaminator. "
+                "Vurdér den studerendes svar mod modelsvaret. "
+                "Returnér kun JSON med felterne: "
                 "score (number), feedback (short text), missing (list), matched (list). "
-                f"Score must be between 0 and {max_points}. "
-                "Feedback must be concise and concrete."
+                f"Score skal være mellem 0 og {max_points}. "
+                "Feedback skal være kort, konkret og på dansk. "
+                f"{language_instruction(language)}"
             )
 
             if ignore_sketch:
-                system_prompt += " Ignore any sketch/drawing requirement; evaluate only the text response."
+                system_prompt += " Ignorér krav om skitse/tegning; vurder kun tekstsvaret."
 
             user_prompt = (
-                f"Language: {language}\n"
-                f"Question: {prompt}\n"
-                f"Model answer: {model_answer}\n"
-                f"Student answer: {user_answer}\n"
-                f"Max points: {max_points}\n"
-                "Respond with JSON only."
+                f"Sprog: {language}\n"
+                f"Spørgsmål: {prompt}\n"
+                f"Modelbesvarelse: {model_answer}\n"
+                f"Studerendes svar: {user_answer}\n"
+                f"Maks point: {max_points}\n"
+                "Returnér kun JSON."
             )
 
             try:
@@ -459,8 +512,9 @@ class AppHandler(SimpleHTTPRequestHandler):
             options = payload.get("options") or []
             correct_label = str(payload.get("correctLabel", "")).strip().upper()
             user_label = str(payload.get("userLabel", "")).strip().upper()
-            if not correct_label or not user_label:
-                self.send_json(400, {"error": "Missing correctLabel or userLabel"})
+            skipped = bool(payload.get("skipped"))
+            if not correct_label:
+                self.send_json(400, {"error": "Missing correctLabel"})
                 return
 
             formatted_options = []
@@ -480,19 +534,27 @@ class AppHandler(SimpleHTTPRequestHandler):
             user_text = find_option_text(user_label)
 
             system_prompt = (
-                "You are a concise tutor. "
-                "Explain why the student's answer is wrong and why the correct answer is right. "
-                "Keep it short (1-3 sentences). "
-                "Return JSON only with field: explanation."
+                "Du er en hjælpsom tutor. "
+                "Forklar kort hvorfor det korrekte svar passer. "
+                "Hvis et elevsvar er angivet, forklar også kort hvorfor det ikke gør. "
+                "Fokusér på den centrale begrundelse fremfor bare rigtigt/forkert. "
+                "Svar i 2-4 korte sætninger. "
+                "Returnér kun JSON med feltet: explanation. "
+                f"{language_instruction(language)}"
             )
 
+            if skipped or not user_label:
+                student_line = "Studerendes svar: Sprunget over"
+            else:
+                student_line = f"Studerendes svar: {user_label}. {user_text}"
+
             user_prompt = (
-                f"Language: {language}\n"
-                f"Question: {question}\n"
-                f"Options: {' | '.join(formatted_options)}\n"
-                f"Correct answer: {correct_label}. {correct_text}\n"
-                f"Student answer: {user_label}. {user_text}\n"
-                "Respond with JSON only."
+                f"Sprog: {language}\n"
+                f"Spørgsmål: {question}\n"
+                f"Muligheder: {' | '.join(formatted_options)}\n"
+                f"Korrekt svar: {correct_label}. {correct_text}\n"
+                f"{student_line}\n"
+                "Returnér kun JSON."
             )
         elif question_type == "short":
             model_answer = str(payload.get("modelAnswer", "")).strip()
@@ -500,28 +562,32 @@ class AppHandler(SimpleHTTPRequestHandler):
             max_points = float(payload.get("maxPoints", 0) or 0)
             awarded_points = float(payload.get("awardedPoints", 0) or 0)
             ignore_sketch = bool(payload.get("ignoreSketch"))
-
-            if not user_answer:
-                self.send_json(400, {"error": "Missing userAnswer"})
-                return
+            skipped = bool(payload.get("skipped"))
 
             system_prompt = (
-                "You are a concise tutor. "
-                "Explain briefly what is missing or incorrect in the student's answer. "
-                "Keep it short (1-3 sentences). "
-                "Return JSON only with field: explanation."
+                "Du er en hjælpsom tutor. "
+                "Forklar kort hvad et godt svar skal indeholde, og hvad der evt. mangler eller er misforstået. "
+                "Hvis der ikke er givet et svar, forklar kort det centrale indhold. "
+                "Svar i 2-4 korte sætninger uden at kopiere facit. "
+                "Returnér kun JSON med feltet: explanation. "
+                f"{language_instruction(language)}"
             )
 
             if ignore_sketch:
-                system_prompt += " Ignore any sketch/drawing requirement; evaluate only the text response."
+                system_prompt += " Ignorér krav om skitse/tegning; vurder kun tekstsvaret."
+
+            if skipped or not user_answer:
+                student_line = "Studerendes svar: Sprunget over"
+            else:
+                student_line = f"Studerendes svar: {user_answer}"
 
             user_prompt = (
-                f"Language: {language}\n"
-                f"Question: {question}\n"
-                f"Model answer: {model_answer}\n"
-                f"Student answer: {user_answer}\n"
-                f"Score: {awarded_points} / {max_points}\n"
-                "Respond with JSON only."
+                f"Sprog: {language}\n"
+                f"Spørgsmål: {question}\n"
+                f"Modelbesvarelse: {model_answer}\n"
+                f"{student_line}\n"
+                f"Point: {awarded_points} / {max_points}\n"
+                "Returnér kun JSON."
             )
         else:
             self.send_json(400, {"error": "Unknown type"})
