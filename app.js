@@ -41,6 +41,101 @@ const SHORT_TOTAL_POINTS = 72;
 const SHORT_FAIL_THRESHOLD = 5;
 const HISTORY_LIMIT = 12;
 const TARGET_GRADE_PERCENT = 92;
+const DUPLICATE_QUESTION_SIMILARITY = 0.95;
+const DUPLICATE_ANSWER_SIMILARITY = 0.95;
+const SHORTCUT_STATUS_DURATION = 3000;
+const SHORT_LABEL_ORDER = ["a", "b", "c", "d", "e"];
+const SHORT_LABEL_INDEX = new Map(SHORT_LABEL_ORDER.map((label, index) => [label, index]));
+const CONTEXT_STRONG_CUE = /\b(dis?se|ovenfor|ovenstående|førnævnte|sidstnævnte|førstnævnte)\b/i;
+const CONTEXT_COUNT_WORDS = new Set(["to", "tre", "fire", "fem", "seks"]);
+const CONTEXT_COUNT_SKIP = new Set([
+  "vigtigste",
+  "centrale",
+  "primære",
+  "samme",
+  "følgende",
+  "relevante",
+  "førnævnte",
+  "sidstnævnte",
+  "førstnævnte",
+  "ovenstående",
+]);
+const CONTEXT_COUNT_STOP = new Set([
+  "i",
+  "på",
+  "fra",
+  "med",
+  "som",
+  "af",
+  "til",
+  "for",
+  "hos",
+  "ved",
+  "over",
+  "under",
+  "mellem",
+  "om",
+  "inden",
+  "efter",
+]);
+const CONTEXT_STOPWORDS = new Set([
+  "angiv",
+  "angives",
+  "beskriv",
+  "redegør",
+  "forklar",
+  "nævn",
+  "navn",
+  "besvar",
+  "skitser",
+  "skitse",
+  "kort",
+  "korte",
+  "kortfattet",
+  "kortfattede",
+  "hvad",
+  "hvilke",
+  "hvilken",
+  "hvilket",
+  "hvor",
+  "hvordan",
+  "hvorfor",
+  "hvorledes",
+  "hvornår",
+  "denne",
+  "dette",
+  "disse",
+  "deres",
+  "begge",
+  "samme",
+  "sådan",
+  "således",
+  "der",
+  "og",
+  "eller",
+  "samt",
+  "men",
+  "fordi",
+  "derfor",
+  "mens",
+  "når",
+  "af",
+  "på",
+  "i",
+  "med",
+  "til",
+  "fra",
+  "for",
+  "om",
+  "som",
+  "hos",
+  "ved",
+  "over",
+  "under",
+  "mellem",
+  "efter",
+  "inden",
+]);
 
 const GRADE_SCALE = [
   { min: 92, grade: "12" },
@@ -398,6 +493,7 @@ const state = {
   shortAnswerDrafts: new Map(),
   shortAnswerAI: new Map(),
   shortAnswerPending: false,
+  shortQuestionGroups: new Map(),
   reviewHintQueue: [],
   reviewHintProcessing: false,
   reviewFilters: {
@@ -437,7 +533,6 @@ const state = {
   seenKeys: new Set(loadStoredArray(STORAGE_KEYS.seen)),
   lastMistakeKeys: new Set(loadStoredArray(STORAGE_KEYS.mistakes)),
   history: loadStoredArray(STORAGE_KEYS.history),
-  flaggedKeys: new Set(),
   autoAdvanceTimer: null,
   questionStartedAt: null,
   sessionSettings: { ...DEFAULT_SETTINGS },
@@ -454,18 +549,21 @@ const screens = {
   result: document.getElementById("result-screen"),
 };
 
+const shortcutStatusTimers = new Map();
+
 const elements = {
-  startButtons: [
-    document.getElementById("start-btn"),
-    document.getElementById("start-btn-top"),
-    document.getElementById("modal-start-btn"),
-  ].filter(Boolean),
+  startButtons: [document.getElementById("start-btn")].filter(Boolean),
   landingStartBtn: document.getElementById("landing-start-btn"),
   landingQuickBtn: document.getElementById("landing-quick-btn"),
   rulesButton: document.getElementById("rules-btn"),
   closeModal: document.getElementById("close-modal"),
   modalClose: document.getElementById("modal-close-btn"),
   modal: document.getElementById("rules-modal"),
+  figureModal: document.getElementById("figure-modal"),
+  figureModalClose: document.getElementById("figure-modal-close"),
+  figureModalTitle: document.getElementById("figure-modal-title"),
+  figureModalImg: document.getElementById("figure-modal-img"),
+  figureModalCaption: document.getElementById("figure-modal-caption"),
   themeToggle: document.getElementById("theme-toggle"),
   questionCountRange: document.getElementById("question-count"),
   questionCountInput: document.getElementById("question-count-input"),
@@ -536,6 +634,9 @@ const elements = {
   questionNumber: document.getElementById("question-number"),
   questionType: document.getElementById("question-type"),
   questionIntro: document.getElementById("question-intro"),
+  questionContext: document.getElementById("question-context"),
+  questionContextTitle: document.getElementById("question-context-title"),
+  questionContextList: document.getElementById("question-context-list"),
   questionText: document.getElementById("question-text"),
   questionHint: document.getElementById("question-hint"),
   questionHintText: document.getElementById("question-hint-text"),
@@ -564,8 +665,8 @@ const elements = {
   shortAnswerScoreRange: document.getElementById("short-score-range"),
   shortAnswerScoreInput: document.getElementById("short-score-input"),
   shortAnswerMaxPoints: document.getElementById("short-max-points"),
-  shortAnswerAiButton: document.getElementById("short-ai-grade-btn"),
   shortAnswerAiFeedback: document.getElementById("short-ai-feedback"),
+  shortAnswerAiRetryBtn: document.getElementById("short-ai-retry-btn"),
   shortAnswerAiStatus: document.getElementById("ai-status-inline"),
   shortAnswerShowAnswer: document.getElementById("short-show-answer-btn"),
   shortAnswerModel: document.getElementById("short-model-answer"),
@@ -584,14 +685,16 @@ const elements = {
   sketchPanelTitle: document.getElementById("sketch-panel-title"),
   sketchPanelBody: document.getElementById("sketch-panel-body"),
   sketchUpload: document.getElementById("sketch-upload"),
-  sketchAnalyzeBtn: document.getElementById("sketch-analyze-btn"),
   sketchStatus: document.getElementById("sketch-status"),
+  sketchRetryBtn: document.getElementById("sketch-retry-btn"),
   sketchFeedback: document.getElementById("sketch-feedback"),
   sketchPreview: document.getElementById("sketch-preview"),
+  sketchDropzone: document.getElementById("sketch-dropzone"),
   feedbackArea: document.getElementById("feedback-area"),
+  shortcutInline: document.getElementById("shortcut-inline"),
+  shortcutFigure: document.getElementById("shortcut-figure"),
   skipBtn: document.getElementById("skip-btn"),
   nextBtn: document.getElementById("next-btn"),
-  flagBtn: document.getElementById("flag-btn"),
   toggleFocus: document.getElementById("toggle-focus"),
   toggleMeta: document.getElementById("toggle-meta"),
   questionMeta: document.getElementById("question-meta"),
@@ -609,9 +712,9 @@ const elements = {
   statSkipped: document.getElementById("stat-skipped"),
   statShortScore: document.getElementById("stat-short-score"),
   statPace: document.getElementById("stat-pace"),
-  statFlagged: document.getElementById("stat-flagged"),
   bestBadge: document.getElementById("best-badge"),
   playAgainBtn: document.getElementById("play-again-btn"),
+  restartRoundBtn: document.getElementById("restart-round-btn"),
   returnMenuBtn: document.getElementById("return-menu-btn"),
   reviewQueue: document.getElementById("review-queue"),
   reviewQueueList: document.getElementById("review-queue-list"),
@@ -767,6 +870,77 @@ function getQuestionKey(question) {
   const typeKey = question.type || "mcq";
   const labelKey = question.label ? `-${question.label}` : "";
   return `${question.year}-${sessionKey}-${typeKey}-${question.number}-${question.category}${labelKey}`;
+}
+
+function normalizeShortLabel(label) {
+  return String(label || "").trim().toLowerCase();
+}
+
+function tokenizeContextText(text) {
+  const tokens = String(text || "")
+    .toLowerCase()
+    .match(/[a-zæøå]+/gi);
+  return tokens ? tokens.map((token) => token.toLowerCase()) : [];
+}
+
+function extractContentTokens(text) {
+  const tokens = tokenizeContextText(text);
+  const filtered = tokens.filter(
+    (token) => token.length >= 3 && !CONTEXT_STOPWORDS.has(token)
+  );
+  return new Set(filtered);
+}
+
+function extractCountCueNoun(prompt) {
+  const tokens = tokenizeContextText(prompt);
+  for (let i = 0; i < tokens.length - 2; i += 1) {
+    if (tokens[i] !== "de") continue;
+    const countWord = tokens[i + 1];
+    if (!CONTEXT_COUNT_WORDS.has(countWord)) continue;
+    let noun = "";
+    for (let j = i + 2; j < tokens.length; j += 1) {
+      const token = tokens[j];
+      if (CONTEXT_COUNT_STOP.has(token)) break;
+      if (CONTEXT_COUNT_SKIP.has(token)) continue;
+      noun = token;
+    }
+    if (noun) return noun;
+  }
+  return "";
+}
+
+function getShortGroupKey(question) {
+  if (!question || question.type !== "short") return null;
+  const sessionKey = question.session ? formatSessionLabel(question.session) : "standard";
+  return `${question.year}-${sessionKey}-${question.opgave}`;
+}
+
+function getShortLabelIndex(label) {
+  const normalized = normalizeShortLabel(label);
+  return SHORT_LABEL_INDEX.get(normalized) ?? 99;
+}
+
+function sortShortGroupQuestions(questions) {
+  return [...questions].sort((a, b) => {
+    const indexA = getShortLabelIndex(a.label);
+    const indexB = getShortLabelIndex(b.label);
+    if (indexA !== indexB) return indexA - indexB;
+    return String(a.prompt || "").localeCompare(String(b.prompt || ""), "da");
+  });
+}
+
+function buildShortQuestionGroups(questions) {
+  const groups = new Map();
+  questions.forEach((question) => {
+    const key = getShortGroupKey(question);
+    if (!key) return;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(question);
+  });
+  groups.forEach((list, key) => {
+    groups.set(key, sortShortGroupQuestions(list));
+  });
+  return groups;
 }
 
 function normalizeCategory(category) {
@@ -968,6 +1142,73 @@ function buildSketchModelAnswer(question) {
   return `${answer}\n\nFigurbeskrivelse: ${caption}`;
 }
 
+function getShortContextQuestions(question) {
+  const key = getShortGroupKey(question);
+  if (!key || !state.shortQuestionGroups) return [];
+  const group = state.shortQuestionGroups.get(key);
+  if (!group || group.length < 2) return [];
+  const currentIndex = group.findIndex((entry) => entry.key === question.key);
+  if (currentIndex <= 0) return [];
+  return group.slice(0, currentIndex);
+}
+
+function hasContextOverlap(question, contextQuestions) {
+  const currentText = String(question?.text || question?.prompt || "");
+  const currentTokens = extractContentTokens(currentText);
+  if (!currentTokens.size) return false;
+  const contextTokens = new Set();
+  contextQuestions.forEach((entry) => {
+    extractContentTokens(entry.text || entry.prompt || "").forEach((token) => {
+      contextTokens.add(token);
+    });
+  });
+  if (!contextTokens.size) return false;
+  let overlapCount = 0;
+  let longOverlap = false;
+  currentTokens.forEach((token) => {
+    if (!contextTokens.has(token)) return;
+    overlapCount += 1;
+    if (token.length >= 6) {
+      longOverlap = true;
+    }
+  });
+  if (longOverlap) return true;
+  return overlapCount >= 2;
+}
+
+function shouldShowQuestionContext(question, contextQuestions) {
+  if (!question || question.type !== "short") return false;
+  if (!contextQuestions || !contextQuestions.length) return false;
+  const prompt = String(question.text || question.prompt || "");
+  if (!prompt) return false;
+  if (CONTEXT_STRONG_CUE.test(prompt)) return true;
+  const noun = extractCountCueNoun(prompt);
+  if (noun) {
+    const prevText = contextQuestions
+      .map((entry) => String(entry.text || entry.prompt || ""))
+      .join(" ")
+      .toLowerCase();
+    if (prevText.includes(noun)) return true;
+  }
+  return hasContextOverlap(question, contextQuestions);
+}
+
+function formatShortContextLine(question) {
+  const label = normalizeShortLabel(question.label);
+  const labelPrefix = label ? `${label.toUpperCase()}. ` : "";
+  return `${labelPrefix}${question.text || question.prompt || ""}`.trim();
+}
+
+function formatShortContextTitle(question, contextQuestions) {
+  if (!question || !contextQuestions.length) return "";
+  const labels = contextQuestions
+    .map((entry) => normalizeShortLabel(entry.label))
+    .filter(Boolean)
+    .map((entry) => entry.toUpperCase());
+  const range = labels.length > 1 ? `${labels[0]}–${labels[labels.length - 1]}` : labels[0];
+  return `Opg. ${question.opgave} · tidligere delspørgsmål (${range})`;
+}
+
 function buildShortPrompt(question) {
   if (!question) return "";
   const parts = [];
@@ -1021,6 +1262,7 @@ function applyShortAnswerGradeResult(question, data, { fallbackFeedback } = {}) 
   const feedback = String(data.feedback || "").trim();
   elements.shortAnswerAiFeedback.textContent =
     feedback || fallbackFeedback || "Auto-vurdering klar. Justér point efter behov.";
+  setShortcutTempStatus("grade", "Vurderet", 2000);
   state.shortAnswerAI.set(question.key, {
     score: suggested,
     feedback: feedback || "",
@@ -1050,6 +1292,132 @@ function tokenizeSearchText(value) {
     if (BOOK_SHORT_TOKENS.has(token)) return true;
     return /\d/.test(token);
   });
+}
+
+function normalizeSimilarityText(value) {
+  return normalizeSearchText(value);
+}
+
+function getCorrectOptionText(question) {
+  if (!question || !Array.isArray(question.options)) return "";
+  const correctLabel = String(question.correctLabel || "").toUpperCase();
+  if (correctLabel) {
+    const match = question.options.find(
+      (option) => String(option.label || "").toUpperCase() === correctLabel
+    );
+    if (match?.text) return String(match.text);
+  }
+  const fallback = question.options.find((option) => option.isCorrect);
+  return String(fallback?.text || "");
+}
+
+function levenshteinDistance(a, b) {
+  if (a === b) return 0;
+  if (!a) return b.length;
+  if (!b) return a.length;
+  if (a.length > b.length) {
+    [a, b] = [b, a];
+  }
+  const prev = new Array(b.length + 1);
+  for (let j = 0; j <= b.length; j += 1) {
+    prev[j] = j;
+  }
+  for (let i = 1; i <= a.length; i += 1) {
+    let prevDiag = prev[0];
+    prev[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const temp = prev[j];
+      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
+      const insert = prev[j - 1] + 1;
+      const del = prev[j] + 1;
+      const sub = prevDiag + cost;
+      prev[j] = Math.min(insert, del, sub);
+      prevDiag = temp;
+    }
+  }
+  return prev[b.length];
+}
+
+function getSimilarityRatio(a, b) {
+  if (!a && !b) return 1;
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  const distance = levenshteinDistance(a, b);
+  const denom = Math.max(a.length, b.length) || 1;
+  return 1 - distance / denom;
+}
+
+function buildMcqDuplicateGroups(questions) {
+  if (!Array.isArray(questions) || !questions.length) return;
+  const normalized = questions.map((question) => ({
+    question: normalizeSimilarityText(question.text),
+    answer: normalizeSimilarityText(getCorrectOptionText(question)),
+  }));
+  const parents = Array.from({ length: questions.length }, (_, index) => index);
+  const sizes = new Array(questions.length).fill(1);
+
+  const find = (index) => {
+    let root = index;
+    while (parents[root] !== root) {
+      root = parents[root];
+    }
+    let node = index;
+    while (parents[node] !== node) {
+      const next = parents[node];
+      parents[node] = root;
+      node = next;
+    }
+    return root;
+  };
+
+  const union = (a, b) => {
+    const rootA = find(a);
+    const rootB = find(b);
+    if (rootA === rootB) return;
+    if (sizes[rootA] < sizes[rootB]) {
+      parents[rootA] = rootB;
+      sizes[rootB] += sizes[rootA];
+      return;
+    }
+    parents[rootB] = rootA;
+    sizes[rootA] += sizes[rootB];
+  };
+
+  for (let i = 0; i < questions.length; i += 1) {
+    const current = normalized[i];
+    if (!current.question || !current.answer) continue;
+    for (let j = i + 1; j < questions.length; j += 1) {
+      const candidate = normalized[j];
+      if (!candidate.question || !candidate.answer) continue;
+      const questionLenRatio =
+        Math.min(current.question.length, candidate.question.length) /
+        Math.max(current.question.length, candidate.question.length, 1);
+      if (questionLenRatio < DUPLICATE_QUESTION_SIMILARITY - 0.15) continue;
+      const questionSimilarity = getSimilarityRatio(current.question, candidate.question);
+      if (questionSimilarity < DUPLICATE_QUESTION_SIMILARITY) continue;
+      const answerSimilarity = getSimilarityRatio(current.answer, candidate.answer);
+      if (answerSimilarity < DUPLICATE_ANSWER_SIMILARITY) continue;
+      union(i, j);
+    }
+  }
+
+  const groupSizes = new Map();
+  for (let i = 0; i < questions.length; i += 1) {
+    const root = find(i);
+    groupSizes.set(root, (groupSizes.get(root) || 0) + 1);
+  }
+
+  const groupIds = new Map();
+  let groupIndex = 1;
+  for (let i = 0; i < questions.length; i += 1) {
+    const root = find(i);
+    if ((groupSizes.get(root) || 0) <= 1) continue;
+    if (!groupIds.has(root)) {
+      groupIds.set(root, `mcq-dup-${groupIndex}`);
+      groupIndex += 1;
+    }
+    questions[i].duplicateGroup = groupIds.get(root);
+  }
 }
 
 function buildBookCaptionIndex(library) {
@@ -1257,7 +1625,7 @@ function getQuestionNumberDisplay(question) {
   return `#${question.number}`;
 }
 
-function setFigureVisibility(visible) {
+function setFigureVisibility(visible, { announce = true } = {}) {
   state.figureVisible = visible;
   if (!elements.questionFigure) return;
   elements.questionFigure.classList.toggle("hidden", !visible);
@@ -1269,11 +1637,16 @@ function setFigureVisibility(visible) {
       ? "Figuren vises nu."
       : "Figuren er skjult indtil du vælger at se den.";
   }
+  setShortcutActive("figure", visible);
+  if (announce) {
+    setShortcutTempStatus("figure", visible ? "Figur vises" : "Figur skjult", 2000);
+  }
 }
 
 function updateQuestionFigure(question) {
   if (!elements.questionFigure || !elements.questionFigureMedia) return;
-  if (!question.images || !question.images.length) {
+  const images = getQuestionImagePaths(question);
+  if (!images.length) {
     elements.questionFigure.classList.add("hidden");
     elements.questionFigureMedia.innerHTML = "";
     if (elements.questionFigureCaption) {
@@ -1286,7 +1659,7 @@ function updateQuestionFigure(question) {
   }
 
   elements.questionFigureMedia.innerHTML = "";
-  question.images.forEach((src, index) => {
+  images.forEach((src, index) => {
     const img = document.createElement("img");
     img.src = src;
     img.alt = `Figur ${index + 1} til ${question.category}`;
@@ -1294,14 +1667,117 @@ function updateQuestionFigure(question) {
   });
 
   if (elements.questionFigureCaption) {
-    elements.questionFigureCaption.textContent =
-      question.images.length > 1 ? "Flere figurer" : "Figur";
+    elements.questionFigureCaption.textContent = images.length > 1 ? "Flere figurer" : "Figur";
   }
 
   if (elements.figureToolbar) {
     elements.figureToolbar.classList.remove("hidden");
   }
-  setFigureVisibility(false);
+  setFigureVisibility(false, { announce: false });
+}
+
+function getShortcutItem(action) {
+  if (!elements.shortcutInline) return null;
+  return elements.shortcutInline.querySelector(`.shortcut-item[data-action="${action}"]`);
+}
+
+function updateShortcutStatusText(item) {
+  if (!item) return;
+  const statusEl = item.querySelector(".shortcut-status");
+  if (!statusEl) return;
+  const tempStatus = item.dataset.tempStatus || "";
+  const status = item.dataset.status || "";
+  const text = tempStatus || status;
+  statusEl.textContent = text;
+  item.classList.toggle("has-status", Boolean(text));
+}
+
+function setShortcutStatus(action, text) {
+  const item = getShortcutItem(action);
+  if (!item) return;
+  if (text) {
+    item.dataset.status = text;
+  } else {
+    delete item.dataset.status;
+  }
+  updateShortcutStatusText(item);
+}
+
+function setShortcutTempStatus(action, text, duration = SHORTCUT_STATUS_DURATION) {
+  const item = getShortcutItem(action);
+  if (!item) return;
+  if (text) {
+    item.dataset.tempStatus = text;
+  } else {
+    delete item.dataset.tempStatus;
+  }
+  updateShortcutStatusText(item);
+  if (!duration) return;
+  if (shortcutStatusTimers.has(action)) {
+    clearTimeout(shortcutStatusTimers.get(action));
+  }
+  const timer = setTimeout(() => {
+    shortcutStatusTimers.delete(action);
+    if (item) {
+      delete item.dataset.tempStatus;
+      updateShortcutStatusText(item);
+    }
+  }, duration);
+  shortcutStatusTimers.set(action, timer);
+}
+
+function setShortcutActive(action, active) {
+  const item = getShortcutItem(action);
+  if (!item) return;
+  item.classList.toggle("is-active", Boolean(active));
+  if (item.dataset.toggle === "true") {
+    item.setAttribute("aria-pressed", String(Boolean(active)));
+  }
+}
+
+function setShortcutAvailable(action, available) {
+  const item = getShortcutItem(action);
+  if (!item) return;
+  item.classList.toggle("is-available", Boolean(available));
+}
+
+function setShortcutDisabled(action, disabled) {
+  const item = getShortcutItem(action);
+  if (!item) return;
+  const isDisabled = Boolean(disabled);
+  item.classList.toggle("is-disabled", isDisabled);
+  if (item.tagName === "BUTTON") {
+    item.disabled = isDisabled;
+  }
+  item.setAttribute("aria-disabled", String(isDisabled));
+}
+
+function setShortcutBusy(action, busy) {
+  const item = getShortcutItem(action);
+  if (!item) return;
+  item.classList.toggle("is-busy", Boolean(busy));
+}
+
+function flashShortcut(action) {
+  const item = getShortcutItem(action);
+  if (!item) return;
+  item.classList.remove("is-flash");
+  requestAnimationFrame(() => {
+    item.classList.add("is-flash");
+    setTimeout(() => item.classList.remove("is-flash"), 600);
+  });
+}
+
+function updateShortcutFigureIndicator(question) {
+  if (!getShortcutItem("figure") && !elements.shortcutFigure) return;
+  const hasFigure = getQuestionImagePaths(question).length > 0;
+  const showIndicator = Boolean(question && hasFigure);
+  setShortcutAvailable("figure", showIndicator);
+  setShortcutDisabled("figure", !showIndicator);
+  if (!showIndicator) {
+    setShortcutActive("figure", false);
+    setShortcutStatus("figure", "");
+  }
 }
 
 function setShortFigureStatus(message, isWarn = false) {
@@ -1401,9 +1877,6 @@ function updateSketchPanel(question) {
       ? "Skitse-analyse (auto)"
       : "Skitse (valgfri)";
   }
-  if (elements.sketchAnalyzeBtn) {
-    elements.sketchAnalyzeBtn.disabled = !state.aiStatus.available;
-  }
   if (elements.sketchStatus && !state.aiStatus.available) {
     elements.sketchStatus.textContent = state.aiStatus.message || "Hjælp offline";
   }
@@ -1423,7 +1896,7 @@ function updateSketchPanel(question) {
 
 function resetShortAnswerUI() {
   if (!elements.shortAnswerContainer) return;
-  state.shortAnswerPending = false;
+  setShortAnswerPending(false);
   elements.shortAnswerInput.value = "";
   elements.shortAnswerScoreRange.value = "0";
   elements.shortAnswerScoreInput.value = "0";
@@ -1480,6 +1953,8 @@ function resetShortAnswerUI() {
   if (elements.sketchFeedback) {
     elements.sketchFeedback.textContent = "";
   }
+  setShortRetryVisible(false);
+  setSketchRetryVisible(false);
   if (elements.sketchPreview) {
     elements.sketchPreview.src = "";
     elements.sketchPreview.classList.add("hidden");
@@ -1488,7 +1963,7 @@ function resetShortAnswerUI() {
 
 function setShortReviewOpen(open) {
   if (!elements.shortReviewDrawer) return;
-  elements.shortReviewDrawer.dataset.open = "true";
+  elements.shortReviewDrawer.dataset.open = open ? "true" : "false";
 }
 
 function updateShortReviewStatus(question) {
@@ -1506,6 +1981,16 @@ function updateShortReviewStatus(question) {
     status = `Senest: ${draft.points.toFixed(1)} / ${Number(question.maxPoints).toFixed(1)}`;
   }
   elements.shortReviewStatus.textContent = status;
+}
+
+function setShortRetryVisible(visible) {
+  if (!elements.shortAnswerAiRetryBtn) return;
+  elements.shortAnswerAiRetryBtn.classList.toggle("hidden", !visible);
+}
+
+function setSketchRetryVisible(visible) {
+  if (!elements.sketchRetryBtn) return;
+  elements.sketchRetryBtn.classList.toggle("hidden", !visible);
 }
 
 function isShortAnswerScored(question) {
@@ -1531,10 +2016,18 @@ function setShortAnswerPending(isPending) {
   const question = state.activeQuestions[state.currentIndex];
   if (elements.skipBtn) {
     elements.skipBtn.disabled = state.shortAnswerPending;
+    setShortcutDisabled("skip", elements.skipBtn.disabled);
   }
-  if (elements.shortAnswerAiButton) {
-    elements.shortAnswerAiButton.disabled =
-      state.shortAnswerPending || !state.aiStatus.available;
+  if (elements.shortAnswerAiRetryBtn) {
+    elements.shortAnswerAiRetryBtn.disabled = state.shortAnswerPending;
+  }
+  const isShort = question?.type === "short";
+  setShortcutBusy("grade", state.shortAnswerPending);
+  setShortcutDisabled("grade", !isShort);
+  if (state.shortAnswerPending) {
+    setShortcutStatus("grade", "Vurderer …");
+  } else {
+    setShortcutStatus("grade", "");
   }
   updateShortAnswerActions(question);
 }
@@ -1544,16 +2037,19 @@ function updateShortAnswerActions(question) {
   if (state.locked) {
     elements.nextBtn.textContent = "Næste";
     elements.nextBtn.disabled = false;
+    setShortcutDisabled("next", elements.nextBtn.disabled);
     return;
   }
   if (state.shortAnswerPending) {
     elements.nextBtn.textContent = "Vurderer …";
     elements.nextBtn.disabled = true;
+    setShortcutDisabled("next", elements.nextBtn.disabled);
     return;
   }
   const scored = isShortAnswerScored(question);
   elements.nextBtn.textContent = scored ? "Næste" : "Vurdér";
   elements.nextBtn.disabled = false;
+  setShortcutDisabled("next", elements.nextBtn.disabled);
 }
 
 function getDisplayLabels(count) {
@@ -1601,6 +2097,10 @@ function renderMcqQuestion(question) {
   elements.skipBtn.textContent = "Spring over (0 point)";
   elements.nextBtn.textContent = "Næste";
   elements.nextBtn.disabled = true;
+  setShortcutDisabled("next", true);
+  if (elements.skipBtn) {
+    setShortcutDisabled("skip", elements.skipBtn.disabled);
+  }
   elements.questionText.textContent = question.text;
 
   const mapping = getOptionMapping(question);
@@ -1621,6 +2121,10 @@ function renderShortQuestion(question) {
   elements.shortAnswerContainer.classList.remove("hidden");
   elements.skipBtn.textContent = "Spring over (0 point)";
   elements.nextBtn.disabled = false;
+  setShortcutDisabled("next", elements.nextBtn.disabled);
+  if (elements.skipBtn) {
+    setShortcutDisabled("skip", elements.skipBtn.disabled);
+  }
   elements.questionText.textContent = question.text;
 
   const cached = getShortDraft(question.key);
@@ -1656,7 +2160,7 @@ function renderShortQuestion(question) {
   if (elements.shortSketchHint) {
     if (requiresSketch(question)) {
       elements.shortSketchHint.textContent =
-        'Upload en skitse og klik "Analyser skitse" for at få den med i auto-bedømmelsen.';
+        "Upload en skitse - analysen starter automatisk og bruges i auto-bedømmelsen.";
       elements.shortSketchHint.classList.remove("hidden");
     } else {
       elements.shortSketchHint.textContent = "";
@@ -1673,10 +2177,38 @@ function renderShortQuestion(question) {
   );
   setShortReviewOpen(shouldOpenReview);
 
-  if (elements.shortAnswerAiButton) {
-    elements.shortAnswerAiButton.disabled = !state.aiStatus.available;
-  }
   updateShortAnswerActions(question);
+}
+
+function updateQuestionContext(question) {
+  if (!elements.questionContext || !elements.questionContextTitle || !elements.questionContextList) {
+    return;
+  }
+  const contextQuestions =
+    question && question.type === "short" ? getShortContextQuestions(question) : [];
+  if (!shouldShowQuestionContext(question, contextQuestions)) {
+    elements.questionContextTitle.textContent = "";
+    elements.questionContextList.innerHTML = "";
+    elements.questionContext.classList.add("hidden");
+    return;
+  }
+  elements.questionContextTitle.textContent = formatShortContextTitle(question, contextQuestions);
+  elements.questionContextList.innerHTML = "";
+  contextQuestions.forEach((entry) => {
+    const line = formatShortContextLine(entry);
+    if (!line) return;
+    const listItem = document.createElement("li");
+    const label = normalizeShortLabel(entry.label);
+    if (label) {
+      const badge = document.createElement("span");
+      badge.textContent = `${label.toUpperCase()}.`;
+      listItem.appendChild(badge);
+      listItem.appendChild(document.createTextNode(" "));
+    }
+    listItem.appendChild(document.createTextNode(entry.text || entry.prompt || ""));
+    elements.questionContextList.appendChild(listItem);
+  });
+  elements.questionContext.classList.remove("hidden");
 }
 
 function renderQuestion() {
@@ -1702,7 +2234,10 @@ function renderQuestion() {
     elements.questionIntro.textContent = currentQuestion.opgaveIntro || "";
     elements.questionIntro.classList.toggle("hidden", !currentQuestion.opgaveIntro);
   }
+  updateQuestionContext(currentQuestion);
   updateQuestionFigure(currentQuestion);
+  updateShortcutFigureIndicator(currentQuestion);
+  setShortcutDisabled("grade", currentQuestion.type !== "short");
   updateQuestionHintUI(currentQuestion);
   queueFigureCaptionsForQuestions(currentQuestion);
 
@@ -1712,7 +2247,6 @@ function renderQuestion() {
     renderMcqQuestion(currentQuestion);
   }
 
-  updateFlagButton();
   updateTopBar();
   state.questionStartedAt = Date.now();
   maybeAutoReadQuestion();
@@ -1891,7 +2425,7 @@ function readFileAsDataUrl(file) {
   });
 }
 
-async function handleSketchUpload(file) {
+async function handleSketchUpload(file, { autoAnalyze = true } = {}) {
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
   if (!file) return;
@@ -1907,6 +2441,7 @@ async function handleSketchUpload(file) {
     const label = `${file.name} · ${sizeMb} MB`;
     state.sketchUploads.set(question.key, { dataUrl, label });
     state.sketchAnalysis.delete(question.key);
+    setSketchRetryVisible(false);
     if (elements.sketchStatus) {
       elements.sketchStatus.textContent = `Valgt: ${label}`;
     }
@@ -1916,6 +2451,9 @@ async function handleSketchUpload(file) {
     if (elements.sketchPreview) {
       elements.sketchPreview.src = dataUrl;
       elements.sketchPreview.classList.remove("hidden");
+    }
+    if (autoAnalyze) {
+      void analyzeSketch();
     }
   } catch (error) {
     if (elements.sketchStatus) {
@@ -1927,10 +2465,12 @@ async function handleSketchUpload(file) {
 async function analyzeSketch() {
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
+  setSketchRetryVisible(false);
   if (!state.aiStatus.available) {
     if (elements.sketchStatus) {
       elements.sketchStatus.textContent = state.aiStatus.message || "Hjælp offline";
     }
+    setSketchRetryVisible(true);
     return;
   }
   const upload = state.sketchUploads.get(question.key);
@@ -1939,9 +2479,6 @@ async function analyzeSketch() {
       elements.sketchStatus.textContent = "Vælg en skitse først.";
     }
     return;
-  }
-  if (elements.sketchAnalyzeBtn) {
-    elements.sketchAnalyzeBtn.disabled = true;
   }
   if (elements.sketchStatus) {
     elements.sketchStatus.textContent = "Analyserer skitse …";
@@ -1992,16 +2529,14 @@ async function analyzeSketch() {
     if (elements.sketchStatus) {
       elements.sketchStatus.textContent = "Skitse analyseret.";
     }
+    setSketchRetryVisible(false);
     await gradeShortAnswer({ auto: true });
   } catch (error) {
     if (elements.sketchStatus) {
       elements.sketchStatus.textContent =
         `Kunne ikke analysere skitsen. ${error.message || "Tjek serveren."}`;
     }
-  } finally {
-    if (elements.sketchAnalyzeBtn) {
-      elements.sketchAnalyzeBtn.disabled = !state.aiStatus.available;
-    }
+    setSketchRetryVisible(true);
   }
 }
 
@@ -2052,6 +2587,8 @@ function handleMcqAnswer(label) {
   lockOptions();
   elements.nextBtn.disabled = false;
   elements.skipBtn.disabled = true;
+  setShortcutDisabled("next", false);
+  setShortcutDisabled("skip", true);
   updateTopBar();
   maybeAutoAdvance();
 }
@@ -2076,6 +2613,8 @@ function skipQuestion() {
     state.locked = true;
     elements.nextBtn.disabled = false;
     elements.skipBtn.disabled = true;
+    setShortcutDisabled("next", false);
+    setShortcutDisabled("skip", true);
     updateTopBar();
     return;
   }
@@ -2092,6 +2631,8 @@ function skipQuestion() {
   state.locked = true;
   elements.nextBtn.disabled = false;
   elements.skipBtn.disabled = true;
+  setShortcutDisabled("next", false);
+  setShortcutDisabled("skip", true);
   lockOptions();
   updateTopBar();
   maybeAutoAdvance();
@@ -2214,6 +2755,10 @@ function updateQuestionHintUI(question = state.activeQuestions[state.currentInde
     elements.questionHintText.classList.add("hidden");
     elements.questionHintText.textContent = "";
     elements.questionHintStatus.textContent = "";
+    setShortcutActive("hint", false);
+    setShortcutBusy("hint", false);
+    setShortcutStatus("hint", "");
+    setShortcutDisabled("hint", true);
     return;
   }
   const hintEntry = getHintEntry(question);
@@ -2228,6 +2773,10 @@ function updateQuestionHintUI(question = state.activeQuestions[state.currentInde
     elements.questionHintText.classList.add("hidden");
     elements.questionHintText.textContent = "";
     elements.questionHintStatus.textContent = "";
+    setShortcutActive("hint", false);
+    setShortcutBusy("hint", false);
+    setShortcutStatus("hint", "");
+    setShortcutDisabled("hint", false);
     return;
   }
 
@@ -2244,6 +2793,18 @@ function updateQuestionHintUI(question = state.activeQuestions[state.currentInde
   } else {
     elements.questionHintStatus.textContent = "Klar til hint";
   }
+
+  setShortcutActive("hint", isVisible);
+  setShortcutBusy("hint", isLoading);
+  const hintStatus = isLoading
+    ? "Henter …"
+    : hasHint
+    ? "Hint klar"
+    : !available
+    ? "Offline"
+    : "Åben";
+  setShortcutStatus("hint", hintStatus);
+  setShortcutDisabled("hint", false);
 
   if (hasHint) {
     elements.questionHintText.textContent = hintEntry.text;
@@ -2367,9 +2928,6 @@ function setAiStatus(status) {
     message: status.message || "",
   };
 
-  if (elements.shortAnswerAiButton) {
-    elements.shortAnswerAiButton.disabled = !status.available;
-  }
   if (elements.aiStatusPill) {
     const label = status.available
       ? "Assistent klar"
@@ -2444,6 +3002,20 @@ function updateTtsControls() {
   }
   if (elements.ttsSpeedRange) {
     elements.ttsSpeedRange.disabled = !available;
+  }
+
+  setShortcutActive("tts", enabled);
+  setShortcutBusy("tts", isLoading);
+  if (!enabled) {
+    setShortcutStatus("tts", "");
+  } else if (!state.ttsStatus.available) {
+    setShortcutStatus("tts", "Offline");
+  } else if (isLoading) {
+    setShortcutStatus("tts", "Genererer …");
+  } else if (isPlaying) {
+    setShortcutStatus("tts", "Afspiller");
+  } else {
+    setShortcutStatus("tts", "");
   }
 }
 
@@ -3161,22 +3733,25 @@ async function gradeShortAnswer(options = {}) {
   const { auto = false } = options;
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
+  setShortRetryVisible(false);
   if (!state.aiStatus.available) {
     elements.shortAnswerAiFeedback.textContent =
       state.aiStatus.message || "Auto-bedømmelse er ikke sat op endnu.";
+    setShortcutTempStatus("grade", "Hjælp offline", 2000);
+    setShortRetryVisible(true);
     return;
   }
   const { answer: combinedAnswer, hasSketch } = buildShortAnswerForGrading(question);
   if (!combinedAnswer) {
     const upload = state.sketchUploads.get(question.key);
     elements.shortAnswerAiFeedback.textContent = upload
-      ? "Analyser skitsen før auto-bedømmelse, eller skriv et svar."
+      ? "Skitseanalyse mangler. Vent på analysen, eller skriv et svar."
       : "Skriv et svar eller upload en skitse først.";
+    setShortcutTempStatus("grade", "Mangler svar", 2000);
     return;
   }
 
   setShortAnswerPending(true);
-  elements.shortAnswerAiButton.disabled = true;
   const feedbackPrefix = hasSketch ? "Vurderer skitse + tekst …" : "Vurderer dit svar …";
   elements.shortAnswerAiFeedback.textContent = auto
     ? hasSketch
@@ -3215,11 +3790,12 @@ async function gradeShortAnswer(options = {}) {
       ? "Skitse vurderet. Justér point efter behov."
       : "Auto-vurdering klar. Justér point efter behov.";
     applyShortAnswerGradeResult(question, data, { fallbackFeedback });
+    setShortRetryVisible(false);
   } catch (error) {
     elements.shortAnswerAiFeedback.textContent =
       `Kunne ikke hente auto-bedømmelse. ${error.message || "Tjek serveren og din API-nøgle."}`;
+    setShortRetryVisible(true);
   } finally {
-    elements.shortAnswerAiButton.disabled = !state.aiStatus.available;
     setShortAnswerPending(false);
   }
 }
@@ -3236,11 +3812,11 @@ function handleNextClick() {
       updateShortReviewStatus(question);
       updateShortAnswerActions(question);
       if (!hasAnswer) {
-        setFeedback("Skriv et svar, upload en skitse eller brug Spring over.", "error");
+        setFeedback("Skriv et svar, upload en skitse eller brug Spring over i Mere.", "error");
         return;
       }
       if (state.aiStatus.available) {
-        void gradeShortAnswer({ auto: true });
+        triggerShortAutoGrade();
       } else if (elements.shortAnswerAiFeedback) {
         elements.shortAnswerAiFeedback.textContent =
           "Giv point manuelt i vurderingen, eller spring over.";
@@ -3290,26 +3866,6 @@ function goToNextQuestion() {
   }
   state.currentIndex += 1;
   renderQuestion();
-}
-
-function updateFlagButton() {
-  const question = state.activeQuestions[state.currentIndex];
-  if (!question) return;
-  const isFlagged = state.flaggedKeys.has(question.key);
-  elements.flagBtn.textContent = isFlagged ? "Markeret" : "Marker spørgsmål";
-  elements.flagBtn.classList.toggle("active", isFlagged);
-}
-
-function toggleFlag() {
-  const question = state.activeQuestions[state.currentIndex];
-  if (!question) return;
-  const key = question.key;
-  if (state.flaggedKeys.has(key)) {
-    state.flaggedKeys.delete(key);
-  } else {
-    state.flaggedKeys.add(key);
-  }
-  updateFlagButton();
 }
 
 function buildExplainPayload(entry) {
@@ -3690,6 +4246,89 @@ function updateReviewIllustration(entry, { force = false } = {}) {
   return true;
 }
 
+function buildReviewFigure(entry) {
+  const images = getQuestionImagePaths(entry.question);
+  if (!images.length) return null;
+
+  const wrap = document.createElement("div");
+  wrap.className = "review-figure";
+
+  const head = document.createElement("div");
+  head.className = "review-figure-head";
+
+  const title = document.createElement("span");
+  title.textContent = images.length > 1 ? "Figurer" : "Figur";
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "btn ghost small";
+  button.textContent = images.length > 1 ? "Vis figurer" : "Vis figur";
+
+  const body = document.createElement("div");
+  body.className = "review-figure-body hidden";
+
+  const grid = document.createElement("div");
+  grid.className = "review-figure-grid";
+
+  images.forEach((src, index) => {
+    const figure = document.createElement("figure");
+    figure.className = "review-figure-item";
+
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.src = src;
+    img.alt = `Figur ${index + 1} til ${entry.question.category}`;
+    img.title = "Klik for at forstørre";
+
+    const captionText = getFigureCaptionForImage(src);
+    img.addEventListener("click", () => {
+      const titleText = images.length > 1 ? `Figur ${index + 1}` : "Figur";
+      openFigureModal({
+        src,
+        alt: img.alt,
+        caption: captionText,
+        title: titleText,
+      });
+    });
+
+    figure.appendChild(img);
+
+    if (captionText) {
+      const caption = document.createElement("div");
+      caption.className = "review-figure-caption";
+      caption.textContent = captionText;
+      figure.appendChild(caption);
+    }
+
+    const note = document.createElement("div");
+    note.className = "review-figure-note";
+    note.textContent = "Klik for at forstørre";
+    figure.appendChild(note);
+
+    grid.appendChild(figure);
+  });
+
+  body.appendChild(grid);
+  head.appendChild(title);
+  head.appendChild(button);
+  wrap.appendChild(head);
+  wrap.appendChild(body);
+
+  button.addEventListener("click", () => {
+    const isHidden = body.classList.contains("hidden");
+    body.classList.toggle("hidden", !isHidden);
+    button.textContent = isHidden
+      ? images.length > 1
+        ? "Skjul figurer"
+        : "Skjul figur"
+      : images.length > 1
+      ? "Vis figurer"
+      : "Vis figur";
+  });
+
+  return wrap;
+}
+
 function buildReviewIllustration(entry) {
   const wrap = document.createElement("div");
   wrap.className = "review-illustration";
@@ -3810,10 +4449,6 @@ function buildReviewList(results) {
       card.classList.add(entry.isCorrect ? "correct" : "wrong");
     }
 
-    if (state.flaggedKeys.has(entry.question.key)) {
-      card.classList.add("flagged");
-    }
-
     const title = document.createElement("div");
     title.className = "title";
     title.textContent = `${displayIndex}. ${entry.question.text}`;
@@ -3906,6 +4541,13 @@ function buildReviewList(results) {
     card.appendChild(title);
     card.appendChild(meta);
     lines.forEach((line) => card.appendChild(line));
+
+    if (isShort) {
+      const figureWrap = buildReviewFigure(entry);
+      if (figureWrap) {
+        card.appendChild(figureWrap);
+      }
+    }
 
     if (shouldShowReviewExplanation(entry)) {
       const explainWrap = document.createElement("div");
@@ -4022,7 +4664,6 @@ function showResults() {
       : "—";
   }
   elements.statPace.textContent = timePerQuestion;
-  elements.statFlagged.textContent = state.flaggedKeys.size;
 
   const isNewBest = state.scoreSummary.overallPercent > state.bestScore;
   if (isNewBest) {
@@ -4044,6 +4685,12 @@ function showResults() {
     .map((result) => result.question.key);
   state.lastMistakeKeys = new Set(mistakeKeys);
   localStorage.setItem(STORAGE_KEYS.mistakes, JSON.stringify([...state.lastMistakeKeys]));
+  if (elements.playAgainBtn) {
+    elements.playAgainBtn.textContent = state.lastMistakeKeys.size ? "Gentag fejl" : "Spil igen";
+  }
+  if (elements.restartRoundBtn) {
+    elements.restartRoundBtn.classList.toggle("hidden", !state.lastMistakeKeys.size);
+  }
 
   state.activeQuestions.forEach((question) => state.seenKeys.add(question.key));
   localStorage.setItem(STORAGE_KEYS.seen, JSON.stringify([...state.seenKeys]));
@@ -4163,6 +4810,94 @@ function pickFromPool(pool, count) {
   return pickedUnseen.concat(pickedSeen);
 }
 
+function getMcqGroupKey(question) {
+  if (!question || question.type !== "mcq") return null;
+  return question.duplicateGroup || question.key;
+}
+
+function getUniqueMcqGroupCount(pool) {
+  const groups = new Set();
+  pool.forEach((question) => {
+    if (question.type !== "mcq") return;
+    const key = getMcqGroupKey(question);
+    if (key) groups.add(key);
+  });
+  return groups.size;
+}
+
+function filterUniqueMcqGroups(questions, usedGroups) {
+  const filtered = [];
+  questions.forEach((question) => {
+    if (!question || question.type !== "mcq") return;
+    const key = getMcqGroupKey(question);
+    if (!key || usedGroups.has(key)) return;
+    usedGroups.add(key);
+    filtered.push(question);
+  });
+  return filtered;
+}
+
+function pickMcqFromPool(pool, count) {
+  if (count <= 0) return [];
+  const target = Math.min(count, getUniqueMcqGroupCount(pool));
+  if (target <= 0) return [];
+  const usedGroups = new Set();
+  let selected = filterUniqueMcqGroups(pickFromPool(pool, target), usedGroups);
+  let remaining = pool.filter((question) => !usedGroups.has(getMcqGroupKey(question)));
+  let guard = 0;
+  while (selected.length < target && remaining.length && guard < 6) {
+    const needed = target - selected.length;
+    const fill = filterUniqueMcqGroups(pickFromPool(remaining, needed), usedGroups);
+    if (!fill.length) break;
+    selected = selected.concat(fill);
+    remaining = remaining.filter((question) => !usedGroups.has(getMcqGroupKey(question)));
+    guard += 1;
+  }
+  return selected;
+}
+
+function fillSelectionAvoidingMcqDuplicates(pool, selected, desiredTotal) {
+  if (selected.length >= desiredTotal) return selected;
+  const usedGroups = new Set();
+  selected.forEach((question) => {
+    if (question.type !== "mcq") return;
+    const key = getMcqGroupKey(question);
+    if (key) usedGroups.add(key);
+  });
+  let remaining = pool.filter((question) => !selected.includes(question));
+  remaining = remaining.filter((question) => {
+    if (question.type !== "mcq") return true;
+    const key = getMcqGroupKey(question);
+    if (!key) return true;
+    return !usedGroups.has(key);
+  });
+
+  let output = [...selected];
+  let guard = 0;
+  while (output.length < desiredTotal && remaining.length && guard < 6) {
+    const needed = desiredTotal - output.length;
+    const fill = pickFromPool(remaining, needed);
+    const filteredFill = [];
+    fill.forEach((question) => {
+      if (question.type === "mcq") {
+        const key = getMcqGroupKey(question);
+        if (!key || usedGroups.has(key)) return;
+        usedGroups.add(key);
+      }
+      filteredFill.push(question);
+    });
+    if (!filteredFill.length) break;
+    output = output.concat(filteredFill);
+    remaining = remaining.filter((question) => {
+      if (output.includes(question)) return false;
+      if (question.type !== "mcq") return true;
+      return !usedGroups.has(getMcqGroupKey(question));
+    });
+    guard += 1;
+  }
+  return output;
+}
+
 function buildQuestionSet(pool) {
   const baseCount = Math.min(state.sessionSettings.questionCount, pool.length);
   if (baseCount <= 0) return [];
@@ -4173,7 +4908,8 @@ function buildQuestionSet(pool) {
   if (includeMcq && includeShort) {
     const mcqPool = pool.filter((q) => q.type === "mcq");
     const shortPool = pool.filter((q) => q.type === "short");
-    let mcqTarget = Math.min(state.sessionSettings.questionCount, mcqPool.length);
+    const uniqueMcqCount = getUniqueMcqGroupCount(mcqPool);
+    let mcqTarget = Math.min(state.sessionSettings.questionCount, uniqueMcqCount);
     let shortTarget = getShortTargetFromRatio(
       mcqTarget,
       shortPool.length,
@@ -4181,14 +4917,12 @@ function buildQuestionSet(pool) {
     );
 
     let selectedShort = pickFromPool(shortPool, shortTarget);
-    let selectedMcq = pickFromPool(mcqPool, mcqTarget);
+    let selectedMcq = pickMcqFromPool(mcqPool, mcqTarget);
 
     let selected = [...selectedShort, ...selectedMcq];
     const desiredTotal = mcqTarget + shortTarget;
     if (selected.length < desiredTotal) {
-      const remaining = pool.filter((q) => !selected.includes(q));
-      const fill = pickFromPool(remaining, desiredTotal - selected.length);
-      selected = selected.concat(fill);
+      selected = fillSelectionAvoidingMcqDuplicates(pool, selected, desiredTotal);
     }
 
     return state.sessionSettings.shuffleQuestions ? shuffle(selected) : sortQuestions(selected);
@@ -4202,10 +4936,10 @@ function buildQuestionSet(pool) {
   }
 
   if (includeMcq) {
-    return pickFromPool(
-      pool.filter((q) => q.type === "mcq"),
-      baseCount
-    );
+    const mcqPool = pool.filter((q) => q.type === "mcq");
+    const uniqueMcqCount = getUniqueMcqGroupCount(mcqPool);
+    const mcqTarget = Math.min(baseCount, uniqueMcqCount);
+    return pickMcqFromPool(mcqPool, mcqTarget);
   }
 
   return [];
@@ -4243,7 +4977,8 @@ function updateSessionScoreMeta(questions) {
   };
 }
 
-function resolvePool() {
+function resolvePool(options = {}) {
+  const { forceMistakes = false, ignoreFocusMistakes = false } = options;
   const allowedTypes = [];
   if (state.settings.includeMcq) allowedTypes.push("mcq");
   if (state.settings.includeShort) allowedTypes.push("short");
@@ -4257,7 +4992,10 @@ function resolvePool() {
 
   let pool = basePool;
   let focusMistakesActive = false;
-  if (state.settings.focusMistakes && state.lastMistakeKeys.size) {
+  if (
+    (forceMistakes || (state.settings.focusMistakes && !ignoreFocusMistakes)) &&
+    state.lastMistakeKeys.size
+  ) {
     const mistakePool = basePool.filter((question) => state.lastMistakeKeys.has(question.key));
     if (mistakePool.length) {
       pool = mistakePool;
@@ -4400,6 +5138,7 @@ function applySessionDisplaySettings() {
   document.body.classList.toggle("meta-hidden", !state.sessionSettings.showMeta);
   elements.toggleFocus.textContent = state.sessionSettings.focusMode ? "Fokus: Til" : "Fokus";
   elements.toggleMeta.textContent = state.sessionSettings.showMeta ? "Skjul metadata" : "Vis metadata";
+  setShortcutActive("focus", state.sessionSettings.focusMode);
   if (elements.endRoundBtn) {
     elements.endRoundBtn.classList.toggle("hidden", !state.sessionSettings.infiniteMode);
   }
@@ -4448,8 +5187,8 @@ function finishSession() {
   showResults();
 }
 
-function startGame() {
-  const { pool, focusMistakesActive } = resolvePool();
+function startGame(options = {}) {
+  const { pool, focusMistakesActive } = resolvePool(options);
   if (!pool.length) return;
 
   hideRules();
@@ -4461,7 +5200,6 @@ function startGame() {
   state.score = 0;
   state.scoreBreakdown = { mcq: 0, short: 0 };
   state.results = [];
-  state.flaggedKeys = new Set();
   state.shortAnswerDrafts = new Map();
   state.shortAnswerAI = new Map();
   state.shortAnswerPending = false;
@@ -4487,12 +5225,51 @@ function startGame() {
   renderQuestion();
 }
 
+function handlePlayAgainClick() {
+  if (state.lastMistakeKeys.size) {
+    startGame({ forceMistakes: true });
+    return;
+  }
+  startGame();
+}
+
+function handleRestartRoundClick() {
+  startGame({ ignoreFocusMistakes: true });
+}
+
 function showRules() {
   elements.modal.classList.remove("hidden");
 }
 
 function hideRules() {
   elements.modal.classList.add("hidden");
+}
+
+function openFigureModal({ src, alt, caption, title } = {}) {
+  if (!elements.figureModal || !elements.figureModalImg) return;
+  elements.figureModalImg.src = src || "";
+  elements.figureModalImg.alt = alt || "Figur";
+  if (elements.figureModalTitle) {
+    elements.figureModalTitle.textContent = title || "Figur";
+  }
+  if (elements.figureModalCaption) {
+    const text = String(caption || "").trim();
+    elements.figureModalCaption.textContent = text;
+    elements.figureModalCaption.classList.toggle("hidden", !text);
+  }
+  elements.figureModal.classList.remove("hidden");
+}
+
+function closeFigureModal() {
+  if (!elements.figureModal || elements.figureModal.classList.contains("hidden")) return;
+  elements.figureModal.classList.add("hidden");
+  if (elements.figureModalImg) {
+    elements.figureModalImg.src = "";
+    elements.figureModalImg.alt = "";
+  }
+  if (elements.figureModalCaption) {
+    elements.figureModalCaption.textContent = "";
+  }
 }
 
 function goToMenu() {
@@ -4632,7 +5409,6 @@ function updateAutoAdvanceLabel() {
 }
 
 async function checkAiAvailability() {
-  if (!elements.shortAnswerAiButton && !elements.ttsPlayBtn) return;
   try {
     const res = await fetch("/api/health");
     if (!res.ok) {
@@ -4691,6 +5467,8 @@ function setTtsEnabled(enabled) {
   if (elements.toggleTts) {
     elements.toggleTts.checked = next;
   }
+  setShortcutActive("tts", next);
+  setShortcutTempStatus("tts", next ? "Lyd slået til" : "Lyd slået fra");
   applyTtsVisibility();
   if (next) {
     maybeAutoReadQuestion();
@@ -4700,6 +5478,76 @@ function setTtsEnabled(enabled) {
 
 function toggleTtsEnabled() {
   setTtsEnabled(!state.settings.ttsEnabled);
+}
+
+function toggleFocusMode() {
+  state.sessionSettings.focusMode = !state.sessionSettings.focusMode;
+  applySessionDisplaySettings();
+  setShortcutTempStatus("focus", state.sessionSettings.focusMode ? "Fokus til" : "Fokus fra");
+}
+
+function triggerShortAutoGrade() {
+  const question = state.activeQuestions[state.currentIndex];
+  if (!question || question.type !== "short") {
+    setShortcutTempStatus("grade", "Kun kortsvar", 2000);
+    return;
+  }
+  setShortRetryVisible(false);
+  setShortReviewOpen(true);
+  updateShortReviewStatus(question);
+  if (state.shortAnswerPending) {
+    setShortcutTempStatus("grade", "Vurderer …", 1500);
+    return;
+  }
+  const upload = state.sketchUploads.get(question.key);
+  const analysis = state.sketchAnalysis.get(question.key);
+  if (upload && !analysis) {
+    void analyzeSketch();
+    return;
+  }
+  void gradeShortAnswer({ auto: true });
+}
+
+function performShortcutAction(action) {
+  const question = state.activeQuestions[state.currentIndex];
+  let acted = false;
+  if (action === "next") {
+    if (!elements.nextBtn?.disabled) {
+      handleNextClick();
+      acted = true;
+    } else {
+      setShortcutTempStatus("next", "Mangler svar", 1500);
+    }
+  } else if (action === "skip") {
+    if (!elements.skipBtn?.disabled) {
+      skipQuestion();
+      acted = true;
+    } else {
+      setShortcutTempStatus("skip", "Ikke nu", 1500);
+    }
+  } else if (action === "grade") {
+    triggerShortAutoGrade();
+    acted = true;
+  } else if (action === "figure") {
+    if (question?.images?.length) {
+      toggleFigure();
+      acted = true;
+    } else {
+      setShortcutTempStatus("figure", "Ingen figur", 1500);
+    }
+  } else if (action === "hint") {
+    void toggleQuestionHint();
+    acted = true;
+  } else if (action === "tts") {
+    toggleTtsEnabled();
+    acted = true;
+  } else if (action === "focus") {
+    toggleFocusMode();
+    acted = true;
+  }
+  if (acted) {
+    flashShortcut(action);
+  }
 }
 
 function handleKeyDown(event) {
@@ -4714,23 +5562,21 @@ function handleKeyDown(event) {
     if (currentQuestion?.type === "mcq") {
       handleMcqAnswer(key.toUpperCase());
     }
-  } else if (key === "n") {
-    if (!elements.nextBtn.disabled) {
-      handleNextClick();
-    }
-  } else if (key === "k") {
-    skipQuestion();
-  } else if (key === "l") {
-    toggleTtsEnabled();
-  } else if (key === "f") {
-    if (currentQuestion?.images?.length) {
-      toggleFigure();
-    }
-  } else if (key === "h") {
-    void toggleQuestionHint();
-  } else if (key === "m") {
-    toggleFlag();
+    return;
   }
+  const actionMap = {
+    n: "next",
+    k: "skip",
+    v: "grade",
+    g: "figure",
+    h: "hint",
+    l: "tts",
+    f: "focus",
+  };
+  const action = actionMap[key];
+  if (!action) return;
+  event.preventDefault();
+  performShortcutAction(action);
 }
 
 function attachEvents() {
@@ -4741,6 +5587,16 @@ function attachEvents() {
     elements.landingQuickBtn.addEventListener("click", startGame);
   }
   elements.startButtons.forEach((btn) => btn.addEventListener("click", startGame));
+  if (elements.shortcutInline) {
+    elements.shortcutInline.addEventListener("click", (event) => {
+      const item = event.target.closest(".shortcut-item");
+      if (!item || item.classList.contains("is-static")) return;
+      if (item.disabled || item.getAttribute("aria-disabled") === "true") return;
+      const action = item.dataset.action;
+      if (!action) return;
+      performShortcutAction(action);
+    });
+  }
   if (elements.presetGrid) {
     elements.presetGrid.addEventListener("click", (event) => {
       const card = event.target.closest(".preset-card");
@@ -4757,7 +5613,10 @@ function attachEvents() {
   elements.modalClose.addEventListener("click", hideRules);
   elements.backToMenu.addEventListener("click", goToMenu);
   elements.returnMenuBtn.addEventListener("click", goToMenu);
-  elements.playAgainBtn.addEventListener("click", startGame);
+  elements.playAgainBtn.addEventListener("click", handlePlayAgainClick);
+  if (elements.restartRoundBtn) {
+    elements.restartRoundBtn.addEventListener("click", handleRestartRoundClick);
+  }
   if (elements.reviewFilterCorrect) {
     elements.reviewFilterCorrect.addEventListener("click", () =>
       toggleReviewFilter("correct")
@@ -4771,7 +5630,6 @@ function attachEvents() {
       toggleReviewFilter("skipped")
     );
   }
-  elements.flagBtn.addEventListener("click", toggleFlag);
   if (elements.endRoundBtn) {
     elements.endRoundBtn.addEventListener("click", finishSession);
   }
@@ -4842,10 +5700,7 @@ function attachEvents() {
     });
   }
 
-  elements.toggleFocus.addEventListener("click", () => {
-    state.sessionSettings.focusMode = !state.sessionSettings.focusMode;
-    applySessionDisplaySettings();
-  });
+  elements.toggleFocus.addEventListener("click", toggleFocusMode);
 
   elements.toggleMeta.addEventListener("click", () => {
     state.sessionSettings.showMeta = !state.sessionSettings.showMeta;
@@ -4884,8 +5739,12 @@ function attachEvents() {
     });
   }
 
-  if (elements.shortAnswerAiButton) {
-    elements.shortAnswerAiButton.addEventListener("click", gradeShortAnswer);
+  if (elements.shortAnswerAiRetryBtn) {
+    elements.shortAnswerAiRetryBtn.addEventListener("click", async () => {
+      setShortRetryVisible(false);
+      await checkAiAvailability();
+      triggerShortAutoGrade();
+    });
   }
 
   if (elements.shortFigureGenerateBtn) {
@@ -4916,12 +5775,39 @@ function attachEvents() {
   if (elements.sketchUpload) {
     elements.sketchUpload.addEventListener("change", (event) => {
       const file = event.target.files && event.target.files[0];
-      handleSketchUpload(file);
+      handleSketchUpload(file, { autoAnalyze: true });
     });
   }
 
-  if (elements.sketchAnalyzeBtn) {
-    elements.sketchAnalyzeBtn.addEventListener("click", analyzeSketch);
+  if (elements.sketchDropzone) {
+    const dropzone = elements.sketchDropzone;
+    const highlight = () => dropzone.classList.add("is-dragover");
+    const unhighlight = () => dropzone.classList.remove("is-dragover");
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        highlight();
+      });
+    });
+    ["dragleave", "dragend"].forEach((eventName) => {
+      dropzone.addEventListener(eventName, () => {
+        unhighlight();
+      });
+    });
+    dropzone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      unhighlight();
+      const file = event.dataTransfer?.files && event.dataTransfer.files[0];
+      handleSketchUpload(file, { autoAnalyze: true });
+    });
+  }
+
+  if (elements.sketchRetryBtn) {
+    elements.sketchRetryBtn.addEventListener("click", async () => {
+      setSketchRetryVisible(false);
+      await checkAiAvailability();
+      await analyzeSketch();
+    });
   }
 
   elements.modal.addEventListener("click", (evt) => {
@@ -4929,6 +5815,17 @@ function attachEvents() {
       hideRules();
     }
   });
+
+  if (elements.figureModal) {
+    elements.figureModal.addEventListener("click", (evt) => {
+      if (evt.target === elements.figureModal) {
+        closeFigureModal();
+      }
+    });
+  }
+  if (elements.figureModalClose) {
+    elements.figureModalClose.addEventListener("click", closeFigureModal);
+  }
 
   elements.questionCountRange.addEventListener("input", (event) => {
     updateQuestionCount(event.target.value);
@@ -5034,6 +5931,11 @@ function attachEvents() {
     elements.categorySearch.addEventListener("change", applyCategorySearch);
   }
   document.addEventListener("keydown", handleKeyDown);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeFigureModal();
+    }
+  });
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
       scheduleFigureCaptionQueue();
@@ -5154,6 +6056,7 @@ async function loadQuestions() {
       };
     })
     .filter(Boolean);
+  buildMcqDuplicateGroups(mcqQuestions);
 
   const shortQuestions = shortData
     .map((question) => {
@@ -5182,6 +6085,7 @@ async function loadQuestions() {
     })
     .filter(Boolean);
 
+  state.shortQuestionGroups = buildShortQuestionGroups(shortQuestions);
   state.allQuestions = [...mcqQuestions, ...shortQuestions];
   const availableImages = new Set();
   state.allQuestions.forEach((question) => {
@@ -5241,7 +6145,7 @@ async function loadQuestions() {
 
 async function init() {
   attachEvents();
-  showScreen("landing");
+  showScreen("menu");
   updateTopBar();
   elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
   applyTheme(getInitialTheme());
