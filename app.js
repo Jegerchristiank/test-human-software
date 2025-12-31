@@ -656,7 +656,6 @@ const elements = {
   questionFigure: document.getElementById("question-figure"),
   questionFigureMedia: document.getElementById("question-figure-media"),
   questionFigureCaption: document.getElementById("question-figure-caption"),
-  figureToolbar: document.getElementById("figure-toolbar"),
   figureToggleBtn: document.getElementById("figure-toggle-btn"),
   figureToggleHint: document.getElementById("figure-toggle-hint"),
   optionsContainer: document.getElementById("options-container"),
@@ -1043,12 +1042,6 @@ function calculateScoreSummary() {
 
 function isShortFailed(entry) {
   return entry.type === "short" && !entry.skipped && entry.awardedPoints < SHORT_FAIL_THRESHOLD;
-}
-
-function isReviewWrong(entry) {
-  if (entry.skipped) return true;
-  if (entry.type === "mcq") return !entry.isCorrect;
-  return entry.awardedPoints < entry.maxPoints;
 }
 
 function isReviewCorrect(entry) {
@@ -1652,9 +1645,6 @@ function updateQuestionFigure(question) {
     if (elements.questionFigureCaption) {
       elements.questionFigureCaption.textContent = "";
     }
-    if (elements.figureToolbar) {
-      elements.figureToolbar.classList.add("hidden");
-    }
     return;
   }
 
@@ -1670,9 +1660,6 @@ function updateQuestionFigure(question) {
     elements.questionFigureCaption.textContent = images.length > 1 ? "Flere figurer" : "Figur";
   }
 
-  if (elements.figureToolbar) {
-    elements.figureToolbar.classList.remove("hidden");
-  }
   setFigureVisibility(false, { announce: false });
 }
 
@@ -3463,15 +3450,6 @@ async function playTtsForCurrentQuestion(source = "manual") {
     return;
   }
   playTtsText(text, { source });
-}
-
-function toggleTtsPlayback() {
-  if (!state.settings.ttsEnabled) return;
-  if (state.ttsPlayer.isLoading || state.ttsPlayer.isPlaying) {
-    stopTts();
-    return;
-  }
-  playTtsForCurrentQuestion("manual");
 }
 
 function maybeAutoReadQuestion() {
@@ -5281,15 +5259,6 @@ function goToMenu() {
   showScreen("menu");
 }
 
-function goToLanding() {
-  clearAutoAdvance();
-  stopTts();
-  clearTtsPrefetch();
-  clearFigureCaptionQueue();
-  state.questionStartedAt = null;
-  showScreen("landing");
-}
-
 function renderChips(container, values, selectedSet, counts, type) {
   container.innerHTML = "";
   values.forEach((value) => {
@@ -6016,11 +5985,12 @@ function syncSettingsToUI() {
 }
 
 async function loadQuestions() {
+  const fetchOptions = { cache: "no-store" };
   const [mcqRes, shortRes, captionsRes, bookRes] = await Promise.all([
-    fetch("data/questions.json"),
-    fetch("data/kortsvar.json"),
-    fetch("data/figure_captions.json"),
-    fetch("data/book_captions.json"),
+    fetch("data/questions.json", fetchOptions),
+    fetch("data/kortsvar.json", fetchOptions),
+    fetch("data/figure_captions.json", fetchOptions),
+    fetch("data/book_captions.json", fetchOptions),
   ]);
   const mcqData = await mcqRes.json();
   const shortData = shortRes.ok ? await shortRes.json() : [];
@@ -6127,6 +6097,10 @@ async function loadQuestions() {
     if (aParsed.year !== bParsed.year) return aParsed.year - bParsed.year;
     return (SESSION_ORDER[aParsed.session] ?? 99) - (SESSION_ORDER[bParsed.session] ?? 99);
   });
+  const defaultYears = state.available.years.filter((label) => {
+    const parsed = parseYearLabel(label);
+    return !(parsed.year === 2030 && parsed.session.includes("genereret"));
+  });
   const categoryOrder = new Map(CATEGORY_ORDER.map((label, index) => [label, index]));
   state.available.categories = [...state.counts.categories.keys()].sort((a, b) => {
     const aIndex = categoryOrder.get(a);
@@ -6136,7 +6110,7 @@ async function loadQuestions() {
     }
     return a.localeCompare(b, "da");
   });
-  state.filters.years = new Set(state.available.years);
+  state.filters.years = new Set(defaultYears);
   state.filters.categories = new Set(state.available.categories);
   elements.questionCountChip.textContent = `${mcqQuestions.length} MCQ · ${shortQuestions.length} kortsvar`;
   updateChips();
