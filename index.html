@@ -723,6 +723,14 @@
                       </span>
                       <kbd class="keycap">V</kbd>
                     </button>
+                    <button class="shortcut-item" data-action="mic" data-toggle="true" type="button">
+                      <span class="shortcut-icon" aria-hidden="true">&#x1F3A4;</span>
+                      <span class="shortcut-meta">
+                        <span class="shortcut-text">optag</span>
+                        <span class="shortcut-status" aria-live="polite"></span>
+                      </span>
+                      <kbd class="keycap">M</kbd>
+                    </button>
                     <button
                       class="shortcut-item"
                       data-action="figure"
@@ -788,11 +796,22 @@
                 <div id="options-container" class="options-grid"></div>
                 <div id="short-answer-container" class="short-answer hidden">
                   <label class="field-label" for="short-answer-text">Dit svar</label>
-                  <textarea
-                    id="short-answer-text"
-                    rows="6"
-                    placeholder="Skriv dit svar her. Brug gerne punktform og nævn nøglebegreber."
-                  ></textarea>
+                  <div class="short-answer-input" id="short-answer-input-wrap">
+                    <textarea
+                      id="short-answer-text"
+                      rows="6"
+                      placeholder="Skriv dit svar her. Brug gerne punktform og nævn nøglebegreber."
+                    ></textarea>
+                    <div
+                      class="transcribe-indicator hidden"
+                      id="transcribe-indicator"
+                      data-state="transcribing"
+                      aria-live="polite"
+                    >
+                      <span class="transcribe-spinner" aria-hidden="true"></span>
+                      <span id="transcribe-text">Transkriberer …</span>
+                    </div>
+                  </div>
                   <div class="short-sketch-hint hidden" id="short-sketch-hint"></div>
                   <div class="sketch-panel hidden" id="sketch-panel">
                     <div class="sketch-panel-head">
@@ -865,6 +884,15 @@
                   <div class="question-hint-text hidden" id="question-hint-text"></div>
                 </div>
                 <div class="actions">
+                  <button
+                    class="btn ghost mic-btn hidden"
+                    id="mic-btn"
+                    type="button"
+                    aria-label="Optag svar (M)"
+                    title="Optag svar (M)"
+                  >
+                    <span class="mic-icon" aria-hidden="true">&#x1F3A4;</span>
+                  </button>
                   <button class="btn secondary" id="next-btn" type="button" disabled>Næste</button>
                 </div>
                 <div class="feedback" id="feedback-area"></div>
@@ -1025,6 +1053,10 @@
               <li>
                 <span class="shortcut-icon" aria-hidden="true">&#x1F9EE;</span>
                 <kbd class="keycap">V</kbd> vurdér (auto-bedøm)
+              </li>
+              <li>
+                <span class="shortcut-icon" aria-hidden="true">&#x1F3A4;</span>
+                <kbd class="keycap">M</kbd> optag svar
               </li>
               <li>
                 <span class="shortcut-icon" aria-hidden="true">&#x1F5BC;&#xFE0F;</span>

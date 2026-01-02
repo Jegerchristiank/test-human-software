@@ -43,6 +43,7 @@ const HISTORY_LIMIT = 12;
 const TARGET_GRADE_PERCENT = 92;
 const DUPLICATE_QUESTION_SIMILARITY = 0.95;
 const DUPLICATE_ANSWER_SIMILARITY = 0.95;
+const PREFER_UNSEEN_SHARE = 0.7;
 const SHORTCUT_STATUS_DURATION = 3000;
 const SHORT_LABEL_ORDER = ["a", "b", "c", "d", "e"];
 const SHORT_LABEL_INDEX = new Map(SHORT_LABEL_ORDER.map((label, index) => [label, index]));
@@ -346,6 +347,15 @@ const TTS_SPEED_STEP = 0.05;
 const TTS_MAX_CHARS = 2000;
 const SKETCH_MAX_BYTES = 5 * 1024 * 1024;
 const FIGURE_CAPTION_QUEUE_DELAY = 450;
+const TRANSCRIBE_LANGUAGE = "da";
+const AUDIO_MIME_TYPES = [
+  "audio/webm;codecs=opus",
+  "audio/webm",
+  "audio/ogg;codecs=opus",
+  "audio/ogg",
+  "audio/mp4",
+  "audio/mpeg",
+];
 
 const PRESET_CONFIGS = {
   exam: {
@@ -488,6 +498,17 @@ const state = {
     timer: null,
     defer: false,
   },
+  mic: {
+    recorder: null,
+    stream: null,
+    chunks: [],
+    mimeType: "",
+    isRecording: false,
+    isTranscribing: false,
+    discardOnStop: false,
+    requestId: 0,
+    abortController: null,
+  },
   optionOrder: new Map(),
   figureVisible: false,
   shortAnswerDrafts: new Map(),
@@ -503,6 +524,7 @@ const state = {
   },
   figureCaptions: loadFigureCaptions(),
   figureCaptionLibrary: {},
+  figureAuditIndex: new Map(),
   bookCaptionLibrary: {},
   bookCaptionIndex: [],
   figureCaptionRequests: new Map(),
@@ -660,7 +682,10 @@ const elements = {
   figureToggleHint: document.getElementById("figure-toggle-hint"),
   optionsContainer: document.getElementById("options-container"),
   shortAnswerContainer: document.getElementById("short-answer-container"),
+  shortAnswerInputWrap: document.getElementById("short-answer-input-wrap"),
   shortAnswerInput: document.getElementById("short-answer-text"),
+  transcribeIndicator: document.getElementById("transcribe-indicator"),
+  transcribeText: document.getElementById("transcribe-text"),
   shortAnswerScoreRange: document.getElementById("short-score-range"),
   shortAnswerScoreInput: document.getElementById("short-score-input"),
   shortAnswerMaxPoints: document.getElementById("short-max-points"),
@@ -694,6 +719,7 @@ const elements = {
   shortcutFigure: document.getElementById("shortcut-figure"),
   skipBtn: document.getElementById("skip-btn"),
   nextBtn: document.getElementById("next-btn"),
+  micBtn: document.getElementById("mic-btn"),
   toggleFocus: document.getElementById("toggle-focus"),
   toggleMeta: document.getElementById("toggle-meta"),
   questionMeta: document.getElementById("question-meta"),
@@ -852,6 +878,7 @@ function showScreen(target) {
   if (target !== "quiz") {
     document.body.classList.remove("focus-mode");
     document.body.classList.remove("meta-hidden");
+    cancelMicRecording();
   }
 }
 
@@ -1087,6 +1114,41 @@ function getFigureCaptionForImage(imagePath) {
   return "";
 }
 
+function buildFigureAuditIndex(entries) {
+  const index = new Map();
+  if (!Array.isArray(entries)) return index;
+  entries.forEach((entry) => {
+    const key = String(entry.key || "").trim();
+    const image = String(entry.image || "").trim();
+    const description = String(entry.description || "").trim();
+    if (!key || !image || !description) return;
+    const list = index.get(key) || [];
+    list.push({ image, description });
+    index.set(key, list);
+  });
+  return index;
+}
+
+function getFigureAuditKey(question) {
+  if (!question || question.type !== "short") return "";
+  const year = Number(question.year);
+  const opgave = Number(question.opgave ?? question.number);
+  if (!Number.isFinite(year) || !Number.isFinite(opgave)) return "";
+  const label = normalizeShortLabel(question.label);
+  const labelKey = label ? label : "None";
+  return `${year}-${opgave}${labelKey}`;
+}
+
+function getFigureAuditCaption(question, imagePath) {
+  if (!question || !imagePath || !state.figureAuditIndex) return "";
+  const key = getFigureAuditKey(question);
+  if (!key) return "";
+  const entries = state.figureAuditIndex.get(key);
+  if (!entries || !entries.length) return "";
+  const match = entries.find((entry) => entry.image === imagePath);
+  return match ? match.description : "";
+}
+
 function setFigureCaptionForImage(imagePath, description) {
   if (!imagePath || !description) return;
   state.figureCaptions[imagePath] = description;
@@ -1098,7 +1160,7 @@ function getCombinedFigureCaption(question) {
   if (!images.length) return "";
   const parts = images
     .map((path, index) => {
-      const caption = getFigureCaptionForImage(path);
+      const caption = getFigureAuditCaption(question, path) || getFigureCaptionForImage(path);
       if (!caption) return "";
       if (images.length > 1) {
         return `Figur ${index + 1}: ${caption}`;
@@ -1483,6 +1545,9 @@ function buildBookQueryWeights(entry) {
 
   if (entry.aiExplanation) {
     addWeightedTokens(weights, entry.aiExplanation, 1.3);
+  }
+  if (entry.aiExplanationExpanded) {
+    addWeightedTokens(weights, entry.aiExplanationExpanded, 1.1);
   }
   if (entry.aiHint) {
     addWeightedTokens(weights, entry.aiHint, 1.2);
@@ -1883,6 +1948,7 @@ function updateSketchPanel(question) {
 
 function resetShortAnswerUI() {
   if (!elements.shortAnswerContainer) return;
+  cancelMicRecording();
   setShortAnswerPending(false);
   elements.shortAnswerInput.value = "";
   elements.shortAnswerScoreRange.value = "0";
@@ -2025,18 +2091,21 @@ function updateShortAnswerActions(question) {
     elements.nextBtn.textContent = "Næste";
     elements.nextBtn.disabled = false;
     setShortcutDisabled("next", elements.nextBtn.disabled);
+    updateMicControls(question);
     return;
   }
   if (state.shortAnswerPending) {
     elements.nextBtn.textContent = "Vurderer …";
     elements.nextBtn.disabled = true;
     setShortcutDisabled("next", elements.nextBtn.disabled);
+    updateMicControls(question);
     return;
   }
   const scored = isShortAnswerScored(question);
   elements.nextBtn.textContent = scored ? "Næste" : "Vurdér";
   elements.nextBtn.disabled = false;
   setShortcutDisabled("next", elements.nextBtn.disabled);
+  updateMicControls(question);
 }
 
 function getDisplayLabels(count) {
@@ -2101,6 +2170,7 @@ function renderMcqQuestion(question) {
     btn.addEventListener("click", () => handleMcqAnswer(option.label));
     elements.optionsContainer.appendChild(btn);
   });
+  updateMicControls(question);
 }
 
 function renderShortQuestion(question) {
@@ -2412,6 +2482,263 @@ function readFileAsDataUrl(file) {
   });
 }
 
+function canRecordAudio() {
+  return Boolean(navigator.mediaDevices?.getUserMedia) && typeof MediaRecorder !== "undefined";
+}
+
+function getPreferredAudioMimeType() {
+  if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) return "";
+  for (const mimeType of AUDIO_MIME_TYPES) {
+    if (MediaRecorder.isTypeSupported(mimeType)) {
+      return mimeType;
+    }
+  }
+  return "";
+}
+
+function updateVoiceIndicator() {
+  const isRecording = state.mic.isRecording;
+  const isTranscribing = state.mic.isTranscribing;
+  if (elements.shortAnswerInputWrap) {
+    elements.shortAnswerInputWrap.classList.toggle("is-recording", isRecording);
+    elements.shortAnswerInputWrap.classList.toggle("is-transcribing", isTranscribing);
+  }
+  if (!elements.transcribeIndicator) return;
+  const shouldShow = isRecording || isTranscribing;
+  elements.transcribeIndicator.classList.toggle("hidden", !shouldShow);
+  if (!shouldShow) return;
+  elements.transcribeIndicator.dataset.state = isRecording ? "recording" : "transcribing";
+  if (elements.transcribeText) {
+    elements.transcribeText.textContent = isRecording ? "Optager …" : "Transkriberer …";
+  }
+}
+
+function setMicRecording(isRecording) {
+  state.mic.isRecording = Boolean(isRecording);
+  if (elements.micBtn) {
+    elements.micBtn.classList.toggle("is-recording", state.mic.isRecording);
+    elements.micBtn.setAttribute("aria-pressed", String(state.mic.isRecording));
+    const label = state.mic.isRecording ? "Stop optagelse (M)" : "Optag svar (M)";
+    elements.micBtn.setAttribute("aria-label", label);
+    elements.micBtn.title = label;
+  }
+  setShortcutActive("mic", state.mic.isRecording);
+  updateVoiceIndicator();
+}
+
+function setTranscribing(isTranscribing) {
+  state.mic.isTranscribing = Boolean(isTranscribing);
+  setShortcutBusy("mic", state.mic.isTranscribing);
+  updateVoiceIndicator();
+}
+
+function stopMicStream() {
+  if (!state.mic.stream) return;
+  state.mic.stream.getTracks().forEach((track) => track.stop());
+  state.mic.stream = null;
+}
+
+function clearMicRecorder() {
+  stopMicStream();
+  state.mic.recorder = null;
+  state.mic.chunks = [];
+  state.mic.mimeType = "";
+  state.mic.discardOnStop = false;
+}
+
+function updateMicControls(question) {
+  if (!elements.micBtn) return;
+  const isShort = question?.type === "short";
+  elements.micBtn.classList.toggle("hidden", !isShort);
+  if (!isShort) {
+    elements.micBtn.disabled = true;
+    setShortcutDisabled("mic", true);
+    setShortcutStatus("mic", "");
+    updateVoiceIndicator();
+    return;
+  }
+  const supported = canRecordAudio();
+  const aiReady = state.aiStatus.available;
+  const isRecording = state.mic.isRecording;
+  const isTranscribing = state.mic.isTranscribing;
+  const shouldDisable =
+    !supported ||
+    (!aiReady && !isRecording) ||
+    ((state.shortAnswerPending || state.locked || isTranscribing) && !isRecording);
+  elements.micBtn.disabled = shouldDisable;
+  setShortcutDisabled("mic", shouldDisable);
+  let status = "";
+  if (!supported) {
+    status = "Ikke understøttet";
+  } else if (!aiReady && !isRecording) {
+    status = "Offline";
+  } else if (isTranscribing) {
+    status = "Transkriberer …";
+  } else if (isRecording) {
+    status = "Optager";
+  }
+  setShortcutStatus("mic", status);
+  updateVoiceIndicator();
+}
+
+function stopMicRecording({ discard = false } = {}) {
+  if (!state.mic.recorder || !state.mic.isRecording) return;
+  state.mic.discardOnStop = Boolean(discard);
+  try {
+    state.mic.recorder.stop();
+  } catch (error) {
+    clearMicRecorder();
+    setMicRecording(false);
+  }
+}
+
+function cancelMicRecording() {
+  if (state.mic.abortController) {
+    state.mic.abortController.abort();
+    state.mic.abortController = null;
+  }
+  state.mic.requestId += 1;
+  setTranscribing(false);
+  if (state.mic.isRecording) {
+    stopMicRecording({ discard: true });
+  } else {
+    clearMicRecorder();
+    setMicRecording(false);
+  }
+  updateMicControls(state.activeQuestions[state.currentIndex]);
+}
+
+function appendTranscription(text) {
+  if (!elements.shortAnswerInput) return;
+  const current = elements.shortAnswerInput.value.trim();
+  const combined = current ? `${current}\n${text}` : text;
+  elements.shortAnswerInput.value = combined;
+  elements.shortAnswerInput.dispatchEvent(new Event("input", { bubbles: true }));
+  elements.shortAnswerInput.focus();
+  elements.shortAnswerInput.selectionStart = combined.length;
+  elements.shortAnswerInput.selectionEnd = combined.length;
+}
+
+async function transcribeAudio(blob) {
+  const question = state.activeQuestions[state.currentIndex];
+  if (!question || question.type !== "short") return;
+  if (!blob || !blob.size) {
+    setFeedback("Ingen lyd optaget.", "error");
+    return;
+  }
+  const requestId = state.mic.requestId + 1;
+  state.mic.requestId = requestId;
+  setTranscribing(true);
+  updateMicControls(question);
+  const controller = new AbortController();
+  state.mic.abortController = controller;
+  try {
+    const audioData = await readFileAsDataUrl(blob);
+    const res = await fetch("/api/transcribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audioData, language: TRANSCRIBE_LANGUAGE }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      let detail = `AI response ${res.status}`;
+      try {
+        const data = await res.json();
+        if (data.error) detail = data.error;
+      } catch (error) {
+        detail = `AI response ${res.status}`;
+      }
+      throw new Error(detail);
+    }
+    const data = await res.json();
+    if (state.mic.requestId !== requestId) return;
+    const text = String(data.text || "").trim();
+    if (!text) {
+      setFeedback("Kunne ikke høre noget i optagelsen.", "error");
+      return;
+    }
+    appendTranscription(text);
+  } catch (error) {
+    if (error.name === "AbortError") return;
+    setFeedback(
+      `Kunne ikke transkribere lyd. ${error.message || "Tjek server og API-nøgle."}`,
+      "error"
+    );
+  } finally {
+    if (state.mic.requestId === requestId) {
+      setTranscribing(false);
+      updateMicControls(state.activeQuestions[state.currentIndex]);
+    }
+    if (state.mic.abortController === controller) {
+      state.mic.abortController = null;
+    }
+  }
+}
+
+async function startMicRecording() {
+  const question = state.activeQuestions[state.currentIndex];
+  if (!question || question.type !== "short") return;
+  if (state.mic.isRecording || state.mic.isTranscribing) return;
+  if (!canRecordAudio()) {
+    setFeedback("Mikrofon understøttes ikke i denne browser.", "error");
+    return;
+  }
+  if (!state.aiStatus.available) {
+    setFeedback(state.aiStatus.message || "Hjælp offline.", "error");
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = getPreferredAudioMimeType();
+    const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    state.mic.recorder = recorder;
+    state.mic.stream = stream;
+    state.mic.chunks = [];
+    state.mic.mimeType = recorder.mimeType || mimeType || "";
+    state.mic.discardOnStop = false;
+    recorder.addEventListener("dataavailable", (event) => {
+      if (event.data && event.data.size) {
+        state.mic.chunks.push(event.data);
+      }
+    });
+    recorder.addEventListener("stop", () => {
+      const chunks = state.mic.chunks.slice();
+      const mime = state.mic.mimeType || "audio/webm";
+      const discard = state.mic.discardOnStop;
+      clearMicRecorder();
+      setMicRecording(false);
+      updateMicControls(state.activeQuestions[state.currentIndex]);
+      if (discard) return;
+      const blob = new Blob(chunks, { type: mime });
+      void transcribeAudio(blob);
+    });
+    recorder.start();
+    setMicRecording(true);
+    updateMicControls(question);
+  } catch (error) {
+    setFeedback("Kunne ikke starte mikrofonen. Tjek tilladelserne.", "error");
+    clearMicRecorder();
+    setMicRecording(false);
+  }
+}
+
+function toggleMicRecording() {
+  const question = state.activeQuestions[state.currentIndex];
+  if (!question || question.type !== "short") {
+    setShortcutTempStatus("mic", "Kun kortsvar", 2000);
+    return;
+  }
+  if (state.mic.isTranscribing) {
+    setShortcutTempStatus("mic", "Transkriberer …", 1500);
+    return;
+  }
+  if (state.mic.isRecording) {
+    stopMicRecording();
+    return;
+  }
+  void startMicRecording();
+}
+
 async function handleSketchUpload(file, { autoAnalyze = true } = {}) {
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
@@ -2585,6 +2912,16 @@ function skipQuestion() {
   stopTts();
   const question = state.activeQuestions[state.currentIndex];
   if (!question) return;
+  if (question.type === "short") {
+    if (state.mic.isRecording) {
+      setFeedback("Stop optagelsen før du springer over.", "error");
+      return;
+    }
+    if (state.mic.isTranscribing) {
+      setFeedback("Transkriberer stadig – vent et øjeblik.", "error");
+      return;
+    }
+  }
   if (question.type === "short") {
     state.results.push({
       question,
@@ -2940,6 +3277,7 @@ function setAiStatus(status) {
     queueFigureCaptionsForQuestions(state.activeQuestions);
   }
   updateQuestionHintUI(current);
+  updateMicControls(current);
 }
 
 function getTtsBaseLabel() {
@@ -3781,6 +4119,16 @@ async function gradeShortAnswer(options = {}) {
 function handleNextClick() {
   const question = state.activeQuestions[state.currentIndex];
   if (!question) return;
+  if (question.type === "short") {
+    if (state.mic.isRecording) {
+      setFeedback("Stop optagelsen før du går videre.", "error");
+      return;
+    }
+    if (state.mic.isTranscribing) {
+      setFeedback("Transkriberer stadig – vent et øjeblik.", "error");
+      return;
+    }
+  }
   if (question.type === "short" && !state.locked) {
     if (state.shortAnswerPending) return;
     const { hasText, hasSketch, scored } = getShortAnswerState(question);
@@ -3846,7 +4194,9 @@ function goToNextQuestion() {
   renderQuestion();
 }
 
-function buildExplainPayload(entry) {
+function buildExplainPayload(entry, options = {}) {
+  const expand = Boolean(options.expand);
+  const previousExplanation = String(options.previousExplanation || "").trim();
   if (entry.type === "mcq") {
     const mapping = getOptionMapping(entry.question);
     return {
@@ -3857,6 +4207,8 @@ function buildExplainPayload(entry) {
       userLabel: entry.selected || "",
       skipped: entry.skipped,
       language: "da",
+      expand: expand && Boolean(previousExplanation),
+      previousExplanation,
     };
   }
   return {
@@ -3869,36 +4221,116 @@ function buildExplainPayload(entry) {
     awardedPoints: entry.awardedPoints,
     language: "da",
     ignoreSketch: requiresSketch(entry.question),
+    expand: expand && Boolean(previousExplanation),
+    previousExplanation,
   };
 }
 
-function toggleExplanationDisplay(entry, textEl, button) {
+function getExplainText(entry) {
+  const base = String(entry.aiExplanation || "").trim();
+  const expanded = String(entry.aiExplanationExpanded || "").trim();
+  if (expanded) {
+    if (base) return `${base}\n\nUddybning: ${expanded}`;
+    return expanded;
+  }
+  return base;
+}
+
+function getHintText(entry) {
+  const base = String(entry.aiHint || "").trim();
+  const expanded = String(entry.aiHintExpanded || "").trim();
+  if (expanded) {
+    if (base) return `${base}\n\nUddybning: ${expanded}`;
+    return expanded;
+  }
+  return base;
+}
+
+function updateExpandButton(entry, button) {
+  if (!button) return;
+  const hasBase = Boolean(entry.aiExplanation);
+  const hasExpanded = Boolean(entry.aiExplanationExpanded);
+  const hasAny = hasBase || hasExpanded;
+  const isLoading = Boolean(entry.explainLoading || entry.explainExpanding);
+  button.classList.toggle("hidden", !hasAny);
+  button.textContent = hasExpanded ? "Forklaring udvidet" : "Udvid forklaring";
+  if (!hasAny) {
+    button.disabled = true;
+    button.title = "";
+    return;
+  }
+  if (hasExpanded) {
+    button.disabled = true;
+    button.title = "Forklaring er allerede udvidet.";
+    return;
+  }
+  if (!state.aiStatus.available) {
+    button.disabled = true;
+    button.title = state.aiStatus.message || "Hjælp offline. Tjek server og API-nøgle.";
+    return;
+  }
+  button.disabled = isLoading;
+  button.title = "";
+}
+
+function updateExpandHintButton(entry, button) {
+  if (!button) return;
+  const hasBase = Boolean(entry.aiHint);
+  const hasExpanded = Boolean(entry.aiHintExpanded);
+  const hasAny = hasBase || hasExpanded;
+  const isLoading = Boolean(entry.hintLoading || entry.hintExpanding);
+  button.classList.toggle("hidden", !hasAny);
+  button.textContent = hasExpanded ? "Hint udvidet" : "Udvid hint";
+  if (!hasAny) {
+    button.disabled = true;
+    button.title = "";
+    return;
+  }
+  if (hasExpanded) {
+    button.disabled = true;
+    button.title = "Hint er allerede udvidet.";
+    return;
+  }
+  if (!state.aiStatus.available) {
+    button.disabled = true;
+    button.title = state.aiStatus.message || "Hjælp offline. Tjek server og API-nøgle.";
+    return;
+  }
+  button.disabled = isLoading;
+  button.title = "";
+}
+
+function toggleExplanationDisplay(entry, textEl, button, expandButton) {
   if (!entry.aiExplanation) return false;
   const isHidden = textEl.classList.contains("hidden");
   if (isHidden) {
-    textEl.textContent = entry.aiExplanation;
+    textEl.textContent = getExplainText(entry);
     textEl.classList.remove("hidden");
     button.textContent = "Skjul forklaring";
   } else {
     textEl.classList.add("hidden");
     button.textContent = "Få forklaring";
   }
+  updateExpandButton(entry, expandButton);
   return true;
 }
 
-async function handleExplainClick(entry, textEl, button) {
-  if (toggleExplanationDisplay(entry, textEl, button)) return;
+async function handleExplainClick(entry, textEl, button, expandButton) {
+  if (toggleExplanationDisplay(entry, textEl, button, expandButton)) return;
   if (!state.aiStatus.available) {
     textEl.textContent = state.aiStatus.message || "Hjælp offline. Tjek server og API-nøgle.";
     textEl.classList.remove("hidden");
+    updateExpandButton(entry, expandButton);
     return;
   }
 
+  entry.explainLoading = true;
   button.disabled = true;
   button.textContent = "Henter forklaring …";
   textEl.textContent = "Henter forklaring …";
   textEl.classList.add("loading");
   textEl.classList.remove("hidden");
+  updateExpandButton(entry, expandButton);
 
   try {
     const res = await fetch("/api/explain", {
@@ -3919,33 +4351,204 @@ async function handleExplainClick(entry, textEl, button) {
     const data = await res.json();
     const explanation = String(data.explanation || "").trim();
     entry.aiExplanation = explanation || "Kunne ikke lave en forklaring.";
-    textEl.textContent = entry.aiExplanation;
+    textEl.textContent = getExplainText(entry);
     button.textContent = "Skjul forklaring";
     updateReviewIllustration(entry, { force: true });
   } catch (error) {
     textEl.textContent = `Kunne ikke hente forklaring. ${error.message || "Tjek server og API-nøgle."}`;
     button.textContent = "Prøv igen";
   } finally {
+    entry.explainLoading = false;
     textEl.classList.remove("loading");
     button.disabled = !state.aiStatus.available && !entry.aiExplanation;
+    updateExpandButton(entry, expandButton);
   }
 }
 
-function toggleHintDisplay(entry, textEl, button) {
-  if (!entry.aiHint) return false;
+async function handleExpandExplainClick(entry, textEl, button, explainButton) {
+  if (!entry.aiExplanation) {
+    updateExpandButton(entry, button);
+    return;
+  }
+  if (entry.aiExplanationExpanded) {
+    textEl.textContent = getExplainText(entry);
+    textEl.classList.remove("hidden");
+    if (explainButton) {
+      explainButton.textContent = "Skjul forklaring";
+    }
+    updateExpandButton(entry, button);
+    return;
+  }
+  if (!state.aiStatus.available) {
+    textEl.textContent = state.aiStatus.message || "Hjælp offline. Tjek server og API-nøgle.";
+    textEl.classList.remove("hidden");
+    updateExpandButton(entry, button);
+    return;
+  }
+
+  entry.explainExpanding = true;
+  button.disabled = true;
+  button.textContent = "Udvider …";
+  if (explainButton) {
+    explainButton.disabled = true;
+  }
+  textEl.textContent = "Udvider forklaring …";
+  textEl.classList.add("loading");
+  textEl.classList.remove("hidden");
+
+  let success = false;
+  try {
+    const res = await fetch("/api/explain", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        buildExplainPayload(entry, {
+          expand: true,
+          previousExplanation: entry.aiExplanation || "",
+        })
+      ),
+    });
+    if (!res.ok) {
+      let detail = `AI response ${res.status}`;
+      try {
+        const data = await res.json();
+        if (data.error) detail = data.error;
+      } catch (error) {
+        detail = `AI response ${res.status}`;
+      }
+      throw new Error(detail);
+    }
+    const data = await res.json();
+    const explanation = String(data.explanation || "").trim();
+    entry.aiExplanationExpanded = explanation || "Kunne ikke udvide forklaringen.";
+    textEl.textContent = getExplainText(entry);
+    if (explainButton) {
+      explainButton.textContent = "Skjul forklaring";
+    }
+    updateReviewIllustration(entry, { force: true });
+    success = true;
+  } catch (error) {
+    textEl.textContent = `Kunne ikke udvide forklaringen. ${error.message || "Tjek server og API-nøgle."}`;
+    button.textContent = "Prøv igen";
+  } finally {
+    entry.explainExpanding = false;
+    textEl.classList.remove("loading");
+    if (explainButton) {
+      explainButton.disabled = !state.aiStatus.available && !entry.aiExplanation;
+    }
+    if (success) {
+      updateExpandButton(entry, button);
+    } else {
+      button.disabled = !state.aiStatus.available;
+      button.title = state.aiStatus.message || "";
+    }
+  }
+}
+
+function toggleHintDisplay(entry, textEl, button, expandButton) {
+  if (!entry.aiHint && !entry.aiHintExpanded) return false;
   const isHidden = textEl.classList.contains("hidden");
   if (isHidden) {
-    textEl.textContent = entry.aiHint;
+    textEl.textContent = getHintText(entry);
     textEl.classList.remove("hidden");
     button.textContent = "Skjul hint";
   } else {
     textEl.classList.add("hidden");
     button.textContent = "Vis hint";
   }
+  updateExpandHintButton(entry, expandButton);
   return true;
 }
 
-async function fetchReviewHint(entry, textEl, button, { auto = false } = {}) {
+async function handleExpandHintClick(entry, textEl, button, hintButton) {
+  if (!entry.aiHint) {
+    updateExpandHintButton(entry, button);
+    return;
+  }
+  if (entry.aiHintExpanded) {
+    textEl.textContent = getHintText(entry);
+    textEl.classList.remove("hidden");
+    if (hintButton) {
+      hintButton.textContent = "Skjul hint";
+    }
+    updateExpandHintButton(entry, button);
+    return;
+  }
+  if (!state.aiStatus.available) {
+    textEl.textContent = state.aiStatus.message || "Hjælp offline. Tjek server og API-nøgle.";
+    textEl.classList.remove("hidden");
+    updateExpandHintButton(entry, button);
+    return;
+  }
+
+  entry.hintExpanding = true;
+  button.disabled = true;
+  button.textContent = "Udvider …";
+  if (hintButton) {
+    hintButton.disabled = true;
+  }
+  textEl.textContent = "Udvider hint …";
+  textEl.classList.add("loading");
+  textEl.classList.remove("hidden");
+
+  let success = false;
+  try {
+    const modelAnswer = getEffectiveModelAnswer(entry.question);
+    if (!modelAnswer) {
+      throw new Error("Ingen facit til hint.");
+    }
+    const res = await fetch("/api/hint", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question: entry.question.text,
+        modelAnswer,
+        userAnswer: entry.response || "",
+        maxPoints: entry.maxPoints || 0,
+        awardedPoints: entry.awardedPoints || 0,
+        language: "da",
+        ignoreSketch: requiresSketch(entry.question),
+        expand: true,
+        previousHint: entry.aiHint || "",
+      }),
+    });
+    if (!res.ok) {
+      let detail = `AI response ${res.status}`;
+      try {
+        const data = await res.json();
+        if (data.error) detail = data.error;
+      } catch (error) {
+        detail = `AI response ${res.status}`;
+      }
+      throw new Error(detail);
+    }
+    const data = await res.json();
+    const hint = String(data.hint || "").trim();
+    entry.aiHintExpanded = hint || "Kunne ikke udvide hintet.";
+    textEl.textContent = getHintText(entry);
+    if (hintButton) {
+      hintButton.textContent = "Skjul hint";
+    }
+    success = true;
+  } catch (error) {
+    textEl.textContent = `Kunne ikke udvide hintet. ${error.message || "Tjek server og API-nøgle."}`;
+    button.textContent = "Prøv igen";
+  } finally {
+    entry.hintExpanding = false;
+    textEl.classList.remove("loading");
+    if (hintButton) {
+      hintButton.disabled = !state.aiStatus.available;
+    }
+    if (success) {
+      updateExpandHintButton(entry, button);
+    } else {
+      button.disabled = !state.aiStatus.available;
+      button.title = state.aiStatus.message || "";
+    }
+  }
+}
+
+async function fetchReviewHint(entry, textEl, button, expandButton, { auto = false } = {}) {
   if (!state.aiStatus.available || entry.hintLoading) return;
   entry.hintLoading = true;
   textEl.textContent = auto ? "Henter hint …" : "Henter hint …";
@@ -3953,6 +4556,7 @@ async function fetchReviewHint(entry, textEl, button, { auto = false } = {}) {
   textEl.classList.remove("hidden");
   button.textContent = "Henter …";
   button.disabled = true;
+  updateExpandHintButton(entry, expandButton);
 
   const modelAnswer = getEffectiveModelAnswer(entry.question);
   if (!modelAnswer) {
@@ -3961,6 +4565,7 @@ async function fetchReviewHint(entry, textEl, button, { auto = false } = {}) {
     textEl.classList.remove("loading");
     button.textContent = "Vis hint";
     button.disabled = true;
+    updateExpandHintButton(entry, expandButton);
     return;
   }
 
@@ -3991,9 +4596,10 @@ async function fetchReviewHint(entry, textEl, button, { auto = false } = {}) {
     const data = await res.json();
     const hint = String(data.hint || "").trim();
     entry.aiHint = hint || "Kunne ikke lave et hint.";
-    textEl.textContent = entry.aiHint;
+    textEl.textContent = getHintText(entry);
     textEl.classList.remove("loading");
     button.textContent = "Skjul hint";
+    updateExpandHintButton(entry, expandButton);
   } catch (error) {
     textEl.textContent = `Kunne ikke hente hint. ${error.message || "Tjek server og API-nøgle."}`;
     textEl.classList.remove("loading");
@@ -4001,11 +4607,12 @@ async function fetchReviewHint(entry, textEl, button, { auto = false } = {}) {
   } finally {
     entry.hintLoading = false;
     button.disabled = !state.aiStatus.available;
+    updateExpandHintButton(entry, expandButton);
   }
 }
 
-function enqueueReviewHint(entry, textEl, button) {
-  state.reviewHintQueue.push({ entry, textEl, button });
+function enqueueReviewHint(entry, textEl, button, expandButton) {
+  state.reviewHintQueue.push({ entry, textEl, button, expandButton });
 }
 
 function updateReviewQueueStatus(message) {
@@ -4018,9 +4625,9 @@ async function processReviewHintQueue() {
   state.reviewHintProcessing = true;
   updateReviewQueueStatus("Henter hints …");
   while (state.reviewHintQueue.length) {
-    const { entry, textEl, button } = state.reviewHintQueue.shift();
+    const { entry, textEl, button, expandButton } = state.reviewHintQueue.shift();
     if (!entry.aiHint) {
-      await fetchReviewHint(entry, textEl, button, { auto: true });
+      await fetchReviewHint(entry, textEl, button, expandButton, { auto: true });
     }
   }
   state.reviewHintProcessing = false;
@@ -4063,6 +4670,8 @@ function buildReviewQueue(results) {
     const numberTag = `Opg. ${entry.question.opgave}${labelTag}`;
     meta.textContent = `${entry.question.category} • ${entry.question.yearLabel} • ${numberTag}`;
 
+    const sketchUpload = getSketchUpload(entry);
+
     const answerLine = document.createElement("div");
     answerLine.className = "answer-line";
     if (entry.skipped) {
@@ -4070,6 +4679,9 @@ function buildReviewQueue(results) {
       answerLine.classList.add("muted");
     } else if (entry.response) {
       answerLine.textContent = `Dit svar: ${entry.response}`;
+    } else if (sketchUpload) {
+      answerLine.textContent = "Dit svar: (skitse uploadet)";
+      answerLine.classList.add("muted");
     } else {
       answerLine.textContent = "Dit svar: (tomt)";
       answerLine.classList.add("muted");
@@ -4085,6 +4697,10 @@ function buildReviewQueue(results) {
     hintBtn.type = "button";
     hintBtn.className = "btn ghost small";
     hintBtn.textContent = "Vis hint";
+    const expandHintBtn = document.createElement("button");
+    expandHintBtn.type = "button";
+    expandHintBtn.className = "btn ghost small";
+    updateExpandHintButton(entry, expandHintBtn);
     const modelAnswer = getEffectiveModelAnswer(entry.question);
     const canHint = Boolean(modelAnswer);
     hintBtn.disabled = !state.aiStatus.available || !canHint;
@@ -4097,16 +4713,28 @@ function buildReviewQueue(results) {
     hintText.className = "queue-hint hidden";
 
     hintBtn.addEventListener("click", () => {
-      if (toggleHintDisplay(entry, hintText, hintBtn)) return;
-      void fetchReviewHint(entry, hintText, hintBtn);
+      if (toggleHintDisplay(entry, hintText, hintBtn, expandHintBtn)) return;
+      void fetchReviewHint(entry, hintText, hintBtn, expandHintBtn);
+    });
+    expandHintBtn.addEventListener("click", () => {
+      handleExpandHintClick(entry, hintText, expandHintBtn, hintBtn);
     });
 
     actions.appendChild(hintBtn);
+    actions.appendChild(expandHintBtn);
 
     card.appendChild(title);
     card.appendChild(meta);
     card.appendChild(answerLine);
     card.appendChild(scoreLine);
+    const figureWrap = buildReviewFigure(entry);
+    if (figureWrap) {
+      card.appendChild(figureWrap);
+    }
+    const sketchWrap = buildReviewSketch(entry);
+    if (sketchWrap) {
+      card.appendChild(sketchWrap);
+    }
     card.appendChild(actions);
     card.appendChild(hintText);
     elements.reviewQueueList.appendChild(card);
@@ -4115,7 +4743,7 @@ function buildReviewQueue(results) {
       hintText.classList.remove("hidden");
       hintText.classList.add("loading");
       hintText.textContent = "Henter hint …";
-      enqueueReviewHint(entry, hintText, hintBtn);
+      enqueueReviewHint(entry, hintText, hintBtn, expandHintBtn);
     } else {
       hintText.classList.remove("hidden");
       hintText.textContent = canHint ? "Hjælp offline. Tjek serveren." : "Ingen facit til hint.";
@@ -4183,6 +4811,11 @@ function shouldShowReviewIllustration(entry) {
     return state.reviewFilters.correct;
   }
   return true;
+}
+
+function getSketchUpload(entry) {
+  if (!entry?.question?.key) return null;
+  return state.sketchUploads.get(entry.question.key) || null;
 }
 
 function updateReviewIllustration(entry, { force = false } = {}) {
@@ -4303,6 +4936,66 @@ function buildReviewFigure(entry) {
       ? "Vis figurer"
       : "Vis figur";
   });
+
+  return wrap;
+}
+
+function buildReviewSketch(entry) {
+  const upload = getSketchUpload(entry);
+  if (!upload?.dataUrl) return null;
+
+  const wrap = document.createElement("div");
+  wrap.className = "review-figure review-sketch";
+
+  const head = document.createElement("div");
+  head.className = "review-figure-head";
+
+  const title = document.createElement("span");
+  title.textContent = "Din skitse";
+
+  const body = document.createElement("div");
+  body.className = "review-figure-body";
+
+  const grid = document.createElement("div");
+  grid.className = "review-figure-grid";
+
+  const figure = document.createElement("figure");
+  figure.className = "review-figure-item";
+
+  const img = document.createElement("img");
+  img.loading = "lazy";
+  img.src = upload.dataUrl;
+  img.alt = `Skitse til ${entry.question.category}`;
+  img.title = "Klik for at forstørre";
+
+  img.addEventListener("click", () => {
+    openFigureModal({
+      src: upload.dataUrl,
+      alt: img.alt,
+      caption: upload.label || "",
+      title: "Din skitse",
+    });
+  });
+
+  figure.appendChild(img);
+
+  if (upload.label) {
+    const caption = document.createElement("div");
+    caption.className = "review-figure-caption";
+    caption.textContent = upload.label;
+    figure.appendChild(caption);
+  }
+
+  const note = document.createElement("div");
+  note.className = "review-figure-note";
+  note.textContent = "Klik for at forstørre";
+  figure.appendChild(note);
+
+  grid.appendChild(figure);
+  body.appendChild(grid);
+  head.appendChild(title);
+  wrap.appendChild(head);
+  wrap.appendChild(body);
 
   return wrap;
 }
@@ -4439,6 +5132,8 @@ function buildReviewList(results) {
     meta.textContent = `${entry.question.category} • ${entry.question.yearLabel} • ${numberTag} • ${typeLabel}`;
 
     const lines = [];
+    const sketchUpload = getSketchUpload(entry);
+
     if (isShort) {
       const responseLine = document.createElement("div");
       responseLine.className = "answer-line";
@@ -4447,6 +5142,9 @@ function buildReviewList(results) {
         responseLine.classList.add("muted");
       } else if (entry.response) {
         responseLine.textContent = `Dit svar: ${entry.response}`;
+      } else if (sketchUpload) {
+        responseLine.textContent = "Dit svar: (skitse uploadet)";
+        responseLine.classList.add("muted");
       } else {
         responseLine.textContent = "Dit svar: (tomt)";
         responseLine.classList.add("muted");
@@ -4520,11 +5218,13 @@ function buildReviewList(results) {
     card.appendChild(meta);
     lines.forEach((line) => card.appendChild(line));
 
-    if (isShort) {
-      const figureWrap = buildReviewFigure(entry);
-      if (figureWrap) {
-        card.appendChild(figureWrap);
-      }
+    const figureWrap = buildReviewFigure(entry);
+    if (figureWrap) {
+      card.appendChild(figureWrap);
+    }
+    const sketchWrap = buildReviewSketch(entry);
+    if (sketchWrap) {
+      card.appendChild(sketchWrap);
     }
 
     if (shouldShowReviewExplanation(entry)) {
@@ -4543,23 +5243,32 @@ function buildReviewList(results) {
         explainBtn.title = state.aiStatus.message || "Hjælp offline. Start scripts/dev_server.py.";
       }
 
+      const expandBtn = document.createElement("button");
+      expandBtn.type = "button";
+      expandBtn.className = "btn ghost small";
+      updateExpandButton(entry, expandBtn);
+
       const explainStatus = document.createElement("span");
       explainStatus.className = "review-explain-status";
       explainStatus.textContent = state.aiStatus.available ? "Forklaring" : "Hjælp offline";
 
       const explainText = document.createElement("div");
       explainText.className = "review-explain-text";
-      if (entry.aiExplanation) {
-        explainText.textContent = entry.aiExplanation;
+      if (entry.aiExplanation || entry.aiExplanationExpanded) {
+        explainText.textContent = getExplainText(entry);
       } else {
         explainText.classList.add("hidden");
       }
 
       explainBtn.addEventListener("click", () => {
-        handleExplainClick(entry, explainText, explainBtn);
+        handleExplainClick(entry, explainText, explainBtn, expandBtn);
+      });
+      expandBtn.addEventListener("click", () => {
+        handleExpandExplainClick(entry, explainText, expandBtn, explainBtn);
       });
 
       explainActions.appendChild(explainBtn);
+      explainActions.appendChild(expandBtn);
       explainActions.appendChild(explainStatus);
       explainWrap.appendChild(explainActions);
       explainWrap.appendChild(explainText);
@@ -4777,15 +5486,29 @@ function pickFromPoolCore(pool, count) {
 
 function pickFromPool(pool, count) {
   if (count <= 0) return [];
-  const preferUnseen = Boolean(state.sessionSettings.preferUnseen);
+  const preferUnseen = Boolean(
+    state.sessionSettings.preferUnseen && !state.sessionSettings.avoidRepeats
+  );
   if (!preferUnseen) return pickFromPoolCore(pool, count);
   const unseen = pool.filter((q) => !state.seenKeys.has(q.key));
-  if (!unseen.length) return pickFromPoolCore(pool, count);
-  if (unseen.length >= count) return pickFromPoolCore(unseen, count);
-  const pickedUnseen = pickFromPoolCore(unseen, unseen.length);
   const seenPool = pool.filter((q) => state.seenKeys.has(q.key));
-  const pickedSeen = pickFromPoolCore(seenPool, count - pickedUnseen.length);
-  return pickedUnseen.concat(pickedSeen);
+  if (!unseen.length || !seenPool.length) return pickFromPoolCore(pool, count);
+  const desiredUnseen = Math.max(1, Math.round(count * PREFER_UNSEEN_SHARE));
+  let unseenTarget = Math.min(unseen.length, desiredUnseen);
+  let seenTarget = Math.min(seenPool.length, count - unseenTarget);
+  const remaining = count - unseenTarget - seenTarget;
+  if (remaining > 0) {
+    const extraUnseen = Math.min(unseen.length - unseenTarget, remaining);
+    unseenTarget += extraUnseen;
+    const leftover = remaining - extraUnseen;
+    if (leftover > 0) {
+      seenTarget += Math.min(seenPool.length - seenTarget, leftover);
+    }
+  }
+  const pickedUnseen = pickFromPoolCore(unseen, unseenTarget);
+  const pickedSeen = pickFromPoolCore(seenPool, seenTarget);
+  const combined = pickedUnseen.concat(pickedSeen);
+  return state.sessionSettings.shuffleQuestions ? shuffle(combined) : sortQuestions(combined);
 }
 
 function getMcqGroupKey(question) {
@@ -4886,6 +5609,14 @@ function buildQuestionSet(pool) {
   if (includeMcq && includeShort) {
     const mcqPool = pool.filter((q) => q.type === "mcq");
     const shortPool = pool.filter((q) => q.type === "short");
+    if (!mcqPool.length && shortPool.length) {
+      return pickFromPool(shortPool, baseCount);
+    }
+    if (!shortPool.length && mcqPool.length) {
+      const uniqueMcqCount = getUniqueMcqGroupCount(mcqPool);
+      const mcqTarget = Math.min(baseCount, uniqueMcqCount);
+      return pickMcqFromPool(mcqPool, mcqTarget);
+    }
     const uniqueMcqCount = getUniqueMcqGroupCount(mcqPool);
     let mcqTarget = Math.min(state.sessionSettings.questionCount, uniqueMcqCount);
     let shortTarget = getShortTargetFromRatio(
@@ -4981,7 +5712,7 @@ function resolvePool(options = {}) {
     }
   }
 
-  if (state.settings.avoidRepeats) {
+  if (state.settings.avoidRepeats && !focusMistakesActive) {
     pool = pool.filter((question) => !state.seenKeys.has(question.key));
   }
 
@@ -5009,9 +5740,17 @@ function updateSummary() {
   const mcqPoolCount = pool.filter((q) => q.type === "mcq").length;
   const shortPoolCount = pool.filter((q) => q.type === "short").length;
   let roundSize = Math.min(state.settings.questionCount, pool.length);
+  let mcqTarget = 0;
+  let shortTarget = 0;
   if (state.settings.includeMcq && state.settings.includeShort) {
-    const mcqTarget = Math.min(state.settings.questionCount, mcqPoolCount);
-    const shortTarget = getShortTargetFromRatio(mcqTarget, shortPoolCount, state.settings);
+    mcqTarget = Math.min(state.settings.questionCount, mcqPoolCount);
+    if (!mcqTarget && shortPoolCount) {
+      shortTarget = Math.min(state.settings.questionCount, shortPoolCount);
+    } else if (!shortPoolCount && mcqPoolCount) {
+      shortTarget = 0;
+    } else {
+      shortTarget = getShortTargetFromRatio(mcqTarget, shortPoolCount, state.settings);
+    }
     roundSize = mcqTarget + shortTarget;
   }
   const poolMcq = mcqPoolCount;
@@ -5022,8 +5761,6 @@ function updateSummary() {
   const isInfinite = state.settings.infiniteMode;
   let roundLabel = String(roundSize);
   if (state.settings.includeMcq && state.settings.includeShort && roundSize > 0) {
-    const mcqTarget = Math.min(state.settings.questionCount, mcqPoolCount);
-    const shortTarget = getShortTargetFromRatio(mcqTarget, shortPoolCount, state.settings);
     roundLabel = `${roundSize} (${mcqTarget} MCQ / ${shortTarget} kortsvar)`;
     if (isInfinite) {
       roundLabel = `Uendelig · batch ${roundLabel}`;
@@ -5497,6 +6234,9 @@ function performShortcutAction(action) {
   } else if (action === "grade") {
     triggerShortAutoGrade();
     acted = true;
+  } else if (action === "mic") {
+    toggleMicRecording();
+    acted = true;
   } else if (action === "figure") {
     if (question?.images?.length) {
       toggleFigure();
@@ -5522,10 +6262,10 @@ function performShortcutAction(action) {
 function handleKeyDown(event) {
   if (!screens.quiz.classList.contains("active")) return;
   if (elements.modal && !elements.modal.classList.contains("hidden")) return;
-  const tag = document.activeElement?.tagName;
-  if (tag === "INPUT" || tag === "TEXTAREA") return;
-
   const key = event.key.toLowerCase();
+  const tag = document.activeElement?.tagName;
+  const isTyping = tag === "INPUT" || tag === "TEXTAREA";
+  if (isTyping && !(key === "m" && state.mic.isRecording)) return;
   const currentQuestion = state.activeQuestions[state.currentIndex];
   if (key === "a" || key === "b" || key === "c" || key === "d") {
     if (currentQuestion?.type === "mcq") {
@@ -5537,6 +6277,7 @@ function handleKeyDown(event) {
     n: "next",
     k: "skip",
     v: "grade",
+    m: "mic",
     g: "figure",
     h: "hint",
     l: "tts",
@@ -5577,6 +6318,9 @@ function attachEvents() {
   }
   elements.skipBtn.addEventListener("click", skipQuestion);
   elements.nextBtn.addEventListener("click", handleNextClick);
+  if (elements.micBtn) {
+    elements.micBtn.addEventListener("click", toggleMicRecording);
+  }
   elements.rulesButton.addEventListener("click", showRules);
   elements.closeModal.addEventListener("click", hideRules);
   elements.modalClose.addEventListener("click", hideRules);
@@ -5986,18 +6730,21 @@ function syncSettingsToUI() {
 
 async function loadQuestions() {
   const fetchOptions = { cache: "no-store" };
-  const [mcqRes, shortRes, captionsRes, bookRes] = await Promise.all([
+  const [mcqRes, shortRes, captionsRes, bookRes, auditRes] = await Promise.all([
     fetch("data/questions.json", fetchOptions),
     fetch("data/kortsvar.json", fetchOptions),
     fetch("data/figure_captions.json", fetchOptions),
     fetch("data/book_captions.json", fetchOptions),
+    fetch("data/figure_audit.json", fetchOptions),
   ]);
   const mcqData = await mcqRes.json();
   const shortData = shortRes.ok ? await shortRes.json() : [];
   const captionData = captionsRes.ok ? await captionsRes.json() : {};
   const bookData = bookRes.ok ? await bookRes.json() : {};
+  const auditData = auditRes.ok ? await auditRes.json() : [];
   state.figureCaptionLibrary =
     captionData && typeof captionData === "object" ? captionData : {};
+  state.figureAuditIndex = buildFigureAuditIndex(auditData);
   state.bookCaptionLibrary =
     bookData && typeof bookData === "object" ? bookData : {};
   state.bookCaptionIndex = buildBookCaptionIndex(state.bookCaptionLibrary);
@@ -6097,10 +6844,7 @@ async function loadQuestions() {
     if (aParsed.year !== bParsed.year) return aParsed.year - bParsed.year;
     return (SESSION_ORDER[aParsed.session] ?? 99) - (SESSION_ORDER[bParsed.session] ?? 99);
   });
-  const defaultYears = state.available.years.filter((label) => {
-    const parsed = parseYearLabel(label);
-    return !(parsed.year === 2030 && parsed.session.includes("genereret"));
-  });
+  const defaultYears = state.available.years;
   const categoryOrder = new Map(CATEGORY_ORDER.map((label, index) => [label, index]));
   state.available.categories = [...state.counts.categories.keys()].sort((a, b) => {
     const aIndex = categoryOrder.get(a);

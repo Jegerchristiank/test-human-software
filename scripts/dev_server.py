@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 import mimetypes
 import os
 import re
+import uuid
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
@@ -17,8 +19,11 @@ DEFAULT_VISION_MODEL = DEFAULT_MODEL
 DEFAULT_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 DEFAULT_TTS_MODEL = "tts-1"
 DEFAULT_TTS_ENDPOINT = "https://api.openai.com/v1/audio/speech"
+DEFAULT_TRANSCRIBE_MODEL = "whisper-1"
+DEFAULT_TRANSCRIBE_ENDPOINT = "https://api.openai.com/v1/audio/transcriptions"
 TTS_VOICES = {"alloy", "echo", "fable", "onyx", "nova", "shimmer"}
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
+MAX_AUDIO_BYTES = 25 * 1024 * 1024
 
 
 def load_env() -> None:
@@ -151,6 +156,106 @@ def call_openai_tts(
         raise RuntimeError("Could not reach OpenAI") from error
 
 
+def parse_audio_data_url(data_url: str) -> Tuple[str, bytes]:
+    match = re.match(r"^data:(?P<mime>[^;]+)(?:;[^,]+)*;base64,(?P<data>.+)$", data_url)
+    if not match:
+        raise RuntimeError("Invalid audioData")
+    mime_type = match.group("mime").strip().lower()
+    if not mime_type.startswith("audio/"):
+        raise RuntimeError("Unsupported audio type")
+    try:
+        decoded = base64.b64decode(match.group("data"))
+    except Exception as error:
+        raise RuntimeError("Invalid audio data") from error
+    if len(decoded) > MAX_AUDIO_BYTES:
+        raise RuntimeError("Audio too large")
+    return mime_type, decoded
+
+
+def guess_audio_filename(mime_type: str) -> str:
+    base_type = mime_type.split(";", 1)[0].strip().lower()
+    extension_map = {
+        "audio/webm": ".webm",
+        "audio/ogg": ".ogg",
+        "audio/mpeg": ".mp3",
+        "audio/mp4": ".mp4",
+        "audio/wav": ".wav",
+        "audio/x-wav": ".wav",
+    }
+    extension = extension_map.get(base_type) or mimetypes.guess_extension(base_type) or ".webm"
+    return f"recording{extension}"
+
+
+def build_multipart_form(
+    fields: Dict[str, str],
+    files: List[Tuple[str, str, str, bytes]],
+) -> Tuple[bytes, str]:
+    boundary = f"----CodexBoundary{uuid.uuid4().hex}"
+    buffer = io.BytesIO()
+
+    def write_line(line: str) -> None:
+        buffer.write(line.encode("utf-8"))
+        buffer.write(b"\r\n")
+
+    for name, value in fields.items():
+        write_line(f"--{boundary}")
+        write_line(f'Content-Disposition: form-data; name="{name}"')
+        write_line("")
+        write_line(str(value))
+
+    for field_name, filename, content_type, data in files:
+        write_line(f"--{boundary}")
+        write_line(
+            f'Content-Disposition: form-data; name="{field_name}"; filename="{filename}"'
+        )
+        write_line(f"Content-Type: {content_type}")
+        write_line("")
+        buffer.write(data)
+        buffer.write(b"\r\n")
+
+    write_line(f"--{boundary}--")
+    return buffer.getvalue(), f"multipart/form-data; boundary={boundary}"
+
+
+def call_openai_transcribe(
+    api_key: str,
+    endpoint: str,
+    model: str,
+    audio_bytes: bytes,
+    mime_type: str,
+    language: str,
+) -> Dict[str, Any]:
+    fields = {"model": model}
+    if language:
+        fields["language"] = language
+    filename = guess_audio_filename(mime_type)
+    body, content_type = build_multipart_form(
+        fields, [("file", filename, mime_type, audio_bytes)]
+    )
+    request = Request(
+        endpoint,
+        data=body,
+        headers={
+            "Content-Type": content_type,
+            "Authorization": f"Bearer {api_key}",
+        },
+        method="POST",
+    )
+
+    try:
+        with urlopen(request, timeout=60) as response:
+            raw = response.read().decode("utf-8")
+    except HTTPError as error:
+        raise RuntimeError(parse_openai_error(error)) from error
+    except URLError as error:
+        raise RuntimeError("Could not reach OpenAI") from error
+
+    try:
+        return json.loads(raw)
+    except Exception as error:
+        raise RuntimeError("Could not parse transcription response") from error
+
+
 def resolve_image_path(raw_path: str) -> Path:
     candidate = (ROOT_PATH / raw_path).resolve()
     if ROOT_PATH != candidate and ROOT_PATH not in candidate.parents:
@@ -270,7 +375,14 @@ class AppHandler(SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self) -> None:
-        if self.path not in {"/api/grade", "/api/explain", "/api/hint", "/api/tts", "/api/vision"}:
+        if self.path not in {
+            "/api/grade",
+            "/api/explain",
+            "/api/hint",
+            "/api/tts",
+            "/api/vision",
+            "/api/transcribe",
+        }:
             self.send_json(404, {"error": "Not found"})
             return
 
@@ -312,6 +424,43 @@ class AppHandler(SimpleHTTPRequestHandler):
                 return
 
             self.send_audio(200, audio)
+            return
+
+        if self.path == "/api/transcribe":
+            audio_data = str(payload.get("audioData", "")).strip()
+            language = str(payload.get("language", "")).strip().lower()
+            if not audio_data:
+                self.send_json(400, {"error": "Missing audioData"})
+                return
+
+            try:
+                mime_type, audio_bytes = parse_audio_data_url(audio_data)
+            except RuntimeError as error:
+                self.send_json(400, {"error": str(error)})
+                return
+
+            transcribe_model = (
+                os.environ.get("OPENAI_TRANSCRIBE_MODEL") or DEFAULT_TRANSCRIBE_MODEL
+            )
+            transcribe_endpoint = (
+                os.environ.get("OPENAI_TRANSCRIBE_ENDPOINT") or DEFAULT_TRANSCRIBE_ENDPOINT
+            )
+
+            try:
+                result = call_openai_transcribe(
+                    api_key,
+                    transcribe_endpoint,
+                    transcribe_model,
+                    audio_bytes,
+                    mime_type,
+                    language,
+                )
+            except RuntimeError as error:
+                self.send_json(502, {"error": str(error)})
+                return
+
+            text = str(result.get("text", "")).strip()
+            self.send_json(200, {"text": text, "model": transcribe_model})
             return
 
         if self.path == "/api/vision":
@@ -406,19 +555,33 @@ class AppHandler(SimpleHTTPRequestHandler):
             awarded_points = float(payload.get("awardedPoints", 0) or 0)
             ignore_sketch = bool(payload.get("ignoreSketch"))
             language = str(payload.get("language", "da")).strip().lower()
+            expand = bool(payload.get("expand"))
+            previous_hint = str(payload.get("previousHint", "")).strip()
+            if not previous_hint:
+                expand = False
 
             if not question or not model_answer:
                 self.send_json(400, {"error": "Missing question or modelAnswer"})
                 return
 
-            system_prompt = (
-                "Du er en hjælpsom underviser. "
-                "Giv et kort hint, der hjælper den studerende mod det rigtige svar uden at afsløre facit. "
-                "Fokusér på det vigtigste, der mangler eller er misforstået. "
-                "Returnér kun JSON med feltet: hint (string). "
-                "Hint må være 1-2 korte sætninger. "
-                f"{language_instruction(language)}"
-            )
+            if expand:
+                system_prompt = (
+                    "Du er en hjælpsom underviser. "
+                    "Udvid det eksisterende hint med flere detaljer og sammenhænge. "
+                    "Bevar hint-formatet og afslør ikke facit. "
+                    "Returnér kun JSON med feltet: hint (string). "
+                    "Hint må være 3-5 korte sætninger. "
+                    f"{language_instruction(language)}"
+                )
+            else:
+                system_prompt = (
+                    "Du er en hjælpsom underviser. "
+                    "Giv et kort hint, der hjælper den studerende mod det rigtige svar uden at afsløre facit. "
+                    "Fokusér på det vigtigste, der mangler eller er misforstået. "
+                    "Returnér kun JSON med feltet: hint (string). "
+                    "Hint må være 1-2 korte sætninger. "
+                    f"{language_instruction(language)}"
+                )
 
             if ignore_sketch:
                 system_prompt += " Ignorér krav om skitse/tegning; giv kun hint til tekstsvaret."
@@ -429,7 +592,8 @@ class AppHandler(SimpleHTTPRequestHandler):
                 f"Modelbesvarelse: {model_answer}\n"
                 f"Studerendes svar: {user_answer}\n"
                 f"Point: {awarded_points} / {max_points}\n"
-                "Giv et hint (ikke facit). Returnér kun JSON."
+                + (f"Eksisterende hint: {previous_hint}\n" if expand else "")
+                + "Giv et hint (ikke facit). Returnér kun JSON."
             )
 
             try:
@@ -503,6 +667,10 @@ class AppHandler(SimpleHTTPRequestHandler):
         question_type = str(payload.get("type", "")).strip().lower()
         question = str(payload.get("question", "")).strip()
         language = str(payload.get("language", "da")).strip().lower()
+        expand = bool(payload.get("expand"))
+        previous_explanation = str(payload.get("previousExplanation", "")).strip()
+        if not previous_explanation:
+            expand = False
 
         if not question_type or not question:
             self.send_json(400, {"error": "Missing type or question"})
@@ -533,15 +701,25 @@ class AppHandler(SimpleHTTPRequestHandler):
             correct_text = find_option_text(correct_label)
             user_text = find_option_text(user_label)
 
-            system_prompt = (
-                "Du er en hjælpsom tutor. "
-                "Forklar kort hvorfor det korrekte svar passer. "
-                "Hvis et elevsvar er angivet, forklar også kort hvorfor det ikke gør. "
-                "Fokusér på den centrale begrundelse fremfor bare rigtigt/forkert. "
-                "Svar i 2-4 korte sætninger. "
-                "Returnér kun JSON med feltet: explanation. "
-                f"{language_instruction(language)}"
-            )
+            if expand:
+                system_prompt = (
+                    "Du er en hjælpsom tutor. "
+                    "Udvid den eksisterende forklaring med flere detaljer og sammenhænge. "
+                    "Gå et lag dybere i mekanismerne uden at gentage den eksisterende forklaring ordret. "
+                    "Svar i 4-7 korte sætninger. "
+                    "Returnér kun JSON med feltet: explanation. "
+                    f"{language_instruction(language)}"
+                )
+            else:
+                system_prompt = (
+                    "Du er en hjælpsom tutor. "
+                    "Forklar kort hvorfor det korrekte svar passer. "
+                    "Hvis et elevsvar er angivet, forklar også kort hvorfor det ikke gør. "
+                    "Fokusér på den centrale begrundelse fremfor bare rigtigt/forkert. "
+                    "Svar i 2-4 korte sætninger. "
+                    "Returnér kun JSON med feltet: explanation. "
+                    f"{language_instruction(language)}"
+                )
 
             if skipped or not user_label:
                 student_line = "Studerendes svar: Sprunget over"
@@ -554,7 +732,12 @@ class AppHandler(SimpleHTTPRequestHandler):
                 f"Muligheder: {' | '.join(formatted_options)}\n"
                 f"Korrekt svar: {correct_label}. {correct_text}\n"
                 f"{student_line}\n"
-                "Returnér kun JSON."
+                + (
+                    f"Eksisterende forklaring: {previous_explanation}\n"
+                    if expand
+                    else ""
+                )
+                + "Returnér kun JSON."
             )
         elif question_type == "short":
             model_answer = str(payload.get("modelAnswer", "")).strip()
@@ -564,14 +747,24 @@ class AppHandler(SimpleHTTPRequestHandler):
             ignore_sketch = bool(payload.get("ignoreSketch"))
             skipped = bool(payload.get("skipped"))
 
-            system_prompt = (
-                "Du er en hjælpsom tutor. "
-                "Forklar kort hvad et godt svar skal indeholde, og hvad der evt. mangler eller er misforstået. "
-                "Hvis der ikke er givet et svar, forklar kort det centrale indhold. "
-                "Svar i 2-4 korte sætninger uden at kopiere facit. "
-                "Returnér kun JSON med feltet: explanation. "
-                f"{language_instruction(language)}"
-            )
+            if expand:
+                system_prompt = (
+                    "Du er en hjælpsom tutor. "
+                    "Udvid den eksisterende forklaring med flere detaljer og faglige sammenhænge. "
+                    "Gå et lag dybere uden at gentage den eksisterende forklaring ordret. "
+                    "Svar i 4-7 korte sætninger uden at kopiere facit. "
+                    "Returnér kun JSON med feltet: explanation. "
+                    f"{language_instruction(language)}"
+                )
+            else:
+                system_prompt = (
+                    "Du er en hjælpsom tutor. "
+                    "Forklar kort hvad et godt svar skal indeholde, og hvad der evt. mangler eller er misforstået. "
+                    "Hvis der ikke er givet et svar, forklar kort det centrale indhold. "
+                    "Svar i 2-4 korte sætninger uden at kopiere facit. "
+                    "Returnér kun JSON med feltet: explanation. "
+                    f"{language_instruction(language)}"
+                )
 
             if ignore_sketch:
                 system_prompt += " Ignorér krav om skitse/tegning; vurder kun tekstsvaret."
@@ -587,7 +780,12 @@ class AppHandler(SimpleHTTPRequestHandler):
                 f"Modelbesvarelse: {model_answer}\n"
                 f"{student_line}\n"
                 f"Point: {awarded_points} / {max_points}\n"
-                "Returnér kun JSON."
+                + (
+                    f"Eksisterende forklaring: {previous_explanation}\n"
+                    if expand
+                    else ""
+                )
+                + "Returnér kun JSON."
             )
         else:
             self.send_json(400, {"error": "Unknown type"})
