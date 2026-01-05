@@ -92,3 +92,41 @@ create policy "Usage events are viewable by owner"
   on public.usage_events
   for select
   using (auth.uid() = user_id);
+
+-- User state (settings + history sync)
+create table if not exists public.user_state (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  settings jsonb,
+  history jsonb,
+  seen jsonb,
+  mistakes jsonb,
+  performance jsonb,
+  figure_captions jsonb,
+  best_score numeric,
+  theme text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create trigger set_user_state_updated_at
+before update on public.user_state
+for each row
+execute function public.set_updated_at();
+
+alter table public.user_state enable row level security;
+
+create policy "User state is viewable by owner"
+  on public.user_state
+  for select
+  using (auth.uid() = user_id);
+
+create policy "User state is insertable by owner"
+  on public.user_state
+  for insert
+  with check (auth.uid() = user_id);
+
+create policy "User state is updatable by owner"
+  on public.user_state
+  for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);

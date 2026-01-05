@@ -31,12 +31,18 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 1. Supabase:
    - Kør SQL fra `supabase/schema.sql` i Supabase SQL Editor.
    - Aktivér Auth providers (email, evt. Google + Apple) i Supabase Auth.
+   - Hvis du allerede har kørt SQL, så kør det igen for at oprette `user_state` tabellen.
 2. Stripe:
    - Opret et produkt og en price (subscription).
    - Tilføj webhook til `/api/stripe/webhook`.
 3. Vercel:
    - Tilføj miljøvariabler fra `.env` i Vercel Dashboard.
    - Deploy projektet via GitHub.
+
+## Fejlfinding
+- Hvis du ser "Backend offline" i produktion, åbn `https://<din-app>/api/config` og læs fejlbeskeden.
+- Sørg for at Vercel har `SUPABASE_URL` + `SUPABASE_ANON_KEY`/`SUPABASE_PUBLISHABLE_KEY` sat i Environment Variables (Production + Preview).
+- Tjek at Vercel "Output Directory" er tom eller `.` så `/api/*` deployes.
 
 ## Miljøvariabler
 Minimum for online drift:
@@ -53,6 +59,10 @@ Stripe nøgler:
 - `STRIPE_PRICE_ID` findes i Stripe Dashboard → Products → Price (starter med `price_`).
 - `STRIPE_WEBHOOK_SECRET` findes i Stripe Dashboard → Developers → Webhooks (starter med `whsec_`).
 - `STRIPE_BASE_URL` er optional og skal være din app-URL (bruges til success/cancel).
+
+## Sync af settings + historik
+- Appen synkroniserer settings, historik, fejl og performance til `user_state` tabellen i Supabase.
+- Synkronisering sker i baggrunden efter login og ved ændringer i lokal data.
 
 Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 

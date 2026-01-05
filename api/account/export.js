@@ -34,11 +34,20 @@ module.exports = async function handler(req, res) {
       .order("created_at", { ascending: false })
       .limit(1000);
 
+    const { data: userState } = await supabase
+      .from("user_state")
+      .select(
+        "settings, history, seen, mistakes, performance, figure_captions, best_score, theme, created_at, updated_at"
+      )
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     return sendJson(res, 200, {
       exported_at: new Date().toISOString(),
       profile: profile || null,
       subscriptions: subscriptions || [],
       usage_events: usageEvents || [],
+      user_state: userState || null,
     });
   } catch (err) {
     return sendError(res, 500, "Could not export data");

@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   figureCaptions: "ku_mcq_figure_captions",
   userOpenAiKey: "hbs_user_openai_key",
   useOwnKey: "hbs_use_own_key",
+  userStateUpdatedAt: "hbs_user_state_updated_at",
 };
 
 const DEFAULT_SETTINGS = {
@@ -52,6 +53,7 @@ const DUPLICATE_QUESTION_SIMILARITY = 0.95;
 const DUPLICATE_ANSWER_SIMILARITY = 0.95;
 const PREFER_UNSEEN_SHARE = 0.7;
 const SHORTCUT_STATUS_DURATION = 3000;
+const USER_STATE_SYNC_DELAY = 1800;
 const SHORT_LABEL_ORDER = ["a", "b", "c", "d", "e"];
 const SHORT_LABEL_INDEX = new Map(SHORT_LABEL_ORDER.map((label, index) => [label, index]));
 const CONTEXT_STRONG_CUE = /\b(dis?se|ovenfor|ovenstående|førnævnte|sidstnævnte|førstnævnte)\b/i;
@@ -481,6 +483,9 @@ const state = {
   configError: "",
   demoMode: false,
   authReady: false,
+  userStateSyncTimer: null,
+  userStateSyncInFlight: false,
+  userStateApplying: false,
   useOwnKey: localStorage.getItem(STORAGE_KEYS.useOwnKey) === "true",
   userOpenAiKey: String(localStorage.getItem(STORAGE_KEYS.userOpenAiKey) || ""),
   lastPreset: null,
@@ -814,6 +819,7 @@ function loadSettings() {
 
 function saveSettings() {
   localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(state.settings));
+  scheduleUserStateSync();
 }
 
 function loadPerformance() {
@@ -830,6 +836,7 @@ function loadPerformance() {
 
 function savePerformance() {
   localStorage.setItem(STORAGE_KEYS.performance, JSON.stringify(state.performance));
+  scheduleUserStateSync();
 }
 
 function loadFigureCaptions() {
@@ -846,6 +853,130 @@ function loadFigureCaptions() {
 
 function saveFigureCaptions() {
   localStorage.setItem(STORAGE_KEYS.figureCaptions, JSON.stringify(state.figureCaptions));
+  scheduleUserStateSync();
+}
+
+function touchUserStateUpdatedAt() {
+  if (state.userStateApplying) return;
+  localStorage.setItem(STORAGE_KEYS.userStateUpdatedAt, new Date().toISOString());
+}
+
+function getLocalUserStateUpdatedAt() {
+  const stored = localStorage.getItem(STORAGE_KEYS.userStateUpdatedAt);
+  if (!stored) return null;
+  const parsed = Date.parse(stored);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function buildUserStatePayload() {
+  if (!state.session?.user) return null;
+  return {
+    user_id: state.session.user.id,
+    settings: state.settings,
+    history: getHistoryEntries(),
+    seen: [...state.seenKeys],
+    mistakes: [...state.lastMistakeKeys],
+    performance: state.performance,
+    figure_captions: state.figureCaptions,
+    best_score: state.bestScore,
+    theme: localStorage.getItem(STORAGE_KEYS.theme) || "light",
+  };
+}
+
+function scheduleUserStateSync() {
+  touchUserStateUpdatedAt();
+  if (state.userStateApplying) return;
+  if (!state.backendAvailable || !state.supabase || !state.session?.user) return;
+  if (state.userStateSyncTimer) return;
+  state.userStateSyncTimer = setTimeout(() => {
+    state.userStateSyncTimer = null;
+    syncUserStateNow();
+  }, USER_STATE_SYNC_DELAY);
+}
+
+async function syncUserStateNow() {
+  if (state.userStateApplying) return;
+  if (!state.backendAvailable || !state.supabase || !state.session?.user) return;
+  if (state.userStateSyncInFlight) return;
+  const payload = buildUserStatePayload();
+  if (!payload) return;
+  state.userStateSyncInFlight = true;
+  const { error } = await state.supabase.from("user_state").upsert(payload, {
+    onConflict: "user_id",
+  });
+  if (error) {
+    console.warn("Kunne ikke synkronisere brugerdata", error);
+  }
+  state.userStateSyncInFlight = false;
+}
+
+function applyUserState(remote) {
+  if (!remote) return;
+  state.userStateApplying = true;
+  if (remote.settings && typeof remote.settings === "object") {
+    state.settings = { ...DEFAULT_SETTINGS, ...remote.settings, assistantCollapsed: false };
+    localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(state.settings));
+  }
+  if (Array.isArray(remote.history)) {
+    saveHistoryEntries(remote.history);
+  }
+  if (Array.isArray(remote.seen)) {
+    state.seenKeys = new Set(remote.seen);
+    localStorage.setItem(STORAGE_KEYS.seen, JSON.stringify([...state.seenKeys]));
+  }
+  if (Array.isArray(remote.mistakes)) {
+    state.lastMistakeKeys = new Set(remote.mistakes);
+    localStorage.setItem(STORAGE_KEYS.mistakes, JSON.stringify([...state.lastMistakeKeys]));
+  }
+  if (remote.performance && typeof remote.performance === "object") {
+    state.performance = remote.performance;
+    localStorage.setItem(STORAGE_KEYS.performance, JSON.stringify(state.performance));
+  }
+  if (remote.figure_captions && typeof remote.figure_captions === "object") {
+    state.figureCaptions = remote.figure_captions;
+    localStorage.setItem(STORAGE_KEYS.figureCaptions, JSON.stringify(state.figureCaptions));
+  }
+  if (typeof remote.best_score === "number") {
+    state.bestScore = Math.max(state.bestScore, remote.best_score);
+    localStorage.setItem(STORAGE_KEYS.bestScore, String(state.bestScore.toFixed(1)));
+  }
+  if (remote.theme) {
+    applyTheme(remote.theme);
+  }
+  state.userStateApplying = false;
+  syncSettingsToUI();
+  updateSummary();
+  renderHistory();
+  updateChips();
+  updateTopBar();
+  if (elements.bestScoreValue) {
+    elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
+  }
+}
+
+async function loadUserStateFromSupabase() {
+  if (!state.supabase || !state.session?.user) return;
+  const { data, error } = await state.supabase
+    .from("user_state")
+    .select("settings, history, seen, mistakes, performance, figure_captions, best_score, theme, updated_at")
+    .eq("user_id", state.session.user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("Kunne ikke hente brugerdata", error);
+    return;
+  }
+  if (!data) {
+    scheduleUserStateSync();
+    return;
+  }
+  const localUpdatedAt = getLocalUserStateUpdatedAt();
+  const remoteUpdatedAt = data.updated_at ? Date.parse(data.updated_at) : null;
+  if (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt)) {
+    applyUserState(data);
+  } else {
+    scheduleUserStateSync();
+  }
 }
 
 function loadStoredArray(key) {
@@ -876,6 +1007,7 @@ function applyTheme(theme) {
     elements.themeToggle.setAttribute("aria-checked", String(nextTheme === "dark"));
   }
   localStorage.setItem(STORAGE_KEYS.theme, nextTheme);
+  scheduleUserStateSync();
 }
 
 function updatePresetButtons() {
@@ -1074,7 +1206,7 @@ function updateAuthUI() {
     showScreen("auth");
     if (!canAuth) {
       const message =
-        state.configError || "Backend offline. Kør vercel dev for login.";
+        state.configError || "Backend offline. Tjek /api/config og Vercel env.";
       setAuthStatus(message, true);
     } else {
       setAuthStatus("Log ind for at fortsætte");
@@ -1114,7 +1246,7 @@ async function apiFetch(url, options = {}) {
 async function loadRuntimeConfig() {
   const res = await fetch("/api/config", { cache: "no-store" });
   if (!res.ok) {
-    let detail = "Backend offline. Kør vercel dev for login.";
+    let detail = "Backend offline. Tjek /api/config og Vercel env.";
     try {
       const data = await res.json();
       if (data?.error) {
@@ -1186,6 +1318,7 @@ async function refreshProfile() {
     state.subscription = data.subscription || null;
     updateAccountUI();
     updateUserChip();
+    await loadUserStateFromSupabase();
   } catch (error) {
     // Ignore profile fetch errors for now.
   }
@@ -4372,6 +4505,7 @@ function getHistoryEntries() {
 function saveHistoryEntries(entries) {
   state.history = entries.slice(-HISTORY_LIMIT);
   localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(state.history));
+  scheduleUserStateSync();
 }
 
 function getBestHistoryEntry(entries) {
@@ -5941,6 +6075,7 @@ function showResults() {
 
   state.activeQuestions.forEach((question) => state.seenKeys.add(question.key));
   localStorage.setItem(STORAGE_KEYS.seen, JSON.stringify([...state.seenKeys]));
+  scheduleUserStateSync();
 
   buildReviewQueue(state.results);
   buildReviewList(state.results);
@@ -6678,15 +6813,17 @@ function updateAutoAdvanceLabel() {
 async function checkAiAvailability() {
   try {
     if (!state.backendAvailable) {
+      const offlineMessage =
+        state.configError || "Backend offline. Tjek /api/config og Vercel env.";
       setAiStatus({
         available: false,
         model: null,
-        message: "Backend offline. Kør vercel dev.",
+        message: offlineMessage,
       });
       setTtsStatus({
         available: false,
         model: null,
-        message: "Backend offline. Kør vercel dev.",
+        message: offlineMessage,
       });
       return;
     }
@@ -7487,6 +7624,7 @@ async function loadQuestions() {
   savePerformance();
   localStorage.setItem(STORAGE_KEYS.seen, JSON.stringify([...state.seenKeys]));
   localStorage.setItem(STORAGE_KEYS.mistakes, JSON.stringify([...state.lastMistakeKeys]));
+  scheduleUserStateSync();
   state.counts = buildCounts(state.allQuestions);
   state.countsByType = {
     mcq: state.counts.types.get("mcq") || 0,

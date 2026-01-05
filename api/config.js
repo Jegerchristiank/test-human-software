@@ -14,7 +14,11 @@ module.exports = function handler(req, res) {
   const stripePublishableKey = optionalEnv("STRIPE_PUBLISHABLE_KEY");
 
   if (!supabaseUrl || !supabaseKey) {
-    return sendError(res, 500, "Missing public config");
+    return sendError(
+      res,
+      500,
+      "Missing public config (SUPABASE_URL + SUPABASE_ANON_KEY/SUPABASE_PUBLISHABLE_KEY)"
+    );
   }
 
   return sendJson(res, 200, {

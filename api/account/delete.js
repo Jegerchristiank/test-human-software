@@ -30,6 +30,7 @@ module.exports = async function handler(req, res) {
     const supabase = getSupabaseAdmin();
     await supabase.from("usage_events").delete().eq("user_id", user.id);
     await supabase.from("subscriptions").delete().eq("user_id", user.id);
+    await supabase.from("user_state").delete().eq("user_id", user.id);
     await supabase.from("profiles").delete().eq("id", user.id);
     await supabase.auth.admin.deleteUser(user.id);
 
