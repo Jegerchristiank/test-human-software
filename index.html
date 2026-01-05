@@ -27,6 +27,84 @@
     </div>
 
     <div class="app">
+      <section id="auth-screen" class="screen active">
+        <div class="landing-shell auth-shell">
+          <header class="landing-header reveal" style="--delay: 0s">
+            <div class="brand-block">
+              <div class="brand-mark">
+                <img class="brand-logo" src="Logo.png" alt="Københavns Universitet logo" />
+              </div>
+              <div>
+                <div class="brand-subtitle">Københavns Universitet · Sundhed &amp; Informatik</div>
+                <h1>Human Biologi Studio</h1>
+                <p>
+                  Øv eksamenssæt med et personligt flow, smart feedback og AI-hjælp når du har adgang.
+                </p>
+              </div>
+            </div>
+            <div class="landing-actions auth-actions">
+              <div class="auth-status" id="auth-status">Log ind for at fortsætte</div>
+              <div class="auth-email">
+                <input
+                  id="auth-email-input"
+                  type="email"
+                  placeholder="Email til loginlink"
+                  autocomplete="email"
+                />
+                <button id="auth-email-btn" class="btn primary" type="button">Send loginlink</button>
+              </div>
+              <div class="auth-divider">eller</div>
+              <button id="auth-google-btn" class="btn secondary" type="button">Log ind med Google</button>
+              <button id="auth-apple-btn" class="btn ghost" type="button">Log ind med Apple</button>
+            </div>
+          </header>
+
+          <div class="landing-grid auth-grid">
+            <section class="panel hero-panel reveal" style="--delay: 0.05s">
+              <div class="panel-header">
+                <h2>Vælg adgang</h2>
+                <p>Testmode er aktiv: Du kan gennemføre en testbetaling via Stripe.</p>
+              </div>
+              <div class="pricing-grid">
+                <div class="pricing-card">
+                  <div class="pricing-title">Gratis</div>
+                  <div class="pricing-price">0 kr</div>
+                  <ul>
+                    <li>Brug din egen OpenAI API-nøgle</li>
+                    <li>Alle quizfunktioner</li>
+                    <li>AI-funktioner via din egen nøgle</li>
+                  </ul>
+                  <div class="pricing-note">Nøglen gemmes kun i din browser.</div>
+                </div>
+                <div class="pricing-card highlight">
+                  <div class="pricing-title">Pro adgang</div>
+                  <div class="pricing-price">Testbetaling</div>
+                  <ul>
+                    <li>AI-hjælp via min nøgle</li>
+                    <li>Auto-bedømmelse, hints og oplæsning</li>
+                    <li>Prioriteret support og statistik</li>
+                  </ul>
+                  <div class="pricing-note">Klar til live senere.</div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel history-panel reveal" style="--delay: 0.1s">
+              <div class="panel-header">
+                <h2>Sikkerhed &amp; compliance</h2>
+                <p>Bygget til at undgå data-leak og håndtere adgang korrekt.</p>
+              </div>
+              <div class="compliance-list">
+                <div class="compliance-item">Supabase Auth (Apple + Google)</div>
+                <div class="compliance-item">Stripe betaling &amp; kundeportal</div>
+                <div class="compliance-item">RLS på alle tabeller</div>
+                <div class="compliance-item">Eksport og sletning af data</div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
       <section id="landing-screen" class="screen hidden">
         <div class="landing-shell">
           <header class="landing-header reveal" style="--delay: 0s">
@@ -86,7 +164,7 @@
         </div>
       </section>
 
-      <section id="menu-screen" class="screen active">
+      <section id="menu-screen" class="screen hidden">
         <div class="menu-shell">
           <header class="menu-header reveal" style="--delay: 0s">
             <div class="brand-block">
@@ -107,6 +185,10 @@
                 <div class="stat-pill" id="question-count-chip">Indlæser …</div>
                 <div class="stat-pill" id="pool-count-chip">0 i puljen</div>
                 <div class="stat-pill" id="ai-status-pill">Assistent: Tjekker …</div>
+              </div>
+              <div class="menu-account">
+                <div class="user-chip" id="user-chip">Ikke logget ind</div>
+                <button id="account-btn" class="btn ghost" type="button">Konto</button>
               </div>
             </div>
           </header>
@@ -1014,6 +1096,120 @@
           </div>
         </div>
       </section>
+      <section id="account-screen" class="screen hidden">
+        <div class="account-shell">
+          <header class="account-header reveal" style="--delay: 0s">
+            <div>
+              <h1>Konto &amp; betaling</h1>
+              <p>Administrér plan, API-nøgle og datarettigheder.</p>
+            </div>
+            <button id="account-back-btn" class="btn ghost" type="button">Tilbage til app</button>
+          </header>
+
+          <div class="account-grid">
+            <section class="panel account-panel reveal" style="--delay: 0.05s">
+              <div class="panel-header">
+                <h2>Profil</h2>
+                <p>Opdatér dit navn og se e-mailen fra login.</p>
+              </div>
+              <div class="field">
+                <label for="profile-name-input">Navn</label>
+                <input id="profile-name-input" type="text" placeholder="Dit navn" />
+              </div>
+              <div class="field">
+                <label>Email</label>
+                <div class="field-static" id="profile-email">—</div>
+              </div>
+              <div class="account-actions">
+                <button id="profile-save-btn" class="btn primary" type="button">Gem profil</button>
+              </div>
+            </section>
+
+            <section class="panel account-panel reveal" style="--delay: 0.1s">
+              <div class="panel-header">
+                <h2>Adgang &amp; betaling</h2>
+                <p>Testbetaling via Stripe. Gratis adgang kræver egen nøgle.</p>
+              </div>
+              <div class="plan-row">
+                <div class="plan-chip" id="plan-status">Plan: —</div>
+                <div class="plan-meta" id="subscription-status">Ingen aktiv betaling endnu.</div>
+              </div>
+              <div class="account-actions">
+                <button id="upgrade-btn" class="btn primary" type="button">Start testbetaling</button>
+                <button id="portal-btn" class="btn ghost" type="button">Administrer betaling</button>
+              </div>
+              <div class="field-hint">Testmode er aktiv i Stripe. Ingen rigtige kort trækkes.</div>
+            </section>
+
+            <section class="panel account-panel reveal" style="--delay: 0.15s">
+              <div class="panel-header">
+                <h2>Din egen API-nøgle</h2>
+                <p>Brug din egen nøgle for gratis adgang til AI-funktioner.</p>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="own-key-toggle" />
+                <span>Brug min egen OpenAI-nøgle</span>
+                <small>Gemmes kun lokalt i browseren</small>
+              </label>
+              <div class="field">
+                <label for="own-key-input">OpenAI API-nøgle</label>
+                <input id="own-key-input" type="password" placeholder="sk-..." autocomplete="off" />
+                <div class="field-hint">Nøglen sendes kun til serveren ved AI-kald og lagres aldrig.</div>
+              </div>
+              <div class="account-actions">
+                <button id="own-key-save-btn" class="btn primary" type="button">Gem nøgle</button>
+                <button id="own-key-clear-btn" class="btn ghost" type="button">Ryd nøgle</button>
+              </div>
+            </section>
+
+            <section class="panel account-panel reveal" style="--delay: 0.2s">
+              <div class="panel-header">
+                <h2>Jura &amp; samtykke</h2>
+                <p>For at bruge appen skal du acceptere vilkår og privatliv.</p>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="consent-terms" />
+                <span>Jeg accepterer vilkår</span>
+                <small>Påkrævet</small>
+              </label>
+              <label class="toggle">
+                <input type="checkbox" id="consent-privacy" />
+                <span>Jeg accepterer privatlivspolitik</span>
+                <small>Påkrævet</small>
+              </label>
+              <div class="account-actions">
+                <button id="consent-save-btn" class="btn ghost" type="button">Gem samtykke</button>
+              </div>
+              <details class="legal-drawer">
+                <summary>Vilkår (udkast)</summary>
+                <div class="legal-body">
+                  Dette er en placeholder. Tilføj dine officielle vilkår her før launch.
+                </div>
+              </details>
+              <details class="legal-drawer">
+                <summary>Privatliv (udkast)</summary>
+                <div class="legal-body">
+                  Dette er en placeholder. Tilføj din privatlivspolitik her før launch.
+                </div>
+              </details>
+            </section>
+
+            <section class="panel account-panel reveal" style="--delay: 0.25s">
+              <div class="panel-header">
+                <h2>Data &amp; sikkerhed</h2>
+                <p>Hent eller slet dine data når som helst.</p>
+              </div>
+              <div class="account-actions">
+                <button id="export-data-btn" class="btn ghost" type="button">Download data</button>
+                <button id="logout-btn" class="btn ghost" type="button">Log ud</button>
+                <button id="delete-account-btn" class="btn danger" type="button">Slet konto</button>
+              </div>
+              <div class="field-hint">Sletning er permanent og kan ikke fortrydes.</div>
+            </section>
+          </div>
+        </div>
+      </section>
+
     </div>
 
     <div class="modal hidden" id="rules-modal">
@@ -1084,6 +1280,7 @@
       </div>
     </div>
 
+
     <div class="modal hidden figure-modal" id="figure-modal">
       <div class="modal-content figure-modal-content">
         <div class="modal-header">
@@ -1097,6 +1294,7 @@
       </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
   </body>
 </html>

@@ -13,11 +13,45 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 - Uendelig mode: fortsæt med nye spørgsmål indtil du afslutter.
 - Øjeblikkelig feedback, gennemgang af dine svar og gemt bedste score lokalt.
 
-## Kom i gang
-1. Start en server i projektmappen:
-   - Uden AI: `python3 -m http.server 8000`
-   - Med AI: `env -u OPENAI_API_KEY -u OPENAI_MODEL python3 scripts/dev_server.py`
-2. Åbn http://localhost:8000 i din browser og tryk “Byg runde” eller “Hurtig start”.
+## Kom i gang (lokalt)
+1. Installer afhængigheder: `npm install`
+2. Start appen:
+   - Kun frontend: `python3 -m http.server 8000`
+   - Frontend + API: `vercel dev` (kræver Vercel CLI)
+3. Åbn:
+   - http://localhost:8000 for statisk frontend
+   - http://localhost:3000 for Vercel dev
+
+## Login
+- Standard login er email magic-link via Supabase Auth.
+- Google/Apple OAuth er valgfrit og kan aktiveres senere i Supabase.
+
+## Online setup (Supabase + Stripe + Vercel)
+1. Supabase:
+   - Kør SQL fra `supabase/schema.sql` i Supabase SQL Editor.
+   - Aktivér Auth providers (email, evt. Google + Apple) i Supabase Auth.
+2. Stripe:
+   - Opret et produkt og en price (subscription).
+   - Tilføj webhook til `/api/stripe/webhook`.
+3. Vercel:
+   - Tilføj miljøvariabler fra `.env` i Vercel Dashboard.
+   - Deploy projektet via GitHub.
+
+## Miljøvariabler
+Minimum for online drift:
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PUBLISHABLE_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_ID`
+- `OPENAI_API_KEY`
+
+Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
+
+## Tests
+- Kør `npm test` for unit tests.
 
 ## Data
 - MCQ rådata ligger i `rawdata`.
@@ -28,13 +62,12 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 - Billeder til kortsvar ligger i `billeder/opgaver` og navngives som `YYYY[-syg]-OO-L[variant].*` (fx `2025-06-a.jpg`).
 
 ## AI-bedømmelse
+- AI-kald går gennem `/api/*` serverless endpoints (Vercel).
 - Opret `.env` i projektroden og udfyld:
   - `OPENAI_API_KEY=...`
   - `OPENAI_MODEL=gpt-5.2` (kan ændres)
   - `OPENAI_TTS_MODEL=tts-1` (valgfri, styrer oplæsning)
   - `OPENAI_VISION_MODEL=gpt-4.1-mini` (valgfri, bruges til figurbeskrivelser/skitse-analyse)
-- Start derefter `python3 scripts/dev_server.py` for at få `/api/grade` og `/api/explain`.
-- Fejlsøgning: En 401-fejl betyder typisk forkert eller inaktiv API-nøgle.
 
 ## Figur-audit (valgfri)
 - Kør `python3 scripts/audit_figures.py` for at generere:

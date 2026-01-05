@@ -7,6 +7,8 @@ const STORAGE_KEYS = {
   history: "ku_mcq_history",
   performance: "ku_mcq_performance",
   figureCaptions: "ku_mcq_figure_captions",
+  userOpenAiKey: "hbs_user_openai_key",
+  useOwnKey: "hbs_use_own_key",
 };
 
 const DEFAULT_SETTINGS = {
@@ -35,6 +37,11 @@ const DEFAULT_SETTINGS = {
   ttsCollapsed: false,
   autoFigureCaptions: true,
   assistantCollapsed: false,
+};
+
+const AUTH_PROVIDERS = {
+  google: "google",
+  apple: "apple",
 };
 
 const SHORT_TOTAL_POINTS = 72;
@@ -464,6 +471,15 @@ const state = {
     return saved;
   })(),
   settings: loadSettings(),
+  config: null,
+  supabase: null,
+  session: null,
+  user: null,
+  profile: null,
+  subscription: null,
+  authReady: false,
+  useOwnKey: localStorage.getItem(STORAGE_KEYS.useOwnKey) === "true",
+  userOpenAiKey: String(localStorage.getItem(STORAGE_KEYS.userOpenAiKey) || ""),
   lastPreset: null,
   isApplyingPreset: false,
   aiStatus: {
@@ -562,13 +578,16 @@ const state = {
   search: {
     category: "",
   },
+  lastAppScreen: "menu",
 };
 
 const screens = {
+  auth: document.getElementById("auth-screen"),
   landing: document.getElementById("landing-screen"),
   menu: document.getElementById("menu-screen"),
   quiz: document.getElementById("quiz-screen"),
   result: document.getElementById("result-screen"),
+  account: document.getElementById("account-screen"),
 };
 
 const shortcutStatusTimers = new Map();
@@ -577,6 +596,31 @@ const elements = {
   startButtons: [document.getElementById("start-btn")].filter(Boolean),
   landingStartBtn: document.getElementById("landing-start-btn"),
   landingQuickBtn: document.getElementById("landing-quick-btn"),
+  authGoogleBtn: document.getElementById("auth-google-btn"),
+  authAppleBtn: document.getElementById("auth-apple-btn"),
+  authEmailInput: document.getElementById("auth-email-input"),
+  authEmailBtn: document.getElementById("auth-email-btn"),
+  authStatus: document.getElementById("auth-status"),
+  accountBtn: document.getElementById("account-btn"),
+  accountBackBtn: document.getElementById("account-back-btn"),
+  userChip: document.getElementById("user-chip"),
+  profileNameInput: document.getElementById("profile-name-input"),
+  profileEmail: document.getElementById("profile-email"),
+  profileSaveBtn: document.getElementById("profile-save-btn"),
+  planStatus: document.getElementById("plan-status"),
+  subscriptionStatus: document.getElementById("subscription-status"),
+  upgradeBtn: document.getElementById("upgrade-btn"),
+  portalBtn: document.getElementById("portal-btn"),
+  ownKeyToggle: document.getElementById("own-key-toggle"),
+  ownKeyInput: document.getElementById("own-key-input"),
+  ownKeySaveBtn: document.getElementById("own-key-save-btn"),
+  ownKeyClearBtn: document.getElementById("own-key-clear-btn"),
+  consentTerms: document.getElementById("consent-terms"),
+  consentPrivacy: document.getElementById("consent-privacy"),
+  consentSaveBtn: document.getElementById("consent-save-btn"),
+  exportDataBtn: document.getElementById("export-data-btn"),
+  deleteAccountBtn: document.getElementById("delete-account-btn"),
+  logoutBtn: document.getElementById("logout-btn"),
   rulesButton: document.getElementById("rules-btn"),
   closeModal: document.getElementById("close-modal"),
   modalClose: document.getElementById("modal-close-btn"),
@@ -872,15 +916,382 @@ function showScreen(target) {
     }
   });
 
+  document.body.classList.toggle("mode-auth", target === "auth");
   document.body.classList.toggle("mode-landing", target === "landing");
-  document.body.classList.toggle("mode-menu", target === "menu");
+  document.body.classList.toggle("mode-menu", target === "menu" || target === "account");
   document.body.classList.toggle("mode-game", target === "quiz");
   document.body.classList.toggle("mode-result", target === "result");
+  if (["menu", "landing", "quiz", "result"].includes(target)) {
+    state.lastAppScreen = target;
+  }
   if (target !== "quiz") {
     document.body.classList.remove("focus-mode");
     document.body.classList.remove("meta-hidden");
     cancelMicRecording();
   }
+}
+
+function setAuthStatus(message, isWarn = false) {
+  if (!elements.authStatus) return;
+  elements.authStatus.textContent = message || "";
+  elements.authStatus.classList.toggle("warn", isWarn);
+}
+
+function formatPlanLabel(plan) {
+  const normalized = String(plan || "free").toLowerCase();
+  if (normalized === "paid") return "Pro";
+  if (normalized === "trial") return "Trial";
+  return "Gratis";
+}
+
+function formatSubscriptionStatus(subscription) {
+  if (!subscription) return "Ingen aktiv betaling endnu.";
+  const status = String(subscription.status || "").toLowerCase();
+  const labelMap = {
+    trialing: "Prøveperiode",
+    active: "Aktiv",
+    past_due: "Betaling afventer",
+    unpaid: "Ubetalt",
+    canceled: "Opsagt",
+  };
+  const label = labelMap[status] || "Status ukendt";
+  const periodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString("da-DK")
+    : null;
+  return periodEnd ? `${label} · fornyes ${periodEnd}` : label;
+}
+
+function updateUserChip() {
+  if (!elements.userChip) return;
+  if (!state.session?.user) {
+    elements.userChip.textContent = "Ikke logget ind";
+    return;
+  }
+  const name =
+    state.profile?.full_name ||
+    state.session.user.user_metadata?.full_name ||
+    state.session.user.user_metadata?.name ||
+    state.session.user.email ||
+    "Konto";
+  const planLabel = formatPlanLabel(state.profile?.plan);
+  elements.userChip.textContent = `${name} · ${planLabel}`;
+}
+
+function updateAccountUI() {
+  if (elements.profileNameInput) {
+    elements.profileNameInput.value = state.profile?.full_name || "";
+  }
+  if (elements.profileEmail) {
+    elements.profileEmail.textContent = state.session?.user?.email || "—";
+  }
+  if (elements.planStatus) {
+    elements.planStatus.textContent = `Plan: ${formatPlanLabel(state.profile?.plan)}`;
+  }
+  if (elements.subscriptionStatus) {
+    elements.subscriptionStatus.textContent = formatSubscriptionStatus(state.subscription);
+  }
+  if (elements.ownKeyToggle) {
+    elements.ownKeyToggle.checked = state.useOwnKey;
+  }
+  if (elements.ownKeyInput) {
+    elements.ownKeyInput.value = state.userOpenAiKey || "";
+  }
+  if (elements.consentTerms) {
+    elements.consentTerms.checked = Boolean(state.profile?.terms_accepted_at);
+  }
+  if (elements.consentPrivacy) {
+    elements.consentPrivacy.checked = Boolean(state.profile?.privacy_accepted_at);
+  }
+}
+
+function updateAuthUI() {
+  if (!state.authReady) return;
+  if (!state.session?.user) {
+    showScreen("auth");
+    setAuthStatus("Log ind for at fortsætte");
+  } else if (screens.auth?.classList.contains("active")) {
+    showScreen(state.lastAppScreen || "menu");
+  }
+  updateUserChip();
+  updateAccountUI();
+}
+
+function requireAuthGuard(message = "Log ind for at fortsætte") {
+  if (state.session?.user) return true;
+  setAuthStatus(message, true);
+  showScreen("auth");
+  return false;
+}
+
+async function apiFetch(url, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (state.session?.access_token) {
+    headers.Authorization = `Bearer ${state.session.access_token}`;
+  }
+  if (state.useOwnKey && state.userOpenAiKey) {
+    headers["x-user-openai-key"] = state.userOpenAiKey;
+  }
+  return fetch(url, { ...options, headers });
+}
+
+async function loadRuntimeConfig() {
+  const res = await fetch("/api/config", { cache: "no-store" });
+  if (!res.ok) {
+    throw new Error("Mangler runtime config");
+  }
+  state.config = await res.json();
+}
+
+function initSupabaseClient() {
+  if (!state.config || !window.supabase) return;
+  state.supabase = window.supabase.createClient(
+    state.config.supabaseUrl,
+    state.config.supabaseAnonKey
+  );
+}
+
+async function refreshSession() {
+  if (!state.supabase) return;
+  const { data } = await state.supabase.auth.getSession();
+  state.session = data?.session || null;
+  state.user = data?.session?.user || null;
+  state.authReady = true;
+}
+
+function subscribeToAuthChanges() {
+  if (!state.supabase) return;
+  state.supabase.auth.onAuthStateChange(async (_event, session) => {
+    state.session = session;
+    state.user = session?.user || null;
+    if (session?.user) {
+      await refreshProfile();
+    } else {
+      state.profile = null;
+      state.subscription = null;
+    }
+    updateAuthUI();
+    await checkAiAvailability();
+  });
+}
+
+async function refreshProfile() {
+  if (!state.session?.user) return;
+  try {
+    const res = await apiFetch("/api/me", { method: "GET" });
+    if (!res.ok) {
+      return;
+    }
+    const data = await res.json();
+    state.profile = data.profile || null;
+    state.subscription = data.subscription || null;
+    updateAccountUI();
+    updateUserChip();
+  } catch (error) {
+    // Ignore profile fetch errors for now.
+  }
+}
+
+async function signInWithProvider(provider) {
+  if (!state.supabase) return;
+  setAuthStatus("Åbner login …");
+  const { error } = await state.supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: window.location.href,
+    },
+  });
+  if (error) {
+    setAuthStatus("Kunne ikke starte login", true);
+  }
+}
+
+async function signInWithEmail() {
+  if (!state.supabase) return;
+  const email = elements.authEmailInput ? elements.authEmailInput.value.trim() : "";
+  if (!email) {
+    setAuthStatus("Skriv din email først.", true);
+    return;
+  }
+  setAuthStatus("Sender loginlink …");
+  const { error } = await state.supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: window.location.href,
+    },
+  });
+  if (error) {
+    setAuthStatus("Kunne ikke sende loginlink.", true);
+    return;
+  }
+  setAuthStatus("Tjek din email for loginlink.");
+}
+
+async function handleProfileSave() {
+  if (!requireAuthGuard()) return;
+  const fullName = elements.profileNameInput ? elements.profileNameInput.value.trim() : "";
+  const res = await apiFetch("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fullName }),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    state.profile = data.profile || state.profile;
+    updateAccountUI();
+    updateUserChip();
+    setFeedback("Profil opdateret.", "success");
+  } else {
+    setFeedback("Kunne ikke gemme profil.", "error");
+  }
+}
+
+async function handleConsentSave() {
+  if (!requireAuthGuard()) return;
+  const acceptTerms = Boolean(elements.consentTerms?.checked);
+  const acceptPrivacy = Boolean(elements.consentPrivacy?.checked);
+  const res = await apiFetch("/api/profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ acceptTerms, acceptPrivacy }),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    state.profile = data.profile || state.profile;
+    updateAccountUI();
+    setFeedback("Samtykke gemt.", "success");
+  } else {
+    setFeedback("Kunne ikke gemme samtykke.", "error");
+  }
+}
+
+async function handleCheckout() {
+  if (!requireAuthGuard()) return;
+  const res = await apiFetch("/api/stripe/create-checkout-session", { method: "POST" });
+  if (!res.ok) {
+    setFeedback("Kunne ikke starte betaling.", "error");
+    return;
+  }
+  const data = await res.json();
+  if (data.url) {
+    window.location.href = data.url;
+  }
+}
+
+async function handlePortal() {
+  if (!requireAuthGuard()) return;
+  const res = await apiFetch("/api/stripe/create-portal-session", { method: "POST" });
+  if (!res.ok) {
+    setFeedback("Kunne ikke åbne betalingsportal.", "error");
+    return;
+  }
+  const data = await res.json();
+  if (data.url) {
+    window.location.href = data.url;
+  }
+}
+
+function persistOwnKeyState() {
+  localStorage.setItem(STORAGE_KEYS.useOwnKey, String(state.useOwnKey));
+  if (state.userOpenAiKey) {
+    localStorage.setItem(STORAGE_KEYS.userOpenAiKey, state.userOpenAiKey);
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.userOpenAiKey);
+  }
+}
+
+function setOwnKeyEnabled(enabled) {
+  state.useOwnKey = Boolean(enabled);
+  persistOwnKeyState();
+  updateAccountUI();
+  checkAiAvailability();
+  syncOwnKeyPreference();
+}
+
+function saveOwnKey() {
+  const key = elements.ownKeyInput ? elements.ownKeyInput.value.trim() : "";
+  state.userOpenAiKey = key;
+  if (key) {
+    state.useOwnKey = true;
+  }
+  persistOwnKeyState();
+  updateAccountUI();
+  checkAiAvailability();
+  syncOwnKeyPreference();
+}
+
+function clearOwnKey() {
+  state.userOpenAiKey = "";
+  state.useOwnKey = false;
+  persistOwnKeyState();
+  updateAccountUI();
+  checkAiAvailability();
+  syncOwnKeyPreference();
+}
+
+async function syncOwnKeyPreference() {
+  if (!state.session?.user) return;
+  try {
+    const res = await apiFetch("/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ownKeyEnabled: state.useOwnKey }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      state.profile = data.profile || state.profile;
+      updateAccountUI();
+    }
+  } catch (error) {
+    // No-op.
+  }
+}
+
+async function handleExportData() {
+  if (!requireAuthGuard()) return;
+  const res = await apiFetch("/api/account/export", { method: "GET" });
+  if (!res.ok) {
+    setFeedback("Kunne ikke hente data.", "error");
+    return;
+  }
+  const data = await res.json();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "human-biologi-data.json";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function handleDeleteAccount() {
+  if (!requireAuthGuard()) return;
+  const confirmed = window.confirm(
+    "Er du sikker? Dette sletter din konto og alle data permanent."
+  );
+  if (!confirmed) return;
+  const res = await apiFetch("/api/account/delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirm: true }),
+  });
+  if (res.ok) {
+    setFeedback("Konto slettet.", "success");
+    await handleLogout();
+  } else {
+    setFeedback("Kunne ikke slette konto.", "error");
+  }
+}
+
+async function handleLogout() {
+  if (!state.supabase) return;
+  await state.supabase.auth.signOut();
+  state.session = null;
+  state.user = null;
+  state.profile = null;
+  state.subscription = null;
+  updateAuthUI();
 }
 
 function shuffle(array) {
@@ -2407,7 +2818,7 @@ async function fetchFigureCaptionByPath(imagePath, { force = false, silent = fal
 
   const promise = (async () => {
     try {
-      const res = await fetch("/api/vision", {
+      const res = await apiFetch("/api/vision", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2665,7 +3076,7 @@ async function transcribeAudio(blob) {
   state.mic.abortController = controller;
   try {
     const audioData = await readFileAsDataUrl(blob);
-    const res = await fetch("/api/transcribe", {
+    const res = await apiFetch("/api/transcribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ audioData, language: TRANSCRIBE_LANGUAGE }),
@@ -2838,7 +3249,7 @@ async function analyzeSketch() {
   }
 
   try {
-    const res = await fetch("/api/vision", {
+    const res = await apiFetch("/api/vision", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -3248,7 +3659,7 @@ async function toggleQuestionHint() {
   }
 
   try {
-    const res = await fetch("/api/hint", {
+    const res = await apiFetch("/api/hint", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -3597,7 +4008,7 @@ function prefetchNextQuestionTts() {
   prefetch.includeOptions = includeOptions;
   prefetch.abortController = controller;
 
-  const promise = fetch("/api/tts", {
+  const promise = apiFetch("/api/tts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text, voice, speed }),
@@ -3731,7 +4142,7 @@ async function playTtsText(text, { source = "manual" } = {}) {
   );
 
   try {
-    const res = await fetch("/api/tts", {
+    const res = await apiFetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: cleanText, voice, speed }),
@@ -4109,7 +4520,7 @@ async function gradeShortAnswer(options = {}) {
   const modelAnswer = await resolveShortModelAnswer(question, { useSketch: hasSketch });
 
   try {
-    const res = await fetch("/api/grade", {
+    const res = await apiFetch("/api/grade", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -4364,7 +4775,7 @@ async function handleExplainClick(entry, textEl, button, expandButton) {
   updateExpandButton(entry, expandButton);
 
   try {
-    const res = await fetch("/api/explain", {
+    const res = await apiFetch("/api/explain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(buildExplainPayload(entry)),
@@ -4429,7 +4840,7 @@ async function handleExpandExplainClick(entry, textEl, button, explainButton) {
 
   let success = false;
   try {
-    const res = await fetch("/api/explain", {
+    const res = await apiFetch("/api/explain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
@@ -4528,7 +4939,7 @@ async function handleExpandHintClick(entry, textEl, button, hintButton) {
     if (!modelAnswer) {
       throw new Error("Ingen facit til hint.");
     }
-    const res = await fetch("/api/hint", {
+    const res = await apiFetch("/api/hint", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -4601,7 +5012,7 @@ async function fetchReviewHint(entry, textEl, button, expandButton, { auto = fal
   }
 
   try {
-    const res = await fetch("/api/hint", {
+    const res = await apiFetch("/api/hint", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -5934,6 +6345,7 @@ function finishSession() {
 }
 
 function startGame(options = {}) {
+  if (!requireAuthGuard("Log ind for at starte en runde.")) return;
   const { pool, focusMistakesActive } = resolvePool(options);
   if (!pool.length) return;
 
@@ -6147,25 +6559,33 @@ function updateAutoAdvanceLabel() {
 
 async function checkAiAvailability() {
   try {
-    const res = await fetch("/api/health");
+    if (!state.session?.user) {
+      setAiStatus({
+        available: false,
+        model: null,
+        message: "Log ind for at bruge AI.",
+      });
+      setTtsStatus({
+        available: false,
+        model: null,
+        message: "Log ind for oplæsning.",
+      });
+      return;
+    }
+
+    const res = await apiFetch("/api/health");
     if (!res.ok) {
-      let aiMessage = "Hjælp offline. Start scripts/dev_server.py.";
-      let ttsMessage = "Oplæsning offline. Start scripts/dev_server.py.";
-      if (res.status === 503) {
-        try {
-          const data = await res.json();
-          if (data.status === "missing_key") {
-            aiMessage = "Hjælp mangler OPENAI_API_KEY i .env.";
-            ttsMessage = "Oplæsning mangler OPENAI_API_KEY i .env.";
-          }
-        } catch (error) {
-          aiMessage = "Hjælp offline. Tjek .env og server.";
-          ttsMessage = "Oplæsning offline. Tjek .env og server.";
-        }
-      }
-      if (res.status === 404) {
-        aiMessage = "Hjælp offline. Kør scripts/dev_server.py i stedet for http.server.";
-        ttsMessage = "Oplæsning offline. Kør scripts/dev_server.py i stedet for http.server.";
+      let aiMessage = "Hjælp offline. Tjek serveren.";
+      let ttsMessage = "Oplæsning offline. Tjek serveren.";
+      if (res.status === 401) {
+        aiMessage = "Log ind for at bruge AI.";
+        ttsMessage = "Log ind for oplæsning.";
+      } else if (res.status === 402) {
+        aiMessage = "Kræver adgang eller egen API-nøgle.";
+        ttsMessage = "Kræver adgang eller egen API-nøgle.";
+      } else if (res.status === 503) {
+        aiMessage = "Mangler OpenAI nøgle på serveren.";
+        ttsMessage = "Mangler OpenAI nøgle på serveren.";
       }
       setAiStatus({ available: false, model: null, message: aiMessage });
       setTtsStatus({ available: false, model: null, message: ttsMessage });
@@ -6322,10 +6742,76 @@ function handleKeyDown(event) {
 
 function attachEvents() {
   if (elements.landingStartBtn) {
-    elements.landingStartBtn.addEventListener("click", () => showScreen("menu"));
+    elements.landingStartBtn.addEventListener("click", () => {
+      if (!requireAuthGuard()) return;
+      showScreen("menu");
+    });
   }
   if (elements.landingQuickBtn) {
     elements.landingQuickBtn.addEventListener("click", startGame);
+  }
+  if (elements.authGoogleBtn) {
+    elements.authGoogleBtn.addEventListener("click", () =>
+      signInWithProvider(AUTH_PROVIDERS.google)
+    );
+  }
+  if (elements.authAppleBtn) {
+    elements.authAppleBtn.addEventListener("click", () =>
+      signInWithProvider(AUTH_PROVIDERS.apple)
+    );
+  }
+  if (elements.authEmailBtn) {
+    elements.authEmailBtn.addEventListener("click", signInWithEmail);
+  }
+  if (elements.authEmailInput) {
+    elements.authEmailInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        signInWithEmail();
+      }
+    });
+  }
+  if (elements.accountBtn) {
+    elements.accountBtn.addEventListener("click", () => {
+      if (!requireAuthGuard()) return;
+      showScreen("account");
+    });
+  }
+  if (elements.accountBackBtn) {
+    elements.accountBackBtn.addEventListener("click", () =>
+      showScreen(state.lastAppScreen || "menu")
+    );
+  }
+  if (elements.profileSaveBtn) {
+    elements.profileSaveBtn.addEventListener("click", handleProfileSave);
+  }
+  if (elements.upgradeBtn) {
+    elements.upgradeBtn.addEventListener("click", handleCheckout);
+  }
+  if (elements.portalBtn) {
+    elements.portalBtn.addEventListener("click", handlePortal);
+  }
+  if (elements.ownKeyToggle) {
+    elements.ownKeyToggle.addEventListener("change", (event) =>
+      setOwnKeyEnabled(event.target.checked)
+    );
+  }
+  if (elements.ownKeySaveBtn) {
+    elements.ownKeySaveBtn.addEventListener("click", saveOwnKey);
+  }
+  if (elements.ownKeyClearBtn) {
+    elements.ownKeyClearBtn.addEventListener("click", clearOwnKey);
+  }
+  if (elements.consentSaveBtn) {
+    elements.consentSaveBtn.addEventListener("click", handleConsentSave);
+  }
+  if (elements.exportDataBtn) {
+    elements.exportDataBtn.addEventListener("click", handleExportData);
+  }
+  if (elements.deleteAccountBtn) {
+    elements.deleteAccountBtn.addEventListener("click", handleDeleteAccount);
+  }
+  if (elements.logoutBtn) {
+    elements.logoutBtn.addEventListener("click", handleLogout);
   }
   elements.startButtons.forEach((btn) => btn.addEventListener("click", startGame));
   if (elements.shortcutInline) {
@@ -6894,13 +7380,24 @@ async function loadQuestions() {
 
 async function init() {
   attachEvents();
-  showScreen("menu");
   updateTopBar();
   elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
   applyTheme(getInitialTheme());
   syncSettingsToUI();
   setAiStatus(state.aiStatus);
   setTtsStatus(state.ttsStatus);
+  try {
+    await loadRuntimeConfig();
+    initSupabaseClient();
+    await refreshSession();
+    subscribeToAuthChanges();
+    if (state.session?.user) {
+      await refreshProfile();
+    }
+  } catch (error) {
+    setAuthStatus("Kunne ikke indlæse login. Tjek serveren.", true);
+  }
+  updateAuthUI();
   try {
     await loadQuestions();
   } catch (err) {
