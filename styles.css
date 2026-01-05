@@ -1283,6 +1283,23 @@ input[type="search"] {
   margin: 16px 0 18px;
 }
 
+.question-card h2.has-subtitle {
+  margin-bottom: 8px;
+}
+
+.question-subtitle {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.question-subtitle[data-label]::before {
+  content: "Delspørgsmål " attr(data-label) ": ";
+  font-weight: 600;
+  color: var(--ink);
+}
+
 
 .tts-toolbar {
   margin: 0;

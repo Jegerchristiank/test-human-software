@@ -660,6 +660,7 @@ const elements = {
   questionContextTitle: document.getElementById("question-context-title"),
   questionContextList: document.getElementById("question-context-list"),
   questionText: document.getElementById("question-text"),
+  questionSubtitle: document.getElementById("question-subtitle"),
   questionHint: document.getElementById("question-hint"),
   questionHintText: document.getElementById("question-hint-text"),
   questionHintStatus: document.getElementById("question-hint-status"),
@@ -2182,7 +2183,28 @@ function renderShortQuestion(question) {
   if (elements.skipBtn) {
     setShortcutDisabled("skip", elements.skipBtn.disabled);
   }
-  elements.questionText.textContent = question.text;
+  const promptText = String(question.text || question.prompt || "").trim();
+  if (question.opgaveIntro) {
+    elements.questionText.textContent = question.opgaveIntro;
+    if (elements.questionSubtitle) {
+      elements.questionSubtitle.textContent = promptText;
+      const label = normalizeShortLabel(question.label);
+      if (label) {
+        elements.questionSubtitle.dataset.label = label.toUpperCase();
+      } else {
+        elements.questionSubtitle.removeAttribute("data-label");
+      }
+      elements.questionSubtitle.classList.toggle("hidden", !promptText);
+    }
+    elements.questionText.classList.toggle("has-subtitle", Boolean(promptText));
+  } else {
+    elements.questionText.textContent = promptText;
+    if (elements.questionSubtitle) {
+      elements.questionSubtitle.textContent = "";
+      elements.questionSubtitle.classList.add("hidden");
+      elements.questionSubtitle.removeAttribute("data-label");
+    }
+  }
 
   const cached = getShortDraft(question.key);
   elements.shortAnswerInput.value = cached.text || "";
@@ -2288,8 +2310,17 @@ function renderQuestion() {
     elements.questionType.textContent = currentQuestion.type === "short" ? "Kortsvar" : "MCQ";
   }
   if (elements.questionIntro) {
-    elements.questionIntro.textContent = currentQuestion.opgaveIntro || "";
-    elements.questionIntro.classList.toggle("hidden", !currentQuestion.opgaveIntro);
+    const showIntro = currentQuestion.type !== "short" && currentQuestion.opgaveIntro;
+    elements.questionIntro.textContent = showIntro ? currentQuestion.opgaveIntro : "";
+    elements.questionIntro.classList.toggle("hidden", !showIntro);
+  }
+  if (elements.questionSubtitle) {
+    elements.questionSubtitle.textContent = "";
+    elements.questionSubtitle.classList.add("hidden");
+    elements.questionSubtitle.removeAttribute("data-label");
+  }
+  if (elements.questionText) {
+    elements.questionText.classList.remove("has-subtitle");
   }
   updateQuestionContext(currentQuestion);
   updateQuestionFigure(currentQuestion);
