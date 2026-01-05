@@ -3,6 +3,7 @@ const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest, getProfileForUser } = require("../_lib/auth");
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { getBaseUrl } = require("../_lib/url");
+const { enforceRateLimit } = require("../_lib/rateLimit");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -14,11 +15,24 @@ module.exports = async function handler(req, res) {
   if (error || !user) {
     return sendError(res, 401, "unauthenticated");
   }
+  if (
+    !(await enforceRateLimit(req, res, {
+      scope: "stripe:checkout",
+      limit: 6,
+      windowSeconds: 300,
+      userId: user.id,
+    }))
+  ) {
+    return;
+  }
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
   const priceId = process.env.STRIPE_PRICE_ID;
-  if (!secretKey || !priceId) {
-    return sendError(res, 500, "Stripe not configured");
+  const missing = [];
+  if (!secretKey) missing.push("secret");
+  if (!priceId) missing.push("price");
+  if (missing.length) {
+    return sendError(res, 500, "payment_not_configured", { missing });
   }
 
   const stripe = new Stripe(secretKey, { apiVersion: "2024-06-20" });

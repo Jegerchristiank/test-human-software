@@ -3,6 +3,7 @@ const { sendError } = require("./_lib/response");
 const { callOpenAiTts } = require("./_lib/openai");
 const { requireAiAccess } = require("./_lib/aiGate");
 const { logUsageEvent } = require("./_lib/usage");
+const { enforceRateLimit } = require("./_lib/rateLimit");
 
 const TTS_VOICES = new Set(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]);
 
@@ -37,6 +38,16 @@ module.exports = async function handler(req, res) {
   if (error) {
     const status = error === "missing_key" ? 503 : error === "unauthenticated" ? 401 : 402;
     return sendError(res, status, error);
+  }
+  if (
+    !(await enforceRateLimit(req, res, {
+      scope: "ai:tts",
+      limit: 60,
+      windowSeconds: 300,
+      userId: user.id,
+    }))
+  ) {
+    return;
   }
 
   const text = cleanTtsText(payload.text || "");

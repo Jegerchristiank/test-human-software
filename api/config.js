@@ -12,6 +12,8 @@ module.exports = function handler(req, res) {
   const supabaseAnonKey = optionalEnv("SUPABASE_ANON_KEY");
   const supabaseKey = supabasePublishableKey || supabaseAnonKey;
   const stripePublishableKey = optionalEnv("STRIPE_PUBLISHABLE_KEY");
+  const stripeSecretKey = optionalEnv("STRIPE_SECRET_KEY");
+  const stripePriceId = optionalEnv("STRIPE_PRICE_ID");
 
   if (!supabaseUrl || !supabaseKey) {
     return sendError(
@@ -26,5 +28,6 @@ module.exports = function handler(req, res) {
     supabaseAnonKey: supabaseKey,
     supabasePublishableKey: supabasePublishableKey || null,
     stripePublishableKey: stripePublishableKey || null,
+    stripeConfigured: Boolean(stripeSecretKey && stripePriceId),
   });
 };

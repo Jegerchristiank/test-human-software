@@ -4,6 +4,7 @@ const { languageInstruction } = require("./_lib/prompts");
 const { callOpenAiJson } = require("./_lib/openai");
 const { requireAiAccess } = require("./_lib/aiGate");
 const { logUsageEvent } = require("./_lib/usage");
+const { enforceRateLimit } = require("./_lib/rateLimit");
 
 function formatMcqOptions(options) {
   if (!Array.isArray(options)) return [];
@@ -44,6 +45,16 @@ module.exports = async function handler(req, res) {
   if (error) {
     const status = error === "missing_key" ? 503 : error === "unauthenticated" ? 401 : 402;
     return sendError(res, status, error);
+  }
+  if (
+    !(await enforceRateLimit(req, res, {
+      scope: "ai:explain",
+      limit: 30,
+      windowSeconds: 300,
+      userId: user.id,
+    }))
+  ) {
+    return;
   }
 
   const questionType = String(payload.type || "").trim().toLowerCase();

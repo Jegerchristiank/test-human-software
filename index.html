@@ -32,36 +32,26 @@
           <header class="landing-header reveal" style="--delay: 0s">
             <div class="brand-block">
               <div class="brand-mark">
-                <img class="brand-logo" src="Logo.png" alt="Københavns Universitet logo" />
+                <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
               </div>
               <div>
-                <div class="brand-subtitle">Københavns Universitet · Sundhed &amp; Informatik</div>
+                <div class="brand-subtitle">Sundhed &amp; Informatik</div>
+                <div class="hero-eyebrow">Designet til ro &amp; fokus</div>
                 <h1>Human Biologi Studio</h1>
                 <p>
-                  Øv eksamenssæt med et personligt flow, smart feedback og AI-hjælp når du har adgang.
+                  Et roligt træningsrum til humanbiologi. Byg en runde på få sekunder, følg din udvikling, og hold
+                  fokus hele vejen.
                 </p>
+                <div class="hero-meta-row">
+                  <div class="hero-meta-item">Kurateret eksamensbank</div>
+                  <div class="hero-meta-item">Personligt tempo</div>
+                  <div class="hero-meta-item">Data beskyttet</div>
+                </div>
               </div>
             </div>
-            <div class="landing-actions auth-actions">
-              <div class="auth-status" id="auth-status">Log ind for at fortsætte</div>
-              <div class="auth-email">
-                <input
-                  id="auth-email-input"
-                  type="email"
-                  placeholder="Email til loginlink"
-                  autocomplete="email"
-                />
-                <button id="auth-email-btn" class="btn primary" type="button">Send loginlink</button>
-              </div>
-              <div class="auth-divider">eller</div>
-              <button id="auth-google-btn" class="btn secondary" type="button">Log ind med Google</button>
-              <button id="auth-apple-btn" class="btn ghost" type="button">Log ind med Apple</button>
-              <button id="auth-demo-btn" class="btn ghost" type="button">
-                Se appen uden login (demo)
-              </button>
-              <div class="auth-note">
-                Demo gemmer kun lokalt og giver ikke adgang til AI eller betaling.
-              </div>
+            <div class="hero-aside">
+              <div class="hero-pill">Klar til start</div>
+              <p>Adgang styres på din konto, og du kan skifte plan når som helst.</p>
             </div>
           </header>
 
@@ -69,42 +59,56 @@
             <section class="panel hero-panel reveal" style="--delay: 0.05s">
               <div class="panel-header">
                 <h2>Vælg adgang</h2>
-                <p>Testmode er aktiv: Du kan gennemføre en testbetaling via Stripe.</p>
+                <p>Hold det enkelt. Vælg gratis adgang med egen nøgle eller aktiver Pro.</p>
               </div>
-              <div class="pricing-grid">
-                <div class="pricing-card">
-                  <div class="pricing-title">Gratis</div>
-                  <div class="pricing-price">0 kr</div>
-                  <ul>
-                    <li>Brug din egen OpenAI API-nøgle</li>
-                    <li>Alle quizfunktioner</li>
-                    <li>AI-funktioner via din egen nøgle</li>
-                  </ul>
-                  <div class="pricing-note">Nøglen gemmes kun i din browser.</div>
+              <div class="access-grid">
+                <div class="access-card">
+                  <div class="access-title">Gratis adgang</div>
+                  <div class="access-price">0 kr</div>
+                  <p>Brug din egen nøgle og få fuld funktionalitet.</p>
+                  <div class="access-note">Nøglen bliver kun gemt på din enhed.</div>
                 </div>
-                <div class="pricing-card highlight">
-                  <div class="pricing-title">Pro adgang</div>
-                  <div class="pricing-price">Testbetaling</div>
-                  <ul>
-                    <li>AI-hjælp via min nøgle</li>
-                    <li>Auto-bedømmelse, hints og oplæsning</li>
-                    <li>Prioriteret support og statistik</li>
-                  </ul>
-                  <div class="pricing-note">Klar til live senere.</div>
+                <div class="access-card highlight">
+                  <div class="access-title">Pro adgang</div>
+                  <div class="access-price">Abonnement</div>
+                  <p>Hjælp, auto-bedømmelse, hints og oplæsning er inkluderet.</p>
+                  <div class="access-note">Skift eller opsig når som helst.</div>
                 </div>
+              </div>
+              <div class="trust-row">
+                <span>Sikker login</span>
+                <span>Tryg betaling</span>
+                <span>Data beskyttet</span>
               </div>
             </section>
 
-            <section class="panel history-panel reveal" style="--delay: 0.1s">
+            <section class="panel auth-panel reveal" style="--delay: 0.1s">
               <div class="panel-header">
-                <h2>Sikkerhed &amp; compliance</h2>
-                <p>Bygget til at undgå data-leak og håndtere adgang korrekt.</p>
+                <h2>Log ind</h2>
+                <p>Dine data følger dig på tværs af enheder.</p>
               </div>
-              <div class="compliance-list">
-                <div class="compliance-item">Supabase Auth (Apple + Google)</div>
-                <div class="compliance-item">Stripe betaling &amp; kundeportal</div>
-                <div class="compliance-item">RLS på alle tabeller</div>
-                <div class="compliance-item">Eksport og sletning af data</div>
+              <div class="auth-status" id="auth-status">Klar til login</div>
+              <div class="auth-email">
+                <input
+                  id="auth-email-input"
+                  type="email"
+                  placeholder="Din email"
+                  autocomplete="email"
+                />
+                <button id="auth-email-btn" class="btn primary" type="button">Send login-mail</button>
+              </div>
+              <div class="auth-divider" id="auth-divider">eller</div>
+              <div class="auth-oauth" id="auth-oauth">
+                <button id="auth-google-btn" class="btn oauth google" type="button">
+                  Fortsæt med Google
+                </button>
+                <button id="auth-apple-btn" class="btn oauth apple" type="button">
+                  Fortsæt med Apple
+                </button>
+              </div>
+              <button id="auth-demo-btn" class="btn ghost" type="button">Se demo uden login</button>
+              <div class="auth-note" id="auth-note">
+                Demo gemmer kun lokalt og giver ikke adgang til abonnement.
               </div>
             </section>
           </div>
@@ -116,13 +120,13 @@
           <header class="landing-header reveal" style="--delay: 0s">
             <div class="brand-block">
               <div class="brand-mark">
-                <img class="brand-logo" src="Logo.png" alt="Københavns Universitet logo" />
+                <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
               </div>
               <div>
-                <div class="brand-subtitle">Københavns Universitet · Sundhed &amp; Informatik</div>
+                <div class="brand-subtitle">Sundhed &amp; Informatik</div>
                 <h1>Human Biologi Studio</h1>
                 <p>
-                  Spil dig gennem tidligere eksamenssæt. Saml point, jagt 12-tallet og se din udvikling over tid.
+                  Byg en runde, få ro på forløbet, og følg din udvikling over tid.
                 </p>
               </div>
             </div>
@@ -134,8 +138,8 @@
           <div class="landing-grid">
             <section class="panel hero-panel reveal" style="--delay: 0.05s">
               <div class="panel-header">
-                <h2>Din mission</h2>
-                <p>Hver runde giver XP i form af point og karakter. Sigt mod 12 og hold streaken kørende.</p>
+                <h2>Overblik</h2>
+                <p>Se hvor du står lige nu, og hvad der skal til for at ramme 12-tallet.</p>
               </div>
               <div class="hero-grid">
                 <div class="hero-card primary">
@@ -144,7 +148,7 @@
                   <div class="hero-meta" id="hero-rank-meta">Ingen rekord endnu</div>
                 </div>
                 <div class="hero-card">
-                  <div class="hero-label">Måltavle</div>
+                  <div class="hero-label">Mål</div>
                   <div class="hero-value" id="hero-target">Mål: 12</div>
                   <div class="hero-meta" id="hero-target-meta">92% for topkarakter</div>
                   <div class="hero-progress">
@@ -161,8 +165,8 @@
 
             <section class="panel history-panel reveal" style="--delay: 0.1s">
               <div class="panel-header">
-                <h2>Seneste runder</h2>
-                <p>Følg med i hvordan du udvikler dig over tid.</p>
+                <h2>Seneste aktivitet</h2>
+                <p>Hold øje med progressionen på tværs af runder.</p>
               </div>
               <div class="history-list" id="landing-history-list"></div>
             </section>
@@ -175,14 +179,14 @@
           <header class="menu-header reveal" style="--delay: 0s">
             <div class="brand-block">
               <div class="brand-mark">
-                <img class="brand-logo" src="Logo.png" alt="Københavns Universitet logo" />
+                <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
               </div>
               <div>
-                <div class="brand-subtitle">Københavns Universitet · Sundhed &amp; Informatik</div>
+                <div class="brand-subtitle">Sundhed &amp; Informatik</div>
                 <h1>Human Biologi Studio</h1>
                 <p>
-                  Byg en runde, der passer til din repetition. Filtrer på årgang og emner, miks dine spørgsmål og
-                  sæt tempoet selv.
+                  Byg en runde, der passer til din repetition. Vælg årgang og emner, justér blanding og sæt tempoet
+                  selv.
                 </p>
               </div>
             </div>
@@ -203,20 +207,20 @@
             <div class="menu-column">
               <section class="panel builder reveal" style="--delay: 0.05s">
                 <div class="panel-header">
-                  <h2>Session builder</h2>
-                  <p>Vælg en retning og finjustér længde, mix og flow på ét sted.</p>
+                  <h2>Byg din runde</h2>
+                  <p>Vælg en retning og tilpas længde, blanding og tempo ét sted.</p>
                 </div>
 
                 <div class="builder-stack">
                   <div class="builder-section">
                     <div class="section-title">
                       <h3>Hvad vil du træne?</h3>
-                      <p>Start med en profil, og justér bagefter efter behov.</p>
+                      <p>Start med en skabelon og justér bagefter.</p>
                     </div>
                     <div class="preset-grid" id="preset-grid">
                       <button class="preset-card" type="button" data-preset="exam" aria-pressed="false">
                         <div class="preset-title">Eksamen</div>
-                        <div class="preset-text">Balanceret mix med realistisk tempo.</div>
+                        <div class="preset-text">Balanceret blanding med realistisk tempo.</div>
                         <div class="preset-meta">24 spg · Standard</div>
                       </button>
                       <button class="preset-card" type="button" data-preset="review" aria-pressed="false">
@@ -226,7 +230,7 @@
                       </button>
                       <button class="preset-card" type="button" data-preset="weak" aria-pressed="false">
                         <div class="preset-title">Svage områder</div>
-                        <div class="preset-text">Fokus på fejl + adaptiv prioritet.</div>
+                        <div class="preset-text">Fokus på fejl og smart prioritet.</div>
                         <div class="preset-meta">20 spg · Fokus</div>
                       </button>
                       <button class="preset-card" type="button" data-preset="tempo" aria-pressed="false">
@@ -258,7 +262,8 @@
                         <input type="number" id="question-count-input" min="5" max="40" step="1" value="24" />
                       </div>
                       <div class="control-hint">
-                        MCQ-tallet styrer længden; kortsvar følger ratioen. I uendelig mode er tallet batch-størrelse.
+                        Antal flervalg styrer længden; kortsvar følger forholdet. I uendelig træning er tallet
+                        størrelsen pr. batch.
                       </div>
                     </div>
 
@@ -266,16 +271,16 @@
                       <label class="toggle">
                         <input type="checkbox" id="toggle-include-mcq" checked />
                         <span>
-                          Inkluder MCQ
+                          Inkluder flervalg
                           <span
                             class="info"
-                            data-tooltip="Tager multiple choice-spørgsmål med i runden."
+                            data-tooltip="Tager flervalgsspørgsmål med i runden."
                             tabindex="0"
-                            aria-label="Info om MCQ"
+                            aria-label="Info om flervalg"
                             >i</span
                           >
                         </span>
-                        <small>Multiple choice</small>
+                        <small>Flervalg</small>
                       </label>
                       <label class="toggle">
                         <input type="checkbox" id="toggle-include-short" checked />
@@ -295,15 +300,15 @@
                     <details class="more-drawer">
                       <summary>
                         <span>Avanceret</span>
-                        <small>Mix, flow og hjælp</small>
+                        <small>Blanding, tempo og hjælp</small>
                       </summary>
                       <div class="more-body">
                         <div class="control-row">
                           <label class="control-label" for="ratio-mcq">
-                            MCQ / kortsvar ratio
+                            Forhold mellem flervalg og kortsvar
                             <span
                               class="info"
-                              data-tooltip="Sæt forholdet mellem MCQ og kortsvar. 4:1 giver ca. 24 MCQ og 6 kortsvar."
+                              data-tooltip="Sæt forholdet mellem flervalg og kortsvar. 4:1 giver ca. 24 flervalg og 6 kortsvar."
                               tabindex="0"
                               aria-label="Info om ratio"
                               >i</span
@@ -314,25 +319,25 @@
                             <span class="ratio-divider">:</span>
                             <input type="number" id="ratio-short" min="1" max="12" step="1" value="1" />
                           </div>
-                          <div class="control-hint">MCQ-tallet styrer længden; kortsvar følger ratioen.</div>
+                          <div class="control-hint">Antal flervalg styrer længden; kortsvar følger forholdet.</div>
                         </div>
 
                         <details class="settings-drawer">
                           <summary>
                             <span>Indhold &amp; visning</span>
-                            <small>Metadata og svarlayout</small>
+                            <small>Detaljer og svarlayout</small>
                           </summary>
                           <div class="settings-body">
                             <div class="toggle-grid compact">
                               <label class="toggle">
                                 <input type="checkbox" id="toggle-show-meta" checked />
                                 <span>
-                                  Vis metadata
+                                  Vis detaljer
                                   <span
                                     class="info"
                                     data-tooltip="Viser år og emne direkte på spørgsmålet."
                                     tabindex="0"
-                                    aria-label="Info om metadata"
+                                    aria-label="Info om detaljer"
                                     >i</span
                                   >
                                 </span>
@@ -341,12 +346,12 @@
                               <label class="toggle">
                                 <input type="checkbox" id="toggle-shuffle-options" checked />
                                 <span>
-                                  Shuffle svarmuligheder
+                                  Bland svarmuligheder
                                   <span
                                     class="info"
-                                    data-tooltip="Blander indholdet mellem A–D, så bogstaverne altid står i samme rækkefølge."
+                                    data-tooltip="Blander svarmulighederne, så rækkefølgen varierer."
                                     tabindex="0"
-                                    aria-label="Info om shuffle svarmuligheder"
+                                    aria-label="Info om bland svarmuligheder"
                                     >i</span
                                   >
                                 </span>
@@ -358,24 +363,24 @@
 
                         <details class="settings-drawer">
                           <summary>
-                            <span>Mix &amp; gentagelser</span>
-                            <small>Adaptiv læring og fejl</small>
+                            <span>Blanding &amp; gentagelser</span>
+                            <small>Smart læring og fejl</small>
                           </summary>
                           <div class="settings-body">
                             <div class="toggle-grid compact">
                               <label class="toggle">
                                 <input type="checkbox" id="toggle-shuffle-questions" checked />
                                 <span>
-                                  Shuffle spørgsmål
+                                  Bland spørgsmål
                                   <span
                                     class="info"
                                     data-tooltip="Blander rækkefølgen af spørgsmålene i runden."
                                     tabindex="0"
-                                    aria-label="Info om shuffle spørgsmål"
+                                    aria-label="Info om bland spørgsmål"
                                     >i</span
                                   >
                                 </span>
-                                <small>Nyt mix hver gang</small>
+                                <small>Ny blanding hver gang</small>
                               </label>
                               <label class="toggle">
                                 <input type="checkbox" id="toggle-balanced" checked />
@@ -394,12 +399,12 @@
                               <label class="toggle">
                                 <input type="checkbox" id="toggle-adaptive-mix" />
                                 <span>
-                                  Adaptiv mix
+                                  Smart blanding
                                   <span
                                     class="info"
                                     data-tooltip="Vægter spørgsmål baseret på fejl, tempo og seneste svar."
                                     tabindex="0"
-                                    aria-label="Info om adaptiv mix"
+                                    aria-label="Info om smart blanding"
                                     >i</span
                                   >
                                 </span>
@@ -503,12 +508,12 @@
                               <label class="toggle">
                                 <input type="checkbox" id="toggle-infinite-mode" />
                                 <span>
-                                  Uendelig mode
+                                  Uendelig træning
                                   <span
                                     class="info"
                                     data-tooltip="Fortsæt med nye spørgsmål, indtil du selv afslutter runden."
                                     tabindex="0"
-                                    aria-label="Info om uendelig mode"
+                                    aria-label="Info om uendelig træning"
                                     >i</span
                                   >
                                 </span>
@@ -631,7 +636,7 @@
                 <div class="summary-card">
                   <div class="summary-item">Pulje: <strong id="pool-count">0</strong> spørgsmål</div>
                   <div class="summary-item">Runde: <strong id="round-count">0</strong> spørgsmål</div>
-                  <div class="summary-item">Mix: <span id="mix-summary">—</span></div>
+                  <div class="summary-item">Blanding: <span id="mix-summary">—</span></div>
                   <div class="summary-item">År: <span id="year-summary">—</span></div>
                   <div class="summary-item">Emner: <span id="category-summary">—</span></div>
                   <div class="summary-item">Genbrug: <span id="repeat-summary">—</span></div>
@@ -742,11 +747,11 @@
         <div class="game-shell">
           <header class="game-header reveal" style="--delay: 0s">
             <div class="game-left">
-              <img class="brand-logo small" src="Logo.png" alt="Københavns Universitet logo" />
-              <div class="session-pill" id="session-pill">Session</div>
+              <img class="brand-logo small" src="Logo.png" alt="Human Biologi Studio logo" />
+              <div class="session-pill" id="session-pill">Runde</div>
             </div>
             <div class="scoreboard">
-              <div class="score">MCQ <span id="mcq-score-value">0</span></div>
+              <div class="score">Flervalg <span id="mcq-score-value">0</span></div>
               <div class="score">Kortsvar <span id="short-score-value">0</span></div>
               <div class="score">Total <span id="score-value">0%</span></div>
               <div class="best">Bedste <span id="best-score-value">0%</span></div>
@@ -775,7 +780,7 @@
                     <button class="btn ghost small" id="skip-btn" type="button">Spring over (0 point)</button>
                     <button class="btn ghost small" id="back-to-menu" type="button">Til menu</button>
                     <button class="btn ghost small" id="toggle-focus" type="button">Fokus</button>
-                    <button class="btn ghost small" id="toggle-meta" type="button">Skjul metadata</button>
+                    <button class="btn ghost small" id="toggle-meta" type="button">Skjul detaljer</button>
                     <button class="btn ghost small hidden" id="end-round-btn" type="button">Afslut runde</button>
                   </div>
                   <div class="shortcut-inline" id="shortcut-inline">
@@ -1004,14 +1009,14 @@
               <p id="final-message"></p>
             </div>
             <div class="result-badge">
-              <img class="brand-logo small" src="Logo.png" alt="Københavns Universitet logo" />
+              <img class="brand-logo small" src="Logo.png" alt="Human Biologi Studio logo" />
               <div class="pill highlight" id="best-badge">Ny personlig rekord!</div>
             </div>
           </div>
 
           <div class="result-breakdown">
             <div class="result-card">
-              <div class="label">MCQ-point</div>
+              <div class="label">Flervalg point</div>
               <div class="value" id="result-mcq-points">0</div>
               <div class="meta" id="result-mcq-percent">0%</div>
             </div>
@@ -1056,7 +1061,7 @@
           <details class="more-drawer">
             <summary>
               <span>Mere</span>
-              <small>Session og navigation</small>
+              <small>Runde og navigation</small>
             </summary>
             <div class="more-body">
               <button class="btn ghost" id="restart-round-btn" type="button">Start igen</button>
@@ -1067,8 +1072,8 @@
           <div class="review-queue hidden" id="review-queue">
             <div class="review-queue-header">
               <div>
-                <h3>Smart review</h3>
-                <p>Gennemgå kortsvar du missede med hurtige hints.</p>
+                <h3>Smart gennemgang</h3>
+                <p>Gennemgå kortsvar du missede med korte hints.</p>
               </div>
               <div class="review-queue-status" id="review-queue-status"></div>
             </div>
@@ -1106,8 +1111,8 @@
         <div class="account-shell">
           <header class="account-header reveal" style="--delay: 0s">
             <div>
-              <h1>Konto &amp; betaling</h1>
-              <p>Administrér plan, API-nøgle og datarettigheder.</p>
+              <h1>Konto</h1>
+              <p>Plan, adgang og data samlet ét sted.</p>
             </div>
             <button id="account-back-btn" class="btn ghost" type="button">Tilbage til app</button>
           </header>
@@ -1117,7 +1122,7 @@
             <section class="panel account-panel reveal" style="--delay: 0.05s">
               <div class="panel-header">
                 <h2>Profil</h2>
-                <p>Opdatér dit navn og se e-mailen fra login.</p>
+                <p>Hold dit navn opdateret og bekræft e-mailen fra login.</p>
               </div>
               <div class="field">
                 <label for="profile-name-input">Navn</label>
@@ -1134,34 +1139,34 @@
 
             <section class="panel account-panel reveal" style="--delay: 0.1s">
               <div class="panel-header">
-                <h2>Adgang &amp; betaling</h2>
-                <p>Testbetaling via Stripe. Gratis adgang kræver egen nøgle.</p>
+                <h2>Plan &amp; betaling</h2>
+                <p>Administrér din plan og hold styr på betalinger.</p>
               </div>
               <div class="plan-row">
                 <div class="plan-chip" id="plan-status">Plan: —</div>
                 <div class="plan-meta" id="subscription-status">Ingen aktiv betaling endnu.</div>
               </div>
               <div class="account-actions">
-                <button id="upgrade-btn" class="btn primary" type="button">Start testbetaling</button>
-                <button id="portal-btn" class="btn ghost" type="button">Administrer betaling</button>
+                <button id="upgrade-btn" class="btn primary" type="button">Aktivér abonnement</button>
+                <button id="portal-btn" class="btn ghost" type="button">Administrer abonnement</button>
               </div>
-              <div class="field-hint">Testmode er aktiv i Stripe. Ingen rigtige kort trækkes.</div>
+              <div class="field-hint">Du kan altid ændre eller opsige dit abonnement.</div>
             </section>
 
             <section class="panel account-panel reveal" style="--delay: 0.15s">
               <div class="panel-header">
-                <h2>Din egen API-nøgle</h2>
-                <p>Brug din egen nøgle for gratis adgang til AI-funktioner.</p>
+                <h2>Din nøgle</h2>
+                <p>Brug din egen nøgle for gratis adgang til hjælpen.</p>
               </div>
               <label class="toggle">
                 <input type="checkbox" id="own-key-toggle" />
-                <span>Brug min egen OpenAI-nøgle</span>
-                <small>Gemmes kun lokalt i browseren</small>
+                <span>Brug min egen nøgle</span>
+                <small>Gemmes kun på din enhed</small>
               </label>
               <div class="field">
-                <label for="own-key-input">OpenAI API-nøgle</label>
+                <label for="own-key-input">Din nøgle</label>
                 <input id="own-key-input" type="password" placeholder="sk-..." autocomplete="off" />
-                <div class="field-hint">Nøglen sendes kun til serveren ved AI-kald og lagres aldrig.</div>
+                <div class="field-hint">Nøglen bruges kun når du beder om hjælp og gemmes ikke.</div>
               </div>
               <div class="account-actions">
                 <button id="own-key-save-btn" class="btn primary" type="button">Gem nøgle</button>
@@ -1188,15 +1193,45 @@
                 <button id="consent-save-btn" class="btn ghost" type="button">Gem samtykke</button>
               </div>
               <details class="legal-drawer">
-                <summary>Vilkår (udkast)</summary>
+                <summary>Vilkår</summary>
                 <div class="legal-body">
-                  Dette er en placeholder. Tilføj dine officielle vilkår her før launch.
+                  <p>Human Biologi Studio er et læringsværktøj til personlig studiebrug.</p>
+                  <ul>
+                    <li>Adgang er personlig og må ikke deles.</li>
+                    <li>Indholdet er til læring og kan indeholde fejl; du er selv ansvarlig for anvendelse.</li>
+                    <li>Misbrug, forsøg på omgåelse eller automatiseret scraping er ikke tilladt.</li>
+                    <li>Vi kan løbende forbedre tjenesten og opdatere vilkår.</li>
+                  </ul>
                 </div>
               </details>
               <details class="legal-drawer">
-                <summary>Privatliv (udkast)</summary>
+                <summary>Privatlivspolitik</summary>
                 <div class="legal-body">
-                  Dette er en placeholder. Tilføj din privatlivspolitik her før launch.
+                  <p>Vi indsamler kun data, der er nødvendige for at levere tjenesten.</p>
+                  <ul>
+                    <li>Kontodata: e-mail og navn.</li>
+                    <li>Brugsdata: runder, resultater og indstillinger.</li>
+                    <li>Tekniske data: logdata og sikkerhedsrelaterede hændelser.</li>
+                  </ul>
+                  <p>Data bruges til drift, sikkerhed og support. Du kan til enhver tid få indsigt, eksportere eller
+                    slette dine data.</p>
+                </div>
+              </details>
+              <details class="legal-drawer">
+                <summary>Persondatapolitik</summary>
+                <div class="legal-body">
+                  <p>Dataansvarlig: Christian Kristensen (kristenson.dk).</p>
+                  <p>Behandlingsgrundlag: opfyldelse af aftale og legitim interesse i drift og sikkerhed.</p>
+                  <p>Databehandlere: hosting, login og betaling håndteres af betroede leverandører.</p>
+                  <p>Opbevaring: så længe din konto er aktiv, eller indtil du beder om sletning.</p>
+                </div>
+              </details>
+              <details class="legal-drawer">
+                <summary>Handelsbetingelser</summary>
+                <div class="legal-body">
+                  <p>Abonnement faktureres løbende. Pris og vilkår fremgår ved checkout.</p>
+                  <p>Du kan opsige når som helst; adgang fortsætter til periodens udløb.</p>
+                  <p>Kontakt support ved spørgsmål om betaling eller refusion.</p>
                 </div>
               </details>
             </section>
@@ -1204,7 +1239,7 @@
             <section class="panel account-panel reveal" style="--delay: 0.25s">
               <div class="panel-header">
                 <h2>Data &amp; sikkerhed</h2>
-                <p>Hent eller slet dine data når som helst.</p>
+                <p>Hent eller slet dine data, når du vil.</p>
               </div>
               <div class="account-actions">
                 <button id="export-data-btn" class="btn ghost" type="button">Download data</button>
@@ -1212,6 +1247,39 @@
                 <button id="delete-account-btn" class="btn danger" type="button">Slet konto</button>
               </div>
               <div class="field-hint">Sletning er permanent og kan ikke fortrydes.</div>
+            </section>
+
+            <section class="panel account-panel diagnostics-panel reveal" style="--delay: 0.3s">
+              <div class="panel-header">
+                <h2>Status &amp; overblik</h2>
+                <p>Hurtigt overblik over login og betaling.</p>
+              </div>
+              <div class="diagnostics-grid">
+                <div class="diagnostic-card">
+                <div class="diagnostic-label">Server</div>
+                  <div class="diagnostic-value" id="diag-backend">—</div>
+                  <div class="diagnostic-meta" id="diag-backend-meta">—</div>
+                </div>
+                <div class="diagnostic-card">
+                  <div class="diagnostic-label">Login</div>
+                  <div class="diagnostic-value" id="diag-auth">—</div>
+                  <div class="diagnostic-meta" id="diag-auth-meta">—</div>
+                </div>
+                <div class="diagnostic-card">
+                  <div class="diagnostic-label">Betaling</div>
+                  <div class="diagnostic-value" id="diag-stripe">—</div>
+                  <div class="diagnostic-meta" id="diag-stripe-meta">—</div>
+                </div>
+                <div class="diagnostic-card">
+                <div class="diagnostic-label">Hjælp</div>
+                  <div class="diagnostic-value" id="diag-ai">—</div>
+                  <div class="diagnostic-meta" id="diag-ai-meta">—</div>
+                </div>
+              </div>
+              <div class="account-actions">
+                <button id="diag-refresh-btn" class="btn ghost" type="button">Opdatér status</button>
+              </div>
+              <div class="field-hint">Nogle checks kræver login for at vise fuld status.</div>
             </section>
           </div>
         </div>
@@ -1231,11 +1299,11 @@
             <ul class="rules-list">
               <li>+3 point for korrekt, -1 for forkert, 0 for at springe over.</li>
               <li>Kortsvar bedømmes på 0–max point pr. delspørgsmål (med eller uden hjælp).</li>
-              <li>Samlet score og 7-trin karakter beregnes 50/50 mellem MCQ og kortsvar.</li>
+              <li>Samlet score og 7-trin karakter beregnes 50/50 mellem flervalg og kortsvar.</li>
               <li>Kortsvar under 5 point tæller som fejlet.</li>
               <li>Figurer er skjult – brug “Vis figur” når du har brug for dem.</li>
-              <li>Du kan skræddersy runden med emner, årgange og mixer.</li>
-              <li>Uendelig mode fortsætter, indtil du afslutter runden.</li>
+              <li>Du kan skræddersy runden med emner, årgange og blanding.</li>
+              <li>Uendelig træning fortsætter, indtil du afslutter runden.</li>
               <li>Spillet gemmer din bedste score og dine seneste fejl lokalt.</li>
             </ul>
           </div>

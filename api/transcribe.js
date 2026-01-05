@@ -4,6 +4,7 @@ const { callOpenAiTranscribe } = require("./_lib/openai");
 const { requireAiAccess } = require("./_lib/aiGate");
 const { parseAudioDataUrl, guessAudioFilename } = require("./_lib/media");
 const { logUsageEvent } = require("./_lib/usage");
+const { enforceRateLimit } = require("./_lib/rateLimit");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -23,6 +24,16 @@ module.exports = async function handler(req, res) {
   if (error) {
     const status = error === "missing_key" ? 503 : error === "unauthenticated" ? 401 : 402;
     return sendError(res, status, error);
+  }
+  if (
+    !(await enforceRateLimit(req, res, {
+      scope: "ai:transcribe",
+      limit: 20,
+      windowSeconds: 300,
+      userId: user.id,
+    }))
+  ) {
+    return;
   }
 
   const audioData = String(payload.audioData || "").trim();

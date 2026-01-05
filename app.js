@@ -481,6 +481,11 @@ const state = {
   subscription: null,
   backendAvailable: true,
   configError: "",
+  authProviders: {
+    google: null,
+    apple: null,
+  },
+  authSettingsStatus: "",
   demoMode: false,
   authReady: false,
   userStateSyncTimer: null,
@@ -610,6 +615,9 @@ const elements = {
   authEmailBtn: document.getElementById("auth-email-btn"),
   authDemoBtn: document.getElementById("auth-demo-btn"),
   authStatus: document.getElementById("auth-status"),
+  authDivider: document.getElementById("auth-divider"),
+  authOauthGroup: document.getElementById("auth-oauth"),
+  authNote: document.getElementById("auth-note"),
   accountBtn: document.getElementById("account-btn"),
   accountBackBtn: document.getElementById("account-back-btn"),
   accountStatus: document.getElementById("account-status"),
@@ -631,6 +639,15 @@ const elements = {
   exportDataBtn: document.getElementById("export-data-btn"),
   deleteAccountBtn: document.getElementById("delete-account-btn"),
   logoutBtn: document.getElementById("logout-btn"),
+  diagBackend: document.getElementById("diag-backend"),
+  diagBackendMeta: document.getElementById("diag-backend-meta"),
+  diagAuth: document.getElementById("diag-auth"),
+  diagAuthMeta: document.getElementById("diag-auth-meta"),
+  diagStripe: document.getElementById("diag-stripe"),
+  diagStripeMeta: document.getElementById("diag-stripe-meta"),
+  diagAi: document.getElementById("diag-ai"),
+  diagAiMeta: document.getElementById("diag-ai-meta"),
+  diagRefreshBtn: document.getElementById("diag-refresh-btn"),
   rulesButton: document.getElementById("rules-btn"),
   closeModal: document.getElementById("close-modal"),
   modalClose: document.getElementById("modal-close-btn"),
@@ -1076,8 +1093,113 @@ function setAuthStatus(message, isWarn = false) {
 
 function setAccountStatus(message, isWarn = false) {
   if (!elements.accountStatus) return;
-  elements.accountStatus.textContent = message || "";
-  elements.accountStatus.classList.toggle("warn", isWarn);
+  const text = String(message || "").trim();
+  elements.accountStatus.textContent = text;
+  elements.accountStatus.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.accountStatus, Boolean(text));
+}
+
+function setElementVisible(element, isVisible) {
+  if (!element) return;
+  element.classList.toggle("hidden", !isVisible);
+}
+
+function resolveProviderFlag(source, provider) {
+  if (!source) return null;
+  if (Array.isArray(source)) {
+    return source.includes(provider) ? true : null;
+  }
+  if (typeof source !== "object") return null;
+  if (!(provider in source)) return null;
+  const value = source[provider];
+  if (typeof value === "boolean") return value;
+  if (value && typeof value === "object") {
+    if ("enabled" in value) return Boolean(value.enabled);
+    if ("client_id" in value) return Boolean(value.client_id);
+    if ("app_id" in value) return Boolean(value.app_id);
+    if ("key_id" in value) return Boolean(value.key_id);
+  }
+  return Boolean(value);
+}
+
+function getAuthProviderFlag(settings, provider) {
+  if (!settings || typeof settings !== "object") return null;
+  const sources = [
+    settings.external,
+    settings.external?.providers,
+    settings.providers,
+    settings.oauth,
+    settings.auth_providers,
+  ];
+  for (const source of sources) {
+    const flag = resolveProviderFlag(source, provider);
+    if (flag !== null) return flag;
+  }
+  return null;
+}
+
+function applyAuthProviderVisibility() {
+  const googleVisible = state.authProviders.google !== false;
+  const appleVisible = state.authProviders.apple !== false;
+  setElementVisible(elements.authGoogleBtn, googleVisible);
+  setElementVisible(elements.authAppleBtn, appleVisible);
+  const hasOauth = googleVisible || appleVisible;
+  setElementVisible(elements.authOauthGroup, hasOauth);
+  setElementVisible(elements.authDivider, hasOauth);
+}
+
+function formatProviderStatus(label, flag) {
+  if (flag === true) return `${label}: aktiv`;
+  if (flag === false) return `${label}: ikke aktiv`;
+  return `${label}: ukendt`;
+}
+
+function updateDiagnosticsUI() {
+  const backendOk = Boolean(state.backendAvailable);
+  if (elements.diagBackend) {
+    elements.diagBackend.textContent = backendOk ? "Online" : "Offline";
+  }
+  if (elements.diagBackendMeta) {
+    elements.diagBackendMeta.textContent = backendOk
+      ? "Serveren svarer"
+      : state.configError || "Serveren svarer ikke";
+  }
+
+  const authReady = Boolean(state.supabase);
+  if (elements.diagAuth) {
+    elements.diagAuth.textContent = authReady ? "Klar" : "Mangler";
+  }
+  if (elements.diagAuthMeta) {
+    const providerSummary = [
+      formatProviderStatus("Google", state.authProviders.google),
+      formatProviderStatus("Apple", state.authProviders.apple),
+    ].join(" · ");
+    const suffix = state.authSettingsStatus ? ` · ${state.authSettingsStatus}` : "";
+    elements.diagAuthMeta.textContent = providerSummary + suffix;
+  }
+
+  const stripeReady = Boolean(state.config?.stripeConfigured);
+  if (elements.diagStripe) {
+    elements.diagStripe.textContent = stripeReady ? "Klar" : "Mangler";
+  }
+  if (elements.diagStripeMeta) {
+    if (stripeReady) {
+      elements.diagStripeMeta.textContent = "Betaling er sat op";
+    } else if (state.config?.stripePublishableKey) {
+      elements.diagStripeMeta.textContent = "Betaling mangler abonnement";
+    } else {
+      elements.diagStripeMeta.textContent = "Betaling er ikke sat op endnu";
+    }
+  }
+
+  const aiReady = Boolean(state.aiStatus?.available);
+  if (elements.diagAi) {
+    elements.diagAi.textContent = aiReady ? "Klar" : "Begrænset";
+  }
+  if (elements.diagAiMeta) {
+    const fallback = state.session?.user ? "Tjek din adgang" : "Kræver login";
+    elements.diagAiMeta.textContent = state.aiStatus?.message || fallback;
+  }
 }
 
 function setAuthControlsEnabled(enabled) {
@@ -1206,7 +1328,7 @@ function updateAuthUI() {
     showScreen("auth");
     if (!canAuth) {
       const message =
-        state.configError || "Backend offline. Tjek /api/config og Vercel env.";
+        state.configError || "Serveren svarer ikke lige nu.";
       setAuthStatus(message, true);
     } else {
       setAuthStatus("Log ind for at fortsætte");
@@ -1216,6 +1338,8 @@ function updateAuthUI() {
   }
   updateUserChip();
   updateAccountUI();
+  applyAuthProviderVisibility();
+  updateDiagnosticsUI();
 }
 
 function requireAuthGuard(message = "Log ind for at fortsætte", options = {}) {
@@ -1246,7 +1370,7 @@ async function apiFetch(url, options = {}) {
 async function loadRuntimeConfig() {
   const res = await fetch("/api/config", { cache: "no-store" });
   if (!res.ok) {
-    let detail = "Backend offline. Tjek /api/config og Vercel env.";
+    let detail = "Serveren svarer ikke lige nu.";
     try {
       const data = await res.json();
       if (data?.error) {
@@ -1263,10 +1387,52 @@ async function loadRuntimeConfig() {
   state.backendAvailable = true;
 }
 
+async function loadAuthSettings() {
+  if (!state.config?.supabaseUrl || !state.config?.supabaseAnonKey) return null;
+  const url = `${state.config.supabaseUrl}/auth/v1/settings`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        apikey: state.config.supabaseAnonKey,
+        Authorization: `Bearer ${state.config.supabaseAnonKey}`,
+      },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      state.authSettingsStatus = "Login-indstillinger kunne ikke læses";
+      return null;
+    }
+    state.authSettingsStatus = "";
+    return await res.json();
+  } catch (error) {
+    state.authSettingsStatus = "Login-indstillinger kunne ikke læses";
+    return null;
+  }
+}
+
+async function hydrateAuthProviders() {
+  const settings = await loadAuthSettings();
+  if (!settings) {
+    applyAuthProviderVisibility();
+    updateDiagnosticsUI();
+    return;
+  }
+  const googleFlag = getAuthProviderFlag(settings, AUTH_PROVIDERS.google);
+  const appleFlag = getAuthProviderFlag(settings, AUTH_PROVIDERS.apple);
+  if (googleFlag !== null) {
+    state.authProviders.google = googleFlag;
+  }
+  if (appleFlag !== null) {
+    state.authProviders.apple = appleFlag;
+  }
+  applyAuthProviderVisibility();
+  updateDiagnosticsUI();
+}
+
 function initSupabaseClient() {
   if (!state.config || !window.supabase) {
     state.backendAvailable = false;
-    state.configError = "Supabase SDK ikke indlæst.";
+    state.configError = "Login er ikke tilgængeligt endnu.";
     state.authReady = true;
     return;
   }
@@ -1333,13 +1499,19 @@ async function signInWithProvider(provider) {
   const { error } = await state.supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: window.location.href,
+      redirectTo: window.location.origin,
     },
   });
   if (error) {
+    if (error.message?.toLowerCase().includes("provider")) {
+      state.authProviders[provider] = false;
+      applyAuthProviderVisibility();
+      updateDiagnosticsUI();
+    }
+    const providerLabel = provider === AUTH_PROVIDERS.google ? "Google" : "Apple";
     const message =
       error.message?.includes("provider") || error.message?.includes("enabled")
-        ? "OAuth er ikke aktiveret i Supabase."
+        ? `${providerLabel}-login er ikke klar endnu.`
         : "Kunne ikke starte login.";
     setAuthStatus(message, true);
   }
@@ -1355,22 +1527,22 @@ async function signInWithEmail() {
     setAuthStatus("Skriv din email først.", true);
     return;
   }
-  setAuthStatus("Sender loginlink …");
+  setAuthStatus("Sender login-mail …");
   const { error } = await state.supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: window.location.href,
+      emailRedirectTo: window.location.origin,
     },
   });
   if (error) {
     const message =
       error.message?.includes("email") || error.message?.includes("disabled")
-        ? "Email login er ikke aktiveret i Supabase."
-        : "Kunne ikke sende loginlink.";
+        ? "Email-login er ikke klar endnu."
+        : "Kunne ikke sende login-mail.";
     setAuthStatus(message, true);
     return;
   }
-  setAuthStatus("Tjek din email for loginlink.");
+  setAuthStatus("Tjek din email for login.");
 }
 
 async function handleProfileSave() {
@@ -1415,12 +1587,21 @@ async function handleCheckout() {
   if (!requireAuthGuard()) return;
   const res = await apiFetch("/api/stripe/create-checkout-session", { method: "POST" });
   if (!res.ok) {
-    setAccountStatus("Kunne ikke starte betaling.", true);
+    let message = "Kunne ikke starte betalingen.";
+    try {
+      const data = await res.json();
+      if (data?.error === "payment_not_configured") {
+        message = "Betaling er ikke sat op endnu.";
+      }
+    } catch (error) {
+      // Ignore JSON parse errors.
+    }
+    setAccountStatus(message, true);
     return;
   }
   const data = await res.json();
   if (data.url) {
-    setAccountStatus("Åbner Stripe Checkout …");
+    setAccountStatus("Åbner betaling …");
     window.location.href = data.url;
   }
 }
@@ -1429,13 +1610,72 @@ async function handlePortal() {
   if (!requireAuthGuard()) return;
   const res = await apiFetch("/api/stripe/create-portal-session", { method: "POST" });
   if (!res.ok) {
-    setAccountStatus("Kunne ikke åbne betalingsportal.", true);
+    let message = "Kunne ikke åbne betalingsoversigt.";
+    try {
+      const data = await res.json();
+      if (data?.error === "payment_not_configured") {
+        message = "Betaling er ikke sat op endnu.";
+      }
+    } catch (error) {
+      // Ignore JSON parse errors.
+    }
+    setAccountStatus(message, true);
     return;
   }
   const data = await res.json();
   if (data.url) {
-    setAccountStatus("Åbner betalingsportal …");
+    setAccountStatus("Åbner betalingsoversigt …");
     window.location.href = data.url;
+  }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function hasPaidAccess() {
+  if (state.profile?.plan && state.profile.plan !== "free") return true;
+  const status = String(state.subscription?.status || "").toLowerCase();
+  return ["trialing", "active", "past_due", "unpaid"].includes(status);
+}
+
+async function refreshAccessStatus({ attempts = 4, delayMs = 1600 } = {}) {
+  if (!state.session?.user) return false;
+  for (let i = 0; i < attempts; i += 1) {
+    await refreshProfile();
+    if (hasPaidAccess()) return true;
+    await sleep(delayMs);
+  }
+  return false;
+}
+
+async function handleReturnParams() {
+  const url = new URL(window.location.href);
+  const checkout = url.searchParams.get("checkout");
+  const portal = url.searchParams.get("portal");
+  if (!checkout && !portal) return;
+
+  if (checkout === "success") {
+    setAccountStatus("Tak! Vi opdaterer din adgang nu.");
+  } else if (checkout === "cancel") {
+    setAccountStatus("Betalingen blev afbrudt.");
+  } else if (portal === "return") {
+    setAccountStatus("Du er tilbage fra betalingsoversigten.");
+  }
+
+  url.searchParams.delete("checkout");
+  url.searchParams.delete("portal");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+
+  if (checkout === "success") {
+    const updated = await refreshAccessStatus();
+    if (updated) {
+      setAccountStatus("Adgang opdateret.");
+    } else {
+      setAccountStatus("Betalingen er gennemført. Adgangen opdateres snart.");
+    }
+  } else if (portal === "return") {
+    await refreshProfile();
   }
 }
 
@@ -2556,7 +2796,7 @@ function updateShortAnswerModel(question) {
         setShortFigureStatus(
           state.aiStatus.available
             ? "Facit henviser til figuren. Generér en beskrivelse."
-            : "Hjælp offline. Start scripts/dev_server.py.",
+            : "Hjælp er ikke klar lige nu.",
           !state.aiStatus.available
         );
       } else {
@@ -2566,7 +2806,7 @@ function updateShortAnswerModel(question) {
         setShortFigureStatus(
           state.aiStatus.available
             ? "Generér en figurbeskrivelse hvis du vil."
-            : "Hjælp offline. Start scripts/dev_server.py.",
+            : "Hjælp er ikke klar lige nu.",
           !state.aiStatus.available
         );
       }
@@ -2593,7 +2833,7 @@ function updateSketchPanel(question) {
       : "Skitse (valgfri)";
   }
   if (elements.sketchStatus && !state.aiStatus.available) {
-    elements.sketchStatus.textContent = state.aiStatus.message || "Hjælp offline";
+    elements.sketchStatus.textContent = state.aiStatus.message || "Hjælp er ikke klar";
   }
   const analysis = state.sketchAnalysis.get(question.key);
   if (analysis && elements.sketchFeedback) {
@@ -2893,7 +3133,7 @@ function renderShortQuestion(question) {
   if (elements.shortAnswerAiStatus) {
     const label = state.aiStatus.available
       ? "Hjælp klar"
-      : state.aiStatus.message || "Hjælp offline";
+      : state.aiStatus.message || "Hjælp er ikke klar";
     elements.shortAnswerAiStatus.textContent = label;
     elements.shortAnswerAiStatus.classList.toggle("warn", !state.aiStatus.available);
   }
@@ -3062,7 +3302,7 @@ async function fetchFigureCaptionByPath(imagePath, { force = false, silent = fal
 
   if (!state.aiStatus.available) {
     if (!silent) {
-      setShortFigureStatus(state.aiStatus.message || "Hjælp offline", true);
+      setShortFigureStatus(state.aiStatus.message || "Hjælp er ikke klar", true);
     }
     return "";
   }
@@ -3102,7 +3342,7 @@ async function fetchFigureCaptionByPath(imagePath, { force = false, silent = fal
     } catch (error) {
       if (!silent) {
         setShortFigureStatus(
-          `Kunne ikke hente figurbeskrivelse. ${error.message || "Tjek serveren."}`,
+          `Kunne ikke hente figurbeskrivelse. ${error.message || "Prøv igen om lidt."}`,
           true
         );
       }
@@ -3124,7 +3364,7 @@ async function fetchFigureCaptionForQuestion(question, { force = false, silent =
   if (!images.length) return "";
   if (!state.aiStatus.available) {
     if (!silent) {
-      setShortFigureStatus(state.aiStatus.message || "Hjælp offline", true);
+      setShortFigureStatus(state.aiStatus.message || "Hjælp er ikke klar", true);
     }
     return "";
   }
@@ -3354,7 +3594,7 @@ async function transcribeAudio(blob) {
   } catch (error) {
     if (error.name === "AbortError") return;
     setFeedback(
-      `Kunne ikke transkribere lyd. ${error.message || "Tjek server og API-nøgle."}`,
+      `Kunne ikke transkribere lyd. ${error.message || "Tjek din adgang og forbindelsen."}`,
       "error"
     );
   } finally {
@@ -3377,7 +3617,7 @@ async function startMicRecording() {
     return;
   }
   if (!state.aiStatus.available) {
-    setFeedback(state.aiStatus.message || "Hjælp offline.", "error");
+    setFeedback(state.aiStatus.message || "Hjælp er ikke klar.", "error");
     return;
   }
   try {
@@ -3475,7 +3715,7 @@ async function analyzeSketch() {
   setSketchRetryVisible(false);
   if (!state.aiStatus.available) {
     if (elements.sketchStatus) {
-      elements.sketchStatus.textContent = state.aiStatus.message || "Hjælp offline";
+      elements.sketchStatus.textContent = state.aiStatus.message || "Hjælp er ikke klar";
     }
     setSketchRetryVisible(true);
     return;
@@ -3541,7 +3781,7 @@ async function analyzeSketch() {
   } catch (error) {
     if (elements.sketchStatus) {
       elements.sketchStatus.textContent =
-        `Kunne ikke analysere skitsen. ${error.message || "Tjek serveren."}`;
+        `Kunne ikke analysere skitsen. ${error.message || "Prøv igen om lidt."}`;
     }
     setSketchRetryVisible(true);
   }
@@ -3800,7 +4040,7 @@ function updateQuestionHintUI(question = state.activeQuestions[state.currentInde
   elements.questionHint.classList.remove("hidden");
 
   if (!available) {
-    elements.questionHintStatus.textContent = state.aiStatus.message || "Hjælp offline";
+    elements.questionHintStatus.textContent = state.aiStatus.message || "Hjælp er ikke klar";
   } else if (!canHint) {
     elements.questionHintStatus.textContent = "Ingen facit til hint.";
   } else if (isLoading) {
@@ -3929,7 +4169,7 @@ async function toggleQuestionHint() {
     const hint = String(data.hint || "").trim();
     hintEntry.text = hint || "Kunne ikke lave et hint.";
   } catch (error) {
-    hintEntry.text = `Kunne ikke hente hint. ${error.message || "Tjek server og API-nøgle."}`;
+    hintEntry.text = `Kunne ikke hente hint. ${error.message || "Tjek din adgang og forbindelsen."}`;
   } finally {
     hintEntry.loading = false;
     hintEntry.visible = true;
@@ -3948,14 +4188,14 @@ function setAiStatus(status) {
   if (elements.aiStatusPill) {
     const label = status.available
       ? "Assistent klar"
-      : status.message || "Hjælp offline";
+      : status.message || "Hjælp er ikke klar";
     elements.aiStatusPill.textContent = label;
     elements.aiStatusPill.classList.toggle("warn", !status.available);
   }
   if (elements.shortAnswerAiStatus) {
     const label = status.available
       ? "Hjælp klar"
-      : status.message || "Hjælp offline";
+      : status.message || "Hjælp er ikke klar";
     elements.shortAnswerAiStatus.textContent = label;
     elements.shortAnswerAiStatus.classList.toggle("warn", !status.available);
   }
@@ -3975,7 +4215,7 @@ function setAiStatus(status) {
 
 function getTtsBaseLabel() {
   if (!state.ttsStatus.available) {
-    return state.ttsStatus.message || "Oplæsning offline";
+    return state.ttsStatus.message || "Oplæsning er ikke klar";
   }
   return "Oplæsning klar";
 }
@@ -4444,7 +4684,7 @@ async function playTtsText(text, { source = "manual" } = {}) {
   } catch (error) {
     if (error.name === "AbortError") return;
     state.ttsPlayer.abortController = null;
-    stopTts(`Kunne ikke hente oplæsning. ${error.message || "Tjek serveren."}`, true);
+    stopTts(`Kunne ikke hente oplæsning. ${error.message || "Prøv igen om lidt."}`, true);
   }
 }
 
@@ -4747,7 +4987,7 @@ async function gradeShortAnswer(options = {}) {
   if (!state.aiStatus.available) {
     elements.shortAnswerAiFeedback.textContent =
       state.aiStatus.message || "Auto-bedømmelse er ikke sat op endnu.";
-    setShortcutTempStatus("grade", "Hjælp offline", 2000);
+    setShortcutTempStatus("grade", "Hjælp er ikke klar", 2000);
     setShortRetryVisible(true);
     return;
   }
@@ -4803,7 +5043,7 @@ async function gradeShortAnswer(options = {}) {
     setShortRetryVisible(false);
   } catch (error) {
     elements.shortAnswerAiFeedback.textContent =
-      `Kunne ikke hente auto-bedømmelse. ${error.message || "Tjek serveren og din API-nøgle."}`;
+      `Kunne ikke hente auto-bedømmelse. ${error.message || "Tjek din adgang og forbindelsen."}`;
     setShortRetryVisible(true);
   } finally {
     setShortAnswerPending(false);
@@ -4960,7 +5200,7 @@ function updateExpandButton(entry, button) {
   }
   if (!state.aiStatus.available) {
     button.disabled = true;
-    button.title = state.aiStatus.message || "Hjælp offline. Tjek server og API-nøgle.";
+    button.title = state.aiStatus.message || "Hjælp er ikke klar. Tjek din adgang.";
     return;
   }
   button.disabled = isLoading;
@@ -4987,7 +5227,7 @@ function updateExpandHintButton(entry, button) {
   }
   if (!state.aiStatus.available) {
     button.disabled = true;
-    button.title = state.aiStatus.message || "Hjælp offline. Tjek server og API-nøgle.";
+    button.title = state.aiStatus.message || "Hjælp er ikke klar. Tjek din adgang.";
     return;
   }
   button.disabled = isLoading;
@@ -5012,7 +5252,7 @@ function toggleExplanationDisplay(entry, textEl, button, expandButton) {
 async function handleExplainClick(entry, textEl, button, expandButton) {
   if (toggleExplanationDisplay(entry, textEl, button, expandButton)) return;
   if (!state.aiStatus.available) {
-    textEl.textContent = state.aiStatus.message || "Hjælp offline. Tjek server og API-nøgle.";
+    textEl.textContent = state.aiStatus.message || "Hjælp er ikke klar. Tjek din adgang.";
     textEl.classList.remove("hidden");
     updateExpandButton(entry, expandButton);
     return;
@@ -5049,7 +5289,7 @@ async function handleExplainClick(entry, textEl, button, expandButton) {
     button.textContent = "Skjul forklaring";
     updateReviewIllustration(entry, { force: true });
   } catch (error) {
-    textEl.textContent = `Kunne ikke hente forklaring. ${error.message || "Tjek server og API-nøgle."}`;
+    textEl.textContent = `Kunne ikke hente forklaring. ${error.message || "Tjek din adgang og forbindelsen."}`;
     button.textContent = "Prøv igen";
   } finally {
     entry.explainLoading = false;
@@ -5074,7 +5314,7 @@ async function handleExpandExplainClick(entry, textEl, button, explainButton) {
     return;
   }
   if (!state.aiStatus.available) {
-    textEl.textContent = state.aiStatus.message || "Hjælp offline. Tjek server og API-nøgle.";
+    textEl.textContent = state.aiStatus.message || "Hjælp er ikke klar. Tjek din adgang.";
     textEl.classList.remove("hidden");
     updateExpandButton(entry, button);
     return;
@@ -5122,7 +5362,7 @@ async function handleExpandExplainClick(entry, textEl, button, explainButton) {
     updateReviewIllustration(entry, { force: true });
     success = true;
   } catch (error) {
-    textEl.textContent = `Kunne ikke udvide forklaringen. ${error.message || "Tjek server og API-nøgle."}`;
+    textEl.textContent = `Kunne ikke udvide forklaringen. ${error.message || "Tjek din adgang og forbindelsen."}`;
     button.textContent = "Prøv igen";
   } finally {
     entry.explainExpanding = false;
@@ -5169,7 +5409,7 @@ async function handleExpandHintClick(entry, textEl, button, hintButton) {
     return;
   }
   if (!state.aiStatus.available) {
-    textEl.textContent = state.aiStatus.message || "Hjælp offline. Tjek server og API-nøgle.";
+    textEl.textContent = state.aiStatus.message || "Hjælp er ikke klar. Tjek din adgang.";
     textEl.classList.remove("hidden");
     updateExpandHintButton(entry, button);
     return;
@@ -5225,7 +5465,7 @@ async function handleExpandHintClick(entry, textEl, button, hintButton) {
     }
     success = true;
   } catch (error) {
-    textEl.textContent = `Kunne ikke udvide hintet. ${error.message || "Tjek server og API-nøgle."}`;
+    textEl.textContent = `Kunne ikke udvide hintet. ${error.message || "Tjek din adgang og forbindelsen."}`;
     button.textContent = "Prøv igen";
   } finally {
     entry.hintExpanding = false;
@@ -5295,7 +5535,7 @@ async function fetchReviewHint(entry, textEl, button, expandButton, { auto = fal
     button.textContent = "Skjul hint";
     updateExpandHintButton(entry, expandButton);
   } catch (error) {
-    textEl.textContent = `Kunne ikke hente hint. ${error.message || "Tjek server og API-nøgle."}`;
+    textEl.textContent = `Kunne ikke hente hint. ${error.message || "Tjek din adgang og forbindelsen."}`;
     textEl.classList.remove("loading");
     button.textContent = "Prøv igen";
   } finally {
@@ -5347,7 +5587,7 @@ function buildReviewQueue(results) {
 
   elements.reviewQueue.classList.remove("hidden");
   updateReviewQueueStatus(
-    state.aiStatus.available ? "Henter hints …" : "Hjælp offline"
+    state.aiStatus.available ? "Henter hints …" : "Hjælp er ikke klar"
   );
 
   queueEntries.forEach((entry, index) => {
@@ -5399,7 +5639,7 @@ function buildReviewQueue(results) {
     const canHint = Boolean(modelAnswer);
     hintBtn.disabled = !state.aiStatus.available || !canHint;
     if (!state.aiStatus.available) {
-      hintBtn.title = state.aiStatus.message || "Hjælp offline. Start scripts/dev_server.py.";
+      hintBtn.title = state.aiStatus.message || "Hjælp er ikke klar lige nu.";
     } else if (!canHint) {
       hintBtn.title = "Ingen facit til hint.";
     }
@@ -5440,7 +5680,7 @@ function buildReviewQueue(results) {
       enqueueReviewHint(entry, hintText, hintBtn, expandHintBtn);
     } else {
       hintText.classList.remove("hidden");
-      hintText.textContent = canHint ? "Hjælp offline. Tjek serveren." : "Ingen facit til hint.";
+      hintText.textContent = canHint ? "Hjælp er ikke klar lige nu." : "Ingen facit til hint.";
     }
   });
 
@@ -5934,7 +6174,7 @@ function buildReviewList(results) {
       explainBtn.textContent = entry.aiExplanation ? "Skjul forklaring" : "Få forklaring";
       explainBtn.disabled = !state.aiStatus.available && !entry.aiExplanation;
       if (!state.aiStatus.available && !entry.aiExplanation) {
-        explainBtn.title = state.aiStatus.message || "Hjælp offline. Start scripts/dev_server.py.";
+        explainBtn.title = state.aiStatus.message || "Hjælp er ikke klar lige nu.";
       }
 
       const expandBtn = document.createElement("button");
@@ -5944,7 +6184,7 @@ function buildReviewList(results) {
 
       const explainStatus = document.createElement("span");
       explainStatus.className = "review-explain-status";
-      explainStatus.textContent = state.aiStatus.available ? "Forklaring" : "Hjælp offline";
+      explainStatus.textContent = state.aiStatus.available ? "Forklaring" : "Hjælp er ikke klar";
 
       const explainText = document.createElement("div");
       explainText.className = "review-explain-text";
@@ -6814,7 +7054,7 @@ async function checkAiAvailability() {
   try {
     if (!state.backendAvailable) {
       const offlineMessage =
-        state.configError || "Backend offline. Tjek /api/config og Vercel env.";
+        state.configError || "Serveren svarer ikke lige nu.";
       setAiStatus({
         available: false,
         model: null,
@@ -6825,12 +7065,13 @@ async function checkAiAvailability() {
         model: null,
         message: offlineMessage,
       });
+      updateDiagnosticsUI();
       return;
     }
     if (!state.session?.user) {
       const message = state.demoMode
-        ? "Demo mode – log ind for AI."
-        : "Log ind for at bruge AI.";
+        ? "Demo – log ind for hjælp."
+        : "Log ind for at bruge hjælpen.";
       setAiStatus({
         available: false,
         model: null,
@@ -6841,22 +7082,23 @@ async function checkAiAvailability() {
         model: null,
         message,
       });
+      updateDiagnosticsUI();
       return;
     }
 
     const res = await apiFetch("/api/health");
     if (!res.ok) {
-      let aiMessage = "Hjælp offline. Tjek serveren.";
-      let ttsMessage = "Oplæsning offline. Tjek serveren.";
+      let aiMessage = "Hjælp er ikke klar lige nu.";
+      let ttsMessage = "Oplæsning er ikke klar lige nu.";
       if (res.status === 401) {
-        aiMessage = "Log ind for at bruge AI.";
+        aiMessage = "Log ind for at bruge hjælpen.";
         ttsMessage = "Log ind for oplæsning.";
       } else if (res.status === 402) {
-        aiMessage = "Kræver adgang eller egen API-nøgle.";
-        ttsMessage = "Kræver adgang eller egen API-nøgle.";
+        aiMessage = "Kræver adgang eller egen nøgle.";
+        ttsMessage = "Kræver adgang eller egen nøgle.";
       } else if (res.status === 503) {
-        aiMessage = "Mangler OpenAI nøgle på serveren.";
-        ttsMessage = "Mangler OpenAI nøgle på serveren.";
+        aiMessage = "Hjælpen er ikke sat op endnu.";
+        ttsMessage = "Oplæsning er ikke sat op endnu.";
       }
       setAiStatus({ available: false, model: null, message: aiMessage });
       setTtsStatus({ available: false, model: null, message: ttsMessage });
@@ -6865,17 +7107,28 @@ async function checkAiAvailability() {
     const data = await res.json();
     setAiStatus({ available: true, model: data.model || null, message: "" });
     setTtsStatus({ available: true, model: data.tts_model || null, message: "" });
+    updateDiagnosticsUI();
   } catch (error) {
     setAiStatus({
       available: false,
       model: null,
-      message: "Hjælp offline. Tjek server og netværk.",
+      message: "Hjælp er ikke klar lige nu.",
     });
     setTtsStatus({
       available: false,
       model: null,
-      message: "Oplæsning offline. Tjek server og netværk.",
+      message: "Oplæsning er ikke klar lige nu.",
     });
+    updateDiagnosticsUI();
+  }
+}
+
+async function refreshDiagnostics({ notify = false } = {}) {
+  await hydrateAuthProviders();
+  await checkAiAvailability();
+  updateDiagnosticsUI();
+  if (notify) {
+    setAccountStatus("Status er opdateret.");
   }
 }
 
@@ -7086,6 +7339,11 @@ function attachEvents() {
   }
   if (elements.logoutBtn) {
     elements.logoutBtn.addEventListener("click", handleLogout);
+  }
+  if (elements.diagRefreshBtn) {
+    elements.diagRefreshBtn.addEventListener("click", () => {
+      refreshDiagnostics({ notify: true });
+    });
   }
   elements.startButtons.forEach((btn) => btn.addEventListener("click", startGame));
   if (elements.shortcutInline) {
@@ -7655,6 +7913,7 @@ async function loadQuestions() {
 
 async function init() {
   attachEvents();
+  setAccountStatus("");
   updateTopBar();
   elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
   applyTheme(getInitialTheme());
@@ -7664,14 +7923,16 @@ async function init() {
   try {
     await loadRuntimeConfig();
     initSupabaseClient();
+    await hydrateAuthProviders();
     await refreshSession();
     subscribeToAuthChanges();
     if (state.session?.user) {
       await refreshProfile();
     }
+    await handleReturnParams();
   } catch (error) {
     state.backendAvailable = false;
-    state.configError = error.message || "Kunne ikke indlæse login. Tjek serveren.";
+    state.configError = error.message || "Kunne ikke åbne login lige nu.";
     state.authReady = true;
     setAuthStatus(state.configError, true);
   }

@@ -1,6 +1,6 @@
 # Human Biologi Studio
 
-En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidligere eksamener i sundhed og informatik (Københavns Universitet).
+En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidligere eksamener i sundhed og informatik.
 
 ## Funktioner
 - MCQ + kortsvar i samme session med 50/50 vægtning.
@@ -31,7 +31,7 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 1. Supabase:
    - Kør SQL fra `supabase/schema.sql` i Supabase SQL Editor.
    - Aktivér Auth providers (email, evt. Google + Apple) i Supabase Auth.
-   - Hvis du allerede har kørt SQL, så kør det igen for at oprette `user_state` tabellen.
+   - Hvis du allerede har kørt SQL, så kør det igen for at oprette `user_state` og `rate_limits`.
 2. Stripe:
    - Opret et produkt og en price (subscription).
    - Tilføj webhook til `/api/stripe/webhook`.
@@ -54,15 +54,20 @@ Minimum for online drift:
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_ID`
 - `OPENAI_API_KEY`
+- `STRIPE_PORTAL_CONFIGURATION_ID` (valgfri)
 
 Stripe nøgler:
 - `STRIPE_PRICE_ID` findes i Stripe Dashboard → Products → Price (starter med `price_`).
 - `STRIPE_WEBHOOK_SECRET` findes i Stripe Dashboard → Developers → Webhooks (starter med `whsec_`).
 - `STRIPE_BASE_URL` er optional og skal være din app-URL (bruges til success/cancel).
+- `STRIPE_PORTAL_CONFIGURATION_ID` er valgfri og bruges til Stripe Customer Portal.
 
 ## Sync af settings + historik
 - Appen synkroniserer settings, historik, fejl og performance til `user_state` tabellen i Supabase.
 - Synkronisering sker i baggrunden efter login og ved ændringer i lokal data.
+
+## Rate limiting
+- API-kald til AI, konto og betaling rate-limites via `rate_limits` tabellen i Supabase.
 
 Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 

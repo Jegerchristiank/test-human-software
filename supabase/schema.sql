@@ -26,28 +26,43 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 
+drop trigger if exists set_profiles_updated_at on public.profiles;
 create trigger set_profiles_updated_at
 before update on public.profiles
 for each row
 execute function public.set_updated_at();
 
-alter table public.profiles enable row level security;
+alter table if exists public.profiles enable row level security;
+
+drop policy if exists "Profiles are viewable by owner" on public.profiles;
+drop policy if exists "Profiles are insertable by owner" on public.profiles;
+drop policy if exists "Profiles are updatable by owner" on public.profiles;
+drop policy if exists "Profiles are deletable by owner" on public.profiles;
 
 create policy "Profiles are viewable by owner"
   on public.profiles
   for select
+  to authenticated
   using (auth.uid() = id);
 
 create policy "Profiles are insertable by owner"
   on public.profiles
   for insert
+  to authenticated
   with check (auth.uid() = id);
 
 create policy "Profiles are updatable by owner"
   on public.profiles
   for update
+  to authenticated
   using (auth.uid() = id)
   with check (auth.uid() = id);
+
+create policy "Profiles are deletable by owner"
+  on public.profiles
+  for delete
+  to authenticated
+  using (auth.uid() = id);
 
 -- Subscriptions
 create table if not exists public.subscriptions (
@@ -63,16 +78,20 @@ create table if not exists public.subscriptions (
   updated_at timestamptz not null default now()
 );
 
+drop trigger if exists set_subscriptions_updated_at on public.subscriptions;
 create trigger set_subscriptions_updated_at
 before update on public.subscriptions
 for each row
 execute function public.set_updated_at();
 
-alter table public.subscriptions enable row level security;
+alter table if exists public.subscriptions enable row level security;
+
+drop policy if exists "Subscriptions are viewable by owner" on public.subscriptions;
 
 create policy "Subscriptions are viewable by owner"
   on public.subscriptions
   for select
+  to authenticated
   using (auth.uid() = user_id);
 
 -- Usage events
@@ -86,11 +105,14 @@ create table if not exists public.usage_events (
   created_at timestamptz not null default now()
 );
 
-alter table public.usage_events enable row level security;
+alter table if exists public.usage_events enable row level security;
+
+drop policy if exists "Usage events are viewable by owner" on public.usage_events;
 
 create policy "Usage events are viewable by owner"
   on public.usage_events
   for select
+  to authenticated
   using (auth.uid() = user_id);
 
 -- User state (settings + history sync)
@@ -108,25 +130,93 @@ create table if not exists public.user_state (
   updated_at timestamptz not null default now()
 );
 
+drop trigger if exists set_user_state_updated_at on public.user_state;
 create trigger set_user_state_updated_at
 before update on public.user_state
 for each row
 execute function public.set_updated_at();
 
-alter table public.user_state enable row level security;
+alter table if exists public.user_state enable row level security;
+
+drop policy if exists "User state is viewable by owner" on public.user_state;
+drop policy if exists "User state is insertable by owner" on public.user_state;
+drop policy if exists "User state is updatable by owner" on public.user_state;
 
 create policy "User state is viewable by owner"
   on public.user_state
   for select
+  to authenticated
   using (auth.uid() = user_id);
 
 create policy "User state is insertable by owner"
   on public.user_state
   for insert
+  to authenticated
   with check (auth.uid() = user_id);
 
 create policy "User state is updatable by owner"
   on public.user_state
   for update
+  to authenticated
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- Rate limits
+create table if not exists public.rate_limits (
+  key text primary key,
+  count integer not null default 0,
+  window_start timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists set_rate_limits_updated_at on public.rate_limits;
+create trigger set_rate_limits_updated_at
+before update on public.rate_limits
+for each row
+execute function public.set_updated_at();
+
+alter table if exists public.rate_limits enable row level security;
+
+drop policy if exists "Rate limits are not accessible to clients" on public.rate_limits;
+
+create policy "Rate limits are not accessible to clients"
+  on public.rate_limits
+  for all
+  using (false)
+  with check (false);
+
+create or replace function public.check_rate_limit(
+  p_key text,
+  p_window_seconds integer,
+  p_limit integer
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_now timestamptz := now();
+  v_cutoff timestamptz := v_now - make_interval(secs => p_window_seconds);
+  v_count integer;
+begin
+  insert into public.rate_limits(key, count, window_start)
+  values (p_key, 1, v_now)
+  on conflict (key) do update
+  set
+    count = case
+      when public.rate_limits.window_start < v_cutoff then 1
+      else public.rate_limits.count + 1
+    end,
+    window_start = case
+      when public.rate_limits.window_start < v_cutoff then v_now
+      else public.rate_limits.window_start
+    end
+  returning count into v_count;
+
+  return v_count <= p_limit;
+end;
+$$;
+
+revoke all on function public.check_rate_limit(text, integer, integer) from public;
+grant execute on function public.check_rate_limit(text, integer, integer) to service_role;
