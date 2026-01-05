@@ -8,16 +8,19 @@ module.exports = function handler(req, res) {
   }
 
   const supabaseUrl = optionalEnv("SUPABASE_URL");
+  const supabasePublishableKey = optionalEnv("SUPABASE_PUBLISHABLE_KEY");
   const supabaseAnonKey = optionalEnv("SUPABASE_ANON_KEY");
+  const supabaseKey = supabasePublishableKey || supabaseAnonKey;
   const stripePublishableKey = optionalEnv("STRIPE_PUBLISHABLE_KEY");
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !supabaseKey) {
     return sendError(res, 500, "Missing public config");
   }
 
   return sendJson(res, 200, {
     supabaseUrl,
-    supabaseAnonKey,
+    supabaseAnonKey: supabaseKey,
+    supabasePublishableKey: supabasePublishableKey || null,
     stripePublishableKey: stripePublishableKey || null,
   });
 };

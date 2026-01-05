@@ -477,6 +477,9 @@ const state = {
   user: null,
   profile: null,
   subscription: null,
+  backendAvailable: true,
+  configError: "",
+  demoMode: false,
   authReady: false,
   useOwnKey: localStorage.getItem(STORAGE_KEYS.useOwnKey) === "true",
   userOpenAiKey: String(localStorage.getItem(STORAGE_KEYS.userOpenAiKey) || ""),
@@ -600,9 +603,11 @@ const elements = {
   authAppleBtn: document.getElementById("auth-apple-btn"),
   authEmailInput: document.getElementById("auth-email-input"),
   authEmailBtn: document.getElementById("auth-email-btn"),
+  authDemoBtn: document.getElementById("auth-demo-btn"),
   authStatus: document.getElementById("auth-status"),
   accountBtn: document.getElementById("account-btn"),
   accountBackBtn: document.getElementById("account-back-btn"),
+  accountStatus: document.getElementById("account-status"),
   userChip: document.getElementById("user-chip"),
   profileNameInput: document.getElementById("profile-name-input"),
   profileEmail: document.getElementById("profile-email"),
@@ -937,6 +942,50 @@ function setAuthStatus(message, isWarn = false) {
   elements.authStatus.classList.toggle("warn", isWarn);
 }
 
+function setAccountStatus(message, isWarn = false) {
+  if (!elements.accountStatus) return;
+  elements.accountStatus.textContent = message || "";
+  elements.accountStatus.classList.toggle("warn", isWarn);
+}
+
+function setAuthControlsEnabled(enabled) {
+  const controls = [
+    elements.authEmailInput,
+    elements.authEmailBtn,
+    elements.authGoogleBtn,
+    elements.authAppleBtn,
+  ];
+  controls.forEach((control) => {
+    if (control) {
+      control.disabled = !enabled;
+    }
+  });
+}
+
+function setAccountControlsEnabled(enabled) {
+  const controls = [
+    elements.profileSaveBtn,
+    elements.upgradeBtn,
+    elements.portalBtn,
+    elements.ownKeyToggle,
+    elements.ownKeySaveBtn,
+    elements.ownKeyClearBtn,
+    elements.consentSaveBtn,
+    elements.exportDataBtn,
+    elements.deleteAccountBtn,
+    elements.logoutBtn,
+  ];
+  controls.forEach((control) => {
+    if (control) {
+      control.disabled = !enabled;
+    }
+  });
+  if (elements.accountBtn) {
+    elements.accountBtn.disabled = !enabled;
+    elements.accountBtn.textContent = enabled ? "Konto" : "Konto (login)";
+  }
+}
+
 function formatPlanLabel(plan) {
   const normalized = String(plan || "free").toLowerCase();
   if (normalized === "paid") return "Pro";
@@ -963,6 +1012,10 @@ function formatSubscriptionStatus(subscription) {
 
 function updateUserChip() {
   if (!elements.userChip) return;
+  if (state.demoMode && !state.session?.user) {
+    elements.userChip.textContent = "Demo · Lokal";
+    return;
+  }
   if (!state.session?.user) {
     elements.userChip.textContent = "Ikke logget ind";
     return;
@@ -1006,9 +1059,26 @@ function updateAccountUI() {
 
 function updateAuthUI() {
   if (!state.authReady) return;
-  if (!state.session?.user) {
+  const canAuth = Boolean(state.supabase);
+  const hasUser = Boolean(state.session?.user);
+  if (hasUser) {
+    state.demoMode = false;
+  }
+
+  setAuthControlsEnabled(canAuth);
+  setAccountControlsEnabled(hasUser && state.backendAvailable);
+
+  if (!hasUser && state.demoMode) {
+    showScreen(state.lastAppScreen || "menu");
+  } else if (!hasUser) {
     showScreen("auth");
-    setAuthStatus("Log ind for at fortsætte");
+    if (!canAuth) {
+      const message =
+        state.configError || "Backend offline. Kør vercel dev for login.";
+      setAuthStatus(message, true);
+    } else {
+      setAuthStatus("Log ind for at fortsætte");
+    }
   } else if (screens.auth?.classList.contains("active")) {
     showScreen(state.lastAppScreen || "menu");
   }
@@ -1016,11 +1086,18 @@ function updateAuthUI() {
   updateAccountUI();
 }
 
-function requireAuthGuard(message = "Log ind for at fortsætte") {
+function requireAuthGuard(message = "Log ind for at fortsætte", options = {}) {
   if (state.session?.user) return true;
+  if (options.allowDemo && state.demoMode) return true;
   setAuthStatus(message, true);
   showScreen("auth");
   return false;
+}
+
+function enableDemoMode() {
+  state.demoMode = true;
+  setAuthStatus("Demo mode aktiv.");
+  updateAuthUI();
 }
 
 async function apiFetch(url, options = {}) {
@@ -1037,13 +1114,30 @@ async function apiFetch(url, options = {}) {
 async function loadRuntimeConfig() {
   const res = await fetch("/api/config", { cache: "no-store" });
   if (!res.ok) {
-    throw new Error("Mangler runtime config");
+    let detail = "Backend offline. Kør vercel dev for login.";
+    try {
+      const data = await res.json();
+      if (data?.error) {
+        detail = data.error;
+      }
+    } catch (error) {
+      // Ignore JSON parse errors.
+    }
+    const err = new Error(detail);
+    err.status = res.status;
+    throw err;
   }
   state.config = await res.json();
+  state.backendAvailable = true;
 }
 
 function initSupabaseClient() {
-  if (!state.config || !window.supabase) return;
+  if (!state.config || !window.supabase) {
+    state.backendAvailable = false;
+    state.configError = "Supabase SDK ikke indlæst.";
+    state.authReady = true;
+    return;
+  }
   state.supabase = window.supabase.createClient(
     state.config.supabaseUrl,
     state.config.supabaseAnonKey
@@ -1055,6 +1149,9 @@ async function refreshSession() {
   const { data } = await state.supabase.auth.getSession();
   state.session = data?.session || null;
   state.user = data?.session?.user || null;
+  if (state.session?.user) {
+    state.demoMode = false;
+  }
   state.authReady = true;
 }
 
@@ -1063,6 +1160,9 @@ function subscribeToAuthChanges() {
   state.supabase.auth.onAuthStateChange(async (_event, session) => {
     state.session = session;
     state.user = session?.user || null;
+    if (session?.user) {
+      state.demoMode = false;
+    }
     if (session?.user) {
       await refreshProfile();
     } else {
@@ -1092,7 +1192,10 @@ async function refreshProfile() {
 }
 
 async function signInWithProvider(provider) {
-  if (!state.supabase) return;
+  if (!state.supabase) {
+    setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
+    return;
+  }
   setAuthStatus("Åbner login …");
   const { error } = await state.supabase.auth.signInWithOAuth({
     provider,
@@ -1101,12 +1204,19 @@ async function signInWithProvider(provider) {
     },
   });
   if (error) {
-    setAuthStatus("Kunne ikke starte login", true);
+    const message =
+      error.message?.includes("provider") || error.message?.includes("enabled")
+        ? "OAuth er ikke aktiveret i Supabase."
+        : "Kunne ikke starte login.";
+    setAuthStatus(message, true);
   }
 }
 
 async function signInWithEmail() {
-  if (!state.supabase) return;
+  if (!state.supabase) {
+    setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
+    return;
+  }
   const email = elements.authEmailInput ? elements.authEmailInput.value.trim() : "";
   if (!email) {
     setAuthStatus("Skriv din email først.", true);
@@ -1120,7 +1230,11 @@ async function signInWithEmail() {
     },
   });
   if (error) {
-    setAuthStatus("Kunne ikke sende loginlink.", true);
+    const message =
+      error.message?.includes("email") || error.message?.includes("disabled")
+        ? "Email login er ikke aktiveret i Supabase."
+        : "Kunne ikke sende loginlink.";
+    setAuthStatus(message, true);
     return;
   }
   setAuthStatus("Tjek din email for loginlink.");
@@ -1139,9 +1253,9 @@ async function handleProfileSave() {
     state.profile = data.profile || state.profile;
     updateAccountUI();
     updateUserChip();
-    setFeedback("Profil opdateret.", "success");
+    setAccountStatus("Profil opdateret.");
   } else {
-    setFeedback("Kunne ikke gemme profil.", "error");
+    setAccountStatus("Kunne ikke gemme profil.", true);
   }
 }
 
@@ -1158,9 +1272,9 @@ async function handleConsentSave() {
     const data = await res.json();
     state.profile = data.profile || state.profile;
     updateAccountUI();
-    setFeedback("Samtykke gemt.", "success");
+    setAccountStatus("Samtykke gemt.");
   } else {
-    setFeedback("Kunne ikke gemme samtykke.", "error");
+    setAccountStatus("Kunne ikke gemme samtykke.", true);
   }
 }
 
@@ -1168,11 +1282,12 @@ async function handleCheckout() {
   if (!requireAuthGuard()) return;
   const res = await apiFetch("/api/stripe/create-checkout-session", { method: "POST" });
   if (!res.ok) {
-    setFeedback("Kunne ikke starte betaling.", "error");
+    setAccountStatus("Kunne ikke starte betaling.", true);
     return;
   }
   const data = await res.json();
   if (data.url) {
+    setAccountStatus("Åbner Stripe Checkout …");
     window.location.href = data.url;
   }
 }
@@ -1181,11 +1296,12 @@ async function handlePortal() {
   if (!requireAuthGuard()) return;
   const res = await apiFetch("/api/stripe/create-portal-session", { method: "POST" });
   if (!res.ok) {
-    setFeedback("Kunne ikke åbne betalingsportal.", "error");
+    setAccountStatus("Kunne ikke åbne betalingsportal.", true);
     return;
   }
   const data = await res.json();
   if (data.url) {
+    setAccountStatus("Åbner betalingsportal …");
     window.location.href = data.url;
   }
 }
@@ -1250,7 +1366,7 @@ async function handleExportData() {
   if (!requireAuthGuard()) return;
   const res = await apiFetch("/api/account/export", { method: "GET" });
   if (!res.ok) {
-    setFeedback("Kunne ikke hente data.", "error");
+    setAccountStatus("Kunne ikke hente data.", true);
     return;
   }
   const data = await res.json();
@@ -1263,6 +1379,7 @@ async function handleExportData() {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+  setAccountStatus("Download startet.");
 }
 
 async function handleDeleteAccount() {
@@ -1277,10 +1394,10 @@ async function handleDeleteAccount() {
     body: JSON.stringify({ confirm: true }),
   });
   if (res.ok) {
-    setFeedback("Konto slettet.", "success");
+    setAccountStatus("Konto slettet.");
     await handleLogout();
   } else {
-    setFeedback("Kunne ikke slette konto.", "error");
+    setAccountStatus("Kunne ikke slette konto.", true);
   }
 }
 
@@ -1291,6 +1408,7 @@ async function handleLogout() {
   state.user = null;
   state.profile = null;
   state.subscription = null;
+  state.demoMode = false;
   updateAuthUI();
 }
 
@@ -6345,7 +6463,7 @@ function finishSession() {
 }
 
 function startGame(options = {}) {
-  if (!requireAuthGuard("Log ind for at starte en runde.")) return;
+  if (!requireAuthGuard("Log ind for at starte en runde.", { allowDemo: true })) return;
   const { pool, focusMistakesActive } = resolvePool(options);
   if (!pool.length) return;
 
@@ -6559,16 +6677,32 @@ function updateAutoAdvanceLabel() {
 
 async function checkAiAvailability() {
   try {
-    if (!state.session?.user) {
+    if (!state.backendAvailable) {
       setAiStatus({
         available: false,
         model: null,
-        message: "Log ind for at bruge AI.",
+        message: "Backend offline. Kør vercel dev.",
       });
       setTtsStatus({
         available: false,
         model: null,
-        message: "Log ind for oplæsning.",
+        message: "Backend offline. Kør vercel dev.",
+      });
+      return;
+    }
+    if (!state.session?.user) {
+      const message = state.demoMode
+        ? "Demo mode – log ind for AI."
+        : "Log ind for at bruge AI.";
+      setAiStatus({
+        available: false,
+        model: null,
+        message,
+      });
+      setTtsStatus({
+        available: false,
+        model: null,
+        message,
       });
       return;
     }
@@ -6743,7 +6877,7 @@ function handleKeyDown(event) {
 function attachEvents() {
   if (elements.landingStartBtn) {
     elements.landingStartBtn.addEventListener("click", () => {
-      if (!requireAuthGuard()) return;
+      if (!requireAuthGuard("Log ind for at fortsætte.", { allowDemo: true })) return;
       showScreen("menu");
     });
   }
@@ -6769,6 +6903,9 @@ function attachEvents() {
         signInWithEmail();
       }
     });
+  }
+  if (elements.authDemoBtn) {
+    elements.authDemoBtn.addEventListener("click", enableDemoMode);
   }
   if (elements.accountBtn) {
     elements.accountBtn.addEventListener("click", () => {
@@ -7395,7 +7532,10 @@ async function init() {
       await refreshProfile();
     }
   } catch (error) {
-    setAuthStatus("Kunne ikke indlæse login. Tjek serveren.", true);
+    state.backendAvailable = false;
+    state.configError = error.message || "Kunne ikke indlæse login. Tjek serveren.";
+    state.authReady = true;
+    setAuthStatus(state.configError, true);
   }
   updateAuthUI();
   try {

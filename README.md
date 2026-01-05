@@ -21,6 +21,7 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 3. Åbn:
    - http://localhost:8000 for statisk frontend
    - http://localhost:3000 for Vercel dev
+4. Demo: Hvis backend ikke kører, kan du fortsætte i demo mode uden login (AI og betaling er deaktiveret).
 
 ## Login
 - Standard login er email magic-link via Supabase Auth.
@@ -40,13 +41,18 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 ## Miljøvariabler
 Minimum for online drift:
 - `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
+- `SUPABASE_ANON_KEY` (eller `SUPABASE_PUBLISHABLE_KEY`)
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_PUBLISHABLE_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_ID`
 - `OPENAI_API_KEY`
+
+Stripe nøgler:
+- `STRIPE_PRICE_ID` findes i Stripe Dashboard → Products → Price (starter med `price_`).
+- `STRIPE_WEBHOOK_SECRET` findes i Stripe Dashboard → Developers → Webhooks (starter med `whsec_`).
+- `STRIPE_BASE_URL` er optional og skal være din app-URL (bruges til success/cancel).
 
 Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 
