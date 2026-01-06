@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
   userOpenAiKey: "hbs_user_openai_key",
   useOwnKey: "hbs_use_own_key",
   userStateUpdatedAt: "hbs_user_state_updated_at",
+  demoTrialLastRun: "hbs_demo_trial_last_run",
 };
 
 const DEFAULT_SETTINGS = {
@@ -54,6 +55,9 @@ const DUPLICATE_ANSWER_SIMILARITY = 0.95;
 const PREFER_UNSEEN_SHARE = 0.7;
 const SHORTCUT_STATUS_DURATION = 3000;
 const USER_STATE_SYNC_DELAY = 1800;
+const DEMO_DAILY_WINDOW = 24 * 60 * 60 * 1000;
+const DEMO_TOTAL_QUESTIONS = 6;
+const DEMO_SHORT_MATCH_THRESHOLD = 0.5;
 const SHORT_LABEL_ORDER = ["a", "b", "c", "d", "e"];
 const SHORT_LABEL_INDEX = new Map(SHORT_LABEL_ORDER.map((label, index) => [label, index]));
 const CONTEXT_STRONG_CUE = /\b(dis?se|ovenfor|ovenstående|førnævnte|sidstnævnte|førstnævnte)\b/i;
@@ -487,7 +491,18 @@ const state = {
   },
   authSettingsStatus: "",
   demoMode: false,
+  demoQuiz: {
+    status: "idle",
+    questions: [],
+    currentIndex: 0,
+    score: 0,
+    answers: [],
+  },
+  pendingEmailConfirmation: false,
+  consentReturnTo: null,
   authReady: false,
+  isLoading: true,
+  loadingFallbackTimer: null,
   userStateSyncTimer: null,
   userStateSyncInFlight: false,
   userStateApplying: false,
@@ -595,7 +610,9 @@ const state = {
 };
 
 const screens = {
+  loading: document.getElementById("loading-screen"),
   auth: document.getElementById("auth-screen"),
+  consent: document.getElementById("consent-screen"),
   landing: document.getElementById("landing-screen"),
   menu: document.getElementById("menu-screen"),
   quiz: document.getElementById("quiz-screen"),
@@ -609,12 +626,48 @@ const elements = {
   startButtons: [document.getElementById("start-btn")].filter(Boolean),
   landingStartBtn: document.getElementById("landing-start-btn"),
   landingQuickBtn: document.getElementById("landing-quick-btn"),
+  demoStartBtn: document.getElementById("demo-start-btn"),
+  demoStatus: document.getElementById("demo-status"),
+  demoLimit: document.getElementById("demo-limit"),
+  demoCardTitle: document.getElementById("demo-card-title"),
+  demoLoading: document.getElementById("demo-loading"),
+  demoEmpty: document.getElementById("demo-empty"),
+  demoQuestion: document.getElementById("demo-question"),
+  demoQuestionType: document.getElementById("demo-question-type"),
+  demoStep: document.getElementById("demo-step"),
+  demoQuestionText: document.getElementById("demo-question-text"),
+  demoOptions: document.getElementById("demo-options"),
+  demoShort: document.getElementById("demo-short"),
+  demoShortInput: document.getElementById("demo-short-input"),
+  demoShortCheckBtn: document.getElementById("demo-short-check"),
+  demoShortGuidance: document.getElementById("demo-short-guidance"),
+  demoFeedback: document.getElementById("demo-feedback"),
+  demoNextBtn: document.getElementById("demo-next-btn"),
+  demoExitBtn: document.getElementById("demo-exit-btn"),
+  demoProgress: document.getElementById("demo-progress"),
+  demoScore: document.getElementById("demo-score"),
+  demoResult: document.getElementById("demo-result"),
+  demoResultScore: document.getElementById("demo-result-score"),
+  demoCloseBtn: document.getElementById("demo-close-btn"),
+  loadingStatus: document.getElementById("loading-status"),
+  loadingDetail: document.getElementById("loading-detail"),
+  loadingProgress: document.getElementById("loading-progress"),
+  loadingProgressFill: document.getElementById("loading-progress-fill"),
+  loadingProgressValue: document.getElementById("loading-progress-value"),
+  loadingActions: document.getElementById("loading-actions"),
+  loadingHomeBtn: document.getElementById("loading-home-btn"),
+  loadingRetryBtn: document.getElementById("loading-retry-btn"),
   authGoogleBtn: document.getElementById("auth-google-btn"),
   authAppleBtn: document.getElementById("auth-apple-btn"),
   authEmailInput: document.getElementById("auth-email-input"),
+  authPasswordInput: document.getElementById("auth-password-input"),
   authEmailBtn: document.getElementById("auth-email-btn"),
+  authLoginBtn: document.getElementById("auth-login-btn"),
+  authSignupBtn: document.getElementById("auth-signup-btn"),
   authDemoBtn: document.getElementById("auth-demo-btn"),
   authStatus: document.getElementById("auth-status"),
+  authResend: document.getElementById("auth-resend"),
+  authResendBtn: document.getElementById("auth-resend-btn"),
   authDivider: document.getElementById("auth-divider"),
   authOauthGroup: document.getElementById("auth-oauth"),
   authNote: document.getElementById("auth-note"),
@@ -636,6 +689,12 @@ const elements = {
   consentTerms: document.getElementById("consent-terms"),
   consentPrivacy: document.getElementById("consent-privacy"),
   consentSaveBtn: document.getElementById("consent-save-btn"),
+  consentGateTerms: document.getElementById("consent-terms-gate"),
+  consentGatePrivacy: document.getElementById("consent-privacy-gate"),
+  consentGateAcceptBtn: document.getElementById("consent-accept-btn"),
+  consentBackBtn: document.getElementById("consent-back-btn"),
+  consentStatus: document.getElementById("consent-status"),
+  consentEmail: document.getElementById("consent-email"),
   exportDataBtn: document.getElementById("export-data-btn"),
   deleteAccountBtn: document.getElementById("delete-account-btn"),
   logoutBtn: document.getElementById("logout-btn"),
@@ -659,7 +718,9 @@ const elements = {
   figureModalCaption: document.getElementById("figure-modal-caption"),
   themeToggle: document.getElementById("theme-toggle"),
   questionCountRange: document.getElementById("question-count"),
-  questionCountInput: document.getElementById("question-count-input"),
+  questionCountLabel: document.getElementById("question-count-label"),
+  questionCountInfo: document.getElementById("question-count-info"),
+  questionCountHint: document.getElementById("question-count-hint"),
   questionCountChip: document.getElementById("question-count-chip"),
   poolCountChip: document.getElementById("pool-count-chip"),
   poolCount: document.getElementById("pool-count"),
@@ -697,19 +758,19 @@ const elements = {
   toggleShuffleOptions: document.getElementById("toggle-shuffle-options"),
   toggleBalanced: document.getElementById("toggle-balanced"),
   toggleAdaptiveMix: document.getElementById("toggle-adaptive-mix"),
-  toggleShowMeta: document.getElementById("toggle-show-meta"),
   toggleAutoAdvance: document.getElementById("toggle-auto-advance"),
   toggleInfiniteMode: document.getElementById("toggle-infinite-mode"),
   toggleAvoidRepeats: document.getElementById("toggle-avoid-repeats"),
   togglePreferUnseen: document.getElementById("toggle-prefer-unseen"),
   toggleFocusMistakes: document.getElementById("toggle-focus-mistakes"),
-  toggleFocusMode: document.getElementById("toggle-focus-mode"),
   toggleIncludeMcq: document.getElementById("toggle-include-mcq"),
   toggleIncludeShort: document.getElementById("toggle-include-short"),
   toggleTts: document.getElementById("toggle-tts"),
   toggleAutoFigure: document.getElementById("toggle-auto-figure"),
+  ratioControlRow: document.getElementById("ratio-control-row"),
   ratioMcqInput: document.getElementById("ratio-mcq"),
   ratioShortInput: document.getElementById("ratio-short"),
+  autoAdvanceRow: document.getElementById("auto-advance-row"),
   autoAdvanceDelay: document.getElementById("auto-advance-delay"),
   autoAdvanceLabel: document.getElementById("auto-advance-label"),
   backToMenu: document.getElementById("back-to-menu"),
@@ -759,7 +820,6 @@ const elements = {
   transcribeIndicator: document.getElementById("transcribe-indicator"),
   transcribeText: document.getElementById("transcribe-text"),
   shortAnswerScoreRange: document.getElementById("short-score-range"),
-  shortAnswerScoreInput: document.getElementById("short-score-input"),
   shortAnswerMaxPoints: document.getElementById("short-max-points"),
   shortAnswerAiFeedback: document.getElementById("short-ai-feedback"),
   shortAnswerAiRetryBtn: document.getElementById("short-ai-retry-btn"),
@@ -787,8 +847,6 @@ const elements = {
   sketchPreview: document.getElementById("sketch-preview"),
   sketchDropzone: document.getElementById("sketch-dropzone"),
   feedbackArea: document.getElementById("feedback-area"),
-  shortcutInline: document.getElementById("shortcut-inline"),
-  shortcutFigure: document.getElementById("shortcut-figure"),
   skipBtn: document.getElementById("skip-btn"),
   nextBtn: document.getElementById("next-btn"),
   micBtn: document.getElementById("mic-btn"),
@@ -1060,6 +1118,18 @@ function applyPreset(presetId) {
 }
 
 function showScreen(target) {
+  if (
+    target !== "loading" &&
+    target !== "auth" &&
+    target !== "consent" &&
+    needsConsent()
+  ) {
+    if (!state.consentReturnTo) {
+      state.consentReturnTo = target;
+    }
+    target = "consent";
+  }
+
   Object.entries(screens).forEach(([key, el]) => {
     if (key === target) {
       el.classList.add("active");
@@ -1070,7 +1140,7 @@ function showScreen(target) {
     }
   });
 
-  document.body.classList.toggle("mode-auth", target === "auth");
+  document.body.classList.toggle("mode-auth", target === "auth" || target === "consent");
   document.body.classList.toggle("mode-landing", target === "landing");
   document.body.classList.toggle("mode-menu", target === "menu" || target === "account");
   document.body.classList.toggle("mode-game", target === "quiz");
@@ -1085,10 +1155,100 @@ function showScreen(target) {
   }
 }
 
+const LOADING_FALLBACK_DELAY = 7000;
+const LOGIN_TIMEOUT_MS = 5000;
+const LOADING_DEFAULT_STATUS = "Indlæser …";
+const LOADING_DEFAULT_DETAIL = "Gør klar til din session";
+
+function withTimeout(promise, timeoutMs, message) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      const error = new Error(message || "Timeout");
+      error.code = "TIMEOUT";
+      reject(error);
+    }, timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  });
+}
+
+function setLoadingMessage(status = LOADING_DEFAULT_STATUS, detail = LOADING_DEFAULT_DETAIL) {
+  if (elements.loadingStatus) {
+    elements.loadingStatus.textContent = status;
+  }
+  if (elements.loadingDetail) {
+    elements.loadingDetail.textContent = detail;
+    setElementVisible(elements.loadingDetail, Boolean(detail));
+  }
+}
+
+function setLoadingProgress(value) {
+  if (!elements.loadingProgressFill || !elements.loadingProgressValue) return;
+  const normalized = Math.min(100, Math.max(0, Number(value) || 0));
+  elements.loadingProgressFill.style.width = `${normalized}%`;
+  elements.loadingProgressValue.textContent = `${Math.round(normalized)}%`;
+  if (elements.loadingProgress) {
+    elements.loadingProgress.setAttribute("aria-valuenow", String(Math.round(normalized)));
+  }
+}
+
+function showLoadingActions(isVisible) {
+  if (!elements.loadingActions) return;
+  setElementVisible(elements.loadingActions, Boolean(isVisible));
+}
+
+function clearLoadingFallback() {
+  if (state.loadingFallbackTimer) {
+    clearTimeout(state.loadingFallbackTimer);
+    state.loadingFallbackTimer = null;
+  }
+  showLoadingActions(false);
+}
+
+function scheduleLoadingFallback() {
+  clearLoadingFallback();
+  state.loadingFallbackTimer = setTimeout(() => {
+    setLoadingMessage("Det tager længere tid end normalt …", "Du kan gå til forsiden eller prøve igen.");
+    setLoadingProgress(92);
+    showLoadingActions(true);
+  }, LOADING_FALLBACK_DELAY);
+}
+
+function setLoadingState(isLoading) {
+  state.isLoading = Boolean(isLoading);
+  if (state.isLoading) {
+    showScreen("loading");
+    setLoadingMessage();
+    setLoadingProgress(6);
+    scheduleLoadingFallback();
+    return;
+  }
+  if (!state.authReady && state.supabase) {
+    state.authReady = true;
+  }
+  clearLoadingFallback();
+  try {
+    updateAuthUI();
+  } catch (error) {
+    console.error("Kunne ikke opdatere UI efter loading", error);
+    showScreen("auth");
+    setAuthStatus("Noget gik galt under indlæsning. Prøv at genindlæse siden.", true);
+  }
+}
+
 function setAuthStatus(message, isWarn = false) {
   if (!elements.authStatus) return;
   elements.authStatus.textContent = message || "";
   elements.authStatus.classList.toggle("warn", isWarn);
+}
+
+function setAuthResendVisible(isVisible) {
+  if (!elements.authResend) return;
+  setElementVisible(elements.authResend, Boolean(isVisible));
 }
 
 function setAccountStatus(message, isWarn = false) {
@@ -1097,6 +1257,21 @@ function setAccountStatus(message, isWarn = false) {
   elements.accountStatus.textContent = text;
   elements.accountStatus.classList.toggle("warn", Boolean(text) && isWarn);
   setElementVisible(elements.accountStatus, Boolean(text));
+}
+
+function setConsentStatus(message, isWarn = false) {
+  if (!elements.consentStatus) return;
+  const text = String(message || "").trim();
+  elements.consentStatus.textContent = text;
+  elements.consentStatus.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.consentStatus, Boolean(text));
+}
+
+function needsConsent() {
+  if (!state.session?.user) return false;
+  const termsAccepted = Boolean(state.profile?.terms_accepted_at);
+  const privacyAccepted = Boolean(state.profile?.privacy_accepted_at);
+  return !termsAccepted || !privacyAccepted;
 }
 
 function setElementVisible(element, isVisible) {
@@ -1139,13 +1314,10 @@ function getAuthProviderFlag(settings, provider) {
 }
 
 function applyAuthProviderVisibility() {
-  const googleVisible = state.authProviders.google !== false;
-  const appleVisible = state.authProviders.apple !== false;
-  setElementVisible(elements.authGoogleBtn, googleVisible);
-  setElementVisible(elements.authAppleBtn, appleVisible);
-  const hasOauth = googleVisible || appleVisible;
-  setElementVisible(elements.authOauthGroup, hasOauth);
-  setElementVisible(elements.authDivider, hasOauth);
+  setElementVisible(elements.authGoogleBtn, true);
+  setElementVisible(elements.authAppleBtn, true);
+  setElementVisible(elements.authOauthGroup, true);
+  setElementVisible(elements.authDivider, true);
 }
 
 function formatProviderStatus(label, flag) {
@@ -1205,7 +1377,10 @@ function updateDiagnosticsUI() {
 function setAuthControlsEnabled(enabled) {
   const controls = [
     elements.authEmailInput,
+    elements.authPasswordInput,
     elements.authEmailBtn,
+    elements.authLoginBtn,
+    elements.authSignupBtn,
     elements.authGoogleBtn,
     elements.authAppleBtn,
   ];
@@ -1284,6 +1459,59 @@ function updateUserChip() {
   elements.userChip.textContent = `${name} · ${planLabel}`;
 }
 
+function updateConsentGateActions() {
+  if (!elements.consentGateAcceptBtn) return;
+  const canEdit = Boolean(state.session?.user && state.backendAvailable);
+  const acceptTerms = Boolean(elements.consentGateTerms?.checked);
+  const acceptPrivacy = Boolean(elements.consentGatePrivacy?.checked);
+  elements.consentGateAcceptBtn.disabled = !canEdit || !(acceptTerms && acceptPrivacy);
+}
+
+function scheduleConsentFallbackCheck() {
+  if (!screens.consent || !screens.consent.classList.contains("active")) return;
+  const grid = screens.consent.querySelector(".consent-grid");
+  if (!grid) return;
+  const panels = grid.querySelectorAll(".consent-panel");
+  requestAnimationFrame(() => {
+    const height = grid.getBoundingClientRect().height;
+    const needsFallback = height < 20 || panels.length === 0;
+    screens.consent.classList.toggle("consent-fallback", needsFallback);
+  });
+}
+
+function syncConsentInputs() {
+  const canEdit = Boolean(state.session?.user && state.backendAvailable);
+  const termsAccepted = Boolean(state.profile?.terms_accepted_at);
+  const privacyAccepted = Boolean(state.profile?.privacy_accepted_at);
+
+  if (elements.consentTerms) {
+    elements.consentTerms.checked = termsAccepted;
+    elements.consentTerms.disabled = !canEdit || termsAccepted;
+  }
+  if (elements.consentPrivacy) {
+    elements.consentPrivacy.checked = privacyAccepted;
+    elements.consentPrivacy.disabled = !canEdit || privacyAccepted;
+  }
+  if (elements.consentGateTerms) {
+    elements.consentGateTerms.checked = termsAccepted;
+    elements.consentGateTerms.disabled = !canEdit || termsAccepted;
+  }
+  if (elements.consentGatePrivacy) {
+    elements.consentGatePrivacy.checked = privacyAccepted;
+    elements.consentGatePrivacy.disabled = !canEdit || privacyAccepted;
+  }
+
+  updateConsentGateActions();
+  scheduleConsentFallbackCheck();
+}
+
+function updateConsentGateUI() {
+  if (elements.consentEmail) {
+    elements.consentEmail.textContent = state.session?.user?.email || "—";
+  }
+  syncConsentInputs();
+}
+
 function updateAccountUI() {
   if (elements.profileNameInput) {
     elements.profileNameInput.value = state.profile?.full_name || "";
@@ -1303,26 +1531,47 @@ function updateAccountUI() {
   if (elements.ownKeyInput) {
     elements.ownKeyInput.value = state.userOpenAiKey || "";
   }
-  if (elements.consentTerms) {
-    elements.consentTerms.checked = Boolean(state.profile?.terms_accepted_at);
-  }
-  if (elements.consentPrivacy) {
-    elements.consentPrivacy.checked = Boolean(state.profile?.privacy_accepted_at);
-  }
+  updateConsentGateUI();
 }
 
 function updateAuthUI() {
-  if (!state.authReady) return;
+  if (state.isLoading) return;
+  if (!state.authReady) {
+    showScreen("auth");
+    setAuthControlsEnabled(false);
+    setAccountControlsEnabled(false);
+    setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
+    setAuthResendVisible(state.pendingEmailConfirmation);
+    updateUserChip();
+    updateAccountUI();
+    applyAuthProviderVisibility();
+    updateDiagnosticsUI();
+    return;
+  }
+
   const canAuth = Boolean(state.supabase);
   const hasUser = Boolean(state.session?.user);
   if (hasUser) {
     state.demoMode = false;
+    state.pendingEmailConfirmation = false;
+  } else {
+    state.consentReturnTo = null;
   }
 
   setAuthControlsEnabled(canAuth);
   setAccountControlsEnabled(hasUser && state.backendAvailable);
 
-  if (!hasUser && state.demoMode) {
+  const requiresConsent = hasUser && needsConsent();
+  if (!requiresConsent) {
+    setConsentStatus("");
+  }
+
+  if (requiresConsent) {
+    if (!state.consentReturnTo) {
+      state.consentReturnTo = state.lastAppScreen || "menu";
+    }
+    showScreen("consent");
+  } else if (!hasUser && state.demoMode) {
     showScreen(state.lastAppScreen || "menu");
   } else if (!hasUser) {
     showScreen("auth");
@@ -1331,19 +1580,34 @@ function updateAuthUI() {
         state.configError || "Serveren svarer ikke lige nu.";
       setAuthStatus(message, true);
     } else {
-      setAuthStatus("Log ind for at fortsætte");
+      setAuthStatus("Log ind eller opret konto for at fortsætte.");
     }
-  } else if (screens.auth?.classList.contains("active")) {
-    showScreen(state.lastAppScreen || "menu");
+    setAuthResendVisible(state.pendingEmailConfirmation);
+  } else if (
+    screens.auth?.classList.contains("active") ||
+    screens.loading?.classList.contains("active") ||
+    screens.consent?.classList.contains("active")
+  ) {
+    const nextScreen = state.consentReturnTo || state.lastAppScreen || "menu";
+    state.consentReturnTo = null;
+    showScreen(nextScreen);
   }
   updateUserChip();
   updateAccountUI();
   applyAuthProviderVisibility();
   updateDiagnosticsUI();
+  updateDemoAvailability();
 }
 
 function requireAuthGuard(message = "Log ind for at fortsætte", options = {}) {
-  if (state.session?.user) return true;
+  if (state.session?.user) {
+    if (!options.ignoreConsent && needsConsent()) {
+      showScreen("consent");
+      setConsentStatus("Accepter vilkår og privatlivspolitik for at fortsætte.", true);
+      return false;
+    }
+    return true;
+  }
   if (options.allowDemo && state.demoMode) return true;
   setAuthStatus(message, true);
   showScreen("auth");
@@ -1354,6 +1618,447 @@ function enableDemoMode() {
   state.demoMode = true;
   setAuthStatus("Demo mode aktiv.");
   updateAuthUI();
+}
+
+function getDemoLastRun() {
+  const stored = Number(localStorage.getItem(STORAGE_KEYS.demoTrialLastRun) || 0);
+  return Number.isFinite(stored) && stored > 0 ? stored : null;
+}
+
+function getDemoRemainingMs() {
+  const lastRun = getDemoLastRun();
+  if (!lastRun) return 0;
+  return lastRun + DEMO_DAILY_WINDOW - Date.now();
+}
+
+function formatDemoWait(ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return "nu";
+  const hours = Math.floor(ms / 3600000);
+  const minutes = Math.ceil((ms % 3600000) / 60000);
+  if (hours >= 23) return "i morgen";
+  if (hours >= 1) return `${hours} t ${minutes} min`;
+  return `${minutes} min`;
+}
+
+function canRunDemoQuiz() {
+  const lastRun = getDemoLastRun();
+  if (!lastRun) return true;
+  return Date.now() - lastRun >= DEMO_DAILY_WINDOW;
+}
+
+function setDemoStatus(message, isWarn = false) {
+  if (!elements.demoStatus) return;
+  elements.demoStatus.textContent = message || "";
+  elements.demoStatus.classList.toggle("warn", isWarn);
+}
+
+function updateDemoCardTitle() {
+  if (!elements.demoCardTitle) return;
+  if (state.demoQuiz.status === "active") {
+    elements.demoCardTitle.textContent = "Mini-runde i gang";
+  } else if (state.demoQuiz.status === "complete") {
+    elements.demoCardTitle.textContent = "Prøvespil afsluttet";
+  } else {
+    elements.demoCardTitle.textContent = "Generér dagens mini-runde";
+  }
+}
+
+function updateDemoAvailability() {
+  if (!elements.demoStartBtn) return;
+  if (state.demoQuiz.status === "active" || state.demoQuiz.status === "loading") return;
+
+  if (!state.backendAvailable) {
+    elements.demoStartBtn.disabled = true;
+    elements.demoStartBtn.textContent = "Prøvespil er offline";
+    setDemoStatus(state.configError || "Prøvespil er ikke tilgængeligt lige nu.", true);
+    if (elements.demoLimit) {
+      elements.demoLimit.textContent = "Prøvespil er offline";
+    }
+    updateDemoCardTitle();
+    return;
+  }
+
+  const canStart = canRunDemoQuiz();
+  elements.demoStartBtn.disabled = !canStart;
+  elements.demoStartBtn.textContent = canStart ? "Start prøvespil" : "Prøvespil brugt i dag";
+  if (canStart) {
+    setDemoStatus("Klar til at starte.");
+    if (elements.demoLimit) {
+      elements.demoLimit.textContent = "Én gang pr. dag";
+    }
+  } else {
+    const remaining = getDemoRemainingMs();
+    const waitText = formatDemoWait(remaining);
+    setDemoStatus(`Dagens prøvespil er brugt. Prøv igen om ${waitText}.`, true);
+    if (elements.demoLimit) {
+      elements.demoLimit.textContent = `Tilgængelig igen om ${waitText}`;
+    }
+  }
+  updateDemoCardTitle();
+}
+
+function updateDemoProgress() {
+  const total = state.demoQuiz.questions.length || DEMO_TOTAL_QUESTIONS;
+  const current =
+    state.demoQuiz.status === "active"
+      ? Math.min(state.demoQuiz.currentIndex + 1, total)
+      : 0;
+  if (elements.demoProgress) {
+    elements.demoProgress.textContent = `${current}/${total}`;
+  }
+  if (elements.demoScore) {
+    elements.demoScore.textContent = `${state.demoQuiz.score}/${total}`;
+  }
+  if (elements.demoStep) {
+    elements.demoStep.textContent = `Spørgsmål ${current || 1}/${total}`;
+  }
+}
+
+function setDemoView(view) {
+  if (elements.demoLoading) {
+    setElementVisible(elements.demoLoading, view === "loading");
+  }
+  if (elements.demoEmpty) {
+    setElementVisible(elements.demoEmpty, view === "idle");
+  }
+  if (elements.demoQuestion) {
+    setElementVisible(elements.demoQuestion, view === "active");
+  }
+  if (elements.demoResult) {
+    setElementVisible(elements.demoResult, view === "result");
+  }
+  updateDemoCardTitle();
+}
+
+function setDemoFeedback({ title, lines = [], tone } = {}) {
+  if (!elements.demoFeedback) return;
+  elements.demoFeedback.innerHTML = "";
+  if (!title && (!lines || lines.length === 0)) {
+    setElementVisible(elements.demoFeedback, false);
+    elements.demoFeedback.classList.remove("good", "bad");
+    return;
+  }
+  if (title) {
+    const titleEl = document.createElement("div");
+    titleEl.className = "demo-feedback-title";
+    titleEl.textContent = title;
+    elements.demoFeedback.appendChild(titleEl);
+  }
+  (lines || []).forEach((line) => {
+    if (!line) return;
+    const lineEl = document.createElement("div");
+    lineEl.textContent = line;
+    elements.demoFeedback.appendChild(lineEl);
+  });
+  elements.demoFeedback.classList.toggle("good", tone === "good");
+  elements.demoFeedback.classList.toggle("bad", tone === "bad");
+  setElementVisible(elements.demoFeedback, true);
+}
+
+function resetDemoQuizState() {
+  state.demoQuiz = {
+    status: "idle",
+    questions: [],
+    currentIndex: 0,
+    score: 0,
+    answers: [],
+  };
+  if (elements.demoOptions) {
+    elements.demoOptions.innerHTML = "";
+  }
+  if (elements.demoShortInput) {
+    elements.demoShortInput.value = "";
+    elements.demoShortInput.disabled = false;
+  }
+  if (elements.demoShortCheckBtn) {
+    elements.demoShortCheckBtn.disabled = false;
+  }
+  if (elements.demoNextBtn) {
+    elements.demoNextBtn.disabled = true;
+    elements.demoNextBtn.textContent = "Næste";
+  }
+  setDemoFeedback();
+  updateDemoProgress();
+  setDemoView("idle");
+}
+
+function buildDemoQuestions(payload) {
+  const output = [];
+  const mcqItems = Array.isArray(payload?.mcq) ? payload.mcq : [];
+  mcqItems.slice(0, 5).forEach((item) => {
+    const question = String(item?.question || "").trim();
+    const options = Array.isArray(item?.options)
+      ? item.options.map((option) => String(option || "").trim()).filter(Boolean)
+      : [];
+    const correctIndex = Number(item?.correctIndex);
+    if (!question || options.length < 4 || !Number.isFinite(correctIndex)) return;
+    output.push({
+      type: "mcq",
+      question,
+      options: options.slice(0, 4),
+      correctIndex: Math.min(3, Math.max(0, correctIndex)),
+      explanation: String(item?.explanation || "").trim(),
+    });
+  });
+
+  const short = payload?.short;
+  if (short && String(short.question || "").trim()) {
+    output.push({
+      type: "short",
+      question: String(short.question || "").trim(),
+      answer: String(short.answer || "").trim(),
+      explanation: String(short.explanation || "").trim(),
+      keywords: Array.isArray(short.keywords)
+        ? short.keywords.map((word) => String(word || "").trim()).filter(Boolean)
+        : [],
+    });
+  }
+  return output;
+}
+
+function renderDemoQuestion() {
+  const question = state.demoQuiz.questions[state.demoQuiz.currentIndex];
+  if (!question) return;
+
+  if (elements.demoQuestionText) {
+    elements.demoQuestionText.textContent = question.question;
+  }
+  if (elements.demoQuestionType) {
+    elements.demoQuestionType.textContent = question.type === "short" ? "Kortsvar" : "MCQ";
+  }
+  if (elements.demoShort) {
+    setElementVisible(elements.demoShort, question.type === "short");
+  }
+  if (elements.demoOptions) {
+    elements.demoOptions.innerHTML = "";
+    setElementVisible(elements.demoOptions, question.type === "mcq");
+  }
+  if (elements.demoNextBtn) {
+    const isLast = state.demoQuiz.currentIndex >= state.demoQuiz.questions.length - 1;
+    elements.demoNextBtn.textContent = isLast ? "Se resultat" : "Næste";
+    elements.demoNextBtn.disabled = true;
+  }
+
+  if (question.type === "mcq" && elements.demoOptions) {
+    question.options.forEach((option, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "demo-option";
+      button.textContent = option;
+      button.addEventListener("click", () => handleDemoOptionSelect(index));
+      elements.demoOptions.appendChild(button);
+    });
+  }
+
+  if (question.type === "short") {
+    if (elements.demoShortInput) {
+      elements.demoShortInput.value = "";
+      elements.demoShortInput.disabled = false;
+    }
+    if (elements.demoShortCheckBtn) {
+      elements.demoShortCheckBtn.disabled = false;
+    }
+    if (elements.demoShortGuidance) {
+      elements.demoShortGuidance.textContent = "Fokusér på de vigtigste begreber.";
+    }
+  }
+
+  setDemoFeedback();
+  updateDemoProgress();
+}
+
+function handleDemoOptionSelect(selectedIndex) {
+  const question = state.demoQuiz.questions[state.demoQuiz.currentIndex];
+  if (!question || question.type !== "mcq") return;
+  if (state.demoQuiz.answers[state.demoQuiz.currentIndex]) return;
+
+  const isCorrect = selectedIndex === question.correctIndex;
+  state.demoQuiz.answers[state.demoQuiz.currentIndex] = {
+    type: "mcq",
+    selectedIndex,
+    correct: isCorrect,
+  };
+  if (isCorrect) {
+    state.demoQuiz.score += 1;
+  }
+  const optionButtons = elements.demoOptions
+    ? elements.demoOptions.querySelectorAll(".demo-option")
+    : [];
+  optionButtons.forEach((button, index) => {
+    button.disabled = true;
+    if (index === selectedIndex) {
+      button.classList.add("selected");
+    }
+    if (index === question.correctIndex) {
+      button.classList.add("is-correct");
+    } else if (index === selectedIndex && !isCorrect) {
+      button.classList.add("is-wrong");
+    }
+  });
+
+  const explanation = question.explanation
+    ? question.explanation
+    : `Rigtigt svar: ${question.options[question.correctIndex]}`;
+  setDemoFeedback({
+    title: isCorrect ? "Korrekt" : "Forkert",
+    lines: [explanation],
+    tone: isCorrect ? "good" : "bad",
+  });
+  if (elements.demoNextBtn) {
+    elements.demoNextBtn.disabled = false;
+  }
+  updateDemoProgress();
+}
+
+function handleDemoShortCheck() {
+  const question = state.demoQuiz.questions[state.demoQuiz.currentIndex];
+  if (!question || question.type !== "short") return;
+  if (state.demoQuiz.answers[state.demoQuiz.currentIndex]) return;
+  const answerText = elements.demoShortInput ? elements.demoShortInput.value.trim() : "";
+  if (!answerText) {
+    setDemoFeedback({ title: "Skriv et kort svar først.", tone: "bad" });
+    return;
+  }
+
+  const normalized = answerText.toLowerCase();
+  const keywords = question.keywords || [];
+  const matched = keywords.filter((keyword) => normalized.includes(keyword.toLowerCase()));
+  const matchRatio = keywords.length ? matched.length / keywords.length : 1;
+  const isCorrect = matchRatio >= DEMO_SHORT_MATCH_THRESHOLD;
+
+  state.demoQuiz.answers[state.demoQuiz.currentIndex] = {
+    type: "short",
+    text: answerText,
+    correct: isCorrect,
+    matched,
+  };
+  if (isCorrect) {
+    state.demoQuiz.score += 1;
+  }
+
+  if (elements.demoShortInput) {
+    elements.demoShortInput.disabled = true;
+  }
+  if (elements.demoShortCheckBtn) {
+    elements.demoShortCheckBtn.disabled = true;
+  }
+
+  const lines = [];
+  if (question.answer) {
+    lines.push(`Modelbesvarelse: ${question.answer}`);
+  }
+  if (keywords.length) {
+    lines.push(`Nøgleord: ${keywords.join(", ")}`);
+  }
+  if (question.explanation) {
+    lines.push(question.explanation);
+  }
+
+  setDemoFeedback({
+    title: isCorrect ? "Godt svar" : "Kan forbedres",
+    lines,
+    tone: isCorrect ? "good" : "bad",
+  });
+  if (elements.demoNextBtn) {
+    elements.demoNextBtn.disabled = false;
+  }
+  updateDemoProgress();
+}
+
+function completeDemoQuiz() {
+  state.demoQuiz.status = "complete";
+  const total = state.demoQuiz.questions.length || DEMO_TOTAL_QUESTIONS;
+  if (elements.demoResultScore) {
+    elements.demoResultScore.textContent = `Score ${state.demoQuiz.score}/${total}`;
+  }
+  setDemoStatus("Prøvespil gennemført. Kom tilbage i morgen for en ny runde.");
+  setDemoView("result");
+  updateDemoAvailability();
+}
+
+function handleDemoNext() {
+  if (!state.demoQuiz.answers[state.demoQuiz.currentIndex]) {
+    setDemoFeedback({ title: "Vælg et svar først.", tone: "bad" });
+    return;
+  }
+  if (state.demoQuiz.currentIndex >= state.demoQuiz.questions.length - 1) {
+    completeDemoQuiz();
+    return;
+  }
+  state.demoQuiz.currentIndex += 1;
+  renderDemoQuestion();
+}
+
+function closeDemoQuiz() {
+  resetDemoQuizState();
+  updateDemoAvailability();
+}
+
+async function startDemoQuiz() {
+  if (!elements.demoStartBtn) return;
+  if (!state.backendAvailable) {
+    setDemoStatus(state.configError || "Prøvespil er ikke tilgængeligt lige nu.", true);
+    updateDemoAvailability();
+    return;
+  }
+  if (!canRunDemoQuiz()) {
+    updateDemoAvailability();
+    return;
+  }
+
+  state.demoQuiz.status = "loading";
+  setDemoStatus("Genererer dagens prøvespil …");
+  setDemoView("loading");
+  elements.demoStartBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/demo-quiz", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ language: "da" }),
+    });
+    if (res.status === 429) {
+      localStorage.setItem(STORAGE_KEYS.demoTrialLastRun, String(Date.now()));
+      state.demoQuiz.status = "idle";
+      updateDemoAvailability();
+      setDemoView("idle");
+      return;
+    }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const errorCode = String(data?.error || "").toLowerCase();
+      let message = "Prøvespil kunne ikke startes.";
+      if (errorCode === "missing_key") {
+        message = "Prøvespil er ikke sat op endnu.";
+      } else if (errorCode === "rate_limited") {
+        message = "Dagens prøvespil er allerede brugt.";
+      }
+      throw new Error(message);
+    }
+    const data = await res.json();
+    const questions = buildDemoQuestions(data);
+    if (questions.length < DEMO_TOTAL_QUESTIONS) {
+      throw new Error("Prøvespillet kunne ikke genereres endnu.");
+    }
+
+    localStorage.setItem(STORAGE_KEYS.demoTrialLastRun, String(Date.now()));
+    state.demoQuiz = {
+      status: "active",
+      questions,
+      currentIndex: 0,
+      score: 0,
+      answers: [],
+    };
+    setDemoStatus("Prøvespil er klar.");
+    setDemoView("active");
+    renderDemoQuestion();
+  } catch (error) {
+    setDemoStatus(error.message || "Prøvespil kunne ikke startes.", true);
+    state.demoQuiz.status = "idle";
+    setDemoView("idle");
+  } finally {
+    updateDemoAvailability();
+  }
 }
 
 async function apiFetch(url, options = {}) {
@@ -1443,32 +2148,68 @@ function initSupabaseClient() {
 }
 
 async function refreshSession() {
-  if (!state.supabase) return;
-  const { data } = await state.supabase.auth.getSession();
-  state.session = data?.session || null;
-  state.user = data?.session?.user || null;
-  if (state.session?.user) {
-    state.demoMode = false;
+  if (!state.supabase) {
+    state.authReady = true;
+    updateAuthUI();
+    return;
   }
-  state.authReady = true;
+  try {
+    const { data, error } = await state.supabase.auth.getSession();
+    if (error) {
+      throw error;
+    }
+    state.session = data?.session || null;
+    state.user = data?.session?.user || null;
+    if (state.session?.user) {
+      state.demoMode = false;
+    }
+  } catch (error) {
+    console.warn("Kunne ikke tjekke session", error);
+    state.session = null;
+    state.user = null;
+  } finally {
+    state.authReady = true;
+    updateAuthUI();
+  }
 }
 
 function subscribeToAuthChanges() {
   if (!state.supabase) return;
-  state.supabase.auth.onAuthStateChange(async (_event, session) => {
+  state.supabase.auth.onAuthStateChange(async (event, session) => {
     state.session = session;
     state.user = session?.user || null;
     if (session?.user) {
       state.demoMode = false;
+      state.pendingEmailConfirmation = false;
+      setAuthResendVisible(false);
     }
-    if (session?.user) {
-      await refreshProfile();
-    } else {
-      state.profile = null;
-      state.subscription = null;
+
+    const shouldShowLoader = event === "SIGNED_IN" && !state.isLoading;
+    if (shouldShowLoader) {
+      setLoadingState(true);
+      setLoadingMessage("Logger ind …", "Henter profil og adgang");
+      setLoadingProgress(45);
     }
-    updateAuthUI();
-    await checkAiAvailability();
+
+    try {
+      if (session?.user) {
+        setLoadingMessage("Henter profil …", "Synkroniserer konto");
+        setLoadingProgress(60);
+        await refreshProfile();
+      } else {
+        state.profile = null;
+        state.subscription = null;
+      }
+      setLoadingMessage("Tjekker hjælpefunktioner …", "Assistent og oplæsning");
+      setLoadingProgress(80);
+      await checkAiAvailability();
+    } finally {
+      if (shouldShowLoader) {
+        setLoadingState(false);
+      } else {
+        updateAuthUI();
+      }
+    }
   });
 }
 
@@ -1495,6 +2236,8 @@ async function signInWithProvider(provider) {
     setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
     return;
   }
+  state.pendingEmailConfirmation = false;
+  setAuthResendVisible(false);
   setAuthStatus("Åbner login …");
   const { error } = await state.supabase.auth.signInWithOAuth({
     provider,
@@ -1505,15 +2248,102 @@ async function signInWithProvider(provider) {
   if (error) {
     if (error.message?.toLowerCase().includes("provider")) {
       state.authProviders[provider] = false;
-      applyAuthProviderVisibility();
       updateDiagnosticsUI();
     }
     const providerLabel = provider === AUTH_PROVIDERS.google ? "Google" : "Apple";
-    const message =
-      error.message?.includes("provider") || error.message?.includes("enabled")
-        ? `${providerLabel}-login er ikke klar endnu.`
-        : "Kunne ikke starte login.";
+    const needsSetup =
+      error.message?.toLowerCase().includes("provider") ||
+      error.message?.toLowerCase().includes("enabled");
+    const message = needsSetup
+      ? `${providerLabel}-login er ikke sat op endnu. Aktivér det i Supabase Auth.`
+      : "Kunne ikke starte login.";
     setAuthStatus(message, true);
+  }
+}
+
+function getAuthEmailValue() {
+  const email = elements.authEmailInput ? elements.authEmailInput.value.trim() : "";
+  if (!email) {
+    setAuthStatus("Skriv din email først.", true);
+    return "";
+  }
+  return email;
+}
+
+function getAuthPasswordValue() {
+  const password = elements.authPasswordInput ? elements.authPasswordInput.value : "";
+  if (!password) {
+    setAuthStatus("Skriv din adgangskode først.", true);
+    return "";
+  }
+  return password;
+}
+
+async function signInWithPassword() {
+  if (!state.supabase) {
+    setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
+    return;
+  }
+  state.pendingEmailConfirmation = false;
+  setAuthResendVisible(false);
+  const email = getAuthEmailValue();
+  const password = getAuthPasswordValue();
+  if (!email || !password) return;
+  setAuthStatus("Logger ind …");
+  const { error } = await state.supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    const lower = error.message?.toLowerCase() || "";
+    const message = lower.includes("invalid") || lower.includes("credentials")
+      ? "Forkert email eller adgangskode."
+      : lower.includes("disabled")
+        ? "Email og adgangskode er ikke aktiveret endnu."
+        : "Kunne ikke logge ind.";
+    setAuthStatus(message, true);
+    return;
+  }
+  setAuthStatus("Logget ind.");
+}
+
+async function signUpWithPassword() {
+  if (!state.supabase) {
+    setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
+    return;
+  }
+  state.pendingEmailConfirmation = false;
+  setAuthResendVisible(false);
+  const email = getAuthEmailValue();
+  const password = getAuthPasswordValue();
+  if (!email || !password) return;
+  if (password.length < 6) {
+    setAuthStatus("Adgangskoden skal være mindst 6 tegn.", true);
+    return;
+  }
+  setAuthStatus("Opretter konto …");
+  const { data, error } = await state.supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: window.location.origin,
+    },
+  });
+  if (error) {
+    const lower = error.message?.toLowerCase() || "";
+    const message = lower.includes("password")
+      ? "Adgangskoden skal være mindst 6 tegn."
+      : lower.includes("disabled")
+        ? "Oprettelse af konto er ikke aktiveret endnu."
+        : "Kunne ikke oprette konto.";
+    setAuthStatus(message, true);
+    return;
+  }
+  if (data?.session) {
+    setAuthStatus("Konto oprettet. Du er logget ind.");
+    state.pendingEmailConfirmation = false;
+    setAuthResendVisible(false);
+  } else {
+    setAuthStatus("Konto oprettet. Bekræft via email.");
+    state.pendingEmailConfirmation = true;
+    setAuthResendVisible(true);
   }
 }
 
@@ -1522,12 +2352,13 @@ async function signInWithEmail() {
     setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
     return;
   }
-  const email = elements.authEmailInput ? elements.authEmailInput.value.trim() : "";
+  state.pendingEmailConfirmation = false;
+  setAuthResendVisible(false);
+  const email = getAuthEmailValue();
   if (!email) {
-    setAuthStatus("Skriv din email først.", true);
     return;
   }
-  setAuthStatus("Sender login-mail …");
+  setAuthStatus("Sender login-link …");
   const { error } = await state.supabase.auth.signInWithOtp({
     email,
     options: {
@@ -1538,11 +2369,39 @@ async function signInWithEmail() {
     const message =
       error.message?.includes("email") || error.message?.includes("disabled")
         ? "Email-login er ikke klar endnu."
-        : "Kunne ikke sende login-mail.";
+        : "Kunne ikke sende login-link.";
     setAuthStatus(message, true);
     return;
   }
-  setAuthStatus("Tjek din email for login.");
+  setAuthStatus("Tjek din email for login-link.");
+}
+
+async function resendConfirmationEmail() {
+  if (!state.supabase) {
+    setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
+    return;
+  }
+  const email = getAuthEmailValue();
+  if (!email) return;
+  setAuthStatus("Sender bekræftelsesmail …");
+  try {
+    const { error } = await state.supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    if (error) {
+      const lower = error.message?.toLowerCase() || "";
+      const message = lower.includes("rate")
+        ? "Du har allerede bedt om en mail. Prøv igen om lidt."
+        : "Kunne ikke sende bekræftelsesmail.";
+      setAuthStatus(message, true);
+      return;
+    }
+    setAuthStatus("Bekræftelsesmail sendt. Tjek også spam.");
+  } catch (error) {
+    setAuthStatus("Kunne ikke sende bekræftelsesmail.", true);
+  }
 }
 
 async function handleProfileSave() {
@@ -1565,9 +2424,26 @@ async function handleProfileSave() {
 }
 
 async function handleConsentSave() {
-  if (!requireAuthGuard()) return;
-  const acceptTerms = Boolean(elements.consentTerms?.checked);
-  const acceptPrivacy = Boolean(elements.consentPrivacy?.checked);
+  if (!requireAuthGuard("Log ind for at fortsætte", { ignoreConsent: true })) return;
+  const gateActive = screens.consent?.classList.contains("active");
+  const termsEl = gateActive ? elements.consentGateTerms : elements.consentTerms;
+  const privacyEl = gateActive ? elements.consentGatePrivacy : elements.consentPrivacy;
+  const acceptTerms = Boolean(termsEl?.checked);
+  const acceptPrivacy = Boolean(privacyEl?.checked);
+  const setStatus = gateActive ? setConsentStatus : setAccountStatus;
+
+  if (!acceptTerms && !acceptPrivacy) {
+    const message = gateActive
+      ? "Du skal acceptere vilkår og privatlivspolitik for at fortsætte."
+      : "Vælg mindst ét samtykke.";
+    setStatus(message, true);
+    return;
+  }
+  if (gateActive && !(acceptTerms && acceptPrivacy)) {
+    setStatus("Du skal acceptere vilkår og privatlivspolitik for at fortsætte.", true);
+    return;
+  }
+
   const res = await apiFetch("/api/profile", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1577,9 +2453,15 @@ async function handleConsentSave() {
     const data = await res.json();
     state.profile = data.profile || state.profile;
     updateAccountUI();
-    setAccountStatus("Samtykke gemt.");
+    updateUserChip();
+    if (gateActive) {
+      setConsentStatus("Tak! Du er klar.", false);
+      updateAuthUI();
+    } else {
+      setAccountStatus("Samtykke gemt.");
+    }
   } else {
-    setAccountStatus("Kunne ikke gemme samtykke.", true);
+    setStatus("Kunne ikke gemme samtykke.", true);
   }
 }
 
@@ -1782,6 +2664,8 @@ async function handleLogout() {
   state.profile = null;
   state.subscription = null;
   state.demoMode = false;
+  state.consentReturnTo = null;
+  setConsentStatus("");
   updateAuthUI();
 }
 
@@ -2724,7 +3608,7 @@ function flashShortcut(action) {
 }
 
 function updateShortcutFigureIndicator(question) {
-  if (!getShortcutItem("figure") && !elements.shortcutFigure) return;
+  if (!getShortcutItem("figure")) return;
   const hasFigure = getQuestionImagePaths(question).length > 0;
   const showIndicator = Boolean(question && hasFigure);
   setShortcutAvailable("figure", showIndicator);
@@ -2855,7 +3739,6 @@ function resetShortAnswerUI() {
   setShortAnswerPending(false);
   elements.shortAnswerInput.value = "";
   elements.shortAnswerScoreRange.value = "0";
-  elements.shortAnswerScoreInput.value = "0";
   elements.shortAnswerMaxPoints.textContent = "0";
   elements.shortAnswerAiFeedback.textContent = "";
   if (elements.shortAnswerAiStatus) {
@@ -3115,14 +3998,10 @@ function renderShortQuestion(question) {
   elements.shortAnswerScoreRange.min = "0";
   elements.shortAnswerScoreRange.max = String(maxPoints);
   elements.shortAnswerScoreRange.step = String(rangeStep);
-  elements.shortAnswerScoreInput.min = "0";
-  elements.shortAnswerScoreInput.max = String(maxPoints);
-  elements.shortAnswerScoreInput.step = String(rangeStep);
   elements.shortAnswerMaxPoints.textContent = maxPoints.toFixed(1);
   const savedPoints = cached.points ?? 0;
   elements.shortAnswerScoreRange.value = String(savedPoints);
-  elements.shortAnswerScoreInput.value = String(savedPoints);
-  elements.shortAnswerHint.textContent = `Max ${maxPoints.toFixed(1)} point. Under ${SHORT_FAIL_THRESHOLD} point tæller som fejlet.`;
+  updateShortScoreHint(maxPoints, savedPoints);
 
   const aiState = state.shortAnswerAI.get(question.key);
   if (aiState?.feedback) {
@@ -4863,7 +5742,7 @@ function renderHistory() {
 
   if (elements.heroRank) {
     const rankSource = best || latest;
-    elements.heroRank.textContent = rankSource ? `Niveau ${rankSource.grade || "-"}` : "Niveau —";
+    elements.heroRank.textContent = rankSource ? `${rankSource.grade || "-"}` : "—";
   }
   if (elements.heroRankMeta) {
     elements.heroRankMeta.textContent = best
@@ -4871,7 +5750,7 @@ function renderHistory() {
       : "Ingen rekord endnu";
   }
   if (elements.heroTarget) {
-    elements.heroTarget.textContent = `Mål: 12`;
+    elements.heroTarget.textContent = "12";
   }
   if (elements.heroTargetMeta) {
     if (latest) {
@@ -4929,6 +5808,14 @@ function saveShortDraft(questionKey, data) {
   state.shortAnswerDrafts.set(questionKey, { ...current, ...data });
 }
 
+function updateShortScoreHint(maxPoints, currentPoints) {
+  if (!elements.shortAnswerHint) return;
+  const safeMax = Number(maxPoints) || 0;
+  const safeCurrent = clamp(Number(currentPoints) || 0, 0, safeMax || 0);
+  elements.shortAnswerHint.textContent =
+    `Valgt: ${safeCurrent.toFixed(1)} / ${safeMax.toFixed(1)} point. Under ${SHORT_FAIL_THRESHOLD} point tæller som fejlet.`;
+}
+
 function syncShortScoreInputs(value, options = {}) {
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
@@ -4936,7 +5823,7 @@ function syncShortScoreInputs(value, options = {}) {
   const numeric = Number(clamp(Number(value) || 0, 0, maxPoints).toFixed(1));
   const scored = options.scored ?? true;
   elements.shortAnswerScoreRange.value = String(numeric);
-  elements.shortAnswerScoreInput.value = String(numeric);
+  updateShortScoreHint(maxPoints, numeric);
   saveShortDraft(question.key, {
     text: elements.shortAnswerInput.value,
     points: numeric,
@@ -4953,7 +5840,7 @@ function finalizeShortAnswer() {
   if (!question || question.type !== "short") return;
   const response = elements.shortAnswerInput.value.trim();
   const maxPoints = question.maxPoints || 0;
-  const awardedPoints = clamp(Number(elements.shortAnswerScoreInput.value) || 0, 0, maxPoints);
+  const awardedPoints = clamp(Number(elements.shortAnswerScoreRange.value) || 0, 0, maxPoints);
   state.score += awardedPoints;
   state.scoreBreakdown.short += awardedPoints;
   state.results.push({
@@ -5072,7 +5959,7 @@ function handleNextClick() {
       updateShortReviewStatus(question);
       updateShortAnswerActions(question);
       if (!hasAnswer) {
-        setFeedback("Skriv et svar, upload en skitse eller brug Spring over i Mere.", "error");
+        setFeedback("Skriv et svar eller upload en skitse først. Ellers brug Spring over i Mere.", "error");
         return;
       }
       if (state.aiStatus.available) {
@@ -6767,6 +7654,7 @@ function updateSummary() {
     btn.disabled = !canStart;
   });
 
+  updateQuestionCountCopy();
   updateRatioControls();
   updateAutoAdvanceLabel();
 }
@@ -6787,7 +7675,7 @@ function applySessionDisplaySettings() {
   document.body.classList.toggle("focus-mode", state.sessionSettings.focusMode);
   document.body.classList.toggle("meta-hidden", !state.sessionSettings.showMeta);
   elements.toggleFocus.textContent = state.sessionSettings.focusMode ? "Fokus: Til" : "Fokus";
-  elements.toggleMeta.textContent = state.sessionSettings.showMeta ? "Skjul metadata" : "Vis metadata";
+  elements.toggleMeta.textContent = state.sessionSettings.showMeta ? "Skjul detaljer" : "Vis detaljer";
   setShortcutActive("focus", state.sessionSettings.focusMode);
   if (elements.endRoundBtn) {
     elements.endRoundBtn.classList.toggle("hidden", !state.sessionSettings.infiniteMode);
@@ -7008,12 +7896,52 @@ function updateQuestionCount(value) {
   const nextValue = Math.max(min, Math.min(max, Number(value) || min));
   state.settings.questionCount = nextValue;
   elements.questionCountRange.value = nextValue;
-  elements.questionCountInput.value = nextValue;
   saveSettings();
   if (!state.isApplyingPreset) {
     clearPresetSelection();
   }
   updateSummary();
+}
+
+function updateQuestionCountCopy() {
+  if (!elements.questionCountLabel && !elements.questionCountInfo && !elements.questionCountHint) return;
+  const includeMcq = state.settings.includeMcq;
+  const includeShort = state.settings.includeShort;
+  const isInfinite = state.settings.infiniteMode;
+  const batchNote = isInfinite ? " I uendelig træning er tallet størrelsen pr. batch." : "";
+
+  let label = "Antal spørgsmål";
+  let tooltip =
+    "Vælg hvor mange spørgsmål runden skal have. Hvis puljen er mindre, forkortes runden automatisk.";
+  let hint = "Vælg mindst én opgavetype.";
+
+  if (includeMcq && includeShort) {
+    label = "Antal flervalg";
+    tooltip =
+      "Antal flervalg styrer længden; kortsvar følger forholdet. Hvis puljen er mindre, forkortes runden automatisk.";
+    hint = `Antal flervalg styrer længden; kortsvar følger forholdet.${batchNote}`;
+  } else if (includeMcq) {
+    label = "Antal flervalg";
+    tooltip =
+      "Vælg hvor mange flervalgsspørgsmål runden skal have. Hvis puljen er mindre, forkortes runden automatisk.";
+    hint = `Tallet angiver hvor mange flervalg der bruges i runden.${batchNote}`;
+  } else if (includeShort) {
+    label = "Antal kortsvar";
+    tooltip =
+      "Vælg hvor mange kortsvar runden skal have. Hvis puljen er mindre, forkortes runden automatisk.";
+    hint = `Tallet angiver hvor mange kortsvar der bruges i runden.${batchNote}`;
+  }
+
+  if (elements.questionCountLabel) {
+    elements.questionCountLabel.textContent = label;
+  }
+  if (elements.questionCountInfo) {
+    elements.questionCountInfo.dataset.tooltip = tooltip;
+    elements.questionCountInfo.setAttribute("aria-label", `Info om ${label.toLowerCase()}`);
+  }
+  if (elements.questionCountHint) {
+    elements.questionCountHint.textContent = hint;
+  }
 }
 
 function updateRatioSettings(mcqValue, shortValue) {
@@ -7036,6 +7964,9 @@ function updateRatioSettings(mcqValue, shortValue) {
 
 function updateRatioControls() {
   const enabled = state.settings.includeMcq && state.settings.includeShort;
+  if (elements.ratioControlRow) {
+    elements.ratioControlRow.classList.toggle("hidden", !enabled);
+  }
   if (elements.ratioMcqInput) {
     elements.ratioMcqInput.disabled = !enabled;
   }
@@ -7048,6 +7979,9 @@ function updateAutoAdvanceLabel() {
   const seconds = state.settings.autoAdvanceDelay / 1000;
   elements.autoAdvanceLabel.textContent = `${seconds.toFixed(1)}s`;
   elements.autoAdvanceDelay.disabled = !state.settings.autoAdvance;
+  if (elements.autoAdvanceRow) {
+    elements.autoAdvanceRow.classList.toggle("hidden", !state.settings.autoAdvance);
+  }
 }
 
 async function checkAiAvailability() {
@@ -7162,9 +8096,12 @@ function toggleTtsEnabled() {
 }
 
 function toggleFocusMode() {
-  state.sessionSettings.focusMode = !state.sessionSettings.focusMode;
+  const next = !state.sessionSettings.focusMode;
+  state.sessionSettings.focusMode = next;
+  state.settings.focusMode = next;
+  saveSettings();
   applySessionDisplaySettings();
-  setShortcutTempStatus("focus", state.sessionSettings.focusMode ? "Fokus til" : "Fokus fra");
+  setShortcutTempStatus("focus", next ? "Fokus til" : "Fokus fra");
 }
 
 function triggerShortAutoGrade() {
@@ -7274,6 +8211,31 @@ function attachEvents() {
   if (elements.landingQuickBtn) {
     elements.landingQuickBtn.addEventListener("click", startGame);
   }
+  if (elements.demoStartBtn) {
+    elements.demoStartBtn.addEventListener("click", startDemoQuiz);
+  }
+  if (elements.demoShortCheckBtn) {
+    elements.demoShortCheckBtn.addEventListener("click", handleDemoShortCheck);
+  }
+  if (elements.demoNextBtn) {
+    elements.demoNextBtn.addEventListener("click", handleDemoNext);
+  }
+  if (elements.demoExitBtn) {
+    elements.demoExitBtn.addEventListener("click", closeDemoQuiz);
+  }
+  if (elements.demoCloseBtn) {
+    elements.demoCloseBtn.addEventListener("click", closeDemoQuiz);
+  }
+  if (elements.loadingHomeBtn) {
+    elements.loadingHomeBtn.addEventListener("click", () => {
+      setLoadingState(false);
+    });
+  }
+  if (elements.loadingRetryBtn) {
+    elements.loadingRetryBtn.addEventListener("click", () => {
+      window.location.reload();
+    });
+  }
   if (elements.authGoogleBtn) {
     elements.authGoogleBtn.addEventListener("click", () =>
       signInWithProvider(AUTH_PROVIDERS.google)
@@ -7287,15 +8249,39 @@ function attachEvents() {
   if (elements.authEmailBtn) {
     elements.authEmailBtn.addEventListener("click", signInWithEmail);
   }
+  if (elements.authLoginBtn) {
+    elements.authLoginBtn.addEventListener("click", signInWithPassword);
+  }
+  if (elements.authSignupBtn) {
+    elements.authSignupBtn.addEventListener("click", signUpWithPassword);
+  }
   if (elements.authEmailInput) {
     elements.authEmailInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
-        signInWithEmail();
+        if (elements.authPasswordInput) {
+          if (elements.authPasswordInput.value) {
+            signInWithPassword();
+          } else {
+            elements.authPasswordInput.focus();
+          }
+        } else {
+          signInWithEmail();
+        }
+      }
+    });
+  }
+  if (elements.authPasswordInput) {
+    elements.authPasswordInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        signInWithPassword();
       }
     });
   }
   if (elements.authDemoBtn) {
     elements.authDemoBtn.addEventListener("click", enableDemoMode);
+  }
+  if (elements.authResendBtn) {
+    elements.authResendBtn.addEventListener("click", resendConfirmationEmail);
   }
   if (elements.accountBtn) {
     elements.accountBtn.addEventListener("click", () => {
@@ -7331,6 +8317,24 @@ function attachEvents() {
   if (elements.consentSaveBtn) {
     elements.consentSaveBtn.addEventListener("click", handleConsentSave);
   }
+  if (elements.consentGateAcceptBtn) {
+    elements.consentGateAcceptBtn.addEventListener("click", handleConsentSave);
+  }
+  if (elements.consentBackBtn) {
+    elements.consentBackBtn.addEventListener("click", handleLogout);
+  }
+  if (elements.consentGateTerms) {
+    elements.consentGateTerms.addEventListener("change", () => {
+      setConsentStatus("");
+      updateConsentGateActions();
+    });
+  }
+  if (elements.consentGatePrivacy) {
+    elements.consentGatePrivacy.addEventListener("change", () => {
+      setConsentStatus("");
+      updateConsentGateActions();
+    });
+  }
   if (elements.exportDataBtn) {
     elements.exportDataBtn.addEventListener("click", handleExportData);
   }
@@ -7346,16 +8350,6 @@ function attachEvents() {
     });
   }
   elements.startButtons.forEach((btn) => btn.addEventListener("click", startGame));
-  if (elements.shortcutInline) {
-    elements.shortcutInline.addEventListener("click", (event) => {
-      const item = event.target.closest(".shortcut-item");
-      if (!item || item.classList.contains("is-static")) return;
-      if (item.disabled || item.getAttribute("aria-disabled") === "true") return;
-      const action = item.dataset.action;
-      if (!action) return;
-      performShortcutAction(action);
-    });
-  }
   if (elements.presetGrid) {
     elements.presetGrid.addEventListener("click", (event) => {
       const card = event.target.closest(".preset-card");
@@ -7465,7 +8459,10 @@ function attachEvents() {
   elements.toggleFocus.addEventListener("click", toggleFocusMode);
 
   elements.toggleMeta.addEventListener("click", () => {
-    state.sessionSettings.showMeta = !state.sessionSettings.showMeta;
+    const next = !state.sessionSettings.showMeta;
+    state.sessionSettings.showMeta = next;
+    state.settings.showMeta = next;
+    saveSettings();
     applySessionDisplaySettings();
   });
 
@@ -7478,7 +8475,7 @@ function attachEvents() {
       const scored = currentDraft.scored && currentDraft.text === nextText;
       saveShortDraft(question.key, {
         text: nextText,
-        points: Number(elements.shortAnswerScoreInput.value) || 0,
+        points: Number(elements.shortAnswerScoreRange.value) || 0,
         scored,
       });
       updateShortReviewStatus(question);
@@ -7488,15 +8485,6 @@ function attachEvents() {
 
   if (elements.shortAnswerScoreRange) {
     elements.shortAnswerScoreRange.addEventListener("input", (event) => {
-      syncShortScoreInputs(event.target.value);
-    });
-  }
-
-  if (elements.shortAnswerScoreInput) {
-    elements.shortAnswerScoreInput.addEventListener("input", (event) => {
-      syncShortScoreInputs(event.target.value);
-    });
-    elements.shortAnswerScoreInput.addEventListener("change", (event) => {
       syncShortScoreInputs(event.target.value);
     });
   }
@@ -7592,9 +8580,6 @@ function attachEvents() {
   elements.questionCountRange.addEventListener("input", (event) => {
     updateQuestionCount(event.target.value);
   });
-  elements.questionCountInput.addEventListener("change", (event) => {
-    updateQuestionCount(event.target.value);
-  });
   if (elements.ratioMcqInput && elements.ratioShortInput) {
     const handleRatioChange = () => {
       updateRatioSettings(elements.ratioMcqInput.value, elements.ratioShortInput.value);
@@ -7623,9 +8608,6 @@ function attachEvents() {
       handleSettingToggle("adaptiveMix", event.target.checked);
     });
   }
-  elements.toggleShowMeta.addEventListener("change", (event) => {
-    handleSettingToggle("showMeta", event.target.checked);
-  });
   elements.toggleAutoAdvance.addEventListener("change", (event) => {
     handleSettingToggle("autoAdvance", event.target.checked);
   });
@@ -7644,9 +8626,6 @@ function attachEvents() {
   }
   elements.toggleFocusMistakes.addEventListener("change", (event) => {
     handleSettingToggle("focusMistakes", event.target.checked);
-  });
-  elements.toggleFocusMode.addEventListener("change", (event) => {
-    handleSettingToggle("focusMode", event.target.checked);
   });
   if (elements.toggleIncludeMcq) {
     elements.toggleIncludeMcq.addEventListener("change", (event) => {
@@ -7719,7 +8698,6 @@ function syncSettingsToUI() {
   if (elements.toggleAdaptiveMix) {
     elements.toggleAdaptiveMix.checked = state.settings.adaptiveMix;
   }
-  elements.toggleShowMeta.checked = state.settings.showMeta;
   elements.toggleAutoAdvance.checked = state.settings.autoAdvance;
   if (elements.toggleInfiniteMode) {
     elements.toggleInfiniteMode.checked = state.settings.infiniteMode;
@@ -7729,7 +8707,6 @@ function syncSettingsToUI() {
     elements.togglePreferUnseen.checked = state.settings.preferUnseen;
   }
   elements.toggleFocusMistakes.checked = state.settings.focusMistakes;
-  elements.toggleFocusMode.checked = state.settings.focusMode;
   if (elements.toggleIncludeMcq) {
     elements.toggleIncludeMcq.checked = state.settings.includeMcq;
   }
@@ -7913,6 +8890,7 @@ async function loadQuestions() {
 
 async function init() {
   attachEvents();
+  resetDemoQuizState();
   setAccountStatus("");
   updateTopBar();
   elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
@@ -7920,32 +8898,70 @@ async function init() {
   syncSettingsToUI();
   setAiStatus(state.aiStatus);
   setTtsStatus(state.ttsStatus);
+  setLoadingState(true);
+  setLoadingMessage("Starter appen …", "Gør klar til din session");
+  setLoadingProgress(10);
   try {
-    await loadRuntimeConfig();
-    initSupabaseClient();
-    await hydrateAuthProviders();
-    await refreshSession();
-    subscribeToAuthChanges();
-    if (state.session?.user) {
-      await refreshProfile();
+    try {
+      setLoadingMessage("Henter konfiguration …", "Kobler til serveren");
+      setLoadingProgress(20);
+      await loadRuntimeConfig();
+      initSupabaseClient();
+      await hydrateAuthProviders();
+      setLoadingMessage("Tjekker login …", "Finder din session");
+      setLoadingProgress(35);
+      subscribeToAuthChanges();
+      try {
+        await withTimeout(
+          refreshSession(),
+          LOGIN_TIMEOUT_MS,
+          "Login tager for lang tid at svare"
+        );
+      } catch (error) {
+        console.warn("Login tjek timeout", error);
+        state.authReady = true;
+      }
+      if (state.session?.user) {
+        setLoadingMessage("Henter profil …", "Synkroniserer konto");
+        setLoadingProgress(50);
+        await refreshProfile();
+      }
+      await handleReturnParams();
+    } catch (error) {
+      state.backendAvailable = false;
+      state.configError = error.message || "Kunne ikke åbne login lige nu.";
+      state.authReady = true;
+      setAuthStatus(state.configError, true);
     }
-    await handleReturnParams();
-  } catch (error) {
-    state.backendAvailable = false;
-    state.configError = error.message || "Kunne ikke åbne login lige nu.";
-    state.authReady = true;
-    setAuthStatus(state.configError, true);
+    try {
+      setLoadingMessage("Indlæser spørgsmål …", "Bygger spørgsmålspulje");
+      setLoadingProgress(70);
+      await loadQuestions();
+    } catch (err) {
+      console.error("Kunne ikke indlæse spørgsmål", err);
+      elements.questionCountChip.textContent = "Fejl: kunne ikke indlæse spørgsmål";
+      elements.poolCountChip.textContent = "Ingen data";
+    }
+    setLoadingMessage("Tjekker hjælpefunktioner …", "Assistent og oplæsning");
+    setLoadingProgress(85);
+    await checkAiAvailability();
+    setLoadingMessage("Opdaterer historik …", "Klargør dashboard");
+    setLoadingProgress(95);
+    setLoadingProgress(100);
+    setLoadingState(false);
+    setTimeout(() => {
+      try {
+        renderHistory();
+      } catch (err) {
+        console.error("Kunne ikke opdatere historik", err);
+      }
+    }, 0);
+  } finally {
+    if (state.isLoading) {
+      setLoadingProgress(100);
+      setLoadingState(false);
+    }
   }
-  updateAuthUI();
-  try {
-    await loadQuestions();
-  } catch (err) {
-    console.error("Kunne ikke indlæse spørgsmål", err);
-    elements.questionCountChip.textContent = "Fejl: kunne ikke indlæse spørgsmål";
-    elements.poolCountChip.textContent = "Ingen data";
-  }
-  await checkAiAvailability();
-  renderHistory();
 }
 
 document.addEventListener("DOMContentLoaded", init);

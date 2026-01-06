@@ -27,88 +27,361 @@
     </div>
 
     <div class="app">
-      <section id="auth-screen" class="screen active">
+      <section id="loading-screen" class="screen active">
+        <div class="loading-shell">
+          <div class="loading-orbit" role="status" aria-live="polite" aria-label="Indlæser">
+            <img class="loading-logo" src="Logo.png" alt="Human Biologi Studio logo" />
+          </div>
+          <div class="loading-text" id="loading-status">Indlæser …</div>
+          <div class="loading-detail" id="loading-detail">Gør klar til din session</div>
+          <div
+            class="loading-progress"
+            id="loading-progress"
+            role="progressbar"
+            aria-label="Indlæsning"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <div class="loading-progress-track">
+              <div class="loading-progress-fill" id="loading-progress-fill"></div>
+            </div>
+            <div class="loading-progress-value" id="loading-progress-value">0%</div>
+          </div>
+          <div class="loading-actions hidden" id="loading-actions">
+            <button id="loading-home-btn" class="btn ghost small" type="button">Til forsiden</button>
+            <button id="loading-retry-btn" class="btn secondary small" type="button">Prøv igen</button>
+          </div>
+        </div>
+      </section>
+      <section id="auth-screen" class="screen hidden">
         <div class="landing-shell auth-shell">
-          <header class="landing-header reveal" style="--delay: 0s">
-            <div class="brand-block">
-              <div class="brand-mark">
-                <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
-              </div>
-              <div>
-                <div class="brand-subtitle">Sundhed &amp; Informatik</div>
-                <div class="hero-eyebrow">Designet til ro &amp; fokus</div>
-                <h1>Human Biologi Studio</h1>
-                <p>
-                  Et roligt træningsrum til humanbiologi. Byg en runde på få sekunder, følg din udvikling, og hold
-                  fokus hele vejen.
-                </p>
-                <div class="hero-meta-row">
-                  <div class="hero-meta-item">Kurateret eksamensbank</div>
-                  <div class="hero-meta-item">Personligt tempo</div>
-                  <div class="hero-meta-item">Data beskyttet</div>
+          <header class="sales-hero">
+            <div class="sales-copy reveal" style="--delay: 0s">
+              <div class="brand-block">
+                <div class="brand-mark">
+                  <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
+                </div>
+                <div>
+                  <div class="brand-subtitle">Sundhed &amp; Informatik</div>
+                  <div class="hero-eyebrow">Eksamensro, bygget til fokus</div>
+                  <h1>Human Biologi Studio</h1>
+                  <p>
+                    Byg en runde på få sekunder, træn MCQ og kortsvar i samme flow, og følg dit niveau uden støj.
+                  </p>
                 </div>
               </div>
+              <div class="sales-cta">
+                <a class="btn primary" href="#auth-start">Start gratis</a>
+                <button id="auth-demo-btn" class="btn ghost" type="button">Se demo</button>
+              </div>
+              <div class="auth-note" id="auth-note">
+                Demo gemmer kun lokalt og giver ikke adgang til abonnement.
+              </div>
+              <div class="sales-price">
+                <div class="price-pill">Pro 179 kr/md</div>
+                <div class="price-note">Gratis plan med egen nøgle</div>
+              </div>
+              <div class="trust-row">
+                <span>MCQ + kortsvar</span>
+                <span>7-trinsscore</span>
+                <span>AI-hjælp på Pro</span>
+              </div>
             </div>
-            <div class="hero-aside">
-              <div class="hero-pill">Klar til start</div>
-              <p>Adgang styres på din konto, og du kan skifte plan når som helst.</p>
+            <div class="sales-visual reveal" style="--delay: 0.05s">
+              <div class="device-stack" aria-hidden="true">
+                <div class="device-card primary">
+                  <div class="device-top">
+                    <span class="device-title">Runde · 24 spørgsmål</span>
+                    <span class="device-badge">Pro</span>
+                  </div>
+                  <div class="device-metric">
+                    <div class="device-label">Score nu</div>
+                    <div class="device-value">78%</div>
+                    <div class="device-sub">Mål: 12</div>
+                  </div>
+                  <div class="device-row">
+                    <span class="device-pill">MCQ</span>
+                    <span class="device-pill">Kortsvar</span>
+                    <span class="device-pill">Oplæsning</span>
+                  </div>
+                  <div class="device-progress">
+                    <span>Tempo 1:12</span>
+                    <div class="device-bar"><span></span></div>
+                  </div>
+                </div>
+                <div class="device-card secondary">
+                  <div class="device-top">
+                    <span class="device-title">Facit og hints</span>
+                    <span class="device-dot"></span>
+                  </div>
+                  <div class="device-line"></div>
+                  <div class="device-line short"></div>
+                  <div class="device-line"></div>
+                  <div class="device-line short"></div>
+                </div>
+                <div class="device-card tertiary">
+                  <div class="device-top">
+                    <span class="device-title">Historik</span>
+                  </div>
+                  <div class="device-chart">
+                    <span></span><span></span><span></span><span></span>
+                  </div>
+                  <div class="device-foot">Streak: 3 runder</div>
+                </div>
+              </div>
             </div>
           </header>
 
-          <div class="landing-grid auth-grid">
-            <section class="panel hero-panel reveal" style="--delay: 0.05s">
-              <div class="panel-header">
-                <h2>Vælg adgang</h2>
-                <p>Hold det enkelt. Vælg gratis adgang med egen nøgle eller aktiver Pro.</p>
+          <section class="sales-section reveal" style="--delay: 0.1s">
+            <div class="section-header">
+              <h2>Et komplet studieflow, samlet ét sted</h2>
+              <p>Byg runden, svar, få feedback og følg dit niveau uden at hoppe mellem værktøjer.</p>
+            </div>
+            <div class="feature-grid">
+              <div class="feature-card">
+                <span class="feature-dot"></span>
+                <h3>MCQ + kortsvar i samme runde</h3>
+                <p>Træn begge opgavetyper sammen, så flowet matcher eksamen.</p>
               </div>
-              <div class="access-grid">
-                <div class="access-card">
-                  <div class="access-title">Gratis adgang</div>
-                  <div class="access-price">0 kr</div>
-                  <p>Brug din egen nøgle og få fuld funktionalitet.</p>
-                  <div class="access-note">Nøglen bliver kun gemt på din enhed.</div>
-                </div>
-                <div class="access-card highlight">
-                  <div class="access-title">Pro adgang</div>
-                  <div class="access-price">Abonnement</div>
-                  <p>Hjælp, auto-bedømmelse, hints og oplæsning er inkluderet.</p>
-                  <div class="access-note">Skift eller opsig når som helst.</div>
-                </div>
+              <div class="feature-card">
+                <span class="feature-dot"></span>
+                <h3>7-trinsscore og klare mål</h3>
+                <p>Se hvor tæt du er på 12, og hvad der løfter din score.</p>
               </div>
-              <div class="trust-row">
-                <span>Sikker login</span>
-                <span>Tryg betaling</span>
-                <span>Data beskyttet</span>
+              <div class="feature-card">
+                <span class="feature-dot"></span>
+                <h3>AI-hjælp når du ønsker det</h3>
+                <p>Auto-bedømmelse, hints og figurbeskrivelser samlet ét sted.</p>
               </div>
-            </section>
+              <div class="feature-card">
+                <span class="feature-dot"></span>
+                <h3>Tempo, oplæsning og fokus</h3>
+                <p>Styr tempoet, få oplæsning og fjern alt der forstyrrer.</p>
+              </div>
+              <div class="feature-card">
+                <span class="feature-dot"></span>
+                <h3>Uendelig træning</h3>
+                <p>Fortsæt med nye spørgsmål og afslut når du selv vælger.</p>
+              </div>
+              <div class="feature-card">
+                <span class="feature-dot"></span>
+                <h3>Historik på tværs af runder</h3>
+                <p>Gem progression, bedste score og seneste fejl lokalt.</p>
+              </div>
+            </div>
+          </section>
 
-            <section class="panel auth-panel reveal" style="--delay: 0.1s">
-              <div class="panel-header">
-                <h2>Log ind</h2>
-                <p>Dine data følger dig på tværs af enheder.</p>
+          <section class="sales-section demo-section reveal" id="demo-section" style="--delay: 0.12s">
+            <div class="section-header">
+              <h2>Prøv flowet på 6 spørgsmål</h2>
+              <p>5 multiple choice og 1 kortsvar, genereret til dig. Ét forsøg pr. dag.</p>
+            </div>
+            <div class="demo-grid">
+              <div class="demo-copy">
+                <div class="demo-pill">Prøvespil</div>
+                <h3>Se hvordan runden føles</h3>
+                <p>Få et realistisk indtryk af tempo, feedback og scoring — helt uden login.</p>
+                <div class="demo-meta">
+                  <span>6 spørgsmål</span>
+                  <span>4-5 min</span>
+                  <span>Én gang pr. dag</span>
+                </div>
+                <div class="demo-status" id="demo-status">Klar til at starte.</div>
               </div>
-              <div class="auth-status" id="auth-status">Klar til login</div>
-              <div class="auth-email">
+              <div class="panel demo-card" id="demo-card">
+                <div class="demo-card-header">
+                  <div>
+                    <div class="demo-card-label">Prøvespil</div>
+                    <div class="demo-card-title" id="demo-card-title">Generér dagens mini-runde</div>
+                  </div>
+                  <div class="demo-card-meta">
+                    <span class="demo-progress" id="demo-progress">0/6</span>
+                    <span class="demo-score" id="demo-score">0/6</span>
+                  </div>
+                </div>
+                <div class="demo-body">
+                  <div class="demo-loading hidden" id="demo-loading" aria-live="polite">
+                    <div class="demo-loading-spinner" aria-hidden="true"></div>
+                    <div class="demo-loading-text">Genererer dagens prøvespil …</div>
+                  </div>
+                  <div class="demo-empty" id="demo-empty">
+                    <p>Du får 5 MCQ og 1 kortsvar med det samme.</p>
+                    <button id="demo-start-btn" class="btn primary" type="button">Start prøvespil</button>
+                    <div class="demo-limit" id="demo-limit">Én gang pr. dag</div>
+                  </div>
+                  <div class="demo-question hidden" id="demo-question">
+                    <div class="demo-question-meta">
+                      <span class="demo-chip" id="demo-question-type">MCQ</span>
+                      <span class="demo-step" id="demo-step">Spørgsmål 1/6</span>
+                    </div>
+                    <div class="demo-question-text" id="demo-question-text">—</div>
+                    <div class="demo-options" id="demo-options"></div>
+                    <div class="demo-short hidden" id="demo-short">
+                      <label for="demo-short-input">Dit kortsvar</label>
+                      <textarea
+                        id="demo-short-input"
+                        rows="3"
+                        placeholder="Skriv 1-2 sætninger"
+                      ></textarea>
+                      <button id="demo-short-check" class="btn secondary small" type="button">
+                        Tjek kortsvar
+                      </button>
+                      <div class="demo-short-guidance" id="demo-short-guidance">
+                        Fokusér på de vigtigste begreber.
+                      </div>
+                    </div>
+                    <div class="demo-feedback" id="demo-feedback"></div>
+                    <div class="demo-controls">
+                      <button id="demo-next-btn" class="btn primary" type="button" disabled>Næste</button>
+                      <button id="demo-exit-btn" class="btn ghost small" type="button">Luk</button>
+                    </div>
+                  </div>
+                  <div class="demo-result hidden" id="demo-result">
+                    <div class="demo-result-score" id="demo-result-score">Score 0/6</div>
+                    <p class="demo-result-copy">Du har gennemført prøvespillet.</p>
+                    <div class="demo-result-actions">
+                      <a class="btn primary" href="#auth-start">Få fuld adgang</a>
+                      <button id="demo-close-btn" class="btn ghost small" type="button">Luk</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="sales-section pricing-section reveal" style="--delay: 0.15s">
+            <div class="section-header">
+              <h2>Vælg din adgang</h2>
+              <p>Start gratis med egen nøgle eller vælg Pro med alt inkluderet.</p>
+            </div>
+            <div class="pricing-grid">
+              <div class="pricing-card">
+                <div class="pricing-title">Gratis</div>
+                <div class="pricing-price">0 kr</div>
+                <ul>
+                  <li>MCQ + kortsvar i samme runde</li>
+                  <li>Manuel vurdering og facit</li>
+                  <li>Historik gemt lokalt</li>
+                </ul>
+                <div class="pricing-note">Brug din egen nøgle for AI-hjælp.</div>
+              </div>
+              <div class="pricing-card highlight">
+                <div class="pricing-title">Pro</div>
+                <div class="pricing-price">179 kr/md</div>
+                <ul>
+                  <li>AI-hints og auto-bedømmelse</li>
+                  <li>Oplæsning og figurbeskrivelser</li>
+                  <li>Prioritering af svage områder</li>
+                </ul>
+                <div class="pricing-note">Skift eller opsig når som helst.</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel auth-panel reveal" id="auth-start" style="--delay: 0.2s">
+            <div class="panel-header">
+              <h2>Log ind eller opret konto</h2>
+              <p>Brug email og adgangskode — eller få et login-link sendt.</p>
+            </div>
+            <div class="auth-status" id="auth-status">Klar til at starte</div>
+            <div class="auth-resend hidden" id="auth-resend">
+              <button id="auth-resend-btn" class="btn ghost small" type="button">
+                Send bekræftelsesmail igen
+              </button>
+              <div class="auth-resend-note">Tjek spam hvis mailen ikke dukker op.</div>
+            </div>
+            <div class="auth-form">
+              <div class="field">
+                <label for="auth-email-input">Email</label>
                 <input
                   id="auth-email-input"
                   type="email"
-                  placeholder="Din email"
+                  placeholder="din@email.dk"
                   autocomplete="email"
                 />
-                <button id="auth-email-btn" class="btn primary" type="button">Send login-mail</button>
               </div>
-              <div class="auth-divider" id="auth-divider">eller</div>
-              <div class="auth-oauth" id="auth-oauth">
-                <button id="auth-google-btn" class="btn oauth google" type="button">
-                  Fortsæt med Google
-                </button>
-                <button id="auth-apple-btn" class="btn oauth apple" type="button">
-                  Fortsæt med Apple
+              <div class="field">
+                <label for="auth-password-input">Adgangskode</label>
+                <input
+                  id="auth-password-input"
+                  type="password"
+                  placeholder="Adgangskode (min. 6 tegn)"
+                  autocomplete="current-password"
+                  minlength="6"
+                />
+              </div>
+              <div class="auth-actions">
+                <button id="auth-login-btn" class="btn primary" type="button">Log ind</button>
+                <button id="auth-signup-btn" class="btn secondary" type="button">Opret konto</button>
+              </div>
+            </div>
+            <details class="auth-alt">
+              <summary>Brug login-link</summary>
+              <div class="auth-email">
+                <button id="auth-email-btn" class="btn ghost" type="button">Send login-link</button>
+              </div>
+            </details>
+            <div class="auth-divider" id="auth-divider">eller</div>
+            <div class="auth-oauth" id="auth-oauth">
+              <button id="auth-google-btn" class="btn oauth google" type="button">
+                Fortsæt med Google
+              </button>
+              <button id="auth-apple-btn" class="btn oauth apple" type="button">
+                Fortsæt med Apple
+              </button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="consent-screen" class="screen hidden">
+        <div class="consent-shell">
+          <header class="consent-header">
+            <div>
+              <div class="eyebrow">Før du går i gang</div>
+              <h1>Acceptér vilkår og politikker</h1>
+              <p>
+                For at bruge Human Biologi Studio skal du acceptere vilkår, handelsbetingelser og privatlivs-
+                og persondatapolitik.
+              </p>
+            </div>
+            <button id="consent-back-btn" class="btn ghost" type="button">Log ud</button>
+          </header>
+          <div class="consent-status hidden" id="consent-status"></div>
+          <div class="consent-grid">
+            <section class="panel consent-panel">
+              <div class="panel-header">
+                <h2>Samtykke</h2>
+                <p>Du er logget ind som <span id="consent-email">—</span>.</p>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="consent-terms-gate" />
+                <span>Jeg accepterer vilkår og handelsbetingelser</span>
+                <small>Påkrævet for adgang</small>
+              </label>
+              <label class="toggle">
+                <input type="checkbox" id="consent-privacy-gate" />
+                <span>Jeg accepterer privatlivs- og persondatapolitik</span>
+                <small>Påkrævet for adgang</small>
+              </label>
+              <div class="account-actions">
+                <button id="consent-accept-btn" class="btn primary" type="button">
+                  Accepter og fortsæt
                 </button>
               </div>
-              <button id="auth-demo-btn" class="btn ghost" type="button">Se demo uden login</button>
-              <div class="auth-note" id="auth-note">
-                Demo gemmer kun lokalt og giver ikke adgang til abonnement.
+              <div class="field-hint">Du kan altid se dokumenterne igen i din profil.</div>
+            </section>
+            <section class="panel consent-panel">
+              <div class="panel-header">
+                <h2>Læs dokumenterne</h2>
+                <p>Få hele teksten, før du accepterer.</p>
+              </div>
+              <div class="legal-links">
+                <a class="legal-link" href="vilkaar.html">Vilkår</a>
+                <a class="legal-link" href="privatlivspolitik.html">Privatlivspolitik</a>
+                <a class="legal-link" href="persondatapolitik.html">Persondatapolitik</a>
+                <a class="legal-link" href="handelsbetingelser.html">Handelsbetingelser</a>
               </div>
             </section>
           </div>
@@ -116,61 +389,53 @@
       </section>
 
       <section id="landing-screen" class="screen hidden">
-        <div class="landing-shell">
-          <header class="landing-header reveal" style="--delay: 0s">
-            <div class="brand-block">
-              <div class="brand-mark">
-                <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
-              </div>
-              <div>
-                <div class="brand-subtitle">Sundhed &amp; Informatik</div>
-                <h1>Human Biologi Studio</h1>
-                <p>
-                  Byg en runde, få ro på forløbet, og følg din udvikling over tid.
-                </p>
+        <div class="landing-shell dashboard-shell">
+          <header class="dashboard-hero reveal" style="--delay: 0s">
+            <div class="dashboard-copy">
+              <div class="eyebrow">Velkommen tilbage</div>
+              <h1>Din næste runde starter her</h1>
+              <p>
+                Byg en ny runde på få sekunder og følg, hvordan du ligger i forhold til 12-målet.
+              </p>
+              <div class="landing-actions">
+                <button id="landing-start-btn" class="btn primary" type="button">Start runde</button>
               </div>
             </div>
-            <div class="landing-actions">
-              <button id="landing-start-btn" class="btn primary" type="button">Byg runde</button>
+            <div class="dashboard-highlight">
+              <div class="highlight-card">
+                <div class="highlight-top">
+                  <div class="highlight-block">
+                    <div class="highlight-label">Niveau</div>
+                    <div class="highlight-value" id="hero-rank">—</div>
+                    <div class="highlight-meta" id="hero-rank-meta">Ingen rekord endnu</div>
+                  </div>
+                  <div class="highlight-block">
+                    <div class="highlight-label">Mål</div>
+                    <div class="highlight-goal" id="hero-target">12</div>
+                    <div class="highlight-meta" id="hero-target-meta">92% for topkarakter</div>
+                  </div>
+                </div>
+                <div class="highlight-progress">
+                  <div class="highlight-progress-bar">
+                    <div class="highlight-progress-fill" id="hero-progress-fill"></div>
+                  </div>
+                </div>
+                <div class="highlight-streak">
+                  <div class="highlight-label">Streak</div>
+                  <div class="highlight-streak-value" id="hero-streak">0</div>
+                  <div class="highlight-meta" id="hero-streak-meta">Ingen streak endnu</div>
+                </div>
+              </div>
             </div>
           </header>
 
-          <div class="landing-grid">
-            <section class="panel hero-panel reveal" style="--delay: 0.05s">
-              <div class="panel-header">
-                <h2>Overblik</h2>
-                <p>Se hvor du står lige nu, og hvad der skal til for at ramme 12-tallet.</p>
-              </div>
-              <div class="hero-grid">
-                <div class="hero-card primary">
-                  <div class="hero-label">Niveau</div>
-                  <div class="hero-value" id="hero-rank">Niveau —</div>
-                  <div class="hero-meta" id="hero-rank-meta">Ingen rekord endnu</div>
-                </div>
-                <div class="hero-card">
-                  <div class="hero-label">Mål</div>
-                  <div class="hero-value" id="hero-target">Mål: 12</div>
-                  <div class="hero-meta" id="hero-target-meta">92% for topkarakter</div>
-                  <div class="hero-progress">
-                    <div class="hero-progress-fill" id="hero-progress-fill"></div>
-                  </div>
-                </div>
-                <div class="hero-card">
-                  <div class="hero-label">Streak</div>
-                  <div class="hero-value" id="hero-streak">0</div>
-                  <div class="hero-meta" id="hero-streak-meta">Ingen streak endnu</div>
-                </div>
-              </div>
-            </section>
-
-            <section class="panel history-panel reveal" style="--delay: 0.1s">
-              <div class="panel-header">
-                <h2>Seneste aktivitet</h2>
-                <p>Hold øje med progressionen på tværs af runder.</p>
-              </div>
-              <div class="history-list" id="landing-history-list"></div>
-            </section>
-          </div>
+          <section class="panel history-panel dashboard-history reveal" style="--delay: 0.05s">
+            <div class="panel-header">
+              <h2>Seneste aktivitet</h2>
+              <p>Hold øje med progressionen på tværs af runder.</p>
+            </div>
+            <div class="history-list" id="landing-history-list"></div>
+          </section>
         </div>
       </section>
 
@@ -248,9 +513,10 @@
                     </div>
                     <div class="control-row">
                       <label class="control-label" for="question-count">
-                        Antal spørgsmål
+                        <span id="question-count-label">Antal spørgsmål</span>
                         <span
                           class="info"
+                          id="question-count-info"
                           data-tooltip="Vælg hvor mange spørgsmål runden skal have. Hvis puljen er mindre, forkortes runden automatisk."
                           tabindex="0"
                           aria-label="Info om antal spørgsmål"
@@ -259,51 +525,49 @@
                       </label>
                       <div class="range-control">
                         <input type="range" id="question-count" min="5" max="40" step="1" value="24" />
-                        <input type="number" id="question-count-input" min="5" max="40" step="1" value="24" />
                       </div>
-                      <div class="control-hint">
+                      <div class="control-hint" id="question-count-hint">
                         Antal flervalg styrer længden; kortsvar følger forholdet. I uendelig træning er tallet
                         størrelsen pr. batch.
                       </div>
                     </div>
-
-                    <div class="toggle-grid compact essentials">
-                      <label class="toggle">
-                        <input type="checkbox" id="toggle-include-mcq" checked />
-                        <span>
-                          Inkluder flervalg
-                          <span
-                            class="info"
-                            data-tooltip="Tager flervalgsspørgsmål med i runden."
-                            tabindex="0"
-                            aria-label="Info om flervalg"
-                            >i</span
-                          >
-                        </span>
-                        <small>Flervalg</small>
-                      </label>
-                      <label class="toggle">
-                        <input type="checkbox" id="toggle-include-short" checked />
-                        <span>
-                          Inkluder kortsvar
-                          <span
-                            class="info"
-                            data-tooltip="Tager kortsvarsopgaver med i runden."
-                            tabindex="0"
-                            aria-label="Info om kortsvar"
-                            >i</span
-                          >
-                        </span>
-                        <small>Åbne spørgsmål</small>
-                      </label>
-                    </div>
                     <details class="more-drawer">
                       <summary>
                         <span>Avanceret</span>
-                        <small>Blanding, tempo og hjælp</small>
+                        <small>Opgavetyper, blanding og tempo</small>
                       </summary>
                       <div class="more-body">
-                        <div class="control-row">
+                        <div class="toggle-grid compact" id="type-toggle-grid">
+                          <label class="toggle">
+                            <input type="checkbox" id="toggle-include-mcq" checked />
+                            <span>
+                              Inkluder flervalg
+                              <span
+                                class="info"
+                                data-tooltip="Tager flervalgsspørgsmål med i runden."
+                                tabindex="0"
+                                aria-label="Info om flervalg"
+                                >i</span
+                              >
+                            </span>
+                            <small>Flervalg</small>
+                          </label>
+                          <label class="toggle">
+                            <input type="checkbox" id="toggle-include-short" checked />
+                            <span>
+                              Inkluder kortsvar
+                              <span
+                                class="info"
+                                data-tooltip="Tager kortsvarsopgaver med i runden."
+                                tabindex="0"
+                                aria-label="Info om kortsvar"
+                                >i</span
+                              >
+                            </span>
+                            <small>Åbne spørgsmål</small>
+                          </label>
+                        </div>
+                        <div class="control-row" id="ratio-control-row">
                           <label class="control-label" for="ratio-mcq">
                             Forhold mellem flervalg og kortsvar
                             <span
@@ -329,20 +593,6 @@
                           </summary>
                           <div class="settings-body">
                             <div class="toggle-grid compact">
-                              <label class="toggle">
-                                <input type="checkbox" id="toggle-show-meta" checked />
-                                <span>
-                                  Vis detaljer
-                                  <span
-                                    class="info"
-                                    data-tooltip="Viser år og emne direkte på spørgsmålet."
-                                    tabindex="0"
-                                    aria-label="Info om detaljer"
-                                    >i</span
-                                  >
-                                </span>
-                                <small>År + emne på kortet</small>
-                              </label>
                               <label class="toggle">
                                 <input type="checkbox" id="toggle-shuffle-options" checked />
                                 <span>
@@ -459,24 +709,10 @@
                         <details class="settings-drawer">
                           <summary>
                             <span>Flow &amp; hjælp</span>
-                            <small>Tempo, fokus og hjælp</small>
+                            <small>Tempo og hjælp</small>
                           </summary>
                           <div class="settings-body">
                             <div class="toggle-grid compact">
-                              <label class="toggle">
-                                <input type="checkbox" id="toggle-tts" checked />
-                                <span>
-                                  Læs højt
-                                  <span
-                                    class="info"
-                                    data-tooltip="Aktivér oplæsning og vis indstillinger her i menuen."
-                                    tabindex="0"
-                                    aria-label="Info om oplæsning"
-                                    >i</span
-                                  >
-                                </span>
-                                <small>Oplæsning af spørgsmål</small>
-                              </label>
                               <label class="toggle">
                                 <input type="checkbox" id="toggle-auto-figure" />
                                 <span>
@@ -519,84 +755,9 @@
                                 </span>
                                 <small>Slut når du vil</small>
                               </label>
-                              <label class="toggle">
-                                <input type="checkbox" id="toggle-focus-mode" />
-                                <span>
-                                  Fokus-tilstand
-                                  <span
-                                    class="info"
-                                    data-tooltip="Fjerner sidepanelet og giver en roligere spilvisning."
-                                    tabindex="0"
-                                    aria-label="Info om fokus-tilstand"
-                                    >i</span
-                                  >
-                                </span>
-                                <small>Minimal spilvisning</small>
-                              </label>
                             </div>
 
-                            <div
-                              class="tts-toolbar hidden"
-                              id="tts-toolbar"
-                              aria-label="Oplæsning"
-                              data-collapsed="false"
-                            >
-                              <div class="tts-header">
-                                <div class="tts-title">
-                                  <span class="tts-title-text">Oplæsning</span>
-                                  <span class="tts-status" id="tts-status" role="status" aria-live="polite">
-                                    Oplæsning tjekkes …
-                                  </span>
-                                </div>
-                                <div class="tts-header-actions">
-                                  <div class="tts-controls">
-                                    <button class="btn ghost small" id="tts-preview-btn" type="button">
-                                      Test stemme
-                                    </button>
-                                  </div>
-                                  <button
-                                    class="btn ghost small"
-                                    id="tts-collapse-btn"
-                                    type="button"
-                                    aria-expanded="true"
-                                  >
-                                    Skjul
-                                  </button>
-                                </div>
-                              </div>
-                              <div class="tts-body" id="tts-body">
-                                <div class="tts-settings">
-                                  <label class="tts-toggle">
-                                    <input type="checkbox" id="tts-auto-toggle" />
-                                    <span>Auto-oplæsning</span>
-                                  </label>
-                                  <label class="tts-toggle">
-                                    <input type="checkbox" id="tts-options-toggle" checked />
-                                    <span>Læs svarmuligheder</span>
-                                  </label>
-                                  <label class="tts-field" for="tts-voice">
-                                    <span class="tts-label">Stemme</span>
-                                    <select id="tts-voice">
-                                      <option value="alloy">Alloy · Klar</option>
-                                      <option value="nova">Nova · Varm</option>
-                                      <option value="echo">Echo · Tydelig</option>
-                                      <option value="fable">Fable · Rolig</option>
-                                      <option value="onyx">Onyx · Dyb</option>
-                                      <option value="shimmer">Shimmer · Lys</option>
-                                    </select>
-                                  </label>
-                                  <label class="tts-field" for="tts-speed">
-                                    <span class="tts-label">Hastighed</span>
-                                    <div class="tts-speed">
-                                      <input type="range" id="tts-speed" min="0.7" max="1.3" step="0.05" value="1" />
-                                      <span id="tts-speed-label">1.0x</span>
-                                    </div>
-                                  </label>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div class="control-row compact">
+                            <div class="control-row compact" id="auto-advance-row">
                               <label class="control-label" for="auto-advance-delay">
                                 Auto-videre tempo
                                 <span
@@ -773,7 +934,7 @@
               <details class="panel compact more-panel" id="more-panel">
                 <summary>
                   <span>Mere</span>
-                  <small>Værktøjer &amp; genveje</small>
+                  <small>Værktøjer</small>
                 </summary>
                 <div class="more-body">
                   <div class="more-actions">
@@ -783,86 +944,76 @@
                     <button class="btn ghost small" id="toggle-meta" type="button">Skjul detaljer</button>
                     <button class="btn ghost small hidden" id="end-round-btn" type="button">Afslut runde</button>
                   </div>
-                  <div class="shortcut-inline" id="shortcut-inline">
-                    <span class="shortcut-label">Taster</span>
-                    <span class="shortcut-item is-static">
-                      <span class="shortcut-icon" aria-hidden="true">&#x1F524;</span>
-                      <span class="shortcut-meta">
-                        <span class="shortcut-text">svar</span>
+                  <div class="toggle-grid compact">
+                    <label class="toggle">
+                      <input type="checkbox" id="toggle-tts" checked />
+                      <span>
+                        Læs højt
+                        <span
+                          class="info"
+                          data-tooltip="Aktivér oplæsning og justér stemmen her."
+                          tabindex="0"
+                          aria-label="Info om oplæsning"
+                          >i</span
+                        >
                       </span>
-                      <kbd class="keycap">A–D</kbd>
-                    </span>
-                    <button class="shortcut-item" data-action="next" type="button">
-                      <span class="shortcut-icon" aria-hidden="true">&#x23ED;&#xFE0F;</span>
-                      <span class="shortcut-meta">
-                        <span class="shortcut-text">næste</span>
-                        <span class="shortcut-status" aria-live="polite"></span>
-                      </span>
-                      <kbd class="keycap">N</kbd>
-                    </button>
-                    <button class="shortcut-item" data-action="skip" type="button">
-                      <span class="shortcut-icon" aria-hidden="true">&#x23E9;&#xFE0F;</span>
-                      <span class="shortcut-meta">
-                        <span class="shortcut-text">spring over</span>
-                        <span class="shortcut-status" aria-live="polite"></span>
-                      </span>
-                      <kbd class="keycap">K</kbd>
-                    </button>
-                    <button class="shortcut-item" data-action="grade" type="button">
-                      <span class="shortcut-icon" aria-hidden="true">&#x1F9EE;</span>
-                      <span class="shortcut-meta">
-                        <span class="shortcut-text">vurdér</span>
-                        <span class="shortcut-status" aria-live="polite"></span>
-                      </span>
-                      <kbd class="keycap">V</kbd>
-                    </button>
-                    <button class="shortcut-item" data-action="mic" data-toggle="true" type="button">
-                      <span class="shortcut-icon" aria-hidden="true">&#x1F3A4;</span>
-                      <span class="shortcut-meta">
-                        <span class="shortcut-text">optag</span>
-                        <span class="shortcut-status" aria-live="polite"></span>
-                      </span>
-                      <kbd class="keycap">M</kbd>
-                    </button>
-                    <button
-                      class="shortcut-item"
-                      data-action="figure"
-                      data-toggle="true"
-                      id="shortcut-figure"
-                      type="button"
-                    >
-                      <span class="shortcut-icon" aria-hidden="true">&#x1F5BC;&#xFE0F;</span>
-                      <span class="shortcut-meta">
-                        <span class="shortcut-text">figur</span>
-                        <span class="shortcut-status" aria-live="polite"></span>
-                      </span>
-                      <kbd class="keycap">G</kbd>
-                    </button>
-                    <button class="shortcut-item" data-action="hint" data-toggle="true" type="button">
-                      <span class="shortcut-icon" aria-hidden="true">&#x1F4A1;</span>
-                      <span class="shortcut-meta">
-                        <span class="shortcut-text">hint</span>
-                        <span class="shortcut-status" aria-live="polite"></span>
-                      </span>
-                      <kbd class="keycap">H</kbd>
-                    </button>
-                    <button class="shortcut-item" data-action="tts" data-toggle="true" type="button">
-                      <span class="shortcut-icon" aria-hidden="true">&#x1F50A;</span>
-                      <span class="shortcut-meta">
-                        <span class="shortcut-text">lyd</span>
-                        <span class="shortcut-status" aria-live="polite"></span>
-                      </span>
-                      <kbd class="keycap">L</kbd>
-                    </button>
-                    <button class="shortcut-item" data-action="focus" data-toggle="true" type="button">
-                      <span class="shortcut-icon" aria-hidden="true">&#x1F3AF;</span>
-                      <span class="shortcut-meta">
-                        <span class="shortcut-text">fokus</span>
-                        <span class="shortcut-status" aria-live="polite"></span>
-                      </span>
-                      <kbd class="keycap">F</kbd>
-                    </button>
-                    <span class="shortcut-note">Klik på chips eller brug tastaturet.</span>
+                      <small>Oplæsning af spørgsmål</small>
+                    </label>
+                  </div>
+                  <div class="tts-toolbar hidden" id="tts-toolbar" aria-label="Oplæsning" data-collapsed="false">
+                    <div class="tts-header">
+                      <div class="tts-title">
+                        <span class="tts-title-text">Oplæsning</span>
+                        <span class="tts-status" id="tts-status" role="status" aria-live="polite">
+                          Oplæsning tjekkes …
+                        </span>
+                      </div>
+                      <div class="tts-header-actions">
+                        <div class="tts-controls">
+                          <button class="btn ghost small" id="tts-preview-btn" type="button">
+                            Test stemme
+                          </button>
+                        </div>
+                        <button
+                          class="btn ghost small"
+                          id="tts-collapse-btn"
+                          type="button"
+                          aria-expanded="true"
+                        >
+                          Skjul
+                        </button>
+                      </div>
+                    </div>
+                    <div class="tts-body" id="tts-body">
+                      <div class="tts-settings">
+                        <label class="tts-toggle">
+                          <input type="checkbox" id="tts-auto-toggle" />
+                          <span>Auto-oplæsning</span>
+                        </label>
+                        <label class="tts-toggle">
+                          <input type="checkbox" id="tts-options-toggle" checked />
+                          <span>Læs svarmuligheder</span>
+                        </label>
+                        <label class="tts-field" for="tts-voice">
+                          <span class="tts-label">Stemme</span>
+                          <select id="tts-voice">
+                            <option value="alloy">Alloy · Klar</option>
+                            <option value="nova">Nova · Varm</option>
+                            <option value="echo">Echo · Tydelig</option>
+                            <option value="fable">Fable · Rolig</option>
+                            <option value="onyx">Onyx · Dyb</option>
+                            <option value="shimmer">Shimmer · Lys</option>
+                          </select>
+                        </label>
+                        <label class="tts-field" for="tts-speed">
+                          <span class="tts-label">Hastighed</span>
+                          <div class="tts-speed">
+                            <input type="range" id="tts-speed" min="0.7" max="1.3" step="0.05" value="1" />
+                            <span id="tts-speed-label">1.0x</span>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </details>
@@ -935,7 +1086,6 @@
                         </div>
                         <div class="score-inputs">
                           <input type="range" id="short-score-range" min="0" max="10" step="0.5" value="0" />
-                          <input type="number" id="short-score-input" min="0" max="10" step="0.5" value="0" />
                         </div>
                         <div class="score-hint" id="short-score-hint"></div>
                       </div>
@@ -1109,12 +1259,26 @@
       </section>
       <section id="account-screen" class="screen hidden">
         <div class="account-shell">
-          <header class="account-header reveal" style="--delay: 0s">
-            <div>
-              <h1>Konto</h1>
-              <p>Plan, adgang og data samlet ét sted.</p>
+          <header class="account-hero reveal" style="--delay: 0s">
+            <div class="account-hero-head">
+              <div>
+                <div class="eyebrow">Konto</div>
+                <h1>Din konto</h1>
+                <p>Plan, profil og data samlet ét sted.</p>
+              </div>
+              <button id="account-back-btn" class="btn ghost" type="button">Tilbage til app</button>
             </div>
-            <button id="account-back-btn" class="btn ghost" type="button">Tilbage til app</button>
+            <div class="account-hero-card">
+              <div class="plan-row">
+                <div class="plan-chip" id="plan-status">Plan: —</div>
+                <div class="plan-meta" id="subscription-status">Ingen aktiv betaling endnu.</div>
+              </div>
+              <div class="account-actions">
+                <button id="upgrade-btn" class="btn primary" type="button">Aktivér Pro</button>
+                <button id="portal-btn" class="btn ghost" type="button">Administrer abonnement</button>
+              </div>
+              <div class="field-hint">Du kan altid ændre eller opsige dit abonnement.</div>
+            </div>
           </header>
           <div class="account-status" id="account-status"></div>
 
@@ -1135,22 +1299,6 @@
               <div class="account-actions">
                 <button id="profile-save-btn" class="btn primary" type="button">Gem profil</button>
               </div>
-            </section>
-
-            <section class="panel account-panel reveal" style="--delay: 0.1s">
-              <div class="panel-header">
-                <h2>Plan &amp; betaling</h2>
-                <p>Administrér din plan og hold styr på betalinger.</p>
-              </div>
-              <div class="plan-row">
-                <div class="plan-chip" id="plan-status">Plan: —</div>
-                <div class="plan-meta" id="subscription-status">Ingen aktiv betaling endnu.</div>
-              </div>
-              <div class="account-actions">
-                <button id="upgrade-btn" class="btn primary" type="button">Aktivér abonnement</button>
-                <button id="portal-btn" class="btn ghost" type="button">Administrer abonnement</button>
-              </div>
-              <div class="field-hint">Du kan altid ændre eller opsige dit abonnement.</div>
             </section>
 
             <section class="panel account-panel reveal" style="--delay: 0.15s">
@@ -1177,63 +1325,28 @@
             <section class="panel account-panel reveal" style="--delay: 0.2s">
               <div class="panel-header">
                 <h2>Jura &amp; samtykke</h2>
-                <p>For at bruge appen skal du acceptere vilkår og privatliv.</p>
+                <p>For at bruge appen skal du acceptere vilkår, handelsbetingelser og privatlivs- og persondatapolitik.</p>
               </div>
               <label class="toggle">
                 <input type="checkbox" id="consent-terms" />
-                <span>Jeg accepterer vilkår</span>
+                <span>Jeg accepterer vilkår og handelsbetingelser</span>
                 <small>Påkrævet</small>
               </label>
               <label class="toggle">
                 <input type="checkbox" id="consent-privacy" />
-                <span>Jeg accepterer privatlivspolitik</span>
+                <span>Jeg accepterer privatlivs- og persondatapolitik</span>
                 <small>Påkrævet</small>
               </label>
               <div class="account-actions">
                 <button id="consent-save-btn" class="btn ghost" type="button">Gem samtykke</button>
               </div>
-              <details class="legal-drawer">
-                <summary>Vilkår</summary>
-                <div class="legal-body">
-                  <p>Human Biologi Studio er et læringsværktøj til personlig studiebrug.</p>
-                  <ul>
-                    <li>Adgang er personlig og må ikke deles.</li>
-                    <li>Indholdet er til læring og kan indeholde fejl; du er selv ansvarlig for anvendelse.</li>
-                    <li>Misbrug, forsøg på omgåelse eller automatiseret scraping er ikke tilladt.</li>
-                    <li>Vi kan løbende forbedre tjenesten og opdatere vilkår.</li>
-                  </ul>
-                </div>
-              </details>
-              <details class="legal-drawer">
-                <summary>Privatlivspolitik</summary>
-                <div class="legal-body">
-                  <p>Vi indsamler kun data, der er nødvendige for at levere tjenesten.</p>
-                  <ul>
-                    <li>Kontodata: e-mail og navn.</li>
-                    <li>Brugsdata: runder, resultater og indstillinger.</li>
-                    <li>Tekniske data: logdata og sikkerhedsrelaterede hændelser.</li>
-                  </ul>
-                  <p>Data bruges til drift, sikkerhed og support. Du kan til enhver tid få indsigt, eksportere eller
-                    slette dine data.</p>
-                </div>
-              </details>
-              <details class="legal-drawer">
-                <summary>Persondatapolitik</summary>
-                <div class="legal-body">
-                  <p>Dataansvarlig: Christian Kristensen (kristenson.dk).</p>
-                  <p>Behandlingsgrundlag: opfyldelse af aftale og legitim interesse i drift og sikkerhed.</p>
-                  <p>Databehandlere: hosting, login og betaling håndteres af betroede leverandører.</p>
-                  <p>Opbevaring: så længe din konto er aktiv, eller indtil du beder om sletning.</p>
-                </div>
-              </details>
-              <details class="legal-drawer">
-                <summary>Handelsbetingelser</summary>
-                <div class="legal-body">
-                  <p>Abonnement faktureres løbende. Pris og vilkår fremgår ved checkout.</p>
-                  <p>Du kan opsige når som helst; adgang fortsætter til periodens udløb.</p>
-                  <p>Kontakt support ved spørgsmål om betaling eller refusion.</p>
-                </div>
-              </details>
+              <div class="legal-links">
+                <a class="legal-link" href="vilkaar.html">Vilkår</a>
+                <a class="legal-link" href="privatlivspolitik.html">Privatlivspolitik</a>
+                <a class="legal-link" href="persondatapolitik.html">Persondatapolitik</a>
+                <a class="legal-link" href="handelsbetingelser.html">Handelsbetingelser</a>
+              </div>
+              <div class="field-hint">Læs de fulde dokumenter før eller efter du giver samtykke.</div>
             </section>
 
             <section class="panel account-panel reveal" style="--delay: 0.25s">
