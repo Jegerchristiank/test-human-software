@@ -5,6 +5,7 @@ const { callOpenAiJson } = require("./_lib/openai");
 const { requireAiAccess } = require("./_lib/aiGate");
 const { logUsageEvent } = require("./_lib/usage");
 const { enforceRateLimit } = require("./_lib/rateLimit");
+const { LIMITS, clampNumber, isValidLanguage } = require("./_lib/limits");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -39,8 +40,14 @@ module.exports = async function handler(req, res) {
   const question = String(payload.question || "").trim();
   const modelAnswer = String(payload.modelAnswer || "").trim();
   const userAnswer = String(payload.userAnswer || "").trim();
-  const maxPoints = Number(payload.maxPoints || 0) || 0;
-  const awardedPoints = Number(payload.awardedPoints || 0) || 0;
+  const maxPoints = clampNumber(payload.maxPoints || 0, {
+    min: 0,
+    max: LIMITS.maxPoints,
+  });
+  const awardedPoints = clampNumber(payload.awardedPoints || 0, {
+    min: 0,
+    max: LIMITS.maxPoints,
+  });
   const ignoreSketch = Boolean(payload.ignoreSketch);
   const language = String(payload.language || "da").trim().toLowerCase();
   const previousHint = String(payload.previousHint || "").trim();
@@ -50,6 +57,31 @@ module.exports = async function handler(req, res) {
   if (!question || !modelAnswer) {
     return sendError(res, 400, "Missing question or modelAnswer");
   }
+  if (!isValidLanguage(language)) {
+    return sendError(res, 400, "Invalid language");
+  }
+  if (question.length > LIMITS.maxQuestionChars) {
+    return sendError(res, 413, "Question too long");
+  }
+  if (modelAnswer.length > LIMITS.maxModelAnswerChars) {
+    return sendError(res, 413, "Model answer too long");
+  }
+  if (userAnswer.length > LIMITS.maxUserAnswerChars) {
+    return sendError(res, 413, "User answer too long");
+  }
+  if (previousHint.length > LIMITS.maxPreviousChars) {
+    return sendError(res, 413, "Previous hint too long");
+  }
+  if (question.length + modelAnswer.length + userAnswer.length > LIMITS.maxTotalChars) {
+    return sendError(res, 413, "Input too long");
+  }
+  if (maxPoints === null) {
+    return sendError(res, 400, "Invalid maxPoints");
+  }
+  if (awardedPoints === null) {
+    return sendError(res, 400, "Invalid awardedPoints");
+  }
+  const safeAwardedPoints = Math.min(awardedPoints ?? 0, maxPoints ?? 0);
 
   let systemPrompt;
   if (expand) {
@@ -79,7 +111,7 @@ module.exports = async function handler(req, res) {
     `Spørgsmål: ${question}\n` +
     `Modelbesvarelse: ${modelAnswer}\n` +
     `Studerendes svar: ${userAnswer}\n` +
-    `Point: ${awardedPoints} / ${maxPoints}\n` +
+    `Point: ${safeAwardedPoints} / ${maxPoints}\n` +
     (expand ? `Eksisterende hint: ${previousHint}\n` : "") +
     "Giv et hint (ikke facit). Returnér kun JSON.";
 

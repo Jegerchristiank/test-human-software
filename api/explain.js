@@ -5,6 +5,7 @@ const { callOpenAiJson } = require("./_lib/openai");
 const { requireAiAccess } = require("./_lib/aiGate");
 const { logUsageEvent } = require("./_lib/usage");
 const { enforceRateLimit } = require("./_lib/rateLimit");
+const { LIMITS, clampNumber, isValidLanguage } = require("./_lib/limits");
 
 function formatMcqOptions(options) {
   if (!Array.isArray(options)) return [];
@@ -67,12 +68,21 @@ module.exports = async function handler(req, res) {
   if (!questionType || !question) {
     return sendError(res, 400, "Missing type or question");
   }
+  if (!isValidLanguage(language)) {
+    return sendError(res, 400, "Invalid language");
+  }
+  if (question.length > LIMITS.maxQuestionChars) {
+    return sendError(res, 413, "Question too long");
+  }
+  if (previousExplanation.length > LIMITS.maxPreviousChars) {
+    return sendError(res, 413, "Previous explanation too long");
+  }
 
   let systemPrompt = "";
   let userPrompt = "";
 
   if (questionType === "mcq") {
-    const options = payload.options || [];
+    const rawOptions = Array.isArray(payload.options) ? payload.options : [];
     const correctLabel = String(payload.correctLabel || "").trim().toUpperCase();
     const userLabel = String(payload.userLabel || "").trim().toUpperCase();
     const skipped = Boolean(payload.skipped);
@@ -80,10 +90,49 @@ module.exports = async function handler(req, res) {
     if (!correctLabel) {
       return sendError(res, 400, "Missing correctLabel");
     }
+    if (correctLabel.length > LIMITS.maxOptionLabelChars) {
+      return sendError(res, 413, "Correct label too long");
+    }
+    if (userLabel && userLabel.length > LIMITS.maxOptionLabelChars) {
+      return sendError(res, 413, "User label too long");
+    }
+
+    if (!rawOptions.length) {
+      return sendError(res, 400, "Missing options");
+    }
+    if (rawOptions.length > LIMITS.maxOptions) {
+      return sendError(res, 413, "Too many options");
+    }
+    const options = [];
+    for (const option of rawOptions) {
+      const label = String(option?.label || "").trim().toUpperCase();
+      const text = String(option?.text || "").trim();
+      if (!label || !text) {
+        return sendError(res, 400, "Invalid options");
+      }
+      if (label.length > LIMITS.maxOptionLabelChars) {
+        return sendError(res, 413, "Option label too long");
+      }
+      if (text.length > LIMITS.maxOptionTextChars) {
+        return sendError(res, 413, "Option text too long");
+      }
+      options.push({ label, text });
+    }
 
     const formattedOptions = formatMcqOptions(options);
     const correctText = findOptionText(options, correctLabel);
     const userText = findOptionText(options, userLabel);
+    const optionsText = formattedOptions.join(" | ");
+    if (
+      question.length +
+        optionsText.length +
+        correctText.length +
+        userText.length +
+        previousExplanation.length >
+      LIMITS.maxTotalChars
+    ) {
+      return sendError(res, 413, "Input too long");
+    }
 
     if (expand) {
       systemPrompt =
@@ -119,10 +168,36 @@ module.exports = async function handler(req, res) {
   } else if (questionType === "short") {
     const modelAnswer = String(payload.modelAnswer || "").trim();
     const userAnswer = String(payload.userAnswer || "").trim();
-    const maxPoints = Number(payload.maxPoints || 0) || 0;
-    const awardedPoints = Number(payload.awardedPoints || 0) || 0;
+    const maxPoints = clampNumber(payload.maxPoints || 0, {
+      min: 0,
+      max: LIMITS.maxPoints,
+    });
+    const awardedPoints = clampNumber(payload.awardedPoints || 0, {
+      min: 0,
+      max: LIMITS.maxPoints,
+    });
     const ignoreSketch = Boolean(payload.ignoreSketch);
     const skipped = Boolean(payload.skipped);
+
+    if (modelAnswer.length > LIMITS.maxModelAnswerChars) {
+      return sendError(res, 413, "Model answer too long");
+    }
+    if (userAnswer.length > LIMITS.maxUserAnswerChars) {
+      return sendError(res, 413, "User answer too long");
+    }
+    if (maxPoints === null) {
+      return sendError(res, 400, "Invalid maxPoints");
+    }
+    if (awardedPoints === null) {
+      return sendError(res, 400, "Invalid awardedPoints");
+    }
+    const safeAwardedPoints = Math.min(awardedPoints ?? 0, maxPoints ?? 0);
+    if (
+      question.length + modelAnswer.length + userAnswer.length + previousExplanation.length >
+      LIMITS.maxTotalChars
+    ) {
+      return sendError(res, 413, "Input too long");
+    }
 
     if (expand) {
       systemPrompt =
@@ -155,7 +230,7 @@ module.exports = async function handler(req, res) {
       `Spørgsmål: ${question}\n` +
       `Modelbesvarelse: ${modelAnswer}\n` +
       `${studentLine}\n` +
-      `Point: ${awardedPoints} / ${maxPoints}\n` +
+      `Point: ${safeAwardedPoints} / ${maxPoints}\n` +
       (expand ? `Eksisterende forklaring: ${previousExplanation}\n` : "") +
       "Returnér kun JSON.";
   } else {

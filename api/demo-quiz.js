@@ -7,6 +7,7 @@ const { enforceRateLimit } = require("./_lib/rateLimit");
 const MCQ_COUNT = 5;
 const OPTIONS_COUNT = 4;
 const DAILY_WINDOW_SECONDS = 24 * 60 * 60;
+const { isValidLanguage } = require("./_lib/limits");
 
 function cleanText(value) {
   return String(value || "").trim();
@@ -108,6 +109,9 @@ module.exports = async function handler(req, res) {
   }
 
   const language = cleanText(payload?.language || "da").toLowerCase();
+  if (!isValidLanguage(language)) {
+    return sendError(res, 400, "Invalid language");
+  }
   const systemPrompt =
     "Du er underviser i human biologi på gymnasieniveau. " +
     "Lav et mini-prøvespil med præcis 5 multiple choice spørgsmål og 1 kortsvarsopgave. " +

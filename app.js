@@ -503,11 +503,22 @@ const state = {
   authReady: false,
   isLoading: true,
   loadingFallbackTimer: null,
+  loadingStartedAt: null,
+  loadingFallbackShown: false,
+  questionsLoading: null,
   userStateSyncTimer: null,
   userStateSyncInFlight: false,
   userStateApplying: false,
-  useOwnKey: localStorage.getItem(STORAGE_KEYS.useOwnKey) === "true",
-  userOpenAiKey: String(localStorage.getItem(STORAGE_KEYS.userOpenAiKey) || ""),
+  useOwnKey: false,
+  userOpenAiKey: "",
+  stripeClient: null,
+  stripeElements: null,
+  stripePaymentElement: null,
+  stripePaymentRequest: null,
+  stripePaymentRequestButton: null,
+  checkoutClientSecret: null,
+  checkoutSubscriptionId: null,
+  checkoutPrice: null,
   lastPreset: null,
   isApplyingPreset: false,
   aiStatus: {
@@ -607,6 +618,7 @@ const state = {
     category: "",
   },
   lastAppScreen: "menu",
+  shouldRecordHistory: true,
 };
 
 const screens = {
@@ -618,6 +630,7 @@ const screens = {
   quiz: document.getElementById("quiz-screen"),
   result: document.getElementById("result-screen"),
   account: document.getElementById("account-screen"),
+  checkout: document.getElementById("checkout-screen"),
 };
 
 const shortcutStatusTimers = new Map();
@@ -673,6 +686,19 @@ const elements = {
   authNote: document.getElementById("auth-note"),
   accountBtn: document.getElementById("account-btn"),
   accountBackBtn: document.getElementById("account-back-btn"),
+  checkoutBackBtn: document.getElementById("checkout-back-btn"),
+  checkoutCancelBtn: document.getElementById("checkout-cancel-btn"),
+  checkoutForm: document.getElementById("checkout-form"),
+  checkoutSubmitBtn: document.getElementById("checkout-submit-btn"),
+  checkoutStatus: document.getElementById("checkout-status"),
+  checkoutElement: document.getElementById("checkout-element"),
+  checkoutExpress: document.getElementById("checkout-express"),
+  checkoutWallets: document.getElementById("checkout-wallets"),
+  checkoutPlanName: document.getElementById("checkout-plan-name"),
+  checkoutPlanNote: document.getElementById("checkout-plan-note"),
+  checkoutPrice: document.getElementById("checkout-price"),
+  checkoutInterval: document.getElementById("checkout-interval"),
+  checkoutTotal: document.getElementById("checkout-total"),
   accountStatus: document.getElementById("account-status"),
   userChip: document.getElementById("user-chip"),
   profileNameInput: document.getElementById("profile-name-input"),
@@ -1121,9 +1147,15 @@ function showScreen(target) {
   if (
     target !== "loading" &&
     target !== "auth" &&
-    target !== "consent" &&
     needsConsent()
   ) {
+    const path = window.location.pathname || "";
+    const onConsentPage =
+      path.endsWith("/consent.html") || path.endsWith("consent.html");
+    if (!onConsentPage) {
+      window.location.replace("consent.html");
+      return;
+    }
     if (!state.consentReturnTo) {
       state.consentReturnTo = target;
     }
@@ -1142,7 +1174,10 @@ function showScreen(target) {
 
   document.body.classList.toggle("mode-auth", target === "auth" || target === "consent");
   document.body.classList.toggle("mode-landing", target === "landing");
-  document.body.classList.toggle("mode-menu", target === "menu" || target === "account");
+  document.body.classList.toggle(
+    "mode-menu",
+    target === "menu" || target === "account" || target === "checkout"
+  );
   document.body.classList.toggle("mode-game", target === "quiz");
   document.body.classList.toggle("mode-result", target === "result");
   if (["menu", "landing", "quiz", "result"].includes(target)) {
@@ -1157,23 +1192,91 @@ function showScreen(target) {
 
 const LOADING_FALLBACK_DELAY = 7000;
 const LOGIN_TIMEOUT_MS = 5000;
+const CONFIG_TIMEOUT_MS = 8000;
+const PROFILE_TIMEOUT_MS = 8000;
+const QUESTIONS_TIMEOUT_MS = 12000;
+const HEALTH_TIMEOUT_MS = 7000;
 const LOADING_DEFAULT_STATUS = "Indlæser …";
 const LOADING_DEFAULT_DETAIL = "Gør klar til din session";
 
 function withTimeout(promise, timeoutMs, message) {
-  let timeoutId;
+  let timeoutId = null;
+  let timedOut = false;
+  let remaining = Math.max(0, Number(timeoutMs) || 0);
+  let startAt = null;
+  let rejectTimeout = null;
+
+  const onTimeout = () => {
+    timedOut = true;
+    const error = new Error(message || "Timeout");
+    error.code = "TIMEOUT";
+    if (rejectTimeout) {
+      rejectTimeout(error);
+    }
+  };
+
+  const stopTimer = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+    if (startAt) {
+      const elapsed = Date.now() - startAt;
+      remaining = Math.max(0, remaining - elapsed);
+      startAt = null;
+    }
+  };
+
+  const startTimer = () => {
+    if (remaining <= 0) {
+      onTimeout();
+      return;
+    }
+    startAt = Date.now();
+    timeoutId = setTimeout(onTimeout, remaining);
+  };
+
+  const handleVisibility = () => {
+    if (document.visibilityState === "hidden") {
+      stopTimer();
+      return;
+    }
+    if (!timeoutId) {
+      startTimer();
+    }
+  };
+
   const timeout = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => {
-      const error = new Error(message || "Timeout");
-      error.code = "TIMEOUT";
-      reject(error);
-    }, timeoutMs);
+    rejectTimeout = reject;
+    if (document.visibilityState === "hidden") {
+      stopTimer();
+    } else {
+      startTimer();
+    }
   });
-  return Promise.race([promise, timeout]).finally(() => {
+  const wrapped = Promise.resolve(promise).catch((error) => {
+    if (timedOut) {
+      console.warn("Indlæsning fejlede efter timeout", error);
+      return null;
+    }
+    throw error;
+  });
+  document.addEventListener("visibilitychange", handleVisibility);
+  return Promise.race([wrapped, timeout]).finally(() => {
+    document.removeEventListener("visibilitychange", handleVisibility);
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
   });
+}
+
+async function guardedStep(promise, timeoutMs, label) {
+  try {
+    return await withTimeout(promise, timeoutMs, label);
+  } catch (error) {
+    console.warn(label || "Indlæsning tog for lang tid", error);
+    return null;
+  }
 }
 
 function setLoadingMessage(status = LOADING_DEFAULT_STATUS, detail = LOADING_DEFAULT_DETAIL) {
@@ -1201,26 +1304,46 @@ function showLoadingActions(isVisible) {
   setElementVisible(elements.loadingActions, Boolean(isVisible));
 }
 
-function clearLoadingFallback() {
+function clearLoadingFallbackTimer() {
   if (state.loadingFallbackTimer) {
     clearTimeout(state.loadingFallbackTimer);
     state.loadingFallbackTimer = null;
   }
+}
+
+function resetLoadingFallback() {
+  clearLoadingFallbackTimer();
+  state.loadingFallbackShown = false;
   showLoadingActions(false);
 }
 
+function showLoadingFallback() {
+  setLoadingMessage(
+    "Det tager længere tid end normalt …",
+    "Du kan gå til forsiden eller prøve igen."
+  );
+  setLoadingProgress(92);
+  showLoadingActions(true);
+  state.loadingFallbackShown = true;
+}
+
 function scheduleLoadingFallback() {
-  clearLoadingFallback();
-  state.loadingFallbackTimer = setTimeout(() => {
-    setLoadingMessage("Det tager længere tid end normalt …", "Du kan gå til forsiden eller prøve igen.");
-    setLoadingProgress(92);
-    showLoadingActions(true);
-  }, LOADING_FALLBACK_DELAY);
+  if (!state.loadingStartedAt || state.loadingFallbackShown) return;
+  clearLoadingFallbackTimer();
+  const elapsed = Date.now() - state.loadingStartedAt;
+  const remaining = LOADING_FALLBACK_DELAY - elapsed;
+  if (remaining <= 0) {
+    showLoadingFallback();
+    return;
+  }
+  state.loadingFallbackTimer = setTimeout(showLoadingFallback, remaining);
 }
 
 function setLoadingState(isLoading) {
   state.isLoading = Boolean(isLoading);
   if (state.isLoading) {
+    state.loadingStartedAt = Date.now();
+    resetLoadingFallback();
     showScreen("loading");
     setLoadingMessage();
     setLoadingProgress(6);
@@ -1230,7 +1353,8 @@ function setLoadingState(isLoading) {
   if (!state.authReady && state.supabase) {
     state.authReady = true;
   }
-  clearLoadingFallback();
+  state.loadingStartedAt = null;
+  resetLoadingFallback();
   try {
     updateAuthUI();
   } catch (error) {
@@ -2195,14 +2319,27 @@ function subscribeToAuthChanges() {
       if (session?.user) {
         setLoadingMessage("Henter profil …", "Synkroniserer konto");
         setLoadingProgress(60);
-        await refreshProfile();
+        await guardedStep(refreshProfile(), PROFILE_TIMEOUT_MS, "Profil indlæsning tog for lang tid");
+        if (!state.allQuestions.length) {
+          setLoadingMessage("Indlæser spørgsmål …", "Bygger spørgsmålspulje");
+          setLoadingProgress(75);
+          await guardedStep(
+            ensureQuestionsLoaded(),
+            QUESTIONS_TIMEOUT_MS,
+            "Spørgsmål indlæsning tog for lang tid"
+          );
+        }
       } else {
         state.profile = null;
         state.subscription = null;
       }
       setLoadingMessage("Tjekker hjælpefunktioner …", "Assistent og oplæsning");
-      setLoadingProgress(80);
-      await checkAiAvailability();
+      setLoadingProgress(85);
+      await guardedStep(
+        checkAiAvailability(),
+        HEALTH_TIMEOUT_MS,
+        "AI tjek tog for lang tid"
+      );
     } finally {
       if (shouldShowLoader) {
         setLoadingState(false);
@@ -2223,6 +2360,9 @@ async function refreshProfile() {
     const data = await res.json();
     state.profile = data.profile || null;
     state.subscription = data.subscription || null;
+    if (!state.userOpenAiKey) {
+      state.useOwnKey = Boolean(state.profile?.own_key_enabled);
+    }
     updateAccountUI();
     updateUserChip();
     await loadUserStateFromSupabase();
@@ -2465,27 +2605,392 @@ async function handleConsentSave() {
   }
 }
 
-async function handleCheckout() {
-  if (!requireAuthGuard()) return;
-  const res = await apiFetch("/api/stripe/create-checkout-session", { method: "POST" });
+function setCheckoutStatus(message, isWarn = false) {
+  if (!elements.checkoutStatus) return;
+  const text = String(message || "").trim();
+  elements.checkoutStatus.textContent = text;
+  elements.checkoutStatus.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.checkoutStatus, Boolean(text));
+}
+
+function setCheckoutControlsEnabled(enabled) {
+  const canSubmit = Boolean(enabled && state.checkoutClientSecret && state.stripeElements);
+  if (elements.checkoutSubmitBtn) {
+    elements.checkoutSubmitBtn.disabled = !canSubmit;
+  }
+  if (elements.checkoutCancelBtn) {
+    elements.checkoutCancelBtn.disabled = !enabled;
+  }
+  if (elements.checkoutBackBtn) {
+    elements.checkoutBackBtn.disabled = !enabled;
+  }
+}
+
+function getStripeClient() {
+  if (state.stripeClient) return state.stripeClient;
+  if (!window.Stripe || !state.config?.stripePublishableKey) return null;
+  state.stripeClient = window.Stripe(state.config.stripePublishableKey);
+  return state.stripeClient;
+}
+
+function clearCheckoutElement() {
+  if (state.stripePaymentElement) {
+    state.stripePaymentElement.unmount();
+  }
+  clearExpressCheckout();
+  state.stripePaymentElement = null;
+  state.stripeElements = null;
+  state.checkoutClientSecret = null;
+  state.checkoutSubscriptionId = null;
+  state.checkoutPrice = null;
+  if (elements.checkoutPrice) {
+    elements.checkoutPrice.textContent = "—";
+  }
+  if (elements.checkoutInterval) {
+    elements.checkoutInterval.textContent = "Pr. måned";
+  }
+  if (elements.checkoutTotal) {
+    elements.checkoutTotal.textContent = "—";
+  }
+  if (elements.checkoutPlanName) {
+    elements.checkoutPlanName.textContent = "Pro";
+  }
+  if (elements.checkoutPlanNote) {
+    elements.checkoutPlanNote.textContent = "";
+    setElementVisible(elements.checkoutPlanNote, false);
+  }
+}
+
+function formatCurrency(amount, currency) {
+  if (typeof amount !== "number" || !Number.isFinite(amount)) return "—";
+  const code = String(currency || "DKK").toUpperCase();
+  try {
+    return new Intl.NumberFormat("da-DK", { style: "currency", currency: code }).format(
+      amount / 100
+    );
+  } catch (error) {
+    return `${(amount / 100).toFixed(2)} ${code}`;
+  }
+}
+
+function resolveUnitAmount(price) {
+  if (!price) return null;
+  if (typeof price.unit_amount === "number" && Number.isFinite(price.unit_amount)) {
+    return price.unit_amount;
+  }
+  if (typeof price.unit_amount_decimal === "string") {
+    const parsed = Number(price.unit_amount_decimal);
+    if (Number.isFinite(parsed)) {
+      return Math.round(parsed);
+    }
+  }
+  return null;
+}
+
+function formatIntervalLabel(recurring) {
+  if (!recurring) return "Engangsbetaling";
+  const interval = recurring.interval || "month";
+  const count = recurring.interval_count || 1;
+  const unitMap = {
+    day: { single: "dag", plural: "dage" },
+    week: { single: "uge", plural: "uger" },
+    month: { single: "måned", plural: "måneder" },
+    year: { single: "år", plural: "år" },
+  };
+  const unit = unitMap[interval] || { single: "periode", plural: "perioder" };
+  if (count === 1) {
+    return `Pr. ${unit.single}`;
+  }
+  return `Hver ${count} ${unit.plural}`;
+}
+
+function updateCheckoutSummary(price) {
+  if (!price) return;
+  const unitAmount = resolveUnitAmount(price);
+  const amount = formatCurrency(unitAmount, price.currency);
+  const interval = formatIntervalLabel(price.recurring);
+  const productName = price.product?.name || "Pro";
+  const productNote = String(price.product?.description || "").trim();
+  if (elements.checkoutPlanName) {
+    elements.checkoutPlanName.textContent = productName;
+  }
+  if (elements.checkoutPlanNote) {
+    elements.checkoutPlanNote.textContent = productNote;
+    setElementVisible(elements.checkoutPlanNote, Boolean(productNote));
+  }
+  if (elements.checkoutPrice) {
+    elements.checkoutPrice.textContent = amount;
+  }
+  if (elements.checkoutInterval) {
+    elements.checkoutInterval.textContent = interval;
+  }
+  if (elements.checkoutTotal) {
+    elements.checkoutTotal.textContent = amount;
+  }
+}
+
+function buildStripeAppearance() {
+  const styles = getComputedStyle(document.body);
+  const getVar = (name, fallback) => styles.getPropertyValue(name).trim() || fallback;
+  return {
+    theme: "stripe",
+    variables: {
+      colorPrimary: getVar("--accent", "#0a84ff"),
+      colorBackground: getVar("--panel-strong", "#ffffff"),
+      colorText: getVar("--ink", "#1d1d1f"),
+      colorDanger: getVar("--accent-warm", "#ff453a"),
+      fontFamily: "Manrope, Helvetica Neue, sans-serif",
+      borderRadius: "14px",
+    },
+  };
+}
+
+function resolveCheckoutCountry() {
+  const locale = String(navigator.language || "").trim();
+  const match = locale.match(/-([a-z]{2})/i);
+  return match ? match[1].toUpperCase() : "DK";
+}
+
+function clearExpressCheckout() {
+  if (state.stripePaymentRequestButton) {
+    state.stripePaymentRequestButton.unmount();
+  }
+  state.stripePaymentRequestButton = null;
+  state.stripePaymentRequest = null;
+  if (elements.checkoutWallets) {
+    elements.checkoutWallets.textContent = "";
+  }
+  setElementVisible(elements.checkoutExpress, false);
+}
+
+async function createSubscriptionIntent() {
+  const res = await apiFetch("/api/stripe/create-subscription", { method: "POST" });
   if (!res.ok) {
     let message = "Kunne ikke starte betalingen.";
     try {
       const data = await res.json();
-      if (data?.error === "payment_not_configured") {
+      const errorCode = String(data?.error || "").toLowerCase();
+      const stripeCode = String(data?.code || "").toLowerCase();
+      const stripeMessage = String(data?.message || "").trim();
+      if (errorCode === "payment_not_configured") {
         message = "Betaling er ikke sat op endnu.";
+      } else if (errorCode === "subscription_active") {
+        message = "Du har allerede et aktivt abonnement.";
+      } else if (errorCode === "unauthenticated") {
+        message = "Log ind for at fortsætte.";
+      } else if (errorCode === "rate_limited") {
+        message = "For mange forsøg. Vent et øjeblik og prøv igen.";
+      } else if (errorCode === "stripe_error") {
+        if (stripeCode === "resource_missing") {
+          message = "Pris-id findes ikke i Stripe (tjek test/live).";
+        } else if (stripeCode === "payment_method_unactivated") {
+          message = "Den valgte betalingsmetode er ikke aktiveret i Stripe endnu.";
+        } else if (stripeMessage) {
+          message = stripeMessage;
+        } else {
+          message = "Stripe kunne ikke starte betalingen.";
+        }
+      } else if (errorCode === "could not create subscription") {
+        message = "Stripe kunne ikke oprette abonnementet.";
       }
     } catch (error) {
       // Ignore JSON parse errors.
     }
-    setAccountStatus(message, true);
+    throw new Error(message);
+  }
+  return res.json();
+}
+
+async function completeCheckoutSuccess() {
+  setCheckoutStatus("Betalingen er gennemført. Opdaterer adgang …");
+  await refreshAccessStatus();
+  await refreshProfile();
+  setCheckoutStatus("Tak! Din Pro-adgang er klar.");
+  setAccountStatus("Tak! Din Pro-adgang er klar.");
+  setTimeout(() => {
+    closeCheckout();
+  }, 800);
+}
+
+async function setupExpressCheckout(price) {
+  clearExpressCheckout();
+  if (!elements.checkoutExpress || !elements.checkoutWallets) return;
+  const stripe = getStripeClient();
+  if (!stripe) return;
+  const unitAmount = resolveUnitAmount(price);
+  if (!unitAmount) return;
+  const currency = String(price.currency || "dkk").toLowerCase();
+  const label = price.product?.name || "Pro";
+  try {
+    const paymentRequest = stripe.paymentRequest({
+      country: resolveCheckoutCountry(),
+      currency,
+      total: {
+        label,
+        amount: Math.round(unitAmount),
+      },
+      requestPayerName: true,
+      requestPayerEmail: true,
+    });
+
+    let canPay = null;
+    try {
+      canPay = await paymentRequest.canMakePayment();
+    } catch (error) {
+      canPay = null;
+    }
+    if (!canPay) return;
+
+    paymentRequest.on("paymentmethod", async (event) => {
+      if (!state.checkoutClientSecret) {
+        event.complete("fail");
+        setCheckoutStatus("Betaling er ikke klar endnu.", true);
+        return;
+      }
+      setCheckoutStatus("Bekræfter betaling …");
+      setCheckoutControlsEnabled(false);
+      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+        state.checkoutClientSecret,
+        { payment_method: event.paymentMethod.id },
+        { handleActions: false }
+      );
+      if (confirmError) {
+        event.complete("fail");
+        setCheckoutStatus(confirmError.message || "Betalingen kunne ikke gennemføres.", true);
+        setCheckoutControlsEnabled(true);
+        return;
+      }
+      event.complete("success");
+      if (paymentIntent && paymentIntent.status === "requires_action") {
+        const { error: actionError } = await stripe.confirmCardPayment(
+          state.checkoutClientSecret
+        );
+        if (actionError) {
+          setCheckoutStatus(actionError.message || "Betalingen kunne ikke gennemføres.", true);
+          setCheckoutControlsEnabled(true);
+          return;
+        }
+      }
+      await completeCheckoutSuccess();
+    });
+
+    const walletElements = stripe.elements({ appearance: buildStripeAppearance() });
+    const paymentRequestButton = walletElements.create("paymentRequestButton", {
+      paymentRequest,
+      style: {
+        paymentRequestButton: {
+          type: "subscribe",
+          theme: "dark",
+          height: "48px",
+        },
+      },
+    });
+    paymentRequestButton.mount(elements.checkoutWallets);
+    state.stripePaymentRequest = paymentRequest;
+    state.stripePaymentRequestButton = paymentRequestButton;
+    setElementVisible(elements.checkoutExpress, true);
+  } catch (error) {
+    clearExpressCheckout();
+  }
+}
+
+async function mountCheckoutElement(clientSecret) {
+  if (!elements.checkoutElement) {
+    throw new Error("Checkout er ikke klar.");
+  }
+  clearCheckoutElement();
+  const stripe = getStripeClient();
+  if (!stripe) {
+    throw new Error("Stripe er ikke tilgængeligt.");
+  }
+  state.stripeElements = stripe.elements({
+    clientSecret,
+    appearance: buildStripeAppearance(),
+  });
+  state.stripePaymentElement = state.stripeElements.create("payment", {
+    layout: "tabs",
+    wallets: {
+      applePay: "auto",
+      googlePay: "auto",
+    },
+  });
+  state.stripePaymentElement.mount(elements.checkoutElement);
+}
+
+async function openCheckout() {
+  if (!requireAuthGuard()) return;
+  if (hasPaidAccess()) {
+    setAccountStatus("Du har allerede Pro.", true);
     return;
   }
-  const data = await res.json();
-  if (data.url) {
-    setAccountStatus("Åbner betaling …");
-    window.location.href = data.url;
+  if (!state.config?.stripeConfigured || !state.config?.stripePublishableKey) {
+    setAccountStatus("Betaling er ikke sat op endnu.", true);
+    return;
   }
+  if (!getStripeClient()) {
+    setAccountStatus("Betaling er ikke tilgængelig lige nu.", true);
+    return;
+  }
+
+  setAccountStatus("");
+  showScreen("checkout");
+  setCheckoutStatus("Klargør betaling …");
+  setCheckoutControlsEnabled(false);
+  try {
+    const data = await createSubscriptionIntent();
+    state.checkoutClientSecret = data.clientSecret;
+    state.checkoutSubscriptionId = data.subscriptionId || null;
+    state.checkoutPrice = data.price || null;
+    updateCheckoutSummary(data.price);
+    await setupExpressCheckout(data.price);
+    await mountCheckoutElement(data.clientSecret);
+    setCheckoutStatus("");
+  } catch (error) {
+    setCheckoutStatus(error.message || "Kunne ikke starte betalingen.", true);
+  } finally {
+    setCheckoutControlsEnabled(true);
+  }
+}
+
+function closeCheckout() {
+  clearCheckoutElement();
+  setCheckoutStatus("");
+  showScreen("account");
+}
+
+async function submitCheckout(event) {
+  if (event) event.preventDefault();
+  if (!state.stripeElements || !state.checkoutClientSecret) {
+    setCheckoutStatus("Betaling er ikke klar endnu.", true);
+    return;
+  }
+  const stripe = getStripeClient();
+  if (!stripe) {
+    setCheckoutStatus("Betaling er ikke tilgængelig lige nu.", true);
+    return;
+  }
+
+  setCheckoutStatus("Bekræfter betaling …");
+  setCheckoutControlsEnabled(false);
+  const { error } = await stripe.confirmPayment({
+    elements: state.stripeElements,
+    confirmParams: {
+      return_url: `${window.location.origin}/?checkout=success`,
+    },
+    redirect: "if_required",
+  });
+
+  if (error) {
+    setCheckoutStatus(error.message || "Betalingen kunne ikke gennemføres.", true);
+    setCheckoutControlsEnabled(true);
+    return;
+  }
+
+  await completeCheckoutSuccess();
+}
+
+async function handleCheckout() {
+  await openCheckout();
 }
 
 async function handlePortal() {
@@ -2524,7 +3029,7 @@ function hasPaidAccess() {
 async function refreshAccessStatus({ attempts = 4, delayMs = 1600 } = {}) {
   if (!state.session?.user) return false;
   for (let i = 0; i < attempts; i += 1) {
-    await refreshProfile();
+    await guardedStep(refreshProfile(), PROFILE_TIMEOUT_MS, "Profil indlæsning tog for lang tid");
     if (hasPaidAccess()) return true;
     await sleep(delayMs);
   }
@@ -2548,6 +3053,9 @@ async function handleReturnParams() {
   url.searchParams.delete("checkout");
   url.searchParams.delete("portal");
   window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  if (state.session?.user) {
+    showScreen("account");
+  }
 
   if (checkout === "success") {
     const updated = await refreshAccessStatus();
@@ -2561,18 +3069,14 @@ async function handleReturnParams() {
   }
 }
 
-function persistOwnKeyState() {
-  localStorage.setItem(STORAGE_KEYS.useOwnKey, String(state.useOwnKey));
-  if (state.userOpenAiKey) {
-    localStorage.setItem(STORAGE_KEYS.userOpenAiKey, state.userOpenAiKey);
-  } else {
-    localStorage.removeItem(STORAGE_KEYS.userOpenAiKey);
-  }
+function clearStoredOwnKey() {
+  localStorage.removeItem(STORAGE_KEYS.useOwnKey);
+  localStorage.removeItem(STORAGE_KEYS.userOpenAiKey);
 }
 
 function setOwnKeyEnabled(enabled) {
   state.useOwnKey = Boolean(enabled);
-  persistOwnKeyState();
+  clearStoredOwnKey();
   updateAccountUI();
   checkAiAvailability();
   syncOwnKeyPreference();
@@ -2584,7 +3088,7 @@ function saveOwnKey() {
   if (key) {
     state.useOwnKey = true;
   }
-  persistOwnKeyState();
+  clearStoredOwnKey();
   updateAccountUI();
   checkAiAvailability();
   syncOwnKeyPreference();
@@ -2593,7 +3097,7 @@ function saveOwnKey() {
 function clearOwnKey() {
   state.userOpenAiKey = "";
   state.useOwnKey = false;
-  persistOwnKeyState();
+  clearStoredOwnKey();
   updateAccountUI();
   checkAiAvailability();
   syncOwnKeyPreference();
@@ -2664,6 +3168,9 @@ async function handleLogout() {
   state.profile = null;
   state.subscription = null;
   state.demoMode = false;
+  state.useOwnKey = false;
+  state.userOpenAiKey = "";
+  clearStoredOwnKey();
   state.consentReturnTo = null;
   setConsentStatus("");
   updateAuthUI();
@@ -3952,7 +4459,12 @@ function renderMcqQuestion(question) {
     btn.className = "option-btn";
     btn.dataset.label = option.label;
     btn.dataset.text = option.text;
-    btn.innerHTML = `<span class="label">${option.label}</span>${option.text}`;
+    const label = document.createElement("span");
+    label.className = "label";
+    label.textContent = option.label;
+    btn.appendChild(label);
+    const optionText = option.text == null ? "" : String(option.text);
+    btn.appendChild(document.createTextNode(optionText));
     btn.addEventListener("click", () => handleMcqAnswer(option.label));
     elements.optionsContainer.appendChild(btn);
   });
@@ -7181,7 +7693,9 @@ function showResults() {
   elements.bestBadge.style.display = isNewBest ? "inline-flex" : "none";
   elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
 
-  recordHistoryEntry();
+  if (state.shouldRecordHistory) {
+    recordHistoryEntry();
+  }
 
   const mistakeKeys = state.results
     .filter((result) => {
@@ -7727,7 +8241,13 @@ function finishSession() {
 
 function startGame(options = {}) {
   if (!requireAuthGuard("Log ind for at starte en runde.", { allowDemo: true })) return;
-  const { pool, focusMistakesActive } = resolvePool(options);
+  const {
+    forceMistakes = false,
+    ignoreFocusMistakes = false,
+    recordHistory = true,
+  } = options;
+  state.shouldRecordHistory = Boolean(recordHistory);
+  const { pool, focusMistakesActive } = resolvePool({ forceMistakes, ignoreFocusMistakes });
   if (!pool.length) return;
 
   hideRules();
@@ -7766,7 +8286,7 @@ function startGame(options = {}) {
 
 function handlePlayAgainClick() {
   if (state.lastMistakeKeys.size) {
-    startGame({ forceMistakes: true });
+    startGame({ forceMistakes: true, recordHistory: false });
     return;
   }
   startGame();
@@ -7829,7 +8349,13 @@ function renderChips(container, values, selectedSet, counts, type) {
     btn.dataset.type = type;
     btn.dataset.value = String(value);
     btn.dataset.label = String(value).toLowerCase();
-    btn.innerHTML = `<span>${value}</span><span class="chip-count">${counts.get(value) || 0}</span>`;
+    const label = document.createElement("span");
+    label.textContent = String(value);
+    const count = document.createElement("span");
+    count.className = "chip-count";
+    count.textContent = String(counts.get(value) || 0);
+    btn.appendChild(label);
+    btn.appendChild(count);
     if (selectedSet.has(value)) {
       btn.classList.add("active");
     }
@@ -8019,6 +8545,35 @@ async function checkAiAvailability() {
       updateDiagnosticsUI();
       return;
     }
+    if (needsConsent()) {
+      const message = "Accepter vilkår for at fortsætte.";
+      setAiStatus({
+        available: false,
+        model: null,
+        message,
+      });
+      setTtsStatus({
+        available: false,
+        model: null,
+        message,
+      });
+      updateDiagnosticsUI();
+      return;
+    }
+    if (state.useOwnKey && !state.userOpenAiKey) {
+      setAiStatus({
+        available: false,
+        model: null,
+        message: "Indtast din nøgle for hjælp.",
+      });
+      setTtsStatus({
+        available: false,
+        model: null,
+        message: "Indtast din nøgle for oplæsning.",
+      });
+      updateDiagnosticsUI();
+      return;
+    }
 
     const res = await apiFetch("/api/health");
     if (!res.ok) {
@@ -8036,6 +8591,7 @@ async function checkAiAvailability() {
       }
       setAiStatus({ available: false, model: null, message: aiMessage });
       setTtsStatus({ available: false, model: null, message: ttsMessage });
+      updateDiagnosticsUI();
       return;
     }
     const data = await res.json();
@@ -8302,6 +8858,15 @@ function attachEvents() {
   }
   if (elements.portalBtn) {
     elements.portalBtn.addEventListener("click", handlePortal);
+  }
+  if (elements.checkoutBackBtn) {
+    elements.checkoutBackBtn.addEventListener("click", closeCheckout);
+  }
+  if (elements.checkoutCancelBtn) {
+    elements.checkoutCancelBtn.addEventListener("click", closeCheckout);
+  }
+  if (elements.checkoutForm) {
+    elements.checkoutForm.addEventListener("submit", submitCheckout);
   }
   if (elements.ownKeyToggle) {
     elements.ownKeyToggle.addEventListener("change", (event) =>
@@ -8754,6 +9319,22 @@ function syncSettingsToUI() {
   updatePresetButtons();
 }
 
+async function ensureQuestionsLoaded() {
+  if (state.allQuestions.length) return;
+  if (state.questionsLoading) {
+    await state.questionsLoading;
+    return;
+  }
+  state.questionsLoading = (async () => {
+    await loadQuestions();
+  })();
+  try {
+    await state.questionsLoading;
+  } finally {
+    state.questionsLoading = null;
+  }
+}
+
 async function loadQuestions() {
   const fetchOptions = { cache: "no-store" };
   const [mcqRes, shortRes, captionsRes, bookRes, auditRes] = await Promise.all([
@@ -8889,6 +9470,7 @@ async function loadQuestions() {
 }
 
 async function init() {
+  clearStoredOwnKey();
   attachEvents();
   resetDemoQuizState();
   setAccountStatus("");
@@ -8905,9 +9487,13 @@ async function init() {
     try {
       setLoadingMessage("Henter konfiguration …", "Kobler til serveren");
       setLoadingProgress(20);
-      await loadRuntimeConfig();
+      await withTimeout(loadRuntimeConfig(), CONFIG_TIMEOUT_MS, "Konfiguration tager for lang tid");
       initSupabaseClient();
-      await hydrateAuthProviders();
+      await guardedStep(
+        hydrateAuthProviders(),
+        CONFIG_TIMEOUT_MS,
+        "Login-indstillinger tog for lang tid"
+      );
       setLoadingMessage("Tjekker login …", "Finder din session");
       setLoadingProgress(35);
       subscribeToAuthChanges();
@@ -8924,9 +9510,14 @@ async function init() {
       if (state.session?.user) {
         setLoadingMessage("Henter profil …", "Synkroniserer konto");
         setLoadingProgress(50);
-        await refreshProfile();
+        await guardedStep(refreshProfile(), PROFILE_TIMEOUT_MS, "Profil indlæsning tog for lang tid");
       }
       await handleReturnParams();
+      if (!state.session?.user) {
+        setLoadingProgress(100);
+        setLoadingState(false);
+        return;
+      }
     } catch (error) {
       state.backendAvailable = false;
       state.configError = error.message || "Kunne ikke åbne login lige nu.";
@@ -8936,7 +9527,11 @@ async function init() {
     try {
       setLoadingMessage("Indlæser spørgsmål …", "Bygger spørgsmålspulje");
       setLoadingProgress(70);
-      await loadQuestions();
+      await withTimeout(
+        ensureQuestionsLoaded(),
+        QUESTIONS_TIMEOUT_MS,
+        "Spørgsmål indlæsning tog for lang tid"
+      );
     } catch (err) {
       console.error("Kunne ikke indlæse spørgsmål", err);
       elements.questionCountChip.textContent = "Fejl: kunne ikke indlæse spørgsmål";
@@ -8944,7 +9539,7 @@ async function init() {
     }
     setLoadingMessage("Tjekker hjælpefunktioner …", "Assistent og oplæsning");
     setLoadingProgress(85);
-    await checkAiAvailability();
+    await guardedStep(checkAiAvailability(), HEALTH_TIMEOUT_MS, "AI tjek tog for lang tid");
     setLoadingMessage("Opdaterer historik …", "Klargør dashboard");
     setLoadingProgress(95);
     setLoadingProgress(100);
@@ -8963,5 +9558,11 @@ async function init() {
     }
   }
 }
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && state.isLoading) {
+    scheduleLoadingFallback();
+  }
+});
 
 document.addEventListener("DOMContentLoaded", init);

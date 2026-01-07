@@ -5,6 +5,7 @@ const { requireAiAccess } = require("./_lib/aiGate");
 const { parseAudioDataUrl, guessAudioFilename } = require("./_lib/media");
 const { logUsageEvent } = require("./_lib/usage");
 const { enforceRateLimit } = require("./_lib/rateLimit");
+const { isValidLanguage } = require("./_lib/limits");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -42,6 +43,9 @@ module.exports = async function handler(req, res) {
 
   if (!audioData) {
     return sendError(res, 400, "Missing audioData");
+  }
+  if (!isValidLanguage(language)) {
+    return sendError(res, 400, "Invalid language");
   }
 
   let audio;

@@ -3,6 +3,9 @@ const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest } = require("../_lib/auth");
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { enforceRateLimit } = require("../_lib/rateLimit");
+const Stripe = require("stripe");
+
+const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["trialing", "active", "past_due", "unpaid"]);
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -37,8 +40,63 @@ module.exports = async function handler(req, res) {
     return sendError(res, 400, "Confirmation required");
   }
 
+  const supabase = getSupabaseAdmin();
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("stripe_customer_id")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (profileError) {
+    return sendError(res, 500, "Could not verify billing status");
+  }
+
+  const { data: subscriptions, error: subscriptionsError } = await supabase
+    .from("subscriptions")
+    .select("stripe_subscription_id")
+    .eq("user_id", user.id);
+  if (subscriptionsError) {
+    return sendError(res, 500, "Could not verify billing status");
+  }
+
+  const customerId = profile?.stripe_customer_id || null;
+  const subscriptionIds = new Set(
+    (subscriptions || []).map((row) => row.stripe_subscription_id).filter(Boolean)
+  );
+  const needsStripeCleanup = Boolean(customerId || subscriptionIds.size);
+  if (needsStripeCleanup) {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
+      return sendError(res, 500, "payment_not_configured");
+    }
+    const stripe = new Stripe(secretKey, { apiVersion: "2024-06-20" });
+    try {
+      if (customerId) {
+        const list = await stripe.subscriptions.list({
+          customer: customerId,
+          status: "all",
+          limit: 100,
+        });
+        list.data.forEach((subscription) => {
+          if (ACTIVE_SUBSCRIPTION_STATUSES.has(subscription.status)) {
+            subscriptionIds.add(subscription.id);
+          }
+        });
+      }
+      if (subscriptionIds.size) {
+        const results = await Promise.allSettled(
+          [...subscriptionIds].map((id) => stripe.subscriptions.cancel(id))
+        );
+        const failed = results.find((result) => result.status === "rejected");
+        if (failed) {
+          return sendError(res, 502, "Could not cancel subscription");
+        }
+      }
+    } catch (error) {
+      return sendError(res, 502, "Could not cancel subscription");
+    }
+  }
+
   try {
-    const supabase = getSupabaseAdmin();
     await supabase.from("usage_events").delete().eq("user_id", user.id);
     await supabase.from("subscriptions").delete().eq("user_id", user.id);
     await supabase.from("user_state").delete().eq("user_id", user.id);

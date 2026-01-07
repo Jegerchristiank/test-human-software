@@ -1309,7 +1309,7 @@
               <label class="toggle">
                 <input type="checkbox" id="own-key-toggle" />
                 <span>Brug min egen nøgle</span>
-                <small>Gemmes kun på din enhed</small>
+                <small>Gemmes ikke mellem sessioner</small>
               </label>
               <div class="field">
                 <label for="own-key-input">Din nøgle</label>
@@ -1393,6 +1393,66 @@
                 <button id="diag-refresh-btn" class="btn ghost" type="button">Opdatér status</button>
               </div>
               <div class="field-hint">Nogle checks kræver login for at vise fuld status.</div>
+            </section>
+          </div>
+        </div>
+      </section>
+      <section id="checkout-screen" class="screen hidden">
+        <div class="checkout-shell">
+          <header class="checkout-hero">
+            <div class="checkout-hero-head">
+              <div class="eyebrow">Pro</div>
+              <h1>Gør din træning skarpere</h1>
+              <p>Gennemfør betalingen sikkert med Stripe og få adgang med det samme.</p>
+            </div>
+            <button id="checkout-back-btn" class="btn ghost" type="button">Tilbage</button>
+          </header>
+          <div class="checkout-status hidden" id="checkout-status"></div>
+          <div class="checkout-grid">
+            <section class="panel checkout-panel">
+              <div class="panel-header">
+                <h2>Betaling</h2>
+                <p>Sikker betaling håndteres af Stripe.</p>
+              </div>
+              <form id="checkout-form">
+                <div class="checkout-express hidden" id="checkout-express">
+                  <div class="checkout-express-title">Hurtig betaling</div>
+                  <div id="checkout-wallets" class="checkout-wallets"></div>
+                  <div class="checkout-divider"><span>eller betal med kort</span></div>
+                </div>
+                <div id="checkout-element" class="checkout-element"></div>
+                <div class="checkout-actions">
+                  <button id="checkout-submit-btn" class="btn primary" type="submit">Betal</button>
+                  <button id="checkout-cancel-btn" class="btn ghost" type="button">Annuller</button>
+                </div>
+              </form>
+              <div class="field-hint">Du kan altid opsige eller ændre abonnementet bagefter.</div>
+            </section>
+            <section class="panel checkout-summary">
+              <div class="panel-header">
+                <h2>Det får du med Pro</h2>
+                <p>Designet til fokus og højere score.</p>
+              </div>
+              <div class="checkout-plan">
+                <div class="checkout-plan-name" id="checkout-plan-name">Pro</div>
+                <div class="checkout-plan-note hidden" id="checkout-plan-note"></div>
+              </div>
+              <div class="checkout-price">
+                <div class="checkout-price-amount" id="checkout-price">—</div>
+                <div class="checkout-price-interval" id="checkout-interval">Pr. måned</div>
+              </div>
+              <ul class="checkout-features">
+                <li>AI-hjælp til MCQ og kortsvar, når du går i stå.</li>
+                <li>Forklaringer på fejl, så du lærer af hver runde.</li>
+                <li>Oplæsning med stemmevalg og tempo.</li>
+                <li>Historik og performance, der følger din udvikling.</li>
+                <li>Prioriteret adgang, når AI-ressourcer er travle.</li>
+              </ul>
+              <div class="checkout-total">
+                <span>Beløb i dag</span>
+                <strong id="checkout-total">—</strong>
+              </div>
+              <div class="checkout-trust">Betal med kort, Apple Pay eller Google Pay (hvis tilgængeligt).</div>
             </section>
           </div>
         </div>
@@ -1483,6 +1543,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://js.stripe.com/v3/"></script>
     <script src="app.js"></script>
   </body>
 </html>

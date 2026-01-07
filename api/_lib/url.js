@@ -1,8 +1,6 @@
-function getBaseUrl(req) {
-  const proto = req.headers["x-forwarded-proto"] || "https";
-  const host = req.headers["x-forwarded-host"] || req.headers.host;
-  if (!host) return "";
-  return `${proto}://${host}`;
+function getBaseUrl() {
+  const baseUrl = process.env.STRIPE_BASE_URL || "";
+  return baseUrl.replace(/\/+$/, "");
 }
 
 module.exports = {

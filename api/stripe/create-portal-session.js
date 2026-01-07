@@ -30,6 +30,10 @@ module.exports = async function handler(req, res) {
   if (!secretKey) {
     return sendError(res, 500, "payment_not_configured");
   }
+  const baseUrl = getBaseUrl(req);
+  if (!baseUrl) {
+    return sendError(res, 500, "payment_not_configured", { missing: ["base_url"] });
+  }
 
   const stripe = new Stripe(secretKey, { apiVersion: "2024-06-20" });
   const profile = await getProfileForUser(user.id, { createIfMissing: true, userData: user });
@@ -51,7 +55,6 @@ module.exports = async function handler(req, res) {
         .eq("id", user.id);
     }
 
-    const baseUrl = process.env.STRIPE_BASE_URL || getBaseUrl(req);
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${baseUrl}/?portal=return`,

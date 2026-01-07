@@ -4,6 +4,7 @@ const { callOpenAiTts } = require("./_lib/openai");
 const { requireAiAccess } = require("./_lib/aiGate");
 const { logUsageEvent } = require("./_lib/usage");
 const { enforceRateLimit } = require("./_lib/rateLimit");
+const { LIMITS, isValidLanguage } = require("./_lib/limits");
 
 const TTS_VOICES = new Set(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]);
 
@@ -53,10 +54,17 @@ module.exports = async function handler(req, res) {
   const text = cleanTtsText(payload.text || "");
   const voice = String(payload.voice || "alloy").trim().toLowerCase() || "alloy";
   const speed = clampTtsSpeed(payload.speed || 1.0);
+  const language = String(payload.language || "da").trim().toLowerCase();
   const model = process.env.OPENAI_TTS_MODEL || "tts-1";
 
   if (!text) {
     return sendError(res, 400, "Missing text");
+  }
+  if (text.length > LIMITS.maxTtsChars) {
+    return sendError(res, 413, "Text too long");
+  }
+  if (language && !isValidLanguage(language)) {
+    return sendError(res, 400, "Invalid language");
   }
   if (!TTS_VOICES.has(voice)) {
     return sendError(res, 400, "Unknown voice");

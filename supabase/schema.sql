@@ -1,5 +1,6 @@
 -- Enable required extensions
 create extension if not exists "pgcrypto";
+create extension if not exists "pg_stat_statements";
 
 -- Helpers
 create or replace function public.set_updated_at()
@@ -43,26 +44,26 @@ create policy "Profiles are viewable by owner"
   on public.profiles
   for select
   to authenticated
-  using (auth.uid() = id);
+  using ((SELECT auth.uid()) = id);
 
 create policy "Profiles are insertable by owner"
   on public.profiles
   for insert
   to authenticated
-  with check (auth.uid() = id);
+  with check ((SELECT auth.uid()) = id);
 
 create policy "Profiles are updatable by owner"
   on public.profiles
   for update
   to authenticated
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
+  using ((SELECT auth.uid()) = id)
+  with check ((SELECT auth.uid()) = id);
 
 create policy "Profiles are deletable by owner"
   on public.profiles
   for delete
   to authenticated
-  using (auth.uid() = id);
+  using ((SELECT auth.uid()) = id);
 
 -- Subscriptions
 create table if not exists public.subscriptions (
@@ -92,7 +93,10 @@ create policy "Subscriptions are viewable by owner"
   on public.subscriptions
   for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((SELECT auth.uid()) = user_id);
+
+create index if not exists idx_subscriptions_user_id on public.subscriptions (user_id);
+create index if not exists idx_subscriptions_stripe_customer_id on public.subscriptions (stripe_customer_id);
 
 -- Usage events
 create table if not exists public.usage_events (
@@ -113,7 +117,9 @@ create policy "Usage events are viewable by owner"
   on public.usage_events
   for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((SELECT auth.uid()) = user_id);
+
+create index if not exists idx_usage_events_user_id on public.usage_events (user_id);
 
 -- User state (settings + history sync)
 create table if not exists public.user_state (
@@ -146,20 +152,20 @@ create policy "User state is viewable by owner"
   on public.user_state
   for select
   to authenticated
-  using (auth.uid() = user_id);
+  using ((SELECT auth.uid()) = user_id);
 
 create policy "User state is insertable by owner"
   on public.user_state
   for insert
   to authenticated
-  with check (auth.uid() = user_id);
+  with check ((SELECT auth.uid()) = user_id);
 
 create policy "User state is updatable by owner"
   on public.user_state
   for update
   to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using ((SELECT auth.uid()) = user_id)
+  with check ((SELECT auth.uid()) = user_id);
 
 -- Rate limits
 create table if not exists public.rate_limits (
@@ -193,7 +199,7 @@ create or replace function public.check_rate_limit(
 returns boolean
 language plpgsql
 security definer
-set search_path = public
+set search_path TO pg_catalog, public, pg_temp
 as $$
 declare
   v_now timestamptz := now();

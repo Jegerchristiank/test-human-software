@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Samtykke · Human Biologi Studio</title>
+    <link rel="icon" href="Logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="mode-auth">
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <div class="ambient ambient-three"></div>
+    <div class="noise-layer"></div>
+    <div class="theme-switch" role="group" aria-label="Tema">
+      <span class="theme-label">Lys</span>
+      <label class="theme-toggle">
+        <input type="checkbox" id="theme-toggle" aria-label="Skift til mørk tilstand" />
+      </label>
+      <span class="theme-label">Mørk</span>
+    </div>
+
+    <main class="gate-shell">
+      <header class="gate-header">
+        <div>
+          <div class="eyebrow">Før du går i gang</div>
+          <h1>Acceptér vilkår og politikker</h1>
+          <p>
+            For at bruge Human Biologi Studio skal du acceptere vilkår,
+            handelsbetingelser og privatlivs- og persondatapolitik.
+          </p>
+        </div>
+        <button id="gate-logout-btn" class="btn ghost" type="button">Log ud</button>
+      </header>
+
+      <div class="gate-status hidden" id="gate-status"></div>
+      <div class="gate-note field-hint">
+        Hvis felterne ikke vises, kan en browserudvidelse (fx cookie- eller privacy-blokker)
+        skjule dem. Prøv at slå udvidelsen fra for denne side.
+      </div>
+
+      <div class="gate-grid">
+        <section class="panel gate-panel">
+          <div class="panel-header">
+            <h2>Samtykke</h2>
+            <p>Du er logget ind som <span id="gate-email">—</span>.</p>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="gate-terms" />
+            <span>Jeg accepterer vilkår og handelsbetingelser</span>
+            <small>Påkrævet for adgang</small>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="gate-privacy" />
+            <span>Jeg accepterer privatlivs- og persondatapolitik</span>
+            <small>Påkrævet for adgang</small>
+          </label>
+          <div class="account-actions">
+            <button id="gate-accept-btn" class="btn primary" type="button">
+              Accepter og fortsæt
+            </button>
+          </div>
+          <div class="field-hint">Du kan altid se dokumenterne igen i din profil.</div>
+        </section>
+        <section class="panel gate-panel">
+          <div class="panel-header">
+            <h2>Læs dokumenterne</h2>
+            <p>Få hele teksten, før du accepterer.</p>
+          </div>
+          <div class="legal-links">
+            <a class="legal-link" href="vilkaar.html">Vilkår</a>
+            <a class="legal-link" href="privatlivspolitik.html">Privatlivspolitik</a>
+            <a class="legal-link" href="persondatapolitik.html">Persondatapolitik</a>
+            <a class="legal-link" href="handelsbetingelser.html">Handelsbetingelser</a>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="consent.js"></script>
+  </body>
+</html>

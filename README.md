@@ -54,12 +54,15 @@ Minimum for online drift:
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_ID`
 - `OPENAI_API_KEY`
+- `STRIPE_BASE_URL` (påkrævet hvis Stripe er aktiveret)
 - `STRIPE_PORTAL_CONFIGURATION_ID` (valgfri)
+- `TRUST_PROXY` (valgfri, brug `true` hvis din platform sætter sikre forwarded headers)
+- `TRUST_PROXY_HEADERS` (valgfri, kommasepareret liste, default `x-forwarded-for`)
 
 Stripe nøgler:
 - `STRIPE_PRICE_ID` findes i Stripe Dashboard → Products → Price (starter med `price_`).
 - `STRIPE_WEBHOOK_SECRET` findes i Stripe Dashboard → Developers → Webhooks (starter med `whsec_`).
-- `STRIPE_BASE_URL` er optional og skal være din app-URL (bruges til success/cancel).
+- `STRIPE_BASE_URL` er påkrævet og skal være din app-URL (bruges til success/cancel).
 - `STRIPE_PORTAL_CONFIGURATION_ID` er valgfri og bruges til Stripe Customer Portal.
 
 ## Sync af settings + historik

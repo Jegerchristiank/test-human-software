@@ -28,17 +28,17 @@ module.exports = async function handler(req, res) {
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
   const priceId = process.env.STRIPE_PRICE_ID;
+  const baseUrl = getBaseUrl(req);
   const missing = [];
   if (!secretKey) missing.push("secret");
   if (!priceId) missing.push("price");
+  if (!baseUrl) missing.push("base_url");
   if (missing.length) {
     return sendError(res, 500, "payment_not_configured", { missing });
   }
 
   const stripe = new Stripe(secretKey, { apiVersion: "2024-06-20" });
   const profile = await getProfileForUser(user.id, { createIfMissing: true, userData: user });
-  const baseUrl = process.env.STRIPE_BASE_URL || getBaseUrl(req);
-
   try {
     let customerId = profile?.stripe_customer_id || null;
     if (!customerId) {

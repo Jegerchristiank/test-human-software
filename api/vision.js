@@ -6,6 +6,7 @@ const { requireAiAccess } = require("./_lib/aiGate");
 const { isDataUrl, parseImageDataUrl, loadImageAsDataUrl } = require("./_lib/media");
 const { logUsageEvent } = require("./_lib/usage");
 const { enforceRateLimit } = require("./_lib/rateLimit");
+const { LIMITS, isValidLanguage } = require("./_lib/limits");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -42,6 +43,10 @@ module.exports = async function handler(req, res) {
   const imagePath = String(payload.imagePath || "").trim();
   const imageData = String(payload.imageData || "").trim();
   const model = process.env.OPENAI_VISION_MODEL || process.env.OPENAI_MODEL || "gpt-5.2";
+
+  if (!isValidLanguage(language)) {
+    return sendError(res, 400, "Invalid language");
+  }
 
   let imageUrl = "";
   try {
@@ -81,6 +86,12 @@ module.exports = async function handler(req, res) {
     const modelAnswer = String(payload.modelAnswer || "").trim();
     if (!question) {
       return sendError(res, 400, "Missing question");
+    }
+    if (question.length > LIMITS.maxQuestionChars) {
+      return sendError(res, 413, "Question too long");
+    }
+    if (modelAnswer.length > LIMITS.maxModelAnswerChars) {
+      return sendError(res, 413, "Model answer too long");
     }
     systemPrompt =
       "Du er en underviser, der vurderer en studerendes skitse. " +
