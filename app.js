@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   useOwnKey: "hbs_use_own_key",
   userStateUpdatedAt: "hbs_user_state_updated_at",
   demoTrialLastRun: "hbs_demo_trial_last_run",
+  demoQuizResult: "hbs_demo_quiz_result",
 };
 
 const DEFAULT_SETTINGS = {
@@ -47,7 +48,8 @@ const AUTH_PROVIDERS = {
 };
 
 const SHORT_TOTAL_POINTS = 72;
-const SHORT_FAIL_THRESHOLD = 5;
+const SHORT_FAIL_RATIO = 0.5;
+const SHORT_FAIL_PERCENT = SHORT_FAIL_RATIO * 100;
 const HISTORY_LIMIT = 12;
 const TARGET_GRADE_PERCENT = 92;
 const DUPLICATE_QUESTION_SIMILARITY = 0.95;
@@ -467,6 +469,11 @@ const state = {
     shortCount: 0,
     shortMax: 0,
   },
+  sessionActive: false,
+  sessionPaused: false,
+  sessionPausedAt: null,
+  cancelRoundConfirmArmed: false,
+  cancelRoundConfirmTimer: null,
   startTime: null,
   locked: false,
   results: [],
@@ -508,7 +515,10 @@ const state = {
   questionsLoading: null,
   userStateSyncTimer: null,
   userStateSyncInFlight: false,
+  userStateLoadPromise: null,
   userStateApplying: false,
+  profileRetryTimer: null,
+  profileRetryCount: 0,
   useOwnKey: false,
   userOpenAiKey: "",
   stripeClient: null,
@@ -519,6 +529,14 @@ const state = {
   checkoutClientSecret: null,
   checkoutSubscriptionId: null,
   checkoutPrice: null,
+  billing: {
+    data: null,
+    isLoading: false,
+    isUpdating: false,
+    setupClientSecret: null,
+  },
+  billingElements: null,
+  billingPaymentElement: null,
   lastPreset: null,
   isApplyingPreset: false,
   aiStatus: {
@@ -553,6 +571,12 @@ const state = {
     timer: null,
     defer: false,
   },
+  ttsPartPrefetch: {
+    entries: new Map(),
+    timer: null,
+  },
+  ttsPartAnnounce: new Map(),
+  lastShortQuestionKey: null,
   mic: {
     recorder: null,
     stream: null,
@@ -570,6 +594,10 @@ const state = {
   shortAnswerAI: new Map(),
   shortAnswerPending: false,
   shortQuestionGroups: new Map(),
+  shortGroupsByKey: new Map(),
+  shortPartNodes: new Map(),
+  activeShortPartKey: null,
+  shortPartSelectionActive: false,
   reviewHintQueue: [],
   reviewHintProcessing: false,
   reviewFilters: {
@@ -608,6 +636,7 @@ const state = {
     short: 0,
   },
   seenKeys: new Set(loadStoredArray(STORAGE_KEYS.seen)),
+  seenMcqGroups: new Set(),
   lastMistakeKeys: new Set(loadStoredArray(STORAGE_KEYS.mistakes)),
   history: loadStoredArray(STORAGE_KEYS.history),
   autoAdvanceTimer: null,
@@ -630,6 +659,7 @@ const screens = {
   quiz: document.getElementById("quiz-screen"),
   result: document.getElementById("result-screen"),
   account: document.getElementById("account-screen"),
+  billing: document.getElementById("billing-screen"),
   checkout: document.getElementById("checkout-screen"),
 };
 
@@ -647,11 +677,14 @@ const elements = {
   demoEmpty: document.getElementById("demo-empty"),
   demoQuestion: document.getElementById("demo-question"),
   demoQuestionType: document.getElementById("demo-question-type"),
+  demoQuestionCategory: document.getElementById("demo-question-category"),
+  demoQuestionYear: document.getElementById("demo-question-year"),
   demoStep: document.getElementById("demo-step"),
   demoQuestionText: document.getElementById("demo-question-text"),
   demoOptions: document.getElementById("demo-options"),
   demoShort: document.getElementById("demo-short"),
-  demoShortInput: document.getElementById("demo-short-input"),
+  demoShortStatus: document.getElementById("demo-short-status"),
+  demoShortList: document.getElementById("demo-short-list"),
   demoShortCheckBtn: document.getElementById("demo-short-check"),
   demoShortGuidance: document.getElementById("demo-short-guidance"),
   demoFeedback: document.getElementById("demo-feedback"),
@@ -686,6 +719,7 @@ const elements = {
   authNote: document.getElementById("auth-note"),
   accountBtn: document.getElementById("account-btn"),
   accountBackBtn: document.getElementById("account-back-btn"),
+  billingBackBtn: document.getElementById("billing-back-btn"),
   checkoutBackBtn: document.getElementById("checkout-back-btn"),
   checkoutCancelBtn: document.getElementById("checkout-cancel-btn"),
   checkoutForm: document.getElementById("checkout-form"),
@@ -700,6 +734,37 @@ const elements = {
   checkoutInterval: document.getElementById("checkout-interval"),
   checkoutTotal: document.getElementById("checkout-total"),
   accountStatus: document.getElementById("account-status"),
+  billingStatus: document.getElementById("billing-status"),
+  billingPlan: document.getElementById("billing-plan"),
+  billingPlanMeta: document.getElementById("billing-plan-meta"),
+  billingStatusBadge: document.getElementById("billing-status-badge"),
+  billingStatusMeta: document.getElementById("billing-status-meta"),
+  billingNextAmount: document.getElementById("billing-next-amount"),
+  billingNextDate: document.getElementById("billing-next-date"),
+  billingPaymentLabel: document.getElementById("billing-payment-label"),
+  billingPaymentMeta: document.getElementById("billing-payment-meta"),
+  billingHeroHint: document.getElementById("billing-hero-hint"),
+  billingUpdateMethodBtn: document.getElementById("billing-update-method-btn"),
+  billingToggleCancelBtn: document.getElementById("billing-toggle-cancel-btn"),
+  billingUpgradeBtn: document.getElementById("billing-upgrade-btn"),
+  billingRefreshBtn: document.getElementById("billing-refresh-btn"),
+  billingMethodTitle: document.getElementById("billing-method-title"),
+  billingMethodMeta: document.getElementById("billing-method-meta"),
+  billingChangeMethodBtn: document.getElementById("billing-change-method-btn"),
+  billingUpdatePanel: document.getElementById("billing-update-panel"),
+  billingUpdateForm: document.getElementById("billing-update-form"),
+  billingPaymentElement: document.getElementById("billing-payment-element"),
+  billingUpdateSubmitBtn: document.getElementById("billing-update-submit-btn"),
+  billingUpdateCancelBtn: document.getElementById("billing-update-cancel-btn"),
+  billingUpdateCloseBtn: document.getElementById("billing-update-close-btn"),
+  billingUpdateStatus: document.getElementById("billing-update-status"),
+  billingPlanName: document.getElementById("billing-plan-name"),
+  billingPlanNote: document.getElementById("billing-plan-note"),
+  billingPlanPrice: document.getElementById("billing-plan-price"),
+  billingPlanCycle: document.getElementById("billing-plan-cycle"),
+  billingTimeline: document.getElementById("billing-timeline"),
+  billingInvoiceList: document.getElementById("billing-invoice-list"),
+  billingMethodTags: document.getElementById("billing-method-tags"),
   userChip: document.getElementById("user-chip"),
   profileNameInput: document.getElementById("profile-name-input"),
   profileEmail: document.getElementById("profile-email"),
@@ -756,6 +821,14 @@ const elements = {
   categorySummary: document.getElementById("category-summary"),
   repeatSummary: document.getElementById("repeat-summary"),
   selectionHint: document.getElementById("selection-hint"),
+  pausedSessionPanel: document.getElementById("paused-session-panel"),
+  pausedProgress: document.getElementById("paused-progress"),
+  pausedAnswered: document.getElementById("paused-answered"),
+  pausedScore: document.getElementById("paused-score"),
+  resumeRoundBtn: document.getElementById("resume-round-btn"),
+  finishRoundBtn: document.getElementById("finish-round-btn"),
+  cancelRoundBtn: document.getElementById("cancel-round-btn"),
+  pausedRoundNote: document.getElementById("paused-round-note"),
   aiStatusPill: document.getElementById("ai-status-pill"),
   presetGrid: document.getElementById("preset-grid"),
   historyLatest: document.getElementById("history-latest"),
@@ -841,6 +914,8 @@ const elements = {
   figureToggleHint: document.getElementById("figure-toggle-hint"),
   optionsContainer: document.getElementById("options-container"),
   shortAnswerContainer: document.getElementById("short-answer-container"),
+  shortPartList: document.getElementById("short-part-list"),
+  shortGroupStatus: document.getElementById("short-group-status"),
   shortAnswerInputWrap: document.getElementById("short-answer-input-wrap"),
   shortAnswerInput: document.getElementById("short-answer-text"),
   transcribeIndicator: document.getElementById("transcribe-indicator"),
@@ -851,6 +926,8 @@ const elements = {
   shortAnswerAiRetryBtn: document.getElementById("short-ai-retry-btn"),
   shortAnswerAiStatus: document.getElementById("ai-status-inline"),
   shortAnswerShowAnswer: document.getElementById("short-show-answer-btn"),
+  shortAnswerShowAnswerInline: document.getElementById("short-show-answer-inline-btn"),
+  shortGradeBtn: document.getElementById("short-grade-btn"),
   shortAnswerModel: document.getElementById("short-model-answer"),
   shortModelTitle: document.getElementById("short-model-title"),
   shortModelText: document.getElementById("short-model-text"),
@@ -863,15 +940,6 @@ const elements = {
   shortAnswerHint: document.getElementById("short-score-hint"),
   shortSketchHint: document.getElementById("short-sketch-hint"),
   shortReviewDrawer: document.getElementById("short-review-drawer"),
-  sketchPanel: document.getElementById("sketch-panel"),
-  sketchPanelTitle: document.getElementById("sketch-panel-title"),
-  sketchPanelBody: document.getElementById("sketch-panel-body"),
-  sketchUpload: document.getElementById("sketch-upload"),
-  sketchStatus: document.getElementById("sketch-status"),
-  sketchRetryBtn: document.getElementById("sketch-retry-btn"),
-  sketchFeedback: document.getElementById("sketch-feedback"),
-  sketchPreview: document.getElementById("sketch-preview"),
-  sketchDropzone: document.getElementById("sketch-dropzone"),
   feedbackArea: document.getElementById("feedback-area"),
   skipBtn: document.getElementById("skip-btn"),
   nextBtn: document.getElementById("next-btn"),
@@ -981,6 +1049,7 @@ function buildUserStatePayload() {
     figure_captions: state.figureCaptions,
     best_score: state.bestScore,
     theme: localStorage.getItem(STORAGE_KEYS.theme) || "light",
+    show_meta: state.settings.showMeta,
   };
 }
 
@@ -1015,7 +1084,19 @@ function applyUserState(remote) {
   if (!remote) return;
   state.userStateApplying = true;
   if (remote.settings && typeof remote.settings === "object") {
-    state.settings = { ...DEFAULT_SETTINGS, ...remote.settings, assistantCollapsed: false };
+    const nextSettings = { ...DEFAULT_SETTINGS, ...remote.settings, assistantCollapsed: false };
+    if (typeof remote.show_meta === "boolean") {
+      nextSettings.showMeta = remote.show_meta;
+    }
+    state.settings = nextSettings;
+    localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(state.settings));
+  } else if (typeof remote.show_meta === "boolean") {
+    const fallbackSettings = {
+      ...DEFAULT_SETTINGS,
+      assistantCollapsed: false,
+      showMeta: remote.show_meta,
+    };
+    state.settings = fallbackSettings;
     localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(state.settings));
   }
   if (Array.isArray(remote.history)) {
@@ -1024,6 +1105,7 @@ function applyUserState(remote) {
   if (Array.isArray(remote.seen)) {
     state.seenKeys = new Set(remote.seen);
     localStorage.setItem(STORAGE_KEYS.seen, JSON.stringify([...state.seenKeys]));
+    refreshSeenGroups();
   }
   if (Array.isArray(remote.mistakes)) {
     state.lastMistakeKeys = new Set(remote.mistakes);
@@ -1056,27 +1138,49 @@ function applyUserState(remote) {
 }
 
 async function loadUserStateFromSupabase() {
-  if (!state.supabase || !state.session?.user) return;
-  const { data, error } = await state.supabase
-    .from("user_state")
-    .select("settings, history, seen, mistakes, performance, figure_captions, best_score, theme, updated_at")
-    .eq("user_id", state.session.user.id)
-    .maybeSingle();
+  if (!state.supabase || !state.session?.user) return null;
+  if (state.userStateLoadPromise) return state.userStateLoadPromise;
 
-  if (error) {
-    console.warn("Kunne ikke hente brugerdata", error);
-    return;
-  }
-  if (!data) {
-    scheduleUserStateSync();
-    return;
-  }
-  const localUpdatedAt = getLocalUserStateUpdatedAt();
-  const remoteUpdatedAt = data.updated_at ? Date.parse(data.updated_at) : null;
-  if (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt)) {
-    applyUserState(data);
-  } else {
-    scheduleUserStateSync();
+  state.userStateLoadPromise = (async () => {
+    const result = await guardedStep(
+      state.supabase
+        .from("user_state")
+        .select("settings, history, seen, mistakes, performance, figure_captions, best_score, theme, show_meta, updated_at")
+        .eq("user_id", state.session.user.id)
+        .maybeSingle(),
+      USER_STATE_TIMEOUT_MS,
+      "Brugerdata indlæsning tog for lang tid"
+    );
+    if (!result) {
+      maybeApplyDemoHistoryEntry();
+      return null;
+    }
+    const { data, error } = result;
+    if (error) {
+      console.warn("Kunne ikke hente brugerdata", error);
+      maybeApplyDemoHistoryEntry();
+      return null;
+    }
+    if (!data) {
+      scheduleUserStateSync();
+      maybeApplyDemoHistoryEntry();
+      return null;
+    }
+    const localUpdatedAt = getLocalUserStateUpdatedAt();
+    const remoteUpdatedAt = data.updated_at ? Date.parse(data.updated_at) : null;
+    if (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt)) {
+      applyUserState(data);
+    } else {
+      scheduleUserStateSync();
+    }
+    maybeApplyDemoHistoryEntry();
+    return data;
+  })();
+
+  try {
+    return await state.userStateLoadPromise;
+  } finally {
+    state.userStateLoadPromise = null;
   }
 }
 
@@ -1176,7 +1280,7 @@ function showScreen(target) {
   document.body.classList.toggle("mode-landing", target === "landing");
   document.body.classList.toggle(
     "mode-menu",
-    target === "menu" || target === "account" || target === "checkout"
+    target === "menu" || target === "account" || target === "billing" || target === "checkout"
   );
   document.body.classList.toggle("mode-game", target === "quiz");
   document.body.classList.toggle("mode-result", target === "result");
@@ -1194,6 +1298,10 @@ const LOADING_FALLBACK_DELAY = 7000;
 const LOGIN_TIMEOUT_MS = 5000;
 const CONFIG_TIMEOUT_MS = 8000;
 const PROFILE_TIMEOUT_MS = 8000;
+const PROFILE_FETCH_TIMEOUT_MS = 5000;
+const PROFILE_RETRY_DELAY_MS = 1200;
+const PROFILE_RETRY_MAX = 2;
+const USER_STATE_TIMEOUT_MS = 3500;
 const QUESTIONS_TIMEOUT_MS = 12000;
 const HEALTH_TIMEOUT_MS = 7000;
 const LOADING_DEFAULT_STATUS = "Indlæser …";
@@ -1383,6 +1491,22 @@ function setAccountStatus(message, isWarn = false) {
   setElementVisible(elements.accountStatus, Boolean(text));
 }
 
+function setBillingStatus(message, isWarn = false) {
+  if (!elements.billingStatus) return;
+  const text = String(message || "").trim();
+  elements.billingStatus.textContent = text;
+  elements.billingStatus.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.billingStatus, Boolean(text));
+}
+
+function setBillingUpdateStatus(message, isWarn = false) {
+  if (!elements.billingUpdateStatus) return;
+  const text = String(message || "").trim();
+  elements.billingUpdateStatus.textContent = text;
+  elements.billingUpdateStatus.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.billingUpdateStatus, Boolean(text));
+}
+
 function setConsentStatus(message, isWarn = false) {
   if (!elements.consentStatus) return;
   const text = String(message || "").trim();
@@ -1539,6 +1663,24 @@ function setAccountControlsEnabled(enabled) {
   }
 }
 
+function setBillingControlsEnabled(enabled) {
+  const controls = [
+    elements.billingUpdateMethodBtn,
+    elements.billingToggleCancelBtn,
+    elements.billingUpgradeBtn,
+    elements.billingRefreshBtn,
+    elements.billingChangeMethodBtn,
+    elements.billingUpdateSubmitBtn,
+    elements.billingUpdateCancelBtn,
+    elements.billingUpdateCloseBtn,
+  ];
+  controls.forEach((control) => {
+    if (control) {
+      control.disabled = !enabled;
+    }
+  });
+}
+
 function formatPlanLabel(plan) {
   const normalized = String(plan || "free").toLowerCase();
   if (normalized === "paid") return "Pro";
@@ -1560,7 +1702,101 @@ function formatSubscriptionStatus(subscription) {
   const periodEnd = subscription.current_period_end
     ? new Date(subscription.current_period_end).toLocaleDateString("da-DK")
     : null;
+  if (subscription.cancel_at_period_end) {
+    return periodEnd ? `Opsagt · udløber ${periodEnd}` : "Opsagt";
+  }
   return periodEnd ? `${label} · fornyes ${periodEnd}` : label;
+}
+
+function formatBillingStatusLabel(status) {
+  const normalized = String(status || "").toLowerCase();
+  const labelMap = {
+    trialing: "Prøveperiode",
+    active: "Aktiv",
+    past_due: "Betaling afventer",
+    unpaid: "Ubetalt",
+    canceled: "Opsagt",
+    incomplete: "Afventer",
+    incomplete_expired: "Udløbet",
+    paused: "Pauset",
+  };
+  return labelMap[normalized] || "Status ukendt";
+}
+
+function resolveBillingTone(status, cancelAtPeriodEnd) {
+  const normalized = String(status || "").toLowerCase();
+  if (!normalized) return "neutral";
+  if (["past_due", "unpaid", "incomplete"].includes(normalized)) return "warning";
+  if (["canceled", "incomplete_expired"].includes(normalized)) return "danger";
+  if (cancelAtPeriodEnd) return "warning";
+  return "";
+}
+
+function formatBillingDate(value) {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleDateString("da-DK");
+}
+
+function formatInvoiceStatus(status) {
+  const normalized = String(status || "").toLowerCase();
+  const labelMap = {
+    draft: "Kladde",
+    open: "Åben",
+    paid: "Betalt",
+    uncollectible: "Uinddrivelig",
+    void: "Annulleret",
+  };
+  return labelMap[normalized] || "Ukendt";
+}
+
+function formatPaymentMethodSummary(paymentMethod) {
+  if (!paymentMethod) {
+    return {
+      title: "Ingen metode",
+      meta: "Tilføj en metode for at holde Pro aktivt.",
+    };
+  }
+  if (paymentMethod.type === "card") {
+    const brandMap = {
+      visa: "Visa",
+      mastercard: "Mastercard",
+      amex: "American Express",
+      discover: "Discover",
+      diners: "Diners Club",
+      jcb: "JCB",
+      unionpay: "UnionPay",
+    };
+    const walletMap = {
+      apple_pay: "Apple Pay",
+      google_pay: "Google Pay",
+      samsung_pay: "Samsung Pay",
+    };
+    const brand = brandMap[paymentMethod.brand] || "Kort";
+    const last4 = paymentMethod.last4 ? `•••• ${paymentMethod.last4}` : "";
+    const title = [brand, last4].filter(Boolean).join(" ").trim() || "Kort";
+    const expMonth = paymentMethod.exp_month
+      ? String(paymentMethod.exp_month).padStart(2, "0")
+      : null;
+    const expYear = paymentMethod.exp_year ? String(paymentMethod.exp_year) : null;
+    const metaParts = [];
+    if (paymentMethod.wallet) {
+      metaParts.push(`Wallet: ${walletMap[paymentMethod.wallet] || paymentMethod.wallet}`);
+    }
+    if (expMonth && expYear) {
+      metaParts.push(`Udløber ${expMonth}/${expYear}`);
+    }
+    return {
+      title,
+      meta: metaParts.join(" · ") || "Standard betalingsmetode",
+    };
+  }
+  const typeLabel = paymentMethod.type ? paymentMethod.type.replace(/_/g, " ") : "Betalingsmetode";
+  return {
+    title: typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1),
+    meta: "Standard betalingsmetode",
+  };
 }
 
 function updateUserChip() {
@@ -1656,6 +1892,317 @@ function updateAccountUI() {
     elements.ownKeyInput.value = state.userOpenAiKey || "";
   }
   updateConsentGateUI();
+  if (state.billing.data) {
+    updateBillingUI();
+  }
+}
+
+function renderBillingMethodTags(methodTypes) {
+  if (!elements.billingMethodTags) return;
+  const tags = [];
+  const labelMap = {
+    card: "Kort",
+    klarna: "Klarna",
+    paypal: "PayPal",
+    sepa_debit: "SEPA Debit",
+    us_bank_account: "Bankoverførsel",
+    acss_debit: "ACSS Debit",
+    au_becs_debit: "AU BECS",
+    bacs_debit: "BACS",
+    bancontact: "Bancontact",
+    ideal: "iDEAL",
+    sofort: "SOFORT",
+    eps: "EPS",
+    giropay: "Giropay",
+    p24: "Przelewy24",
+    link: "Link",
+    cashapp: "Cash App",
+    customer_balance: "Bankoverførsel",
+  };
+  const normalized = Array.isArray(methodTypes) && methodTypes.length
+    ? methodTypes.map((method) => String(method || "").toLowerCase())
+    : ["card"];
+  normalized.forEach((method) => {
+    if (!method) return;
+    tags.push(labelMap[method] || method.replace(/_/g, " "));
+    if (method === "card") {
+      tags.push("Apple Pay");
+      tags.push("Google Pay");
+    }
+  });
+  const uniqueTags = [...new Set(tags)];
+  elements.billingMethodTags.textContent = "";
+  uniqueTags.forEach((label) => {
+    const tag = document.createElement("span");
+    tag.className = "billing-tag";
+    tag.textContent = label;
+    elements.billingMethodTags.appendChild(tag);
+  });
+}
+
+function renderBillingInvoices(invoices) {
+  if (!elements.billingInvoiceList) return;
+  elements.billingInvoiceList.textContent = "";
+  const list = Array.isArray(invoices) ? invoices : [];
+  if (!list.length) {
+    const empty = document.createElement("div");
+    empty.className = "history-empty";
+    empty.textContent = "Ingen fakturaer endnu.";
+    elements.billingInvoiceList.appendChild(empty);
+    return;
+  }
+
+  list.forEach((invoice) => {
+    const amountCandidate = typeof invoice.amount_paid === "number" && invoice.amount_paid > 0
+      ? invoice.amount_paid
+      : typeof invoice.amount_due === "number"
+        ? invoice.amount_due
+        : invoice.amount_remaining;
+    const amount = typeof amountCandidate === "number"
+      ? formatCurrency(amountCandidate, invoice.currency)
+      : "—";
+    const date = formatBillingDate(invoice.created || invoice.period_end);
+    const status = formatInvoiceStatus(invoice.status);
+
+    const item = document.createElement("div");
+    item.className = "billing-invoice-item";
+
+    const info = document.createElement("div");
+    const title = document.createElement("div");
+    const numberLabel = invoice.number ? `#${invoice.number}` : "";
+    const titleParts = ["Faktura"];
+    if (numberLabel) {
+      titleParts.push(numberLabel);
+    }
+    if (amount !== "—") {
+      titleParts.push("·", amount);
+    }
+    title.className = "billing-invoice-title";
+    title.textContent = titleParts.join(" ");
+    const meta = document.createElement("div");
+    meta.className = "billing-invoice-meta";
+    meta.textContent = `${date} · ${status}`;
+    info.appendChild(title);
+    info.appendChild(meta);
+
+    const actions = document.createElement("div");
+    actions.className = "billing-invoice-actions";
+    if (invoice.hosted_invoice_url) {
+      const view = document.createElement("a");
+      view.className = "btn ghost small";
+      view.href = invoice.hosted_invoice_url;
+      view.target = "_blank";
+      view.rel = "noopener noreferrer";
+      view.textContent = "Se";
+      actions.appendChild(view);
+    }
+    if (invoice.invoice_pdf) {
+      const pdf = document.createElement("a");
+      pdf.className = "btn ghost small";
+      pdf.href = invoice.invoice_pdf;
+      pdf.target = "_blank";
+      pdf.rel = "noopener noreferrer";
+      pdf.textContent = "PDF";
+      actions.appendChild(pdf);
+    }
+
+    item.appendChild(info);
+    item.appendChild(actions);
+    elements.billingInvoiceList.appendChild(item);
+  });
+}
+
+function renderBillingTimeline(subscription, upcomingInvoice) {
+  if (!elements.billingTimeline) return;
+  elements.billingTimeline.textContent = "";
+  const items = [];
+  if (subscription?.current_period_start) {
+    items.push({
+      label: "Periode start",
+      value: formatBillingDate(subscription.current_period_start),
+    });
+  }
+  const nextPaymentDate =
+    upcomingInvoice?.next_payment_attempt ||
+    upcomingInvoice?.period_end ||
+    subscription?.current_period_end ||
+    null;
+  if (nextPaymentDate) {
+    items.push({
+      label: "Næste betaling",
+      value: formatBillingDate(nextPaymentDate),
+    });
+  }
+  if (subscription?.current_period_end) {
+    items.push({
+      label: subscription.cancel_at_period_end ? "Adgang udløber" : "Periode slut",
+      value: formatBillingDate(subscription.current_period_end),
+    });
+  }
+
+  if (!items.length) {
+    const empty = document.createElement("div");
+    empty.className = "history-empty";
+    empty.textContent = "Ingen aktiv periode endnu.";
+    elements.billingTimeline.appendChild(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "billing-timeline-item";
+    const label = document.createElement("span");
+    label.textContent = item.label;
+    const value = document.createElement("strong");
+    value.textContent = item.value;
+    row.appendChild(label);
+    row.appendChild(value);
+    elements.billingTimeline.appendChild(row);
+  });
+}
+
+function updateBillingUI() {
+  const data = state.billing.data || {};
+  const subscription = data.subscription || null;
+  const price = data.price || null;
+  const upcoming = data.upcomingInvoice || null;
+  const paymentMethod = data.paymentMethod || null;
+  const planLabel = price?.product?.name || formatPlanLabel(state.profile?.plan);
+  const planNote =
+    price?.product?.description ||
+    (subscription ? "Fuld adgang til alle Pro-funktioner." : "Aktivér Pro for at komme i gang.");
+  const priceAmount = resolveUnitAmount(price);
+  const planInterval = price?.recurring ? formatIntervalLabel(price.recurring) : "Engangsbetaling";
+  const statusLabel = subscription
+    ? subscription.cancel_at_period_end
+      ? "Opsagt"
+      : formatBillingStatusLabel(subscription.status)
+    : "Ingen aktiv betaling";
+  const tone = resolveBillingTone(subscription?.status, subscription?.cancel_at_period_end);
+  const summary = formatPaymentMethodSummary(paymentMethod);
+  const nextAmount = typeof upcoming?.amount_due === "number" ? upcoming.amount_due : priceAmount;
+  const nextCurrency = upcoming?.currency || price?.currency;
+  const nextDate =
+    upcoming?.next_payment_attempt ||
+    upcoming?.period_end ||
+    subscription?.current_period_end ||
+    null;
+
+  if (elements.billingPlan) {
+    elements.billingPlan.textContent = planLabel;
+  }
+  if (elements.billingPlanMeta) {
+    let meta = "Ingen aktiv plan";
+    if (price?.recurring) {
+      meta = planInterval;
+    } else if (subscription) {
+      meta = "Aktiv plan";
+    }
+    elements.billingPlanMeta.textContent = meta;
+  }
+  if (elements.billingPlanName) {
+    elements.billingPlanName.textContent = planLabel;
+  }
+  if (elements.billingPlanNote) {
+    elements.billingPlanNote.textContent = planNote;
+  }
+  if (elements.billingPlanPrice) {
+    elements.billingPlanPrice.textContent = priceAmount !== null
+      ? formatCurrency(priceAmount, price?.currency)
+      : "—";
+  }
+  if (elements.billingPlanCycle) {
+    let cycle = "—";
+    if (price?.recurring) {
+      cycle = planInterval;
+    } else if (price) {
+      cycle = "Engangsbetaling";
+    } else if (subscription) {
+      cycle = "Abonnementsperiode";
+    }
+    elements.billingPlanCycle.textContent = cycle;
+  }
+  if (elements.billingStatusBadge) {
+    elements.billingStatusBadge.textContent = statusLabel;
+    if (tone) {
+      elements.billingStatusBadge.dataset.tone = tone;
+    } else {
+      delete elements.billingStatusBadge.dataset.tone;
+    }
+  }
+  if (elements.billingStatusMeta) {
+    let meta = "Ingen aktiv betaling endnu.";
+    if (subscription?.cancel_at_period_end) {
+      meta = `Opsagt pr. ${formatBillingDate(subscription.current_period_end)}`;
+    } else if (subscription?.current_period_end) {
+      meta = `Fornyes ${formatBillingDate(subscription.current_period_end)}`;
+    } else if (subscription) {
+      meta = "Status opdateres løbende.";
+    }
+    elements.billingStatusMeta.textContent = meta;
+  }
+  if (elements.billingNextAmount) {
+    elements.billingNextAmount.textContent = nextAmount !== null
+      ? formatCurrency(nextAmount, nextCurrency)
+      : "—";
+  }
+  if (elements.billingNextDate) {
+    elements.billingNextDate.textContent = nextDate ? `Forfalder ${formatBillingDate(nextDate)}` : "—";
+  }
+  if (elements.billingPaymentLabel) {
+    elements.billingPaymentLabel.textContent = summary.title;
+  }
+  if (elements.billingPaymentMeta) {
+    elements.billingPaymentMeta.textContent = summary.meta;
+  }
+  if (elements.billingMethodTitle) {
+    elements.billingMethodTitle.textContent = summary.title;
+  }
+  if (elements.billingMethodMeta) {
+    elements.billingMethodMeta.textContent = summary.meta;
+  }
+
+  if (elements.billingHeroHint) {
+    let hint = "Du kan altid ændre eller opsige dit abonnement.";
+    if (!subscription) {
+      hint = "Aktivér Pro for at komme i gang med betaling og fakturaer.";
+    } else if (subscription.cancel_at_period_end) {
+      hint = `Opsagt. Adgangen udløber ${formatBillingDate(subscription.current_period_end)}.`;
+    } else if (["past_due", "unpaid"].includes(String(subscription.status || "").toLowerCase())) {
+      hint = "Betalingen afventer. Opdatér betalingsmetode for at undgå afbrydelse.";
+    }
+    elements.billingHeroHint.textContent = hint;
+  }
+
+  const hasSubscription = Boolean(subscription);
+  const stripePublishable = Boolean(state.config?.stripePublishableKey);
+  const stripeCheckoutReady = Boolean(state.config?.stripeConfigured && state.config?.stripePublishableKey);
+  if (elements.billingUpdateMethodBtn) {
+    setElementVisible(elements.billingUpdateMethodBtn, hasSubscription);
+    elements.billingUpdateMethodBtn.disabled = !stripePublishable || !hasSubscription;
+  }
+  if (elements.billingChangeMethodBtn) {
+    setElementVisible(elements.billingChangeMethodBtn, hasSubscription);
+    elements.billingChangeMethodBtn.disabled = !stripePublishable || !hasSubscription;
+  }
+  if (elements.billingToggleCancelBtn) {
+    setElementVisible(elements.billingToggleCancelBtn, hasSubscription);
+    elements.billingToggleCancelBtn.disabled = !hasSubscription;
+    elements.billingToggleCancelBtn.textContent = subscription?.cancel_at_period_end
+      ? "Genoptag abonnement"
+      : "Opsig abonnement";
+  }
+  if (elements.billingUpgradeBtn) {
+    setElementVisible(elements.billingUpgradeBtn, !hasSubscription);
+    elements.billingUpgradeBtn.disabled = !stripeCheckoutReady;
+  }
+  if (!hasSubscription) {
+    setBillingUpdatePanelVisible(false);
+  }
+
+  renderBillingTimeline(subscription, upcoming);
+  renderBillingInvoices(data.invoices);
+  renderBillingMethodTags(data.paymentMethodTypes);
 }
 
 function updateAuthUI() {
@@ -1764,6 +2311,135 @@ function formatDemoWait(ms) {
   return `${minutes} min`;
 }
 
+function loadDemoResult() {
+  const stored = localStorage.getItem(STORAGE_KEYS.demoQuizResult);
+  if (!stored) return null;
+  try {
+    const parsed = JSON.parse(stored);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveDemoResult(result) {
+  if (!result || typeof result !== "object") return;
+  localStorage.setItem(STORAGE_KEYS.demoQuizResult, JSON.stringify(result));
+}
+
+function buildDemoResult() {
+  const questions = Array.isArray(state.demoQuiz.questions) ? state.demoQuiz.questions : [];
+  if (!questions.length) return null;
+  const answers = Array.isArray(state.demoQuiz.answers) ? state.demoQuiz.answers : [];
+  const mcqQuestions = questions.filter((item) => item?.type === "mcq");
+  const shortQuestion = questions.find((item) => item?.type === "short");
+  if (!mcqQuestions.length || !shortQuestion) return null;
+
+  const mcqAnswers = answers.filter((answer) => answer?.type === "mcq");
+  const mcqCorrect = mcqAnswers.filter((answer) => answer.correct).length;
+  const mcqWrong = Math.max(0, mcqQuestions.length - mcqCorrect);
+  const mcqCount = mcqQuestions.length;
+  const mcqPoints = mcqCorrect * 3 + mcqWrong * -1;
+  const mcqMax = mcqCount * 3;
+  const mcqMin = mcqCount * -1;
+  let mcqPercent = 0;
+  if (mcqCount > 0 && mcqMax !== mcqMin) {
+    mcqPercent = ((mcqPoints - mcqMin) / (mcqMax - mcqMin)) * 100;
+  }
+  mcqPercent = clamp(mcqPercent, 0, 100);
+
+  const shortParts = Array.isArray(shortQuestion.parts) ? shortQuestion.parts : [];
+  const shortAnswer = answers.find((answer) => answer?.type === "short");
+  let shortRatio = 0;
+  if (shortAnswer) {
+    if (Number.isFinite(shortAnswer.ratio)) {
+      shortRatio = shortAnswer.ratio;
+    } else if (Array.isArray(shortAnswer.parts) && shortAnswer.parts.length) {
+      shortRatio =
+        shortAnswer.parts.reduce((sum, part) => sum + (Number(part.matchRatio) || 0), 0) /
+        shortAnswer.parts.length;
+    } else if (shortAnswer.correct) {
+      shortRatio = 1;
+    }
+  }
+  shortRatio = clamp(shortRatio, 0, 1);
+  const shortMax = Math.max(shortParts.length, 1);
+  const shortPoints = Number((shortRatio * shortMax).toFixed(1));
+  const shortPercent = shortMax > 0 ? clamp((shortPoints / shortMax) * 100, 0, 100) : 0;
+
+  let overallPercent = 0;
+  if (mcqCount > 0 && shortMax > 0) {
+    overallPercent = 0.5 * mcqPercent + 0.5 * shortPercent;
+  } else if (mcqCount > 0) {
+    overallPercent = mcqPercent;
+  } else if (shortMax > 0) {
+    overallPercent = shortPercent;
+  }
+
+  return {
+    completedAt: new Date().toISOString(),
+    mcqCount,
+    mcqCorrect,
+    mcqWrong,
+    mcqPoints,
+    mcqMax,
+    mcqMin,
+    mcqPercent,
+    shortCount: 1,
+    shortMax,
+    shortPoints,
+    shortPercent,
+    overallPercent,
+    grade: getGradeForPercent(overallPercent),
+    totalQuestions: questions.length,
+    imported: false,
+  };
+}
+
+function buildDemoHistoryEntry(result) {
+  if (!result || typeof result !== "object") return null;
+  if (!Number.isFinite(result.overallPercent)) return null;
+  return {
+    date: result.completedAt || new Date().toISOString(),
+    overallPercent: result.overallPercent,
+    grade: result.grade || getGradeForPercent(result.overallPercent),
+    mcqPercent: Number(result.mcqPercent) || 0,
+    shortPercent: Number(result.shortPercent) || 0,
+    mcqPoints: Number(result.mcqPoints) || 0,
+    shortPoints: Number(result.shortPoints) || 0,
+    mcqMax: Number(result.mcqMax) || 0,
+    shortMax: Number(result.shortMax) || 0,
+    mcqCount: Number(result.mcqCount) || 0,
+    shortCount: Number(result.shortCount) || 0,
+    totalQuestions: Number(result.totalQuestions) || 0,
+  };
+}
+
+function applyBestScore(value) {
+  if (!Number.isFinite(value)) return;
+  if (value <= state.bestScore) return;
+  state.bestScore = value;
+  localStorage.setItem(STORAGE_KEYS.bestScore, String(state.bestScore.toFixed(1)));
+  if (elements.bestScoreValue) {
+    elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
+  }
+}
+
+function maybeApplyDemoHistoryEntry() {
+  const demoResult = loadDemoResult();
+  if (!demoResult || demoResult.imported) return;
+  const entries = getHistoryEntries();
+  if (entries.length) return;
+  const entry = buildDemoHistoryEntry(demoResult);
+  if (!entry) return;
+  saveHistoryEntries(entries.concat(entry));
+  applyBestScore(entry.overallPercent);
+  renderHistory();
+  updateTopBar();
+  demoResult.imported = true;
+  saveDemoResult(demoResult);
+}
+
 function canRunDemoQuiz() {
   const lastRun = getDemoLastRun();
   if (!lastRun) return true;
@@ -1783,7 +2459,7 @@ function updateDemoCardTitle() {
   } else if (state.demoQuiz.status === "complete") {
     elements.demoCardTitle.textContent = "Prøvespil afsluttet";
   } else {
-    elements.demoCardTitle.textContent = "Generér dagens mini-runde";
+    elements.demoCardTitle.textContent = "Træk dagens mini-runde";
   }
 }
 
@@ -1890,9 +2566,11 @@ function resetDemoQuizState() {
   if (elements.demoOptions) {
     elements.demoOptions.innerHTML = "";
   }
-  if (elements.demoShortInput) {
-    elements.demoShortInput.value = "";
-    elements.demoShortInput.disabled = false;
+  if (elements.demoShortList) {
+    elements.demoShortList.innerHTML = "";
+  }
+  if (elements.demoShortStatus) {
+    elements.demoShortStatus.textContent = "";
   }
   if (elements.demoShortCheckBtn) {
     elements.demoShortCheckBtn.disabled = false;
@@ -1906,6 +2584,26 @@ function resetDemoQuizState() {
   setDemoView("idle");
 }
 
+function buildDemoKeywords(answer) {
+  const tokens = String(answer || "")
+    .split(/[\s,.;:()]+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length > 3);
+  return [...new Set(tokens)].slice(0, 4);
+}
+
+function buildDemoMeta(source) {
+  const meta = source?.meta && typeof source.meta === "object" ? source.meta : {};
+  const category = String(source?.category || meta.category || "").trim();
+  const yearDisplay = String(source?.yearDisplay || meta.yearDisplay || source?.year || meta.year || "").trim();
+  const number = Number(source?.number ?? meta.number);
+  return {
+    category,
+    yearDisplay,
+    number: Number.isFinite(number) ? number : null,
+  };
+}
+
 function buildDemoQuestions(payload) {
   const output = [];
   const mcqItems = Array.isArray(payload?.mcq) ? payload.mcq : [];
@@ -1916,26 +2614,61 @@ function buildDemoQuestions(payload) {
       : [];
     const correctIndex = Number(item?.correctIndex);
     if (!question || options.length < 4 || !Number.isFinite(correctIndex)) return;
+    const meta = buildDemoMeta(item);
     output.push({
       type: "mcq",
       question,
       options: options.slice(0, 4),
       correctIndex: Math.min(3, Math.max(0, correctIndex)),
       explanation: String(item?.explanation || "").trim(),
+      meta,
     });
   });
 
   const short = payload?.short;
-  if (short && String(short.question || "").trim()) {
-    output.push({
-      type: "short",
-      question: String(short.question || "").trim(),
-      answer: String(short.answer || "").trim(),
-      explanation: String(short.explanation || "").trim(),
-      keywords: Array.isArray(short.keywords)
-        ? short.keywords.map((word) => String(word || "").trim()).filter(Boolean)
-        : [],
-    });
+  if (short) {
+    const meta = buildDemoMeta(short);
+    const intro = String(short.intro || short.question || meta.category || "").trim();
+    let parts = [];
+    if (Array.isArray(short.parts)) {
+      parts = short.parts
+        .map((part) => {
+          const question = String(part?.question || "").trim();
+          const answer = String(part?.answer || "").trim();
+          if (!question || !answer) return null;
+          const fallbackKeywords = buildDemoKeywords(answer);
+          return {
+            label: String(part?.label || "").trim(),
+            question,
+            answer,
+            explanation: String(part?.explanation || "").trim(),
+            keywords: Array.isArray(part?.keywords)
+              ? part.keywords.map((word) => String(word || "").trim()).filter(Boolean)
+              : fallbackKeywords,
+          };
+        })
+        .filter(Boolean);
+    } else if (String(short.question || "").trim()) {
+      parts = [
+        {
+          label: String(short.label || "").trim(),
+          question: String(short.question || "").trim(),
+          answer: String(short.answer || "").trim(),
+          explanation: String(short.explanation || "").trim(),
+          keywords: Array.isArray(short.keywords)
+            ? short.keywords.map((word) => String(word || "").trim()).filter(Boolean)
+            : buildDemoKeywords(short.answer),
+        },
+      ].filter((part) => part.question && part.answer);
+    }
+    if (parts.length) {
+      output.push({
+        type: "short",
+        intro,
+        parts,
+        meta,
+      });
+    }
   }
   return output;
 }
@@ -1943,12 +2676,26 @@ function buildDemoQuestions(payload) {
 function renderDemoQuestion() {
   const question = state.demoQuiz.questions[state.demoQuiz.currentIndex];
   if (!question) return;
+  const meta = question.meta || {};
 
   if (elements.demoQuestionText) {
-    elements.demoQuestionText.textContent = question.question;
+    elements.demoQuestionText.textContent =
+      question.type === "short"
+        ? question.intro || "Kortsvar"
+        : question.question;
   }
   if (elements.demoQuestionType) {
     elements.demoQuestionType.textContent = question.type === "short" ? "Kortsvar" : "MCQ";
+  }
+  if (elements.demoQuestionCategory) {
+    const category = String(meta.category || question.category || "").trim();
+    elements.demoQuestionCategory.textContent = category;
+    setElementVisible(elements.demoQuestionCategory, Boolean(category));
+  }
+  if (elements.demoQuestionYear) {
+    const yearDisplay = String(meta.yearDisplay || question.yearDisplay || question.year || "").trim();
+    elements.demoQuestionYear.textContent = yearDisplay;
+    setElementVisible(elements.demoQuestionYear, Boolean(yearDisplay));
   }
   if (elements.demoShort) {
     setElementVisible(elements.demoShort, question.type === "short");
@@ -1956,6 +2703,9 @@ function renderDemoQuestion() {
   if (elements.demoOptions) {
     elements.demoOptions.innerHTML = "";
     setElementVisible(elements.demoOptions, question.type === "mcq");
+  }
+  if (elements.demoShortList) {
+    elements.demoShortList.innerHTML = "";
   }
   if (elements.demoNextBtn) {
     const isLast = state.demoQuiz.currentIndex >= state.demoQuiz.questions.length - 1;
@@ -1967,24 +2717,66 @@ function renderDemoQuestion() {
     question.options.forEach((option, index) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = "demo-option";
-      button.textContent = option;
+      button.className = "option-btn";
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = String.fromCharCode(65 + index);
+      button.appendChild(label);
+      button.appendChild(document.createTextNode(option));
       button.addEventListener("click", () => handleDemoOptionSelect(index));
       elements.demoOptions.appendChild(button);
     });
   }
 
   if (question.type === "short") {
-    if (elements.demoShortInput) {
-      elements.demoShortInput.value = "";
-      elements.demoShortInput.disabled = false;
+    if (elements.demoShortList) {
+      const parts = Array.isArray(question.parts) ? question.parts : [];
+      if (elements.demoShortStatus) {
+        elements.demoShortStatus.textContent = parts.length
+          ? `${parts.length} delspørgsmål`
+          : "";
+      }
+      parts.forEach((part, index) => {
+        const card = document.createElement("div");
+        card.className = "short-part";
+
+        const head = document.createElement("div");
+        head.className = "short-part-head";
+
+        const label = document.createElement("span");
+        label.className = "short-part-label";
+        const labelText = String(part.label || "").trim() || String.fromCharCode(65 + index);
+        label.textContent = labelText.toUpperCase();
+
+        const title = document.createElement("span");
+        title.className = "short-part-title";
+        title.textContent = part.question;
+
+        head.appendChild(label);
+        head.appendChild(title);
+
+        const inputWrap = document.createElement("div");
+        inputWrap.className = "short-answer-input";
+
+        const textarea = document.createElement("textarea");
+        textarea.rows = 3;
+        textarea.placeholder = `Skriv kort svar til delspørgsmål ${label.textContent}`;
+        textarea.setAttribute("aria-label", `Svar til delspørgsmål ${label.textContent}`);
+
+        card.appendChild(head);
+        inputWrap.appendChild(textarea);
+        card.appendChild(inputWrap);
+        elements.demoShortList.appendChild(card);
+      });
     }
     if (elements.demoShortCheckBtn) {
       elements.demoShortCheckBtn.disabled = false;
     }
     if (elements.demoShortGuidance) {
-      elements.demoShortGuidance.textContent = "Fokusér på de vigtigste begreber.";
+      elements.demoShortGuidance.textContent = "Fokusér på de vigtigste begreber i hvert delspørgsmål.";
     }
+  } else if (elements.demoShortStatus) {
+    elements.demoShortStatus.textContent = "";
   }
 
   setDemoFeedback();
@@ -2006,17 +2798,15 @@ function handleDemoOptionSelect(selectedIndex) {
     state.demoQuiz.score += 1;
   }
   const optionButtons = elements.demoOptions
-    ? elements.demoOptions.querySelectorAll(".demo-option")
+    ? elements.demoOptions.querySelectorAll(".option-btn")
     : [];
   optionButtons.forEach((button, index) => {
     button.disabled = true;
-    if (index === selectedIndex) {
-      button.classList.add("selected");
-    }
+    button.classList.add("locked");
     if (index === question.correctIndex) {
-      button.classList.add("is-correct");
-    } else if (index === selectedIndex && !isCorrect) {
-      button.classList.add("is-wrong");
+      button.classList.add("correct");
+    } else if (index === selectedIndex) {
+      button.classList.add("incorrect");
     }
   });
 
@@ -2038,45 +2828,68 @@ function handleDemoShortCheck() {
   const question = state.demoQuiz.questions[state.demoQuiz.currentIndex];
   if (!question || question.type !== "short") return;
   if (state.demoQuiz.answers[state.demoQuiz.currentIndex]) return;
-  const answerText = elements.demoShortInput ? elements.demoShortInput.value.trim() : "";
-  if (!answerText) {
-    setDemoFeedback({ title: "Skriv et kort svar først.", tone: "bad" });
+  const parts = Array.isArray(question.parts) ? question.parts : [];
+  const inputs = elements.demoShortList
+    ? [...elements.demoShortList.querySelectorAll("textarea")]
+    : [];
+  if (!parts.length || !inputs.length) return;
+  const responses = inputs.map((input) => input.value.trim());
+  if (responses.some((text) => !text)) {
+    setDemoFeedback({ title: "Skriv svar til alle delspørgsmål først.", tone: "bad" });
     return;
   }
 
-  const normalized = answerText.toLowerCase();
-  const keywords = question.keywords || [];
-  const matched = keywords.filter((keyword) => normalized.includes(keyword.toLowerCase()));
-  const matchRatio = keywords.length ? matched.length / keywords.length : 1;
-  const isCorrect = matchRatio >= DEMO_SHORT_MATCH_THRESHOLD;
+  const evaluated = parts.map((part, index) => {
+    const response = responses[index] || "";
+    const normalized = response.toLowerCase();
+    const keywords = part.keywords || [];
+    const matched = keywords.filter((keyword) => normalized.includes(keyword.toLowerCase()));
+    const matchRatio = keywords.length ? matched.length / keywords.length : 1;
+    return {
+      label: part.label,
+      response,
+      matched,
+      matchRatio,
+      keywords,
+      answer: part.answer,
+      explanation: part.explanation,
+    };
+  });
+  const averageRatio = evaluated.reduce((sum, part) => sum + part.matchRatio, 0) / evaluated.length;
+  const isCorrect = averageRatio >= DEMO_SHORT_MATCH_THRESHOLD;
 
   state.demoQuiz.answers[state.demoQuiz.currentIndex] = {
     type: "short",
-    text: answerText,
+    parts: evaluated,
     correct: isCorrect,
-    matched,
+    ratio: averageRatio,
   };
   if (isCorrect) {
     state.demoQuiz.score += 1;
   }
 
-  if (elements.demoShortInput) {
-    elements.demoShortInput.disabled = true;
-  }
+  inputs.forEach((input) => {
+    input.disabled = true;
+  });
   if (elements.demoShortCheckBtn) {
     elements.demoShortCheckBtn.disabled = true;
   }
 
   const lines = [];
-  if (question.answer) {
-    lines.push(`Modelbesvarelse: ${question.answer}`);
-  }
-  if (keywords.length) {
-    lines.push(`Nøgleord: ${keywords.join(", ")}`);
-  }
-  if (question.explanation) {
-    lines.push(question.explanation);
-  }
+  evaluated.forEach((part, index) => {
+    const label = String(part.label || "").trim()
+      ? String(part.label).toUpperCase()
+      : String.fromCharCode(65 + index);
+    if (part.answer) {
+      lines.push(`${label}: Modelbesvarelse: ${part.answer}`);
+    }
+    if (part.keywords.length) {
+      lines.push(`${label}: Nøgleord: ${part.keywords.join(", ")}`);
+    }
+    if (part.explanation) {
+      lines.push(`${label}: ${part.explanation}`);
+    }
+  });
 
   setDemoFeedback({
     title: isCorrect ? "Godt svar" : "Kan forbedres",
@@ -2094,6 +2907,10 @@ function completeDemoQuiz() {
   const total = state.demoQuiz.questions.length || DEMO_TOTAL_QUESTIONS;
   if (elements.demoResultScore) {
     elements.demoResultScore.textContent = `Score ${state.demoQuiz.score}/${total}`;
+  }
+  const demoResult = buildDemoResult();
+  if (demoResult) {
+    saveDemoResult(demoResult);
   }
   setDemoStatus("Prøvespil gennemført. Kom tilbage i morgen for en ny runde.");
   setDemoView("result");
@@ -2131,7 +2948,7 @@ async function startDemoQuiz() {
   }
 
   state.demoQuiz.status = "loading";
-  setDemoStatus("Genererer dagens prøvespil …");
+  setDemoStatus("Trækker dagens prøvespil …");
   setDemoView("loading");
   elements.demoStartBtn.disabled = true;
 
@@ -2139,7 +2956,7 @@ async function startDemoQuiz() {
     const res = await fetch("/api/demo-quiz", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ language: "da" }),
+      body: JSON.stringify({}),
     });
     if (res.status === 429) {
       localStorage.setItem(STORAGE_KEYS.demoTrialLastRun, String(Date.now()));
@@ -2152,17 +2969,17 @@ async function startDemoQuiz() {
       const data = await res.json().catch(() => ({}));
       const errorCode = String(data?.error || "").toLowerCase();
       let message = "Prøvespil kunne ikke startes.";
-      if (errorCode === "missing_key") {
-        message = "Prøvespil er ikke sat op endnu.";
-      } else if (errorCode === "rate_limited") {
+      if (errorCode === "rate_limited") {
         message = "Dagens prøvespil er allerede brugt.";
+      } else if (errorCode === "data_missing") {
+        message = "Prøvespillet kunne ikke bygges endnu.";
       }
       throw new Error(message);
     }
     const data = await res.json();
     const questions = buildDemoQuestions(data);
     if (questions.length < DEMO_TOTAL_QUESTIONS) {
-      throw new Error("Prøvespillet kunne ikke genereres endnu.");
+      throw new Error("Prøvespillet kunne ikke bygges endnu.");
     }
 
     localStorage.setItem(STORAGE_KEYS.demoTrialLastRun, String(Date.now()));
@@ -2173,7 +2990,7 @@ async function startDemoQuiz() {
       score: 0,
       answers: [],
     };
-    setDemoStatus("Prøvespil er klar.");
+    setDemoStatus("Mini-runden er klar.");
     setDemoView("active");
     renderDemoQuestion();
   } catch (error) {
@@ -2186,14 +3003,37 @@ async function startDemoQuiz() {
 }
 
 async function apiFetch(url, options = {}) {
-  const headers = { ...(options.headers || {}) };
+  const { timeoutMs, ...rest } = options;
+  const headers = { ...(rest.headers || {}) };
   if (state.session?.access_token) {
     headers.Authorization = `Bearer ${state.session.access_token}`;
   }
   if (state.useOwnKey && state.userOpenAiKey) {
     headers["x-user-openai-key"] = state.userOpenAiKey;
   }
-  return fetch(url, { ...options, headers });
+  const fetchOptions = { ...rest, headers };
+  let timeoutId = null;
+  if (timeoutMs && typeof AbortController !== "undefined") {
+    const controller = new AbortController();
+    if (fetchOptions.signal) {
+      if (typeof AbortSignal !== "undefined" && typeof AbortSignal.any === "function") {
+        fetchOptions.signal = AbortSignal.any([fetchOptions.signal, controller.signal]);
+      } else {
+        fetchOptions.signal.addEventListener("abort", () => controller.abort(), { once: true });
+        fetchOptions.signal = controller.signal;
+      }
+    } else {
+      fetchOptions.signal = controller.signal;
+    }
+    timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  }
+  try {
+    return await fetch(url, fetchOptions);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
 }
 
 async function loadRuntimeConfig() {
@@ -2300,15 +3140,18 @@ async function refreshSession() {
 function subscribeToAuthChanges() {
   if (!state.supabase) return;
   state.supabase.auth.onAuthStateChange(async (event, session) => {
+    const hadUser = Boolean(state.session?.user);
     state.session = session;
     state.user = session?.user || null;
     if (session?.user) {
       state.demoMode = false;
       state.pendingEmailConfirmation = false;
       setAuthResendVisible(false);
+    } else {
+      resetProfileRetry();
     }
 
-    const shouldShowLoader = event === "SIGNED_IN" && !state.isLoading;
+    const shouldShowLoader = event === "SIGNED_IN" && !state.isLoading && !hadUser;
     if (shouldShowLoader) {
       setLoadingState(true);
       setLoadingMessage("Logger ind …", "Henter profil og adgang");
@@ -2350,11 +3193,34 @@ function subscribeToAuthChanges() {
   });
 }
 
+function resetProfileRetry() {
+  if (state.profileRetryTimer) {
+    clearTimeout(state.profileRetryTimer);
+    state.profileRetryTimer = null;
+  }
+  state.profileRetryCount = 0;
+}
+
+function scheduleProfileRetry() {
+  if (!state.session?.user) return;
+  if (state.profileRetryTimer) return;
+  if (state.profileRetryCount >= PROFILE_RETRY_MAX) return;
+  state.profileRetryCount += 1;
+  state.profileRetryTimer = setTimeout(() => {
+    state.profileRetryTimer = null;
+    void refreshProfile();
+  }, PROFILE_RETRY_DELAY_MS);
+}
+
 async function refreshProfile() {
   if (!state.session?.user) return;
   try {
-    const res = await apiFetch("/api/me", { method: "GET" });
+    const res = await apiFetch("/api/me", {
+      method: "GET",
+      timeoutMs: PROFILE_FETCH_TIMEOUT_MS,
+    });
     if (!res.ok) {
+      scheduleProfileRetry();
       return;
     }
     const data = await res.json();
@@ -2365,9 +3231,11 @@ async function refreshProfile() {
     }
     updateAccountUI();
     updateUserChip();
-    await loadUserStateFromSupabase();
+    resetProfileRetry();
+    void loadUserStateFromSupabase();
   } catch (error) {
     // Ignore profile fetch errors for now.
+    scheduleProfileRetry();
   }
 }
 
@@ -2661,6 +3529,27 @@ function clearCheckoutElement() {
   }
 }
 
+function clearBillingPaymentElement() {
+  if (state.billingPaymentElement) {
+    state.billingPaymentElement.unmount();
+  }
+  state.billingPaymentElement = null;
+  state.billingElements = null;
+  state.billing.setupClientSecret = null;
+  if (elements.billingPaymentElement) {
+    elements.billingPaymentElement.textContent = "";
+  }
+}
+
+function setBillingUpdatePanelVisible(isVisible) {
+  if (!elements.billingUpdatePanel) return;
+  setElementVisible(elements.billingUpdatePanel, Boolean(isVisible));
+  if (!isVisible) {
+    setBillingUpdateStatus("");
+    clearBillingPaymentElement();
+  }
+}
+
 function formatCurrency(amount, currency) {
   if (typeof amount !== "number" || !Number.isFinite(amount)) return "—";
   const code = String(currency || "DKK").toUpperCase();
@@ -2801,6 +3690,30 @@ async function createSubscriptionIntent() {
   return res.json();
 }
 
+async function createBillingSetupIntent() {
+  const res = await apiFetch("/api/stripe/create-setup-intent", { method: "POST" });
+  if (!res.ok) {
+    let message = "Kunne ikke starte betalingsmetoden.";
+    try {
+      const data = await res.json();
+      const errorCode = String(data?.error || "").toLowerCase();
+      if (errorCode === "payment_not_configured") {
+        message = "Betaling er ikke sat op endnu.";
+      } else if (errorCode === "unauthenticated") {
+        message = "Log ind for at fortsætte.";
+      } else if (errorCode === "rate_limited") {
+        message = "For mange forsøg. Vent et øjeblik og prøv igen.";
+      } else if (errorCode) {
+        message = "Stripe kunne ikke starte betalingsmetoden.";
+      }
+    } catch (error) {
+      // Ignore JSON parse errors.
+    }
+    throw new Error(message);
+  }
+  return res.json();
+}
+
 async function completeCheckoutSuccess() {
   setCheckoutStatus("Betalingen er gennemført. Opdaterer adgang …");
   await refreshAccessStatus();
@@ -2917,6 +3830,29 @@ async function mountCheckoutElement(clientSecret) {
   state.stripePaymentElement.mount(elements.checkoutElement);
 }
 
+async function mountBillingPaymentElement(clientSecret) {
+  if (!elements.billingPaymentElement) {
+    throw new Error("Betalingsfeltet er ikke klar.");
+  }
+  clearBillingPaymentElement();
+  const stripe = getStripeClient();
+  if (!stripe) {
+    throw new Error("Stripe er ikke tilgængeligt.");
+  }
+  state.billingElements = stripe.elements({
+    clientSecret,
+    appearance: buildStripeAppearance(),
+  });
+  state.billingPaymentElement = state.billingElements.create("payment", {
+    layout: "tabs",
+    wallets: {
+      applePay: "auto",
+      googlePay: "auto",
+    },
+  });
+  state.billingPaymentElement.mount(elements.billingPaymentElement);
+}
+
 async function openCheckout() {
   if (!requireAuthGuard()) return;
   if (hasPaidAccess()) {
@@ -2993,26 +3929,221 @@ async function handleCheckout() {
   await openCheckout();
 }
 
-async function handlePortal() {
+async function openBilling() {
   if (!requireAuthGuard()) return;
-  const res = await apiFetch("/api/stripe/create-portal-session", { method: "POST" });
-  if (!res.ok) {
-    let message = "Kunne ikke åbne betalingsoversigt.";
-    try {
-      const data = await res.json();
-      if (data?.error === "payment_not_configured") {
-        message = "Betaling er ikke sat op endnu.";
+  setBillingStatus("");
+  setBillingUpdatePanelVisible(false);
+  showScreen("billing");
+  await loadBillingOverview();
+}
+
+async function handleBilling() {
+  await openBilling();
+}
+
+async function loadBillingOverview({ notify = false } = {}) {
+  if (!state.session?.user) return;
+  state.billing.isLoading = true;
+  if (notify) {
+    setBillingStatus("Opdaterer betalingsoversigt …");
+  }
+  setBillingControlsEnabled(false);
+  try {
+    const res = await apiFetch("/api/stripe/billing-overview", { method: "GET" });
+    if (!res.ok) {
+      let message = "Kunne ikke hente betalingsoversigt.";
+      try {
+        const data = await res.json();
+        const errorCode = String(data?.error || "").toLowerCase();
+        if (errorCode === "payment_not_configured") {
+          message = "Betaling er ikke sat op endnu.";
+        } else if (errorCode === "unauthenticated") {
+          message = "Log ind for at fortsætte.";
+        } else if (errorCode === "rate_limited") {
+          message = "For mange forsøg. Vent et øjeblik og prøv igen.";
+        }
+      } catch (error) {
+        // Ignore JSON parse errors.
       }
-    } catch (error) {
-      // Ignore JSON parse errors.
+      setBillingStatus(message, true);
+      return;
     }
-    setAccountStatus(message, true);
+    const data = await res.json();
+    state.billing.data = data || null;
+    if (data?.subscription) {
+      state.subscription = {
+        ...(state.subscription || {}),
+        ...data.subscription,
+      };
+    }
+    updateAccountUI();
+    if (notify) {
+      setBillingStatus("Betalingsoversigten er opdateret.");
+    }
+  } catch (error) {
+    setBillingStatus("Kunne ikke hente betalingsoversigt.", true);
+  } finally {
+    state.billing.isLoading = false;
+    setBillingControlsEnabled(true);
+  }
+}
+
+async function openBillingUpdatePanel() {
+  if (!requireAuthGuard()) return;
+  if (!state.billing.data?.subscription) {
+    setBillingStatus("Ingen aktivt abonnement at opdatere.", true);
     return;
   }
-  const data = await res.json();
-  if (data.url) {
-    setAccountStatus("Åbner betalingsoversigt …");
-    window.location.href = data.url;
+  if (!state.config?.stripePublishableKey) {
+    setBillingStatus("Betaling er ikke sat op endnu.", true);
+    return;
+  }
+  setBillingUpdatePanelVisible(true);
+  setBillingUpdateStatus("Klargør betalingsmetode …");
+  setBillingControlsEnabled(false);
+  try {
+    const data = await createBillingSetupIntent();
+    state.billing.setupClientSecret = data.clientSecret || null;
+    await mountBillingPaymentElement(data.clientSecret);
+    setBillingUpdateStatus("");
+  } catch (error) {
+    setBillingUpdateStatus(error.message || "Kunne ikke starte betalingsmetoden.", true);
+  } finally {
+    setBillingControlsEnabled(true);
+  }
+}
+
+function closeBillingUpdatePanel() {
+  setBillingUpdatePanelVisible(false);
+}
+
+async function submitBillingUpdate(event) {
+  if (event) event.preventDefault();
+  if (!state.billingElements || !state.billing.setupClientSecret) {
+    setBillingUpdateStatus("Betalingsfeltet er ikke klar endnu.", true);
+    return;
+  }
+  const stripe = getStripeClient();
+  if (!stripe) {
+    setBillingUpdateStatus("Stripe er ikke tilgængeligt lige nu.", true);
+    return;
+  }
+
+  setBillingUpdateStatus("Gemmer betalingsmetode …");
+  setBillingControlsEnabled(false);
+  const { error, setupIntent } = await stripe.confirmSetup({
+    elements: state.billingElements,
+    confirmParams: {
+      return_url: `${window.location.origin}/?billing=return`,
+    },
+    redirect: "if_required",
+  });
+
+  if (error) {
+    setBillingUpdateStatus(error.message || "Kunne ikke gemme betalingsmetode.", true);
+    setBillingControlsEnabled(true);
+    return;
+  }
+
+  const paymentMethodId =
+    setupIntent?.payment_method?.id || setupIntent?.payment_method || null;
+  if (!paymentMethodId) {
+    setBillingUpdateStatus("Kunne ikke gemme betalingsmetode.", true);
+    setBillingControlsEnabled(true);
+    return;
+  }
+
+  try {
+    const res = await apiFetch("/api/stripe/set-default-payment-method", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paymentMethodId }),
+    });
+    if (!res.ok) {
+      let message = "Kunne ikke gemme betalingsmetode.";
+      try {
+        const data = await res.json();
+        if (data?.error === "payment_not_configured") {
+          message = "Betaling er ikke sat op endnu.";
+        }
+      } catch (error) {
+        // Ignore JSON parse errors.
+      }
+      setBillingUpdateStatus(message, true);
+      setBillingControlsEnabled(true);
+      return;
+    }
+    setBillingUpdateStatus("Betalingsmetode opdateret.");
+    await loadBillingOverview();
+    await refreshProfile();
+    setBillingStatus("Betalingsmetode opdateret.");
+    setBillingUpdatePanelVisible(false);
+  } catch (error) {
+    setBillingUpdateStatus("Kunne ikke gemme betalingsmetode.", true);
+  } finally {
+    setBillingControlsEnabled(true);
+  }
+}
+
+async function handleBillingToggleCancel() {
+  if (!requireAuthGuard()) return;
+  const subscription = state.billing.data?.subscription || null;
+  if (!subscription) {
+    setBillingStatus("Ingen aktivt abonnement at opdatere.", true);
+    return;
+  }
+  const cancelAtPeriodEnd = !subscription.cancel_at_period_end;
+  const confirmed = window.confirm(
+    cancelAtPeriodEnd
+      ? "Vil du opsige dit abonnement ved periodens udløb?"
+      : "Vil du genoptage dit abonnement med det samme?"
+  );
+  if (!confirmed) return;
+
+  setBillingStatus(cancelAtPeriodEnd ? "Opsiger abonnement …" : "Genoptager abonnement …");
+  setBillingControlsEnabled(false);
+  try {
+    const res = await apiFetch("/api/stripe/update-subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cancelAtPeriodEnd }),
+    });
+    if (!res.ok) {
+      let message = "Kunne ikke opdatere abonnementet.";
+      try {
+        const data = await res.json();
+        const errorCode = String(data?.error || "").toLowerCase();
+        if (errorCode === "subscription_missing") {
+          message = "Ingen aktivt abonnement at opdatere.";
+        } else if (errorCode === "payment_not_configured") {
+          message = "Betaling er ikke sat op endnu.";
+        }
+      } catch (error) {
+        // Ignore JSON parse errors.
+      }
+      setBillingStatus(message, true);
+      return;
+    }
+    const data = await res.json();
+    state.billing.data = {
+      ...(state.billing.data || {}),
+      subscription: data.subscription || subscription,
+    };
+    state.subscription = {
+      ...(state.subscription || {}),
+      ...(data.subscription || {}),
+    };
+    updateAccountUI();
+    updateBillingUI();
+    setBillingStatus(
+      cancelAtPeriodEnd
+        ? "Abonnement opsagt til periodens udløb."
+        : "Abonnement genoptaget."
+    );
+  } catch (error) {
+    setBillingStatus("Kunne ikke opdatere abonnementet.", true);
+  } finally {
+    setBillingControlsEnabled(true);
   }
 }
 
@@ -3040,7 +4171,8 @@ async function handleReturnParams() {
   const url = new URL(window.location.href);
   const checkout = url.searchParams.get("checkout");
   const portal = url.searchParams.get("portal");
-  if (!checkout && !portal) return;
+  const billing = url.searchParams.get("billing");
+  if (!checkout && !portal && !billing) return;
 
   if (checkout === "success") {
     setAccountStatus("Tak! Vi opdaterer din adgang nu.");
@@ -3048,13 +4180,16 @@ async function handleReturnParams() {
     setAccountStatus("Betalingen blev afbrudt.");
   } else if (portal === "return") {
     setAccountStatus("Du er tilbage fra betalingsoversigten.");
+  } else if (billing === "return") {
+    setBillingStatus("Du er tilbage fra betalingsmetoden.");
   }
 
   url.searchParams.delete("checkout");
   url.searchParams.delete("portal");
+  url.searchParams.delete("billing");
   window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
   if (state.session?.user) {
-    showScreen("account");
+    showScreen(billing ? "billing" : "account");
   }
 
   if (checkout === "success") {
@@ -3065,6 +4200,9 @@ async function handleReturnParams() {
       setAccountStatus("Betalingen er gennemført. Adgangen opdateres snart.");
     }
   } else if (portal === "return") {
+    await refreshProfile();
+  } else if (billing === "return") {
+    await loadBillingOverview({ notify: false });
     await refreshProfile();
   }
 }
@@ -3167,11 +4305,19 @@ async function handleLogout() {
   state.user = null;
   state.profile = null;
   state.subscription = null;
+  state.billing.data = null;
+  state.billing.isLoading = false;
+  state.billing.isUpdating = false;
+  state.billing.setupClientSecret = null;
+  state.userStateLoadPromise = null;
+  clearBillingPaymentElement();
   state.demoMode = false;
   state.useOwnKey = false;
   state.userOpenAiKey = "";
   clearStoredOwnKey();
   state.consentReturnTo = null;
+  setBillingStatus("");
+  setBillingUpdateStatus("");
   setConsentStatus("");
   updateAuthUI();
 }
@@ -3235,6 +4381,22 @@ function getShortGroupKey(question) {
   return `${question.year}-${sessionKey}-${question.opgave}`;
 }
 
+function getShortGroupForQuestion(question) {
+  if (!question || question.type !== "short") return null;
+  if (isShortGroup(question)) return question;
+  if (!question.groupKey) return null;
+  return state.shortGroupsByKey.get(`short-group-${question.groupKey}`) || null;
+}
+
+function isShortGroup(question) {
+  return question?.type === "short" && Array.isArray(question.parts);
+}
+
+function getShortParts(question) {
+  if (!question || question.type !== "short") return [];
+  return isShortGroup(question) ? question.parts : [question];
+}
+
 function getShortLabelIndex(label) {
   const normalized = normalizeShortLabel(label);
   return SHORT_LABEL_INDEX.get(normalized) ?? 99;
@@ -3259,6 +4421,48 @@ function buildShortQuestionGroups(questions) {
   });
   groups.forEach((list, key) => {
     groups.set(key, sortShortGroupQuestions(list));
+  });
+  return groups;
+}
+
+function splitPoints(totalPoints, count, step = 0.5) {
+  if (!Number.isFinite(totalPoints) || totalPoints <= 0 || count <= 0) return [];
+  const safeStep = Number(step) || 0.5;
+  const base = Math.floor((totalPoints / count) / safeStep) * safeStep;
+  let remaining = totalPoints - base * count;
+  return Array.from({ length: count }, () => {
+    let points = base;
+    if (remaining >= safeStep) {
+      points += safeStep;
+      remaining -= safeStep;
+    }
+    return Number(points.toFixed(1));
+  });
+}
+
+function buildShortGroups(questions) {
+  const groups = [];
+  const grouped = buildShortQuestionGroups(questions);
+  grouped.forEach((parts, groupKey) => {
+    const primary = parts.find((part) => part.opgaveIntro || part.opgaveTitle) || parts[0];
+    if (!primary) return;
+    groups.push({
+      type: "short",
+      key: `short-group-${groupKey}`,
+      groupKey,
+      year: primary.year,
+      session: primary.session,
+      yearLabel: primary.yearLabel,
+      yearDisplay: primary.yearDisplay,
+      category: primary.category,
+      rawCategory: primary.rawCategory,
+      opgave: primary.opgave,
+      number: primary.opgave,
+      opgaveTitle: primary.opgaveTitle,
+      opgaveIntro: primary.opgaveIntro,
+      text: primary.opgaveTitle || primary.opgaveIntro || primary.category,
+      parts,
+    });
   });
   return groups;
 }
@@ -3304,7 +4508,8 @@ function buildCounts(questions) {
 function formatTempoValue() {
   if (!state.startTime) return null;
   const elapsed = (Date.now() - state.startTime) / 1000;
-  const perQuestion = elapsed / Math.max(1, state.results.length || state.currentIndex || 1);
+  const completed = state.currentIndex + (state.locked ? 1 : 0);
+  const perQuestion = elapsed / Math.max(1, completed || 1);
   return perQuestion;
 }
 
@@ -3361,8 +4566,17 @@ function calculateScoreSummary() {
   };
 }
 
+function getShortFailThreshold(maxPoints) {
+  const safeMax = Number(maxPoints) || 0;
+  return safeMax > 0 ? safeMax * SHORT_FAIL_RATIO : 0;
+}
+
 function isShortFailed(entry) {
-  return entry.type === "short" && !entry.skipped && entry.awardedPoints < SHORT_FAIL_THRESHOLD;
+  return (
+    entry.type === "short" &&
+    !entry.skipped &&
+    entry.awardedPoints < getShortFailThreshold(entry.maxPoints)
+  );
 }
 
 function isReviewCorrect(entry) {
@@ -3373,6 +4587,12 @@ function isReviewCorrect(entry) {
 
 function requiresSketch(question) {
   if (!question) return false;
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (activePart) {
+      question = activePart;
+    }
+  }
   return (
     SKETCH_CUE.test(question.text || "") ||
     SKETCH_CUE.test(question.prompt || "") ||
@@ -3389,6 +4609,7 @@ function isFigureAnswer(answer) {
 
 function getQuestionImagePaths(question) {
   if (!question || !Array.isArray(question.images)) return [];
+  if (isShortGroup(question)) return [];
   return question.images.filter(Boolean);
 }
 
@@ -3467,12 +4688,24 @@ function getCombinedFigureCaption(question) {
 
 function shouldUseFigureCaption(question) {
   if (!question) return false;
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (activePart) {
+      question = activePart;
+    }
+  }
   if (!getQuestionImagePaths(question).length) return false;
   return isFigureAnswer(question.answer);
 }
 
 function getEffectiveModelAnswer(question) {
   if (!question) return "";
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (activePart) {
+      question = activePart;
+    }
+  }
   const answer = String(question.answer || "").trim();
   if (shouldUseFigureCaption(question)) {
     const caption = getCombinedFigureCaption(question);
@@ -3483,6 +4716,12 @@ function getEffectiveModelAnswer(question) {
 
 function buildSketchModelAnswer(question) {
   if (!question) return "";
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (activePart) {
+      question = activePart;
+    }
+  }
   const answer = String(question.answer || "").trim();
   const caption = getCombinedFigureCaption(question);
   if (!caption) return answer;
@@ -3492,6 +4731,7 @@ function buildSketchModelAnswer(question) {
 }
 
 function getShortContextQuestions(question) {
+  if (isShortGroup(question)) return [];
   const key = getShortGroupKey(question);
   if (!key || !state.shortQuestionGroups) return [];
   const group = state.shortQuestionGroups.get(key);
@@ -3560,6 +4800,12 @@ function formatShortContextTitle(question, contextQuestions) {
 
 function buildShortPrompt(question) {
   if (!question) return "";
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (activePart) {
+      question = activePart;
+    }
+  }
   const parts = [];
   if (question.opgaveIntro) parts.push(question.opgaveIntro);
   if (question.text) parts.push(question.text);
@@ -3568,6 +4814,12 @@ function buildShortPrompt(question) {
 
 function getSketchDescription(question) {
   if (!question) return "";
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (activePart) {
+      question = activePart;
+    }
+  }
   const analysis = state.sketchAnalysis.get(question.key);
   if (!analysis) return "";
   return String(analysis.description || "").trim();
@@ -3575,25 +4827,51 @@ function getSketchDescription(question) {
 
 function buildShortAnswerForGrading(question, options = {}) {
   if (!question) return { answer: "", hasText: false, hasSketch: false };
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (activePart) {
+      question = activePart;
+    }
+  }
   const textAnswer = elements.shortAnswerInput?.value.trim() || "";
-  const sketchDescription =
+  const analysis = state.sketchAnalysis.get(question.key);
+  let sketchDescription =
     options.sketchDescription !== undefined
       ? String(options.sketchDescription || "").trim()
       : getSketchDescription(question);
+  let sketchLabel = "Skitsebeskrivelse";
+  if (!sketchDescription && analysis) {
+    const summary = formatSketchFeedback(analysis).trim();
+    if (summary) {
+      sketchDescription = summary;
+      sketchLabel = "Skitseanalyse";
+    } else if (!textAnswer) {
+      sketchDescription = "Skitse uploadet.";
+      sketchLabel = "Skitse";
+    }
+  }
   const parts = [];
   if (textAnswer) parts.push(textAnswer);
   if (sketchDescription) {
-    parts.push(`Skitsebeskrivelse: ${sketchDescription}`);
+    const sketchPrefix =
+      sketchLabel === "Skitseanalyse" ? `${sketchLabel}:\n` : `${sketchLabel}: `;
+    parts.push(`${sketchPrefix}${sketchDescription}`);
   }
   return {
     answer: parts.join("\n"),
     hasText: Boolean(textAnswer),
-    hasSketch: Boolean(sketchDescription),
+    hasSketch: Boolean(sketchDescription || analysis),
   };
 }
 
 async function resolveShortModelAnswer(question, { useSketch = false } = {}) {
   if (!question) return "";
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (activePart) {
+      question = activePart;
+    }
+  }
   let modelAnswer = useSketch ? buildSketchModelAnswer(question) : getEffectiveModelAnswer(question);
   if (getQuestionImagePaths(question).length && !getCombinedFigureCaption(question)) {
     const generated = await fetchFigureCaptionForQuestion(question, { silent: true });
@@ -3618,6 +4896,8 @@ function applyShortAnswerGradeResult(question, data, { fallbackFeedback } = {}) 
     missing: data.missing || [],
     matched: data.matched || [],
   });
+  updateShortPartStatus(question);
+  updateShortGroupStatus(state.activeQuestions[state.currentIndex]);
   updateShortReviewStatus(question);
   setShortReviewOpen(true);
 }
@@ -3971,6 +5251,9 @@ function setFeedback(message, tone) {
 
 function getQuestionNumberDisplay(question) {
   if (question.type === "short") {
+    if (isShortGroup(question)) {
+      return `Opg. ${question.opgave}`;
+    }
     const label = question.label ? question.label.toUpperCase() : "";
     return `Opg. ${question.opgave}${label ? label : ""}`;
   }
@@ -3979,8 +5262,23 @@ function getQuestionNumberDisplay(question) {
 
 function setFigureVisibility(visible, { announce = true } = {}) {
   state.figureVisible = visible;
-  if (!elements.questionFigure) return;
-  elements.questionFigure.classList.toggle("hidden", !visible);
+  const currentQuestion = state.activeQuestions[state.currentIndex];
+  if (currentQuestion?.type === "short") {
+    const part = getActiveShortPart(currentQuestion);
+    const nodes = part ? state.shortPartNodes.get(part.key) : null;
+    const hasImages = part ? getQuestionImagePaths(part).length > 0 : false;
+    if (nodes?.figureWrap) {
+      nodes.figureWrap.classList.toggle("hidden", !visible || !hasImages);
+    }
+    if (visible && part) {
+      setShortPartCollapsed(part, false);
+    }
+    if (elements.questionFigure) {
+      elements.questionFigure.classList.add("hidden");
+    }
+  } else if (elements.questionFigure) {
+    elements.questionFigure.classList.toggle("hidden", !visible);
+  }
   if (elements.figureToggleBtn) {
     elements.figureToggleBtn.textContent = visible ? "Skjul figur" : "Vis figur";
   }
@@ -4134,6 +5432,9 @@ function setShortFigureStatus(message, isWarn = false) {
 
 function updateShortAnswerModel(question) {
   if (!question || !elements.shortAnswerModel) return;
+  const group = getShortGroupForQuestion(question);
+  const groupParts = group ? getShortParts(group) : [];
+  const isMultiPart = groupParts.length > 1;
   const rawAnswer = String(question.answer || "").trim();
   const fallbackAnswer = rawAnswer || "Ingen facit tilgængelig.";
   const hasImages = getQuestionImagePaths(question).length > 0;
@@ -4144,7 +5445,17 @@ function updateShortAnswerModel(question) {
   let modelText = fallbackAnswer;
   let showTag = false;
 
-  if (useFigureCaption) {
+  if (isMultiPart) {
+    const blocks = groupParts.map((part, index) => {
+      const label = part.label ? part.label.toUpperCase() : String(index + 1);
+      const prompt = String(part.text || part.prompt || "").trim();
+      const answer = getEffectiveModelAnswer(part) || "Ingen facit tilgængelig.";
+      const titleLine = prompt ? `${label}. ${prompt}` : `Delspørgsmål ${label}`;
+      return `${titleLine}\n${answer}`;
+    });
+    modelTitle = "Modelbesvarelse · delspørgsmål";
+    modelText = blocks.join("\n\n");
+  } else if (useFigureCaption) {
     modelTitle = figureCaption ? "Facit (figurbeskrivelse)" : "Facit (figur)";
     if (figureCaption) {
       modelText = figureCaption;
@@ -4211,32 +5522,48 @@ function updateShortAnswerModel(question) {
     : "";
 }
 
-function updateSketchPanel(question) {
-  if (!elements.sketchPanel) return;
-  if (!question || question.type !== "short") {
-    elements.sketchPanel.classList.add("hidden");
-    return;
-  }
-  elements.sketchPanel.classList.remove("hidden");
-  if (elements.sketchPanelTitle) {
-    elements.sketchPanelTitle.textContent = requiresSketch(question)
+function getSketchNodes(part) {
+  if (!part) return null;
+  const nodes = state.shortPartNodes.get(part.key);
+  if (!nodes?.sketchPanel) return null;
+  return nodes;
+}
+
+function updateSketchPanel(part) {
+  if (!part) return;
+  const nodes = getSketchNodes(part);
+  if (!nodes) return;
+  nodes.sketchPanel.classList.remove("hidden");
+  if (nodes.sketchPanelTitle) {
+    nodes.sketchPanelTitle.textContent = requiresSketch(part)
       ? "Skitse-analyse (auto)"
       : "Skitse (valgfri)";
   }
-  if (elements.sketchStatus && !state.aiStatus.available) {
-    elements.sketchStatus.textContent = state.aiStatus.message || "Hjælp er ikke klar";
+  const analysis = state.sketchAnalysis.get(part.key);
+  if (nodes.sketchFeedback) {
+    nodes.sketchFeedback.textContent = analysis ? formatSketchFeedback(analysis) : "";
   }
-  const analysis = state.sketchAnalysis.get(question.key);
-  if (analysis && elements.sketchFeedback) {
-    elements.sketchFeedback.textContent = formatSketchFeedback(analysis);
+  const upload = state.sketchUploads.get(part.key);
+  if (nodes.sketchStatus) {
+    let status = "";
+    if (!state.aiStatus.available) {
+      status = state.aiStatus.message || "Hjælp er ikke klar";
+    }
+    if (upload?.label) {
+      status = upload.label;
+    } else if (upload) {
+      status = "Skitse valgt";
+    }
+    nodes.sketchStatus.textContent = status;
   }
-  const upload = state.sketchUploads.get(question.key);
-  if (upload && elements.sketchStatus) {
-    elements.sketchStatus.textContent = upload.label || "Skitse valgt";
-  }
-  if (upload && elements.sketchPreview) {
-    elements.sketchPreview.src = upload.dataUrl;
-    elements.sketchPreview.classList.remove("hidden");
+  if (nodes.sketchPreview) {
+    if (upload?.dataUrl) {
+      nodes.sketchPreview.src = upload.dataUrl;
+      nodes.sketchPreview.classList.remove("hidden");
+    } else {
+      nodes.sketchPreview.src = "";
+      nodes.sketchPreview.classList.add("hidden");
+    }
   }
 }
 
@@ -4244,23 +5571,44 @@ function resetShortAnswerUI() {
   if (!elements.shortAnswerContainer) return;
   cancelMicRecording();
   setShortAnswerPending(false);
-  elements.shortAnswerInput.value = "";
-  elements.shortAnswerScoreRange.value = "0";
-  elements.shortAnswerMaxPoints.textContent = "0";
-  elements.shortAnswerAiFeedback.textContent = "";
+  if (elements.shortPartList) {
+    elements.shortPartList.innerHTML = "";
+  }
+  if (elements.shortGroupStatus) {
+    elements.shortGroupStatus.textContent = "";
+  }
+  state.shortPartNodes.clear();
+  state.activeShortPartKey = null;
+  state.shortPartSelectionActive = false;
+  elements.shortAnswerInputWrap = null;
+  elements.shortAnswerInput = null;
+  elements.transcribeIndicator = null;
+  elements.transcribeText = null;
+  if (elements.shortAnswerScoreRange) {
+    elements.shortAnswerScoreRange.value = "0";
+  }
+  if (elements.shortAnswerMaxPoints) {
+    elements.shortAnswerMaxPoints.textContent = "0";
+  }
+  if (elements.shortAnswerAiFeedback) {
+    elements.shortAnswerAiFeedback.textContent = "";
+  }
   if (elements.shortAnswerAiStatus) {
     elements.shortAnswerAiStatus.textContent = "";
     elements.shortAnswerAiStatus.classList.remove("warn");
   }
-  elements.shortAnswerHint.textContent = "";
-  elements.shortAnswerModel.classList.add("hidden");
+  if (elements.shortAnswerHint) {
+    elements.shortAnswerHint.textContent = "";
+  }
+  setShortAnswerModelVisible(false);
   if (elements.shortModelTitle) {
     elements.shortModelTitle.textContent = "Modelbesvarelse";
   }
   if (elements.shortModelText) {
     elements.shortModelText.textContent = "";
-  } else {
-    elements.shortAnswerModel.querySelector("p").textContent = "";
+  } else if (elements.shortAnswerModel) {
+    const textEl = elements.shortAnswerModel.querySelector("p");
+    if (textEl) textEl.textContent = "";
   }
   if (elements.shortModelTag) {
     elements.shortModelTag.classList.add("hidden");
@@ -4276,9 +5624,7 @@ function resetShortAnswerUI() {
     elements.shortFigureStatus.classList.remove("warn");
   }
   elements.shortAnswerSources.textContent = "";
-  if (elements.shortAnswerShowAnswer) {
-    elements.shortAnswerShowAnswer.textContent = "Vis facit";
-  }
+  setShortAnswerToggleLabel(true);
   if (elements.shortSketchHint) {
     elements.shortSketchHint.classList.add("hidden");
     elements.shortSketchHint.textContent = "";
@@ -4287,24 +5633,7 @@ function resetShortAnswerUI() {
   if (elements.shortReviewStatus) {
     elements.shortReviewStatus.textContent = "Klar til vurdering";
   }
-  if (elements.sketchPanel) {
-    elements.sketchPanel.classList.add("hidden");
-  }
-  if (elements.sketchUpload) {
-    elements.sketchUpload.value = "";
-  }
-  if (elements.sketchStatus) {
-    elements.sketchStatus.textContent = "";
-  }
-  if (elements.sketchFeedback) {
-    elements.sketchFeedback.textContent = "";
-  }
   setShortRetryVisible(false);
-  setSketchRetryVisible(false);
-  if (elements.sketchPreview) {
-    elements.sketchPreview.src = "";
-    elements.sketchPreview.classList.add("hidden");
-  }
 }
 
 function setShortReviewOpen(open) {
@@ -4334,27 +5663,71 @@ function setShortRetryVisible(visible) {
   elements.shortAnswerAiRetryBtn.classList.toggle("hidden", !visible);
 }
 
-function setSketchRetryVisible(visible) {
-  if (!elements.sketchRetryBtn) return;
-  elements.sketchRetryBtn.classList.toggle("hidden", !visible);
+function setSketchRetryVisible(visible, part = null) {
+  const current = state.activeQuestions[state.currentIndex];
+  const target =
+    part ||
+    (current && current.type === "short" ? getActiveShortPart(current) : null);
+  if (!target) return;
+  const nodes = getSketchNodes(target);
+  if (!nodes?.sketchRetryBtn) return;
+  nodes.sketchRetryBtn.classList.toggle("hidden", !visible);
+}
+
+function hasShortPartAnswer(part) {
+  if (!part) return false;
+  const draft = getShortDraft(part.key);
+  if (draft.text?.trim()) return true;
+  if (state.sketchUploads.get(part.key)) return true;
+  if (getSketchDescription(part)) return true;
+  return false;
+}
+
+function isShortPartScored(part) {
+  if (!part) return false;
+  const draft = getShortDraft(part.key);
+  return hasShortPartAnswer(part) ? Boolean(draft.scored) : true;
 }
 
 function isShortAnswerScored(question) {
   if (!question) return false;
+  if (isShortGroup(question)) {
+    return getShortParts(question).every((part) => isShortPartScored(part));
+  }
   const draft = getShortDraft(question.key);
-  return Boolean(draft.scored);
+  return hasShortPartAnswer(question) ? Boolean(draft.scored) : true;
 }
 
 function getShortAnswerState(question) {
   if (!question) return { draft: null, hasText: false, hasSketch: false, scored: false };
+  if (isShortGroup(question)) {
+    const parts = getShortParts(question);
+    const hasText = parts.some((part) => Boolean(getShortDraft(part.key).text?.trim()));
+    const hasSketch = parts.some((part) => Boolean(state.sketchUploads.get(part.key) || getSketchDescription(part)));
+    const scored = parts.every((part) => isShortPartScored(part));
+    return {
+      draft: null,
+      hasText,
+      hasSketch,
+      scored,
+    };
+  }
   const draft = getShortDraft(question.key);
-  const hasSketch = Boolean(getSketchDescription(question));
+  const hasSketch = Boolean(state.sketchUploads.get(question.key) || getSketchDescription(question));
   return {
     draft,
     hasText: Boolean(draft.text?.trim()),
     hasSketch,
-    scored: Boolean(draft.scored),
+    scored: isShortPartScored(question),
   };
+}
+
+function isShortReadyForNext(question) {
+  if (!question || question.type !== "short") return false;
+  const { hasText, hasSketch, scored } = getShortAnswerState(question);
+  if (hasText || hasSketch) return scored;
+  const parts = isShortGroup(question) ? getShortParts(question) : [question];
+  return parts.some((part) => Boolean(getShortDraft(part.key).scored));
 }
 
 function setShortAnswerPending(isPending) {
@@ -4379,24 +5752,41 @@ function setShortAnswerPending(isPending) {
 }
 
 function updateShortAnswerActions(question) {
-  if (!question || question.type !== "short" || !elements.nextBtn) return;
+  if (!elements.nextBtn) return;
+  const isShort = question?.type === "short";
+  setShortActionVisibility(isShort);
+  if (!isShort) return;
+
+  const gradeLabel = "Vurdér";
   if (state.locked) {
     elements.nextBtn.textContent = "Næste";
     elements.nextBtn.disabled = false;
+    if (elements.shortGradeBtn) {
+      elements.shortGradeBtn.textContent = gradeLabel;
+      elements.shortGradeBtn.disabled = true;
+    }
     setShortcutDisabled("next", elements.nextBtn.disabled);
     updateMicControls(question);
     return;
   }
   if (state.shortAnswerPending) {
-    elements.nextBtn.textContent = "Vurderer …";
+    elements.nextBtn.textContent = "Næste";
     elements.nextBtn.disabled = true;
+    if (elements.shortGradeBtn) {
+      elements.shortGradeBtn.textContent = "Vurderer …";
+      elements.shortGradeBtn.disabled = true;
+    }
     setShortcutDisabled("next", elements.nextBtn.disabled);
     updateMicControls(question);
     return;
   }
-  const scored = isShortAnswerScored(question);
-  elements.nextBtn.textContent = scored ? "Næste" : "Vurdér";
-  elements.nextBtn.disabled = false;
+  const readyForNext = isShortReadyForNext(question);
+  if (elements.shortGradeBtn) {
+    elements.shortGradeBtn.textContent = gradeLabel;
+    elements.shortGradeBtn.disabled = false;
+  }
+  elements.nextBtn.textContent = "Næste";
+  elements.nextBtn.disabled = !readyForNext;
   setShortcutDisabled("next", elements.nextBtn.disabled);
   updateMicControls(question);
 }
@@ -4471,55 +5861,176 @@ function renderMcqQuestion(question) {
   updateMicControls(question);
 }
 
-function renderShortQuestion(question) {
-  elements.optionsContainer.classList.add("hidden");
-  elements.shortAnswerContainer.classList.remove("hidden");
-  elements.skipBtn.textContent = "Spring over (0 point)";
-  elements.nextBtn.disabled = false;
-  setShortcutDisabled("next", elements.nextBtn.disabled);
-  if (elements.skipBtn) {
-    setShortcutDisabled("skip", elements.skipBtn.disabled);
+function getActiveShortPart(question) {
+  if (!question || question.type !== "short") return null;
+  if (!isShortGroup(question)) return question;
+  const parts = question.parts || [];
+  if (!parts.length) return null;
+  const match = parts.find((part) => part.key === state.activeShortPartKey);
+  return match || parts[0];
+}
+
+function updateShortPartStatus(part) {
+  if (!part) return;
+  const nodes = state.shortPartNodes.get(part.key);
+  if (!nodes?.status) return;
+  const draft = getShortDraft(part.key);
+  const maxPoints = Number(part.maxPoints) || 0;
+  if (draft.scored && Number.isFinite(draft.points)) {
+    nodes.status.textContent =
+      `Point: ${draft.points.toFixed(1)} / ${maxPoints.toFixed(1)}`;
+    return;
   }
-  const promptText = String(question.text || question.prompt || "").trim();
-  if (question.opgaveIntro) {
-    elements.questionText.textContent = question.opgaveIntro;
-    if (elements.questionSubtitle) {
-      elements.questionSubtitle.textContent = promptText;
-      const label = normalizeShortLabel(question.label);
-      if (label) {
-        elements.questionSubtitle.dataset.label = label.toUpperCase();
-      } else {
-        elements.questionSubtitle.removeAttribute("data-label");
+  if ((draft.text || "").trim()) {
+    nodes.status.textContent = "Svar gemt · mangler vurdering";
+    return;
+  }
+  nodes.status.textContent = "Ikke besvaret endnu";
+}
+
+function setShortPartCollapsed(part, collapsed) {
+  if (!part) return;
+  const nodes = state.shortPartNodes.get(part.key);
+  if (!nodes?.card) return;
+  nodes.collapsed = Boolean(collapsed);
+  nodes.card.classList.toggle("is-collapsed", nodes.collapsed);
+  if (nodes.toggleBtn) {
+    nodes.toggleBtn.textContent = nodes.collapsed ? "Vis" : "Skjul";
+    nodes.toggleBtn.setAttribute("aria-expanded", String(!nodes.collapsed));
+  }
+  if (!nodes.collapsed) {
+    updateShortPartFigure(part);
+  }
+}
+
+function updateShortPartFigure(part) {
+  if (!part) return;
+  const nodes = state.shortPartNodes.get(part.key);
+  if (!nodes?.figureWrap || !nodes.figureMedia) return;
+  const images = getQuestionImagePaths(part);
+  if (!images.length) {
+    nodes.figureWrap.classList.add("hidden");
+    nodes.figureMedia.innerHTML = "";
+    if (nodes.figureCaption) {
+      nodes.figureCaption.textContent = "";
+    }
+    return;
+  }
+
+  nodes.figureMedia.innerHTML = "";
+  images.forEach((src, index) => {
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = `Figur ${index + 1} til ${part.category}`;
+    img.title = "Klik for at forstørre";
+    img.addEventListener("click", () => {
+      const titleText = images.length > 1 ? `Figur ${index + 1}` : "Figur";
+      openFigureModal({
+        src,
+        alt: img.alt,
+        caption: getFigureCaptionForImage(src),
+        title: titleText,
+      });
+    });
+    nodes.figureMedia.appendChild(img);
+  });
+
+  if (nodes.figureCaption) {
+    nodes.figureCaption.textContent = images.length > 1 ? "Flere figurer" : "Figur";
+  }
+  nodes.figureWrap.classList.toggle("hidden", !state.figureVisible);
+}
+
+function setShortActionVisibility(isShort) {
+  const visible = Boolean(isShort);
+  if (elements.shortGradeBtn) {
+    elements.shortGradeBtn.classList.toggle("hidden", !visible);
+  }
+  if (elements.shortAnswerShowAnswerInline) {
+    elements.shortAnswerShowAnswerInline.classList.toggle("hidden", !visible);
+  }
+}
+
+function setShortAnswerToggleLabel(isHidden) {
+  const label = isHidden ? "Vis facit" : "Skjul facit";
+  if (elements.shortAnswerShowAnswer) {
+    elements.shortAnswerShowAnswer.textContent = label;
+  }
+  if (elements.shortAnswerShowAnswerInline) {
+    elements.shortAnswerShowAnswerInline.textContent = label;
+  }
+}
+
+function setShortAnswerModelVisible(isVisible) {
+  if (!elements.shortAnswerModel) return;
+  elements.shortAnswerModel.classList.toggle("hidden", !isVisible);
+  setShortAnswerToggleLabel(!isVisible);
+}
+
+async function toggleShortAnswerModelVisibility() {
+  if (!elements.shortAnswerModel) return;
+  const shouldShow = elements.shortAnswerModel.classList.contains("hidden");
+  setShortAnswerModelVisible(shouldShow);
+  if (!shouldShow) return;
+  setShortReviewOpen(true);
+  const question = state.activeQuestions[state.currentIndex];
+  if (question && question.type === "short") {
+    const part = getActiveShortPart(question);
+    if (part && shouldUseFigureCaption(part)) {
+      if (!getCombinedFigureCaption(part)) {
+        await fetchFigureCaptionForQuestion(part);
       }
-      elements.questionSubtitle.classList.toggle("hidden", !promptText);
-    }
-    elements.questionText.classList.toggle("has-subtitle", Boolean(promptText));
-  } else {
-    elements.questionText.textContent = promptText;
-    if (elements.questionSubtitle) {
-      elements.questionSubtitle.textContent = "";
-      elements.questionSubtitle.classList.add("hidden");
-      elements.questionSubtitle.removeAttribute("data-label");
     }
   }
+}
 
-  const cached = getShortDraft(question.key);
-  elements.shortAnswerInput.value = cached.text || "";
-  const maxPoints = question.maxPoints || 0;
+function updateShortGroupStatus(question) {
+  if (!elements.shortGroupStatus || !question || question.type !== "short") return;
+  const parts = getShortParts(question);
+  const total = parts.length;
+  const scored = parts.filter(
+    (part) => hasShortPartAnswer(part) && getShortDraft(part.key).scored
+  ).length;
+  let activeLabel = "";
+  if (state.shortPartSelectionActive) {
+    const activePart = getActiveShortPart(question);
+    if (activePart) {
+      const label = activePart.label ? activePart.label.toUpperCase() : "";
+      if (label) {
+        activeLabel = ` · Aktivt: ${label}`;
+      } else {
+        const activeIndex = parts.findIndex((part) => part.key === activePart.key);
+        if (activeIndex >= 0) {
+          activeLabel = ` · Aktivt: ${String.fromCharCode(65 + activeIndex)}`;
+        }
+      }
+    }
+  }
+  elements.shortGroupStatus.textContent = total ? `${scored}/${total} vurderet${activeLabel}` : "";
+}
+
+function syncActiveShortPartUI(part) {
+  if (!part) return;
+  const cached = getShortDraft(part.key);
+  if (elements.shortAnswerInput) {
+    elements.shortAnswerInput.value = cached.text || "";
+  }
+  const maxPoints = part.maxPoints || 0;
   const rangeStep = 0.5;
-  elements.shortAnswerScoreRange.min = "0";
-  elements.shortAnswerScoreRange.max = String(maxPoints);
-  elements.shortAnswerScoreRange.step = String(rangeStep);
-  elements.shortAnswerMaxPoints.textContent = maxPoints.toFixed(1);
-  const savedPoints = cached.points ?? 0;
-  elements.shortAnswerScoreRange.value = String(savedPoints);
-  updateShortScoreHint(maxPoints, savedPoints);
+  if (elements.shortAnswerScoreRange) {
+    elements.shortAnswerScoreRange.min = "0";
+    elements.shortAnswerScoreRange.max = String(maxPoints);
+    elements.shortAnswerScoreRange.step = String(rangeStep);
+    elements.shortAnswerScoreRange.value = String(cached.points ?? 0);
+  }
+  if (elements.shortAnswerMaxPoints) {
+    elements.shortAnswerMaxPoints.textContent = maxPoints.toFixed(1);
+  }
+  updateShortScoreHint(maxPoints, cached.points ?? 0);
 
-  const aiState = state.shortAnswerAI.get(question.key);
-  if (aiState?.feedback) {
-    elements.shortAnswerAiFeedback.textContent = aiState.feedback;
-  } else {
-    elements.shortAnswerAiFeedback.textContent = "";
+  const aiState = state.shortAnswerAI.get(part.key);
+  if (elements.shortAnswerAiFeedback) {
+    elements.shortAnswerAiFeedback.textContent = aiState?.feedback || "";
   }
   if (elements.shortAnswerAiStatus) {
     const label = state.aiStatus.available
@@ -4528,9 +6039,10 @@ function renderShortQuestion(question) {
     elements.shortAnswerAiStatus.textContent = label;
     elements.shortAnswerAiStatus.classList.toggle("warn", !state.aiStatus.available);
   }
+  setShortRetryVisible(false);
 
   if (elements.shortSketchHint) {
-    if (requiresSketch(question)) {
+    if (requiresSketch(part)) {
       elements.shortSketchHint.textContent =
         "Upload en skitse - analysen starter automatisk og bruges i auto-bedømmelsen.";
       elements.shortSketchHint.classList.remove("hidden");
@@ -4540,20 +6052,389 @@ function renderShortQuestion(question) {
     }
   }
 
-  elements.shortAnswerModel.classList.add("hidden");
-  updateShortAnswerModel(question);
-  updateSketchPanel(question);
-  updateShortReviewStatus(question);
-  const shouldOpenReview = Boolean(
-    aiState?.feedback || (cached.text || "").trim() || cached.scored
-  );
-  setShortReviewOpen(shouldOpenReview);
+  setShortAnswerModelVisible(false);
+  updateShortAnswerModel(part);
+  updateSketchPanel(part);
+  updateShortReviewStatus(part);
+  setShortReviewOpen(true);
+  updateShortGroupStatus(state.activeQuestions[state.currentIndex]);
+  updateShortAnswerActions(state.activeQuestions[state.currentIndex]);
+}
 
+function setActiveShortPart(part, { focus = false, announce = false } = {}) {
+  if (!part) return;
+  const wasActive = state.activeShortPartKey === part.key;
+  const current = state.activeQuestions[state.currentIndex];
+  state.activeShortPartKey = part.key;
+  state.shortPartSelectionActive = true;
+  state.shortPartNodes.forEach((nodes, key) => {
+    if (nodes.card) {
+      nodes.card.classList.toggle("is-active", key === part.key);
+    }
+  });
+  if (current && current.type === "short" && isShortGroup(current)) {
+    const parts = getShortParts(current);
+    parts.forEach((candidate) => {
+      if (candidate.key !== part.key) {
+        setShortPartCollapsed(candidate, true);
+      }
+    });
+  }
+  const nodes = state.shortPartNodes.get(part.key);
+  if (nodes) {
+    if (nodes.collapsed) {
+      setShortPartCollapsed(part, false);
+    }
+    elements.shortAnswerInputWrap = nodes.inputWrap;
+    elements.shortAnswerInput = nodes.textarea;
+    elements.transcribeIndicator = nodes.transcribeIndicator;
+    elements.transcribeText = nodes.transcribeText;
+    if (focus) {
+      nodes.textarea.focus();
+    }
+  }
+  updateVoiceIndicator();
+  syncActiveShortPartUI(part);
+  updateQuestionHintUI(part);
+  updateShortPartFigure(part);
+  updateShortcutFigureIndicator(part);
+
+  if (current && current.type === "short" && isShortGroup(current)) {
+    prefetchShortGroupTts(current, { skipKey: part.key });
+    if (announce && !wasActive && !hasShortPartBeenAnnounced(current, part)) {
+      playTtsForShortPart(current, part, "manual");
+    }
+  }
+}
+
+function clearShortPartSelection() {
+  state.shortPartSelectionActive = false;
+  state.shortPartNodes.forEach((nodes) => {
+    if (nodes.card) {
+      nodes.card.classList.remove("is-active");
+    }
+  });
+  const current = state.activeQuestions[state.currentIndex];
+  if (current && current.type === "short") {
+    updateShortGroupStatus(current);
+  }
+}
+
+function buildSketchPanelNodes(part) {
+  const sketchPanel = document.createElement("div");
+  sketchPanel.className = "sketch-panel hidden";
+
+  const sketchPanelHead = document.createElement("div");
+  sketchPanelHead.className = "sketch-panel-head";
+  const sketchPanelTitle = document.createElement("span");
+  sketchPanelTitle.textContent = requiresSketch(part)
+    ? "Skitse-analyse (auto)"
+    : "Skitse (valgfri)";
+  sketchPanelHead.appendChild(sketchPanelTitle);
+  sketchPanel.appendChild(sketchPanelHead);
+
+  const sketchPanelBody = document.createElement("div");
+  sketchPanelBody.className = "sketch-panel-body";
+
+  const sketchDropzone = document.createElement("label");
+  sketchDropzone.className = "sketch-upload";
+
+  const sketchUpload = document.createElement("input");
+  sketchUpload.type = "file";
+  sketchUpload.accept = "image/*";
+
+  const sketchUploadText = document.createElement("span");
+  sketchUploadText.className = "sketch-upload-text";
+  sketchUploadText.textContent = "Vælg billede af din skitse";
+
+  const sketchDropHint = document.createElement("span");
+  sketchDropHint.className = "sketch-drop-hint";
+  sketchDropHint.textContent = "Træk & slip her";
+
+  sketchDropzone.appendChild(sketchUpload);
+  sketchDropzone.appendChild(sketchUploadText);
+  sketchDropzone.appendChild(sketchDropHint);
+  sketchPanelBody.appendChild(sketchDropzone);
+
+  const sketchPreview = document.createElement("img");
+  sketchPreview.className = "sketch-preview hidden";
+  sketchPreview.alt = "Forhåndsvisning af skitse";
+  sketchPanelBody.appendChild(sketchPreview);
+
+  const sketchActions = document.createElement("div");
+  sketchActions.className = "sketch-actions";
+  const sketchStatus = document.createElement("span");
+  sketchStatus.className = "sketch-status";
+  const sketchRetryBtn = document.createElement("button");
+  sketchRetryBtn.type = "button";
+  sketchRetryBtn.className = "btn ghost small hidden";
+  sketchRetryBtn.textContent = "Prøv igen";
+  sketchActions.appendChild(sketchStatus);
+  sketchActions.appendChild(sketchRetryBtn);
+  sketchPanelBody.appendChild(sketchActions);
+
+  const sketchFeedback = document.createElement("div");
+  sketchFeedback.className = "sketch-feedback";
+  sketchPanelBody.appendChild(sketchFeedback);
+
+  sketchPanel.appendChild(sketchPanelBody);
+
+  return {
+    sketchPanel,
+    sketchPanelTitle,
+    sketchPanelBody,
+    sketchUpload,
+    sketchStatus,
+    sketchRetryBtn,
+    sketchFeedback,
+    sketchPreview,
+    sketchDropzone,
+  };
+}
+
+function buildShortPartList(question) {
+  if (!elements.shortPartList || !question || question.type !== "short") return;
+  elements.shortPartList.innerHTML = "";
+  state.shortPartNodes.clear();
+  const parts = getShortParts(question);
+  parts.forEach((part, index) => {
+    const card = document.createElement("div");
+    card.className = "short-part";
+    card.dataset.key = part.key;
+
+    const head = document.createElement("div");
+    head.className = "short-part-head";
+
+    const label = document.createElement("span");
+    label.className = "short-part-label";
+    const labelText = part.label ? part.label.toUpperCase() : String(index + 1);
+    label.textContent = labelText;
+
+    const title = document.createElement("div");
+    title.className = "short-part-title";
+    title.textContent = part.text || part.prompt || "";
+    title.addEventListener("mousedown", (event) => {
+      event.stopPropagation();
+    });
+    title.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+    title.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const activeElement = document.activeElement;
+      if (activeElement && activeElement.tagName === "TEXTAREA") {
+        activeElement.blur();
+      }
+      setActiveShortPart(part, { announce: true });
+    });
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.type = "button";
+    toggleBtn.className = "short-part-toggle";
+    toggleBtn.textContent = "Skjul";
+    toggleBtn.setAttribute("aria-expanded", "true");
+
+    head.appendChild(label);
+    head.appendChild(title);
+    head.appendChild(toggleBtn);
+
+    const status = document.createElement("div");
+    status.className = "short-part-status";
+
+    const inputWrap = document.createElement("div");
+    inputWrap.className = "short-answer-input";
+
+    const textarea = document.createElement("textarea");
+    textarea.rows = 5;
+    textarea.placeholder =
+      `Skriv dit svar til delspørgsmål ${labelText}. Brug gerne punktform og nøglebegreber.`;
+    textarea.setAttribute("aria-label", `Svar til delspørgsmål ${labelText}`);
+
+    const indicator = document.createElement("div");
+    indicator.className = "transcribe-indicator hidden";
+    indicator.dataset.state = "transcribing";
+    indicator.setAttribute("aria-live", "polite");
+    const spinner = document.createElement("span");
+    spinner.className = "transcribe-spinner";
+    spinner.setAttribute("aria-hidden", "true");
+    const indicatorText = document.createElement("span");
+    indicatorText.textContent = "Transkriberer …";
+    indicator.appendChild(spinner);
+    indicator.appendChild(indicatorText);
+
+    inputWrap.appendChild(textarea);
+    inputWrap.appendChild(indicator);
+
+    card.appendChild(head);
+    card.appendChild(status);
+    card.appendChild(inputWrap);
+
+    const sketchNodes = buildSketchPanelNodes(part);
+
+    const figureWrap = document.createElement("figure");
+    figureWrap.className = "short-part-figure hidden";
+    const figureMedia = document.createElement("div");
+    figureMedia.className = "figure-media";
+    const figureCaption = document.createElement("figcaption");
+    figureWrap.appendChild(figureMedia);
+    figureWrap.appendChild(figureCaption);
+    card.appendChild(figureWrap);
+    card.appendChild(sketchNodes.sketchPanel);
+
+    elements.shortPartList.appendChild(card);
+
+    sketchNodes.sketchUpload.addEventListener("change", (event) => {
+      const file = event.target.files && event.target.files[0];
+      void handleSketchUpload(file, { autoAnalyze: true, part });
+    });
+    const dropzone = sketchNodes.sketchDropzone;
+    const highlight = () => dropzone.classList.add("is-dragover");
+    const unhighlight = () => dropzone.classList.remove("is-dragover");
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        highlight();
+      });
+    });
+    ["dragleave", "dragend"].forEach((eventName) => {
+      dropzone.addEventListener(eventName, () => {
+        unhighlight();
+      });
+    });
+    dropzone.addEventListener("drop", (event) => {
+      event.preventDefault();
+      unhighlight();
+      const file = event.dataTransfer?.files && event.dataTransfer.files[0];
+      void handleSketchUpload(file, { autoAnalyze: true, part });
+    });
+    sketchNodes.sketchRetryBtn.addEventListener("click", async () => {
+      setSketchRetryVisible(false, part);
+      await checkAiAvailability();
+      await analyzeSketch(part);
+    });
+
+    textarea.addEventListener("focus", () => {
+      setShortPartCollapsed(part, false);
+      setActiveShortPart(part, { announce: true });
+    });
+    card.addEventListener("click", (event) => {
+      if (event.target === textarea || event.target === toggleBtn) return;
+      const nodes = state.shortPartNodes.get(part.key);
+      if (nodes?.collapsed) {
+        setShortPartCollapsed(part, false);
+      }
+      setActiveShortPart(part, { focus: true, announce: true });
+    });
+    toggleBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const nodes = state.shortPartNodes.get(part.key);
+      const nextState = !nodes?.collapsed;
+      setShortPartCollapsed(part, nextState);
+      if (!nextState) {
+        setActiveShortPart(part, { focus: true, announce: true });
+      }
+    });
+    textarea.addEventListener("input", () => {
+      const currentDraft = getShortDraft(part.key);
+      saveShortDraft(part.key, {
+        text: textarea.value,
+        points: currentDraft.points ?? 0,
+        scored: Boolean(currentDraft.scored),
+      });
+      updateShortPartStatus(part);
+      updateShortGroupStatus(question);
+      if (state.activeShortPartKey === part.key) {
+        updateShortReviewStatus(part);
+      }
+    });
+
+    state.shortPartNodes.set(part.key, {
+      card,
+      status,
+      inputWrap,
+      textarea,
+      toggleBtn,
+      transcribeIndicator: indicator,
+      transcribeText: indicatorText,
+      figureWrap,
+      figureMedia,
+      figureCaption,
+      sketchPanel: sketchNodes.sketchPanel,
+      sketchPanelTitle: sketchNodes.sketchPanelTitle,
+      sketchPanelBody: sketchNodes.sketchPanelBody,
+      sketchUpload: sketchNodes.sketchUpload,
+      sketchStatus: sketchNodes.sketchStatus,
+      sketchRetryBtn: sketchNodes.sketchRetryBtn,
+      sketchFeedback: sketchNodes.sketchFeedback,
+      sketchPreview: sketchNodes.sketchPreview,
+      sketchDropzone: sketchNodes.sketchDropzone,
+      collapsed: false,
+    });
+    setShortPartCollapsed(part, index > 0);
+    const draft = getShortDraft(part.key);
+    textarea.value = draft.text || "";
+    updateShortPartStatus(part);
+    updateSketchPanel(part);
+  });
+}
+
+function renderShortQuestion(question) {
+  elements.optionsContainer.classList.add("hidden");
+  elements.shortAnswerContainer.classList.remove("hidden");
+  if (elements.questionFigure) {
+    elements.questionFigure.classList.add("hidden");
+  }
+  if (elements.questionFigureMedia) {
+    elements.questionFigureMedia.innerHTML = "";
+  }
+  if (elements.questionFigureCaption) {
+    elements.questionFigureCaption.textContent = "";
+  }
+  elements.skipBtn.textContent = "Spring over (0 point)";
+  elements.nextBtn.disabled = false;
+  setShortcutDisabled("next", elements.nextBtn.disabled);
+  if (elements.skipBtn) {
+    setShortcutDisabled("skip", elements.skipBtn.disabled);
+  }
+  if (elements.questionText) {
+    elements.questionText.textContent = question.opgaveTitle || question.category || "Kortsvar";
+  }
+  if (elements.questionIntro) {
+    const intro = String(question.opgaveIntro || "").trim();
+    elements.questionIntro.textContent = intro;
+    elements.questionIntro.classList.toggle("hidden", !intro);
+  }
+  const parts = getShortParts(question);
+  if (elements.questionSubtitle) {
+    const subtitle = parts.length > 1
+      ? "Besvar alle delspørgsmålene herunder."
+      : "Besvar spørgsmålet herunder.";
+    elements.questionSubtitle.textContent = subtitle;
+    elements.questionSubtitle.classList.remove("hidden");
+    elements.questionSubtitle.removeAttribute("data-label");
+  }
+  if (elements.questionText) {
+    elements.questionText.classList.toggle("has-subtitle", true);
+  }
+
+  buildShortPartList(question);
+  updateShortGroupStatus(question);
+  const activePart = parts.find((part) => part.key === state.activeShortPartKey) || parts[0];
+  if (activePart) {
+    setActiveShortPart(activePart);
+  }
   updateShortAnswerActions(question);
+  updateMicControls(question);
 }
 
 function updateQuestionContext(question) {
   if (!elements.questionContext || !elements.questionContextTitle || !elements.questionContextList) {
+    return;
+  }
+  if (question && question.type === "short" && isShortGroup(question)) {
+    elements.questionContextTitle.textContent = "";
+    elements.questionContextList.innerHTML = "";
+    elements.questionContext.classList.add("hidden");
     return;
   }
   const contextQuestions =
@@ -4586,6 +6467,7 @@ function updateQuestionContext(question) {
 function renderQuestion() {
   clearAutoAdvance();
   stopTts();
+  clearTtsPartPrefetch();
   state.locked = false;
   elements.skipBtn.disabled = false;
   setFeedback("");
@@ -4594,6 +6476,13 @@ function renderQuestion() {
   state.figureVisible = false;
 
   const currentQuestion = state.activeQuestions[state.currentIndex];
+  const nextShortKey = currentQuestion?.key || null;
+  if (nextShortKey !== state.lastShortQuestionKey) {
+    state.lastShortQuestionKey = nextShortKey;
+    if (currentQuestion && currentQuestion.type === "short") {
+      resetShortPartAnnounce(nextShortKey);
+    }
+  }
   if (!currentQuestion) return;
 
   elements.questionCategory.textContent = currentQuestion.category;
@@ -4603,7 +6492,7 @@ function renderQuestion() {
     elements.questionType.textContent = currentQuestion.type === "short" ? "Kortsvar" : "MCQ";
   }
   if (elements.questionIntro) {
-    const showIntro = currentQuestion.type !== "short" && currentQuestion.opgaveIntro;
+    const showIntro = Boolean(currentQuestion.opgaveIntro);
     elements.questionIntro.textContent = showIntro ? currentQuestion.opgaveIntro : "";
     elements.questionIntro.classList.toggle("hidden", !showIntro);
   }
@@ -4616,15 +6505,16 @@ function renderQuestion() {
     elements.questionText.classList.remove("has-subtitle");
   }
   updateQuestionContext(currentQuestion);
-  updateQuestionFigure(currentQuestion);
-  updateShortcutFigureIndicator(currentQuestion);
   setShortcutDisabled("grade", currentQuestion.type !== "short");
-  updateQuestionHintUI(currentQuestion);
   queueFigureCaptionsForQuestions(currentQuestion);
+  setShortActionVisibility(currentQuestion.type === "short");
 
   if (currentQuestion.type === "short") {
     renderShortQuestion(currentQuestion);
   } else {
+    updateQuestionFigure(currentQuestion);
+    updateShortcutFigureIndicator(currentQuestion);
+    updateQuestionHintUI(currentQuestion);
     renderMcqQuestion(currentQuestion);
   }
 
@@ -4647,6 +6537,12 @@ function queueFigureCaptionsForQuestions(questions) {
   if (!state.settings.autoFigureCaptions || !state.aiStatus.available) return;
   const list = Array.isArray(questions) ? questions : [questions];
   list.forEach((question) => {
+    if (isShortGroup(question)) {
+      getShortParts(question).forEach((part) => {
+        getQuestionImagePaths(part).forEach((path) => enqueueFigureCaption(path));
+      });
+      return;
+    }
     getQuestionImagePaths(question).forEach((path) => enqueueFigureCaption(path));
   });
   scheduleFigureCaptionQueue();
@@ -4726,8 +6622,15 @@ async function fetchFigureCaptionByPath(imagePath, { force = false, silent = fal
       }
       setFigureCaptionForImage(imagePath, description);
       const current = state.activeQuestions[state.currentIndex];
-      if (current && getQuestionImagePaths(current).includes(imagePath)) {
-        updateShortAnswerModel(current);
+      if (current) {
+        if (isShortGroup(current)) {
+          const activePart = getActiveShortPart(current);
+          if (activePart && getQuestionImagePaths(activePart).includes(imagePath)) {
+            updateShortAnswerModel(activePart);
+          }
+        } else if (getQuestionImagePaths(current).includes(imagePath)) {
+          updateShortAnswerModel(current);
+        }
       }
       return description;
     } catch (error) {
@@ -5063,13 +6966,19 @@ function toggleMicRecording() {
   void startMicRecording();
 }
 
-async function handleSketchUpload(file, { autoAnalyze = true } = {}) {
+async function handleSketchUpload(file, { autoAnalyze = true, part = null } = {}) {
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
+  const targetPart = part || getActiveShortPart(question);
+  if (!targetPart) return;
   if (!file) return;
+  if (state.activeShortPartKey !== targetPart.key) {
+    setActiveShortPart(targetPart);
+  }
+  const nodes = getSketchNodes(targetPart);
   if (file.size > SKETCH_MAX_BYTES) {
-    if (elements.sketchStatus) {
-      elements.sketchStatus.textContent = "Filen er for stor. Vælg en mindre fil.";
+    if (nodes?.sketchStatus) {
+      nodes.sketchStatus.textContent = "Filen er for stor. Vælg en mindre fil.";
     }
     return;
   }
@@ -5077,56 +6986,62 @@ async function handleSketchUpload(file, { autoAnalyze = true } = {}) {
     const dataUrl = await readFileAsDataUrl(file);
     const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
     const label = `${file.name} · ${sizeMb} MB`;
-    state.sketchUploads.set(question.key, { dataUrl, label });
-    state.sketchAnalysis.delete(question.key);
-    setSketchRetryVisible(false);
-    if (elements.sketchStatus) {
-      elements.sketchStatus.textContent = `Valgt: ${label}`;
+    state.sketchUploads.set(targetPart.key, { dataUrl, label });
+    state.sketchAnalysis.delete(targetPart.key);
+    setSketchRetryVisible(false, targetPart);
+    if (nodes?.sketchStatus) {
+      nodes.sketchStatus.textContent = `Valgt: ${label}`;
     }
-    if (elements.sketchFeedback) {
-      elements.sketchFeedback.textContent = "";
+    if (nodes?.sketchFeedback) {
+      nodes.sketchFeedback.textContent = "";
     }
-    if (elements.sketchPreview) {
-      elements.sketchPreview.src = dataUrl;
-      elements.sketchPreview.classList.remove("hidden");
+    if (nodes?.sketchPreview) {
+      nodes.sketchPreview.src = dataUrl;
+      nodes.sketchPreview.classList.remove("hidden");
     }
     if (autoAnalyze) {
-      void analyzeSketch();
+      void analyzeSketch(targetPart);
     }
   } catch (error) {
-    if (elements.sketchStatus) {
-      elements.sketchStatus.textContent = error.message || "Kunne ikke læse filen.";
+    if (nodes?.sketchStatus) {
+      nodes.sketchStatus.textContent = error.message || "Kunne ikke læse filen.";
     }
   }
 }
 
-async function analyzeSketch() {
+async function analyzeSketch(part = null) {
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
-  setSketchRetryVisible(false);
+  const targetPart = part || getActiveShortPart(question);
+  if (!targetPart) return;
+  if (state.activeShortPartKey !== targetPart.key) {
+    setActiveShortPart(targetPart);
+  }
+  const nodes = getSketchNodes(targetPart);
+  setSketchRetryVisible(false, targetPart);
   if (!state.aiStatus.available) {
-    if (elements.sketchStatus) {
-      elements.sketchStatus.textContent = state.aiStatus.message || "Hjælp er ikke klar";
+    if (nodes?.sketchStatus) {
+      nodes.sketchStatus.textContent = state.aiStatus.message || "Hjælp er ikke klar";
     }
-    setSketchRetryVisible(true);
+    setSketchRetryVisible(true, targetPart);
     return;
   }
-  const upload = state.sketchUploads.get(question.key);
+  const upload = state.sketchUploads.get(targetPart.key);
   if (!upload) {
-    if (elements.sketchStatus) {
-      elements.sketchStatus.textContent = "Vælg en skitse først.";
+    if (nodes?.sketchStatus) {
+      nodes.sketchStatus.textContent = "Vælg en skitse først.";
     }
     return;
   }
-  if (elements.sketchStatus) {
-    elements.sketchStatus.textContent = "Analyserer skitse …";
+  if (nodes?.sketchStatus) {
+    nodes.sketchStatus.textContent = "Analyserer skitse …";
   }
 
-  let modelAnswer = buildSketchModelAnswer(question);
-  if (getQuestionImagePaths(question).length && !getCombinedFigureCaption(question)) {
-    const generated = await fetchFigureCaptionForQuestion(question, { silent: true });
+  let modelAnswer = buildSketchModelAnswer(targetPart);
+  if (getQuestionImagePaths(targetPart).length && !getCombinedFigureCaption(targetPart)) {
+    const generated = await fetchFigureCaptionForQuestion(targetPart, { silent: true });
     if (generated) {
-      modelAnswer = buildSketchModelAnswer(question);
+      modelAnswer = buildSketchModelAnswer(targetPart);
     }
   }
 
@@ -5137,7 +7052,7 @@ async function analyzeSketch() {
       body: JSON.stringify({
         task: "sketch",
         imageData: upload.dataUrl,
-        question: buildShortPrompt(question),
+        question: buildShortPrompt(targetPart),
         modelAnswer,
         language: "da",
       }),
@@ -5160,21 +7075,20 @@ async function analyzeSketch() {
       missing: Array.isArray(data.missing) ? data.missing : [],
       feedback: String(data.feedback || "").trim(),
     };
-    state.sketchAnalysis.set(question.key, result);
-    if (elements.sketchFeedback) {
-      elements.sketchFeedback.textContent = formatSketchFeedback(result);
+    state.sketchAnalysis.set(targetPart.key, result);
+    if (nodes?.sketchFeedback) {
+      nodes.sketchFeedback.textContent = formatSketchFeedback(result);
     }
-    if (elements.sketchStatus) {
-      elements.sketchStatus.textContent = "Skitse analyseret.";
+    if (nodes?.sketchStatus) {
+      nodes.sketchStatus.textContent = "Skitse analyseret.";
     }
-    setSketchRetryVisible(false);
-    await gradeShortAnswer({ auto: true });
+    setSketchRetryVisible(false, targetPart);
   } catch (error) {
-    if (elements.sketchStatus) {
-      elements.sketchStatus.textContent =
+    if (nodes?.sketchStatus) {
+      nodes.sketchStatus.textContent =
         `Kunne ikke analysere skitsen. ${error.message || "Prøv igen om lidt."}`;
     }
-    setSketchRetryVisible(true);
+    setSketchRetryVisible(true, targetPart);
   }
 }
 
@@ -5247,14 +7161,18 @@ function skipQuestion() {
     }
   }
   if (question.type === "short") {
-    state.results.push({
-      question,
-      type: "short",
-      response: "",
-      awardedPoints: 0,
-      maxPoints: question.maxPoints || 0,
-      skipped: true,
-      ai: state.shortAnswerAI.get(question.key) || null,
+    const parts = getShortParts(question);
+    parts.forEach((part) => {
+      state.results.push({
+        question: part,
+        groupKey: question.key,
+        type: "short",
+        response: "",
+        awardedPoints: 0,
+        maxPoints: part.maxPoints || 0,
+        skipped: true,
+        ai: state.shortAnswerAI.get(part.key) || null,
+      });
     });
     recordPerformance(question, 0, getQuestionTimeMs());
     setFeedback("Sprunget over – 0 point.");
@@ -5348,6 +7266,13 @@ function getShortTargetFromRatio(mcqTarget, shortPoolCount, settings) {
   return Math.min(Math.max(raw, 1), shortPoolCount);
 }
 
+function estimateShortTargetFromRatio(mcqTarget, settings) {
+  if (!Number.isFinite(mcqTarget) || mcqTarget <= 0) return 0;
+  const { mcqRatio, shortRatio } = getRatioValues(settings);
+  const raw = Math.round((mcqTarget * shortRatio) / mcqRatio);
+  return Math.max(raw, 1);
+}
+
 function formatRatioLabel(settings) {
   const { mcqRatio, shortRatio } = getRatioValues(settings);
   return `${mcqRatio}:${shortRatio}`;
@@ -5376,6 +7301,11 @@ function getMcqCorrectOptionText(question) {
 
 function canGenerateHint(question) {
   if (!question) return false;
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (!activePart) return false;
+    question = activePart;
+  }
   if (question.type === "mcq") {
     return Boolean(getMcqCorrectOptionText(question));
   }
@@ -5396,6 +7326,15 @@ function setHintEntry(question, entry) {
 
 function updateQuestionHintUI(question = state.activeQuestions[state.currentIndex]) {
   if (!elements.questionHint || !elements.questionHintText || !elements.questionHintStatus) {
+    return;
+  }
+  if (question && question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (activePart) {
+      updateQuestionHintUI(activePart);
+    } else {
+      elements.questionHint.classList.add("hidden");
+    }
     return;
   }
   if (!question) {
@@ -5465,6 +7404,11 @@ function updateQuestionHintUI(question = state.activeQuestions[state.currentInde
 
 async function buildHintPayload(question) {
   if (!question) return null;
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (!activePart) return null;
+    question = activePart;
+  }
   if (question.type === "mcq") {
     const mapping = getOptionMapping(question);
     const optionsText = (mapping.options || [])
@@ -5499,44 +7443,50 @@ async function buildHintPayload(question) {
 async function toggleQuestionHint() {
   const question = state.activeQuestions[state.currentIndex];
   if (!question) return;
-  const hintEntry = getHintEntry(question) || { text: "", visible: false, loading: false };
+  let target = question;
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (!activePart) return;
+    target = activePart;
+  }
+  const hintEntry = getHintEntry(target) || { text: "", visible: false, loading: false };
   if (hintEntry.visible) {
     if (hintEntry.loading) return;
     hintEntry.visible = false;
     hintEntry.loading = false;
-    setHintEntry(question, hintEntry);
-    updateQuestionHintUI(question);
+    setHintEntry(target, hintEntry);
+    updateQuestionHintUI(target);
     return;
   }
 
-  const canHint = canGenerateHint(question);
+  const canHint = canGenerateHint(target);
   if (!state.aiStatus.available || !canHint) {
     hintEntry.visible = true;
     hintEntry.loading = false;
-    setHintEntry(question, hintEntry);
-    updateQuestionHintUI(question);
+    setHintEntry(target, hintEntry);
+    updateQuestionHintUI(target);
     return;
   }
 
   if (hintEntry.text) {
     hintEntry.visible = true;
-    setHintEntry(question, hintEntry);
-    updateQuestionHintUI(question);
+    setHintEntry(target, hintEntry);
+    updateQuestionHintUI(target);
     return;
   }
 
   hintEntry.loading = true;
   hintEntry.visible = true;
-  setHintEntry(question, hintEntry);
-  updateQuestionHintUI(question);
+  setHintEntry(target, hintEntry);
+  updateQuestionHintUI(target);
 
-  const payload = await buildHintPayload(question);
+  const payload = await buildHintPayload(target);
   if (!payload || !payload.modelAnswer) {
     hintEntry.loading = false;
     hintEntry.visible = true;
     hintEntry.text = "Ingen facit til hint.";
-    setHintEntry(question, hintEntry);
-    updateQuestionHintUI(question);
+    setHintEntry(target, hintEntry);
+    updateQuestionHintUI(target);
     return;
   }
 
@@ -5564,8 +7514,8 @@ async function toggleQuestionHint() {
   } finally {
     hintEntry.loading = false;
     hintEntry.visible = true;
-    setHintEntry(question, hintEntry);
-    updateQuestionHintUI(question);
+    setHintEntry(target, hintEntry);
+    updateQuestionHintUI(target);
   }
 }
 
@@ -5593,8 +7543,11 @@ function setAiStatus(status) {
 
   const current = state.activeQuestions[state.currentIndex];
   if (current && current.type === "short") {
-    updateShortAnswerModel(current);
-    updateSketchPanel(current);
+    const activePart = getActiveShortPart(current);
+    if (activePart) {
+      updateShortAnswerModel(activePart);
+      updateSketchPanel(activePart);
+    }
     updateShortAnswerActions(current);
   }
   if (status.available && state.settings.autoFigureCaptions) {
@@ -5676,6 +7629,7 @@ function applyTtsVisibility() {
   if (!enabled) {
     stopTts();
     clearTtsPrefetch();
+    clearTtsPartPrefetch();
   }
   updateTtsControls();
   applyTtsCollapsedState();
@@ -5705,6 +7659,7 @@ function setTtsStatus(status) {
   if (!state.ttsStatus.available) {
     stopTts();
     clearTtsPrefetch();
+    clearTtsPartPrefetch();
     return;
   }
 
@@ -5744,9 +7699,52 @@ function getOptionLinesForQuestion(question) {
     .filter(Boolean);
 }
 
+function formatShortPartLabel(question, part) {
+  if (!part) return "1";
+  if (part.label) return part.label.toUpperCase();
+  const parts = getShortParts(question);
+  const index = parts.findIndex((entry) => entry.key === part.key);
+  return index >= 0 ? String(index + 1) : "1";
+}
+
+function buildShortPartTtsText(
+  question,
+  part,
+  { includeMain = false } = {}
+) {
+  if (!question || !part) return "";
+  const parts = [];
+  if (includeMain) {
+    const title = question.opgaveTitle || question.category;
+    if (title) {
+      parts.push(title);
+    }
+  }
+  if (question.opgaveIntro) {
+    parts.push(`Opgaveintro: ${question.opgaveIntro}`);
+  }
+  if (question.text) {
+    parts.push(question.text);
+  }
+  const label = formatShortPartLabel(question, part);
+  const prompt = String(part.text || part.prompt || "").trim();
+  if (prompt) {
+    parts.push(`Delspørgsmål ${label}: ${prompt}`);
+  }
+  if (part.images?.length) {
+    parts.push(`Der er en figur til delspørgsmål ${label}.`);
+  }
+  return sanitizeTtsText(parts.join("\n"));
+}
+
 function buildTtsText(question) {
   if (!question) return "";
   const parts = [];
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question) || getShortParts(question)[0];
+    if (!activePart) return "";
+    return buildShortPartTtsText(question, activePart);
+  }
   if (question.opgaveIntro) {
     parts.push(`Opgaveintro: ${question.opgaveIntro}`);
   }
@@ -5766,6 +7764,225 @@ function buildTtsText(question) {
     }
   }
   return sanitizeTtsText(parts.join("\n"));
+}
+
+function clearTtsPartPrefetch() {
+  const cache = state.ttsPartPrefetch;
+  if (!cache) return;
+  if (cache.timer) {
+    clearTimeout(cache.timer);
+    cache.timer = null;
+  }
+  cache.entries.forEach((entry) => {
+    if (entry.abortController) {
+      entry.abortController.abort();
+    }
+  });
+  cache.entries.clear();
+}
+
+function resetShortPartAnnounce(questionKey) {
+  if (!questionKey) return;
+  state.ttsPartAnnounce.set(questionKey, {
+    mainAnnounced: false,
+    parts: new Set(),
+  });
+}
+
+function getShortPartAnnounceInfo(question) {
+  if (!question?.key) return null;
+  let info = state.ttsPartAnnounce.get(question.key);
+  if (!info) {
+    info = {
+      mainAnnounced: false,
+      parts: new Set(),
+    };
+    state.ttsPartAnnounce.set(question.key, info);
+  }
+  return info;
+}
+
+function shouldIncludeShortMain(question) {
+  const info = getShortPartAnnounceInfo(question);
+  return info ? !info.mainAnnounced : true;
+}
+
+function markShortPartAnnounced(question, part, includeMain = false) {
+  const info = getShortPartAnnounceInfo(question);
+  if (!info || !part?.key) return;
+  if (includeMain) {
+    info.mainAnnounced = true;
+  }
+  info.parts.add(part.key);
+}
+
+function hasShortPartBeenAnnounced(question, part) {
+  const info = getShortPartAnnounceInfo(question);
+  if (!info || !part?.key) return false;
+  return info.parts.has(part.key);
+}
+
+function isShortPartPrefetchMatch(entry, text, voice, speed, includeOptions) {
+  return Boolean(
+    entry &&
+      entry.text === text &&
+      entry.voice === voice &&
+      entry.speed === speed &&
+      entry.includeOptions === includeOptions
+  );
+}
+
+function getShortPartPrefetchEntry(partKey) {
+  if (!partKey) return null;
+  const cache = state.ttsPartPrefetch;
+  if (!cache) return null;
+  let entry = cache.entries.get(partKey);
+  if (!entry) {
+    entry = {
+      key: partKey,
+      text: "",
+      voice: null,
+      speed: null,
+      includeOptions: null,
+      blob: null,
+      promise: null,
+      requestId: 0,
+      abortController: null,
+    };
+    cache.entries.set(partKey, entry);
+  }
+  return entry;
+}
+
+function prefetchShortPartTts(question, part) {
+  if (!state.settings.ttsEnabled || !state.ttsStatus.available || document.hidden) return;
+  if (!question || !part || !part.key) return;
+  const text = buildShortPartTtsText(question, part, { includeMain: false });
+  if (!text || text.length > TTS_MAX_CHARS) return;
+
+  const voice = normalizeTtsVoice(state.settings.ttsVoice);
+  const speed = Math.min(
+    Math.max(Number(state.settings.ttsSpeed) || 1, TTS_SPEED_MIN),
+    TTS_SPEED_MAX
+  );
+  const includeOptions = state.settings.ttsIncludeOptions;
+
+  const entry = getShortPartPrefetchEntry(part.key);
+  if (!entry) return;
+  if (isShortPartPrefetchMatch(entry, text, voice, speed, includeOptions)) {
+    if (entry.blob || entry.promise) return;
+  } else if (entry.abortController) {
+    entry.abortController.abort();
+  }
+
+  entry.requestId += 1;
+  const requestId = entry.requestId;
+  const controller = new AbortController();
+  entry.text = text;
+  entry.voice = voice;
+  entry.speed = speed;
+  entry.includeOptions = includeOptions;
+  entry.abortController = controller;
+  entry.blob = null;
+
+  entry.promise = apiFetch("/api/tts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, voice, speed }),
+    signal: controller.signal,
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        let detail = `TTS response ${res.status}`;
+        try {
+          const data = await res.json();
+          if (data.error) detail = data.error;
+        } catch (error) {
+          detail = `TTS response ${res.status}`;
+        }
+        throw new Error(detail);
+      }
+      return res.blob();
+    })
+    .then((blob) => {
+      if (entry.requestId !== requestId) return null;
+      entry.blob = blob;
+      entry.abortController = null;
+      entry.promise = null;
+      return blob;
+    })
+    .catch((error) => {
+      if (error.name === "AbortError") return null;
+      if (entry.requestId === requestId) {
+        entry.abortController = null;
+        entry.promise = null;
+        entry.blob = null;
+        entry.text = "";
+        entry.voice = null;
+        entry.speed = null;
+        entry.includeOptions = null;
+      }
+      return null;
+    });
+}
+
+function prefetchShortGroupTts(question, { skipKey } = {}) {
+  if (!state.settings.ttsEnabled || !state.ttsStatus.available || document.hidden) return;
+  if (!question || question.type !== "short" || !isShortGroup(question)) return;
+  const parts = getShortParts(question);
+  parts.forEach((part) => {
+    if (skipKey && part.key === skipKey) return;
+    prefetchShortPartTts(question, part);
+  });
+}
+
+async function getShortPartPrefetchedBlob(part, text, voice, speed, includeOptions) {
+  if (!part || !part.key) return null;
+  const entry = state.ttsPartPrefetch?.entries.get(part.key);
+  if (!isShortPartPrefetchMatch(entry, text, voice, speed, includeOptions)) return null;
+  if (entry.blob) return entry.blob;
+  if (!entry.promise) return null;
+  try {
+    const blob = await entry.promise;
+    if (!blob) return null;
+    if (!isShortPartPrefetchMatch(entry, text, voice, speed, includeOptions)) return null;
+    return blob;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function playTtsForShortPart(question, part, source = "manual") {
+  if (!state.settings.ttsEnabled) return;
+  if (!question || !part) return;
+  const includeMain = shouldIncludeShortMain(question);
+  const text = buildShortPartTtsText(question, part, { includeMain });
+  if (!text) {
+    stopTts("Ingen tekst at læse op.", true);
+    return;
+  }
+  if (!state.ttsStatus.available) {
+    stopTts(getTtsBaseLabel(), true);
+    return;
+  }
+  if (text.length > TTS_MAX_CHARS) {
+    stopTts("Teksten er for lang til oplæsning. Slå evt. svarmuligheder fra.", true);
+    return;
+  }
+
+  const voice = normalizeTtsVoice(state.settings.ttsVoice);
+  const speed = Math.min(
+    Math.max(Number(state.settings.ttsSpeed) || 1, TTS_SPEED_MIN),
+    TTS_SPEED_MAX
+  );
+  const includeOptions = state.settings.ttsIncludeOptions;
+  markShortPartAnnounced(question, part, includeMain);
+  const prefetched = await getShortPartPrefetchedBlob(part, text, voice, speed, includeOptions);
+  if (prefetched) {
+    await playTtsBlob(prefetched, { source });
+    return;
+  }
+  playTtsText(text, { source });
 }
 
 function clearTtsPrefetch() {
@@ -6098,6 +8315,13 @@ async function playTtsForCurrentQuestion(source = "manual") {
   if (!state.settings.ttsEnabled) return;
   const question = state.activeQuestions[state.currentIndex];
   if (!question) return;
+  if (question.type === "short" && isShortGroup(question)) {
+    const part = getActiveShortPart(question);
+    if (part) {
+      await playTtsForShortPart(question, part, source);
+    }
+    return;
+  }
   const text = buildTtsText(question);
   const voice = normalizeTtsVoice(state.settings.ttsVoice);
   const speed = Math.min(
@@ -6320,28 +8544,38 @@ function saveShortDraft(questionKey, data) {
   state.shortAnswerDrafts.set(questionKey, { ...current, ...data });
 }
 
-function updateShortScoreHint(maxPoints, currentPoints) {
-  if (!elements.shortAnswerHint) return;
+function updateShortScoreHint(maxPoints, currentPoints, hintEl = elements.shortAnswerHint) {
+  if (!hintEl) return;
   const safeMax = Number(maxPoints) || 0;
   const safeCurrent = clamp(Number(currentPoints) || 0, 0, safeMax || 0);
-  elements.shortAnswerHint.textContent =
-    `Valgt: ${safeCurrent.toFixed(1)} / ${safeMax.toFixed(1)} point. Under ${SHORT_FAIL_THRESHOLD} point tæller som fejlet.`;
+  const failThreshold = getShortFailThreshold(safeMax);
+  const thresholdText = safeMax > 0
+    ? `Under ${SHORT_FAIL_PERCENT}% (${failThreshold.toFixed(1)} point) tæller som fejlet.`
+    : `Under ${SHORT_FAIL_PERCENT}% tæller som fejlet.`;
+  hintEl.textContent =
+    `Valgt: ${safeCurrent.toFixed(1)} / ${safeMax.toFixed(1)} point. ${thresholdText}`;
 }
 
 function syncShortScoreInputs(value, options = {}) {
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
-  const maxPoints = question.maxPoints || 0;
+  const part = getActiveShortPart(question);
+  if (!part) return;
+  const maxPoints = part.maxPoints || 0;
   const numeric = Number(clamp(Number(value) || 0, 0, maxPoints).toFixed(1));
   const scored = options.scored ?? true;
-  elements.shortAnswerScoreRange.value = String(numeric);
+  if (elements.shortAnswerScoreRange) {
+    elements.shortAnswerScoreRange.value = String(numeric);
+  }
   updateShortScoreHint(maxPoints, numeric);
-  saveShortDraft(question.key, {
-    text: elements.shortAnswerInput.value,
+  saveShortDraft(part.key, {
+    text: elements.shortAnswerInput?.value || "",
     points: numeric,
     scored,
   });
-  updateShortReviewStatus(question);
+  updateShortPartStatus(part);
+  updateShortGroupStatus(question);
+  updateShortReviewStatus(part);
   updateShortAnswerActions(question);
 }
 
@@ -6350,27 +8584,50 @@ function finalizeShortAnswer() {
   stopTts();
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
-  const response = elements.shortAnswerInput.value.trim();
-  const maxPoints = question.maxPoints || 0;
-  const awardedPoints = clamp(Number(elements.shortAnswerScoreRange.value) || 0, 0, maxPoints);
-  state.score += awardedPoints;
-  state.scoreBreakdown.short += awardedPoints;
-  state.results.push({
-    question,
-    type: "short",
-    response,
-    awardedPoints,
-    maxPoints,
-    skipped: false,
-    ai: state.shortAnswerAI.get(question.key) || null,
+  const parts = getShortParts(question);
+  if (!parts.length) return;
+  let awardedTotal = 0;
+  let maxTotal = 0;
+  parts.forEach((part) => {
+    const draft = getShortDraft(part.key);
+    const response = String(draft.text || "").trim();
+    const hasAnswer = hasShortPartAnswer(part);
+    const maxPoints = part.maxPoints || 0;
+    const awardedPoints = hasAnswer ? clamp(Number(draft.points) || 0, 0, maxPoints) : 0;
+    awardedTotal += awardedPoints;
+    maxTotal += maxPoints;
+    state.results.push({
+      question: part,
+      groupKey: question.key,
+      type: "short",
+      response,
+      awardedPoints,
+      maxPoints,
+      skipped: !hasAnswer,
+      ai: state.shortAnswerAI.get(part.key) || null,
+    });
   });
-  const ratio = maxPoints > 0 ? awardedPoints / maxPoints : 0;
+  const partCount = parts.length;
+  const averageAwarded = partCount ? awardedTotal / partCount : 0;
+  const averageMax = partCount ? maxTotal / partCount : 0;
+  const roundedAwarded = Number(averageAwarded.toFixed(1));
+  const roundedMax = Number(averageMax.toFixed(1));
+  state.score += roundedAwarded;
+  state.scoreBreakdown.short += roundedAwarded;
+  const ratio = averageMax > 0 ? averageAwarded / averageMax : 0;
   recordPerformance(question, ratio, getQuestionTimeMs());
   state.locked = true;
   elements.skipBtn.disabled = true;
-  setFeedback(`Svar gemt: ${awardedPoints.toFixed(1)} / ${maxPoints.toFixed(1)} point.`, "success");
+  setFeedback(
+    `Svar gemt (gennemsnit): ${roundedAwarded.toFixed(1)} / ${roundedMax.toFixed(1)} point.`,
+    "success"
+  );
   updateTopBar();
-  updateShortReviewStatus(question);
+  parts.forEach((part) => updateShortPartStatus(part));
+  const activePart = getActiveShortPart(question);
+  if (activePart) {
+    updateShortReviewStatus(activePart);
+  }
   updateShortAnswerActions(question);
 }
 
@@ -6378,10 +8635,77 @@ function toggleFigure() {
   setFigureVisibility(!state.figureVisible);
 }
 
+async function gradeShortGroupAnswers(question, { auto = false } = {}) {
+  if (!question || question.type !== "short" || !isShortGroup(question)) return;
+  const parts = getShortParts(question);
+  if (!parts.length) return;
+  if (state.shortAnswerPending) {
+    setShortcutTempStatus("grade", "Vurderer …", 1500);
+    return;
+  }
+
+  const { hasText, hasSketch } = getShortAnswerState(question);
+  const hasAnswer = hasText || hasSketch;
+  if (!hasAnswer) {
+    setShortReviewOpen(true);
+    updateShortAnswerActions(question);
+    setFeedback(
+      "Skriv et svar til alle delspørgsmål eller brug Spring over i Mere.",
+      "error"
+    );
+    setShortcutTempStatus("grade", "Mangler svar", 2000);
+    return;
+  }
+
+  const partsToGrade = parts.filter(
+    (part) => hasShortPartAnswer(part) && !isShortPartScored(part)
+  );
+  if (!partsToGrade.length) {
+    updateShortGroupStatus(question);
+    updateShortAnswerActions(question);
+    return;
+  }
+
+  setShortReviewOpen(true);
+  if (!state.aiStatus.available) {
+    elements.shortAnswerAiFeedback.textContent =
+      state.aiStatus.message || "Auto-bedømmelse er ikke sat op endnu.";
+    setShortcutTempStatus("grade", "Hjælp er ikke klar", 2000);
+    setShortRetryVisible(true);
+    return;
+  }
+
+  const originalKey = state.activeShortPartKey;
+  for (const part of partsToGrade) {
+    if (state.activeShortPartKey !== part.key) {
+      setActiveShortPart(part);
+    }
+    setShortRetryVisible(false);
+    updateShortReviewStatus(part);
+    const upload = state.sketchUploads.get(part.key);
+    const analysis = state.sketchAnalysis.get(part.key);
+    if (upload && !analysis) {
+      await analyzeSketch(part);
+    }
+    await gradeShortAnswer({ auto });
+  }
+
+  if (originalKey && originalKey !== state.activeShortPartKey) {
+    const restorePart = parts.find((part) => part.key === originalKey);
+    if (restorePart) {
+      setActiveShortPart(restorePart);
+    }
+  }
+  updateShortGroupStatus(question);
+  updateShortAnswerActions(question);
+}
+
 async function gradeShortAnswer(options = {}) {
   const { auto = false } = options;
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
+  const part = getActiveShortPart(question);
+  if (!part) return;
   setShortRetryVisible(false);
   if (!state.aiStatus.available) {
     elements.shortAnswerAiFeedback.textContent =
@@ -6390,9 +8714,9 @@ async function gradeShortAnswer(options = {}) {
     setShortRetryVisible(true);
     return;
   }
-  const { answer: combinedAnswer, hasSketch } = buildShortAnswerForGrading(question);
+  const { answer: combinedAnswer, hasSketch } = buildShortAnswerForGrading(part);
   if (!combinedAnswer) {
-    const upload = state.sketchUploads.get(question.key);
+    const upload = state.sketchUploads.get(part.key);
     elements.shortAnswerAiFeedback.textContent = upload
       ? "Skitseanalyse mangler. Vent på analysen, eller skriv et svar."
       : "Skriv et svar eller upload en skitse først.";
@@ -6408,20 +8732,20 @@ async function gradeShortAnswer(options = {}) {
       : "Auto-bedømmer dit svar …"
     : feedbackPrefix;
 
-  const modelAnswer = await resolveShortModelAnswer(question, { useSketch: hasSketch });
+  const modelAnswer = await resolveShortModelAnswer(part, { useSketch: hasSketch });
 
   try {
     const res = await apiFetch("/api/grade", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        prompt: buildShortPrompt(question),
+        prompt: buildShortPrompt(part),
         modelAnswer,
         userAnswer: combinedAnswer,
-        maxPoints: question.maxPoints || 0,
-        sources: question.sources || [],
+        maxPoints: part.maxPoints || 0,
+        sources: part.sources || [],
         language: "da",
-        ignoreSketch: requiresSketch(question) && !hasSketch,
+        ignoreSketch: requiresSketch(part) && !hasSketch,
       }),
     });
     if (!res.ok) {
@@ -6438,7 +8762,7 @@ async function gradeShortAnswer(options = {}) {
     const fallbackFeedback = hasSketch
       ? "Skitse vurderet. Justér point efter behov."
       : "Auto-vurdering klar. Justér point efter behov.";
-    applyShortAnswerGradeResult(question, data, { fallbackFeedback });
+    applyShortAnswerGradeResult(part, data, { fallbackFeedback });
     setShortRetryVisible(false);
   } catch (error) {
     elements.shortAnswerAiFeedback.textContent =
@@ -6464,22 +8788,23 @@ function handleNextClick() {
   }
   if (question.type === "short" && !state.locked) {
     if (state.shortAnswerPending) return;
-    const { hasText, hasSketch, scored } = getShortAnswerState(question);
+    const { hasText, hasSketch } = getShortAnswerState(question);
     const hasAnswer = hasText || hasSketch;
-    if (!scored) {
+    if (!isShortReadyForNext(question)) {
       setShortReviewOpen(true);
-      updateShortReviewStatus(question);
+      const activePart = getActiveShortPart(question);
+      if (activePart) {
+        updateShortReviewStatus(activePart);
+      }
       updateShortAnswerActions(question);
       if (!hasAnswer) {
-        setFeedback("Skriv et svar eller upload en skitse først. Ellers brug Spring over i Mere.", "error");
+        setFeedback(
+          "Skriv et svar til alle delspørgsmål eller brug Spring over i Mere.",
+          "error"
+        );
         return;
       }
-      if (state.aiStatus.available) {
-        triggerShortAutoGrade();
-      } else if (elements.shortAnswerAiFeedback) {
-        elements.shortAnswerAiFeedback.textContent =
-          "Giv point manuelt i vurderingen, eller spring over.";
-      }
+      setFeedback("Vurdér svarene før du går videre.", "error");
       return;
     }
     finalizeShortAnswer();
@@ -7442,7 +9767,7 @@ function buildReviewList(results) {
         card.classList.add("skipped");
       } else if (entry.awardedPoints >= entry.maxPoints) {
         card.classList.add("correct");
-      } else if (entry.awardedPoints < SHORT_FAIL_THRESHOLD) {
+      } else if (isShortFailed(entry)) {
         card.classList.add("wrong");
       } else {
         card.classList.add("partial");
@@ -7492,7 +9817,7 @@ function buildReviewList(results) {
       if (!entry.skipped) {
         const statusLine = document.createElement("div");
         statusLine.className = "answer-line";
-        if (entry.awardedPoints >= SHORT_FAIL_THRESHOLD) {
+        if (!isShortFailed(entry)) {
           statusLine.textContent = "Status: Bestået";
           statusLine.classList.add("correct");
         } else {
@@ -7506,7 +9831,11 @@ function buildReviewList(results) {
       if (modelAnswer) {
         const modelLine = document.createElement("div");
         modelLine.className = "answer-line";
-        modelLine.textContent = `Facit: ${modelAnswer}`;
+        if (labelTag) {
+          modelLine.textContent = `Facit (${labelTag}): ${modelAnswer}`;
+        } else {
+          modelLine.textContent = `Facit: ${modelAnswer}`;
+        }
         lines.push(modelLine);
       }
 
@@ -7633,10 +9962,33 @@ function showResults() {
   clearTtsPrefetch();
   clearFigureCaptionQueue();
   state.questionStartedAt = null;
+  state.sessionActive = false;
+  state.sessionPaused = false;
+  state.sessionPausedAt = null;
+  resetCancelRoundConfirm();
+  updatePausedSessionUI();
   state.scoreSummary = calculateScoreSummary();
   const correct = state.results.filter((r) => r.type === "mcq" && r.isCorrect).length;
   const wrong = state.results.filter((r) => r.type === "mcq" && !r.isCorrect && !r.skipped).length;
-  const skipped = state.results.filter((r) => r.skipped).length;
+  const mcqSkipped = state.results.filter((r) => r.type === "mcq" && r.skipped).length;
+  const shortSkipMap = new Map();
+  const shortMistakes = new Set();
+  state.results.forEach((result) => {
+    if (result?.type !== "short") return;
+    const groupKey = getShortResultGroupKey(result);
+    if (!groupKey) return;
+    const entry = shortSkipMap.get(groupKey) || { total: 0, skipped: 0 };
+    entry.total += 1;
+    if (result.skipped) entry.skipped += 1;
+    shortSkipMap.set(groupKey, entry);
+    if (result.skipped || isShortFailed(result)) {
+      shortMistakes.add(groupKey);
+    }
+  });
+  const skippedShortGroups = [...shortSkipMap.values()].filter(
+    (entry) => entry.total && entry.skipped === entry.total
+  ).length;
+  const skipped = mcqSkipped + skippedShortGroups;
   const timePerQuestion = formatTempo();
   elements.progressFill.style.width = "100%";
 
@@ -7698,13 +10050,9 @@ function showResults() {
   }
 
   const mistakeKeys = state.results
-    .filter((result) => {
-      if (result.type === "short") {
-        return isShortFailed(result);
-      }
-      return !result.isCorrect;
-    })
+    .filter((result) => result.type === "mcq" && !result.isCorrect)
     .map((result) => result.question.key);
+  shortMistakes.forEach((key) => mistakeKeys.push(key));
   state.lastMistakeKeys = new Set(mistakeKeys);
   localStorage.setItem(STORAGE_KEYS.mistakes, JSON.stringify([...state.lastMistakeKeys]));
   if (elements.playAgainBtn) {
@@ -7714,9 +10062,7 @@ function showResults() {
     elements.restartRoundBtn.classList.toggle("hidden", !state.lastMistakeKeys.size);
   }
 
-  state.activeQuestions.forEach((question) => state.seenKeys.add(question.key));
-  localStorage.setItem(STORAGE_KEYS.seen, JSON.stringify([...state.seenKeys]));
-  scheduleUserStateSync();
+  markQuestionsSeen(getResultsQuestions(state.results));
 
   buildReviewQueue(state.results);
   buildReviewList(state.results);
@@ -7738,6 +10084,19 @@ function sortQuestions(questions) {
     }
     return String(a.category).localeCompare(String(b.category));
   });
+}
+
+function orderQuestionsByType(questions) {
+  const mcq = [];
+  const short = [];
+  questions.forEach((question) => {
+    if (question?.type === "short") {
+      short.push(question);
+    } else {
+      mcq.push(question);
+    }
+  });
+  return mcq.concat(short);
 }
 
 function pickWeightedOne(list) {
@@ -7826,8 +10185,8 @@ function pickFromPool(pool, count) {
     state.sessionSettings.preferUnseen && !state.sessionSettings.avoidRepeats
   );
   if (!preferUnseen) return pickFromPoolCore(pool, count);
-  const unseen = pool.filter((q) => !state.seenKeys.has(q.key));
-  const seenPool = pool.filter((q) => state.seenKeys.has(q.key));
+  const unseen = pool.filter((q) => !isQuestionSeen(q));
+  const seenPool = pool.filter((q) => isQuestionSeen(q));
   if (!unseen.length || !seenPool.length) return pickFromPoolCore(pool, count);
   const desiredUnseen = Math.max(1, Math.round(count * PREFER_UNSEEN_SHARE));
   let unseenTarget = Math.min(unseen.length, desiredUnseen);
@@ -7970,7 +10329,7 @@ function buildQuestionSet(pool) {
       selected = fillSelectionAvoidingMcqDuplicates(pool, selected, desiredTotal);
     }
 
-    return state.sessionSettings.shuffleQuestions ? shuffle(selected) : sortQuestions(selected);
+    return orderQuestionsByType(selected);
   }
 
   if (includeShort) {
@@ -7991,28 +10350,46 @@ function buildQuestionSet(pool) {
 }
 
 function assignShortPoints(questions) {
-  const shortQuestions = questions.filter((q) => q.type === "short");
-  if (!shortQuestions.length) return;
+  const shortGroups = questions.filter((q) => q.type === "short");
+  if (!shortGroups.length) return;
+  const parts = [];
+  shortGroups.forEach((group) => {
+    parts.push(...getShortParts(group));
+  });
+  if (!parts.length) return;
   const step = 0.5;
-  const base = SHORT_TOTAL_POINTS / shortQuestions.length;
+  const base = SHORT_TOTAL_POINTS / parts.length;
   const roundedBase = Math.floor(base / step) * step;
-  let remaining = SHORT_TOTAL_POINTS - roundedBase * shortQuestions.length;
+  let remaining = SHORT_TOTAL_POINTS - roundedBase * parts.length;
 
-  shortQuestions.forEach((question) => {
+  const partPoints = new Map();
+  parts.forEach((part) => {
     let points = roundedBase;
     if (remaining >= step) {
       points += step;
       remaining -= step;
     }
-    question.maxPoints = Number(points.toFixed(1));
+    partPoints.set(part.key, Number(points.toFixed(1)));
+  });
+
+  shortGroups.forEach((group) => {
+    const groupParts = getShortParts(group);
+    let totalPoints = 0;
+    groupParts.forEach((part) => {
+      const points = partPoints.get(part.key) ?? 0;
+      part.maxPoints = points;
+      totalPoints += points;
+    });
+    const averagePoints = groupParts.length ? totalPoints / groupParts.length : 0;
+    group.maxPoints = Number(averagePoints.toFixed(1));
   });
 }
 
 function updateSessionScoreMeta(questions) {
   const mcqCount = questions.filter((q) => q.type === "mcq").length;
-  const shortQuestions = questions.filter((q) => q.type === "short");
-  const shortCount = shortQuestions.length;
-  const shortMax = shortQuestions.reduce((sum, q) => sum + (q.maxPoints || 0), 0);
+  const shortGroups = questions.filter((q) => q.type === "short");
+  const shortCount = shortGroups.length;
+  const shortMax = shortGroups.reduce((sum, q) => sum + (q.maxPoints || 0), 0);
   state.sessionScoreMeta = {
     mcqCount,
     mcqMax: mcqCount * 3,
@@ -8020,6 +10397,79 @@ function updateSessionScoreMeta(questions) {
     shortCount,
     shortMax,
   };
+}
+
+function getShortResultGroupKey(entry) {
+  if (!entry || entry.type !== "short") return "";
+  if (entry.groupKey) return entry.groupKey;
+  if (entry.question?.groupKey) return `short-group-${entry.question.groupKey}`;
+  const rawKey = getShortGroupKey(entry.question);
+  return rawKey ? `short-group-${rawKey}` : "";
+}
+
+function getResultsQuestions(results) {
+  if (!Array.isArray(results) || !results.length) return [];
+  const unique = new Map();
+  results.forEach((entry) => {
+    if (!entry) return;
+    if (entry.type === "short") {
+      const groupKey = getShortResultGroupKey(entry);
+      const groupQuestion = state.shortGroupsByKey.get(groupKey);
+      if (groupQuestion && !unique.has(groupQuestion.key)) {
+        unique.set(groupQuestion.key, groupQuestion);
+      }
+      return;
+    }
+    const question = entry?.question;
+    if (!question?.key) return;
+    if (!unique.has(question.key)) {
+      unique.set(question.key, question);
+    }
+  });
+  return [...unique.values()];
+}
+
+function refreshSeenGroups() {
+  const groups = new Set();
+  state.allQuestions.forEach((question) => {
+    if (question.type !== "mcq") return;
+    const groupKey = question.duplicateGroup;
+    if (!groupKey) return;
+    if (state.seenKeys.has(question.key)) {
+      groups.add(groupKey);
+    }
+  });
+  state.seenMcqGroups = groups;
+}
+
+function isQuestionSeen(question) {
+  if (!question?.key) return false;
+  if (state.seenKeys.has(question.key)) return true;
+  if (question.type === "mcq" && question.duplicateGroup) {
+    return state.seenMcqGroups.has(question.duplicateGroup);
+  }
+  return false;
+}
+
+function markQuestionsSeen(questions, { updateSummary: refreshSummary = false } = {}) {
+  if (!Array.isArray(questions) || !questions.length) {
+    if (refreshSummary) updateSummary();
+    return;
+  }
+  let changed = false;
+  questions.forEach((question) => {
+    if (!question?.key) return;
+    if (!state.seenKeys.has(question.key)) {
+      state.seenKeys.add(question.key);
+      changed = true;
+    }
+  });
+  if (changed) {
+    localStorage.setItem(STORAGE_KEYS.seen, JSON.stringify([...state.seenKeys]));
+    refreshSeenGroups();
+    scheduleUserStateSync();
+  }
+  if (refreshSummary) updateSummary();
 }
 
 function resolvePool(options = {}) {
@@ -8037,6 +10487,7 @@ function resolvePool(options = {}) {
 
   let pool = basePool;
   let focusMistakesActive = false;
+  let repeatFiltered = 0;
   if (
     (forceMistakes || (state.settings.focusMistakes && !ignoreFocusMistakes)) &&
     state.lastMistakeKeys.size
@@ -8049,10 +10500,37 @@ function resolvePool(options = {}) {
   }
 
   if (state.settings.avoidRepeats && !focusMistakesActive) {
-    pool = pool.filter((question) => !state.seenKeys.has(question.key));
+    const before = pool.length;
+    pool = pool.filter((question) => !isQuestionSeen(question));
+    repeatFiltered = Math.max(0, before - pool.length);
   }
 
-  return { pool, focusMistakesActive };
+  return { pool, basePool, focusMistakesActive, repeatFiltered };
+}
+
+function applyFilterConstraints({ focusMistakesActive } = {}) {
+  const preferUnseenDisabled = state.settings.avoidRepeats;
+  const preferUnseenPaused = !state.settings.avoidRepeats && focusMistakesActive;
+  if (elements.togglePreferUnseen) {
+    elements.togglePreferUnseen.disabled = preferUnseenDisabled;
+    if (preferUnseenDisabled) {
+      elements.togglePreferUnseen.title =
+        "Prioritér nye spørgsmål kan ikke bruges sammen med Undgå gentagelser.";
+    } else if (preferUnseenPaused) {
+      elements.togglePreferUnseen.title =
+        "Prioritér nye spørgsmål har ingen effekt, når fokus på fejl er aktivt.";
+    } else {
+      elements.togglePreferUnseen.removeAttribute("title");
+    }
+  }
+  if (elements.toggleAvoidRepeats) {
+    if (focusMistakesActive) {
+      elements.toggleAvoidRepeats.title =
+        "Undgå gentagelser er sat på pause, mens fokus på fejl er aktivt.";
+    } else {
+      elements.toggleAvoidRepeats.removeAttribute("title");
+    }
+  }
 }
 
 function describeSelection(selected, all, label) {
@@ -8063,7 +10541,7 @@ function describeSelection(selected, all, label) {
 }
 
 function updateSummary() {
-  const { pool, focusMistakesActive } = resolvePool();
+  const { pool, basePool, focusMistakesActive, repeatFiltered } = resolvePool();
   const selectedYears = [...state.filters.years].sort((a, b) => {
     const aParsed = parseYearLabel(a);
     const bParsed = parseYearLabel(b);
@@ -8091,6 +10569,8 @@ function updateSummary() {
   }
   const poolMcq = mcqPoolCount;
   const poolShort = shortPoolCount;
+  const preferUnseenActive =
+    state.settings.preferUnseen && !state.settings.avoidRepeats && !focusMistakesActive;
 
   elements.poolCount.textContent = pool.length;
   elements.poolCountChip.textContent = `${pool.length} i puljen · ${poolMcq} MCQ · ${poolShort} kortsvar`;
@@ -8110,7 +10590,7 @@ function updateSummary() {
   if (state.settings.balancedMix) mixParts.push("Balanceret");
   if (state.settings.adaptiveMix) mixParts.push("Adaptiv");
   if (state.settings.shuffleQuestions) mixParts.push("Shuffle");
-  if (state.settings.preferUnseen) mixParts.push("Nye først");
+  if (preferUnseenActive) mixParts.push("Nye først");
   if (state.settings.infiniteMode) mixParts.push("Uendelig");
   if (state.settings.includeMcq && state.settings.includeShort) {
     mixParts.push(`Ratio ${formatRatioLabel(state.settings)}`);
@@ -8138,10 +10618,10 @@ function updateSummary() {
       focusMistakesActive ? "Kun fejl" : hasMistakes ? "Fejl (ingen match)" : "Fejl (ingen endnu)"
     );
   }
-  if (state.settings.avoidRepeats) repeatParts.push("Udelukker sete");
-  if (state.settings.preferUnseen && !state.settings.avoidRepeats) {
-    repeatParts.push("Nye først");
+  if (state.settings.avoidRepeats) {
+    repeatParts.push(focusMistakesActive ? "Udelukker sete (pauset)" : "Udelukker sete");
   }
+  if (preferUnseenActive) repeatParts.push("Nye først");
   elements.repeatSummary.textContent = repeatParts.length ? repeatParts.join(" · ") : "Alt";
 
   if (!state.settings.includeMcq && !state.settings.includeShort) {
@@ -8155,12 +10635,26 @@ function updateSummary() {
       ? "Fokus på fejl er slået til, men ingen fejl matcher dine filtre – runden bruger alle spørgsmål."
       : "Fokus på fejl er slået til, men der er ingen fejl endnu – runden bruger alle spørgsmål.";
   } else if (!pool.length) {
-    hint = "Ingen spørgsmål matcher dine filtre.";
+    if (state.settings.avoidRepeats && basePool.length) {
+      hint = "Alle spørgsmål er allerede set – slå 'Undgå gentagelser' fra for at fortsætte.";
+    } else {
+      hint = "Ingen spørgsmål matcher dine filtre.";
+    }
     canStart = false;
   } else if (pool.length < roundSize) {
-    hint = state.settings.infiniteMode
+    const baseHint = state.settings.infiniteMode
       ? `Puljen har kun ${pool.length} spørgsmål – uendelig mode gentager efter en runde.`
       : `Kun ${pool.length} spørgsmål matcher – runden forkortes.`;
+    if (state.settings.avoidRepeats && repeatFiltered > 0) {
+      hint = `Udelukker sete gør runden kortere. ${baseHint}`;
+    } else {
+      hint = baseHint;
+    }
+  }
+
+  if (state.sessionActive && state.sessionPaused) {
+    hint = "Du har en pauset runde. Fortsæt eller annuller for at starte en ny.";
+    canStart = false;
   }
 
   elements.selectionHint.textContent = hint;
@@ -8168,7 +10662,8 @@ function updateSummary() {
     btn.disabled = !canStart;
   });
 
-  updateQuestionCountCopy();
+  applyFilterConstraints({ focusMistakesActive });
+  updateQuestionCountCopy({ mcqTarget, shortTarget });
   updateRatioControls();
   updateAutoAdvanceLabel();
 }
@@ -8192,7 +10687,7 @@ function applySessionDisplaySettings() {
   elements.toggleMeta.textContent = state.sessionSettings.showMeta ? "Skjul detaljer" : "Vis detaljer";
   setShortcutActive("focus", state.sessionSettings.focusMode);
   if (elements.endRoundBtn) {
-    elements.endRoundBtn.classList.toggle("hidden", !state.sessionSettings.infiniteMode);
+    elements.endRoundBtn.classList.toggle("hidden", !state.sessionActive);
   }
 }
 
@@ -8234,7 +10729,7 @@ function finishSession() {
     setFeedback("Svar mindst et spørgsmål før du afslutter runden.");
     return;
   }
-  state.activeQuestions = state.results.map((result) => result.question);
+  state.activeQuestions = getResultsQuestions(state.results);
   updateSessionScoreMeta(state.activeQuestions);
   showResults();
 }
@@ -8251,6 +10746,11 @@ function startGame(options = {}) {
   if (!pool.length) return;
 
   hideRules();
+  state.sessionActive = true;
+  state.sessionPaused = false;
+  state.sessionPausedAt = null;
+  resetCancelRoundConfirm();
+  updatePausedSessionUI();
   state.sessionSettings = { ...state.settings, focusMistakes: focusMistakesActive };
   state.activeQuestions = buildQuestionSet(pool);
   assignShortPoints(state.activeQuestions);
@@ -8331,12 +10831,143 @@ function closeFigureModal() {
   }
 }
 
+function resetCancelRoundConfirm() {
+  state.cancelRoundConfirmArmed = false;
+  if (state.cancelRoundConfirmTimer) {
+    clearTimeout(state.cancelRoundConfirmTimer);
+    state.cancelRoundConfirmTimer = null;
+  }
+  if (elements.cancelRoundBtn) {
+    elements.cancelRoundBtn.textContent = "Annuller runde";
+  }
+}
+
+function updatePausedSessionUI() {
+  if (!elements.pausedSessionPanel) return;
+  const isPaused = state.sessionActive && state.sessionPaused;
+  elements.pausedSessionPanel.classList.toggle("hidden", !isPaused);
+  if (!isPaused) {
+    resetCancelRoundConfirm();
+    return;
+  }
+  const total = state.activeQuestions.length || 0;
+  const current = total ? Math.min(state.currentIndex + 1, total) : 0;
+  const answeredCount = getResultsQuestions(state.results).length;
+  const summary = calculateScoreSummary();
+  const isInfinite = state.sessionSettings.infiniteMode;
+  const progressLabel = isInfinite ? `${current} / ∞` : `${current} / ${total}`;
+  const answeredLabel = isInfinite ? `${answeredCount} besvaret` : `${answeredCount} / ${total}`;
+
+  if (elements.pausedProgress) {
+    elements.pausedProgress.textContent = total ? progressLabel : "—";
+  }
+  if (elements.pausedAnswered) {
+    elements.pausedAnswered.textContent = total ? answeredLabel : "—";
+  }
+  if (elements.pausedScore) {
+    elements.pausedScore.textContent = state.results.length
+      ? `${summary.overallPercent.toFixed(1)}% · ${summary.grade}`
+      : "—";
+  }
+  if (elements.finishRoundBtn) {
+    const canFinish = state.results.length > 0;
+    elements.finishRoundBtn.disabled = !canFinish;
+    if (!canFinish) {
+      elements.finishRoundBtn.title = "Besvar mindst ét spørgsmål først.";
+    } else {
+      elements.finishRoundBtn.removeAttribute("title");
+    }
+  }
+  if (elements.pausedRoundNote) {
+    elements.pausedRoundNote.textContent = state.results.length
+      ? "Ændringer i menuen påvirker næste runde."
+      : "Besvar mindst ét spørgsmål for at afslutte med resultater.";
+  }
+}
+
+function pauseSession() {
+  if (!state.sessionActive) {
+    showScreen("menu");
+    return;
+  }
+  clearAutoAdvance();
+  stopTts();
+  clearTtsPrefetch();
+  clearTtsPartPrefetch();
+  clearFigureCaptionQueue();
+  state.questionStartedAt = null;
+  state.sessionPaused = true;
+  state.sessionPausedAt = Date.now();
+  updatePausedSessionUI();
+  updateSummary();
+  showScreen("menu");
+}
+
+function resumeSession() {
+  if (!state.sessionActive || !state.sessionPaused) return;
+  if (state.sessionPausedAt && state.startTime) {
+    state.startTime += Date.now() - state.sessionPausedAt;
+  }
+  state.sessionPausedAt = null;
+  state.sessionPaused = false;
+  resetCancelRoundConfirm();
+  updatePausedSessionUI();
+  showScreen("quiz");
+  applySessionDisplaySettings();
+  updateTopBar();
+  if (!state.locked) {
+    state.questionStartedAt = Date.now();
+  }
+}
+
+function cancelSession() {
+  if (!state.sessionActive) return;
+  clearAutoAdvance();
+  stopTts();
+  clearTtsPrefetch();
+  clearTtsPartPrefetch();
+  clearFigureCaptionQueue();
+  state.sessionActive = false;
+  state.sessionPaused = false;
+  state.sessionPausedAt = null;
+  state.shouldRecordHistory = false;
+  state.activeQuestions = [];
+  state.currentIndex = 0;
+  state.score = 0;
+  state.scoreBreakdown = { mcq: 0, short: 0 };
+  state.results = [];
+  state.shortAnswerDrafts = new Map();
+  state.shortAnswerAI = new Map();
+  state.shortAnswerPending = false;
+  state.reviewHintQueue = [];
+  state.reviewHintProcessing = false;
+  state.optionOrder = new Map();
+  state.sketchUploads = new Map();
+  state.sketchAnalysis = new Map();
+  state.infiniteState = null;
+  state.locked = false;
+  state.startTime = null;
+  state.questionStartedAt = null;
+  state.activeShortPartKey = null;
+  resetCancelRoundConfirm();
+  updatePausedSessionUI();
+  updateSummary();
+  showScreen("menu");
+}
+
 function goToMenu() {
   clearAutoAdvance();
   stopTts();
   clearTtsPrefetch();
+  clearTtsPartPrefetch();
   clearFigureCaptionQueue();
   state.questionStartedAt = null;
+  state.sessionActive = false;
+  state.sessionPaused = false;
+  state.sessionPausedAt = null;
+  resetCancelRoundConfirm();
+  markQuestionsSeen(getResultsQuestions(state.results), { updateSummary: true });
+  updatePausedSessionUI();
   showScreen("menu");
 }
 
@@ -8429,7 +11060,7 @@ function updateQuestionCount(value) {
   updateSummary();
 }
 
-function updateQuestionCountCopy() {
+function updateQuestionCountCopy({ mcqTarget, shortTarget } = {}) {
   if (!elements.questionCountLabel && !elements.questionCountInfo && !elements.questionCountHint) return;
   const includeMcq = state.settings.includeMcq;
   const includeShort = state.settings.includeShort;
@@ -8442,20 +11073,34 @@ function updateQuestionCountCopy() {
   let hint = "Vælg mindst én opgavetype.";
 
   if (includeMcq && includeShort) {
+    const ratioLabel = formatRatioLabel(state.settings);
+    const hasMcqTarget = Number.isFinite(mcqTarget);
+    const hasShortTarget = Number.isFinite(shortTarget);
+    const mcqCount = hasMcqTarget ? mcqTarget : state.settings.questionCount;
+    const shortCount = hasShortTarget
+      ? shortTarget
+      : estimateShortTargetFromRatio(mcqCount, state.settings);
+    const splitLabel = shortCount
+      ? `${mcqCount} MCQ + ${shortCount} kortsvar`
+      : `${mcqCount} MCQ`;
     label = "Antal flervalg";
     tooltip =
-      "Antal flervalg styrer længden; kortsvar følger forholdet. Hvis puljen er mindre, forkortes runden automatisk.";
-    hint = `Antal flervalg styrer længden; kortsvar følger forholdet.${batchNote}`;
+      `Antal flervalg styrer længden; kortsvar følger forholdet (${ratioLabel}). ` +
+      `Aktuelt: ${splitLabel}. Hvis puljen er mindre, forkortes runden automatisk.`;
+    hint = `Antal flervalg styrer længden; kortsvar følger forholdet (${ratioLabel}). ` +
+      `Aktuelt: ${splitLabel}.${batchNote}`;
   } else if (includeMcq) {
+    const mcqCount = state.settings.questionCount;
     label = "Antal flervalg";
     tooltip =
       "Vælg hvor mange flervalgsspørgsmål runden skal have. Hvis puljen er mindre, forkortes runden automatisk.";
-    hint = `Tallet angiver hvor mange flervalg der bruges i runden.${batchNote}`;
+    hint = `Tallet angiver hvor mange flervalg der bruges i runden. Aktuelt: ${mcqCount} MCQ.${batchNote}`;
   } else if (includeShort) {
+    const shortCount = state.settings.questionCount;
     label = "Antal kortsvar";
     tooltip =
       "Vælg hvor mange kortsvar runden skal have. Hvis puljen er mindre, forkortes runden automatisk.";
-    hint = `Tallet angiver hvor mange kortsvar der bruges i runden.${batchNote}`;
+    hint = `Tallet angiver hvor mange kortsvar der bruges i runden. Aktuelt: ${shortCount} kortsvar.${batchNote}`;
   }
 
   if (elements.questionCountLabel) {
@@ -8644,6 +11289,10 @@ function setTtsEnabled(enabled) {
   if (next) {
     maybeAutoReadQuestion();
     scheduleTtsPrefetch();
+    const current = state.activeQuestions[state.currentIndex];
+    if (current && current.type === "short" && isShortGroup(current)) {
+      prefetchShortGroupTts(current, { skipKey: state.activeShortPartKey });
+    }
   }
 }
 
@@ -8660,26 +11309,32 @@ function toggleFocusMode() {
   setShortcutTempStatus("focus", next ? "Fokus til" : "Fokus fra");
 }
 
-function triggerShortAutoGrade() {
+async function triggerShortAutoGrade(options = {}) {
+  const { scope = "active" } = options;
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") {
     setShortcutTempStatus("grade", "Kun kortsvar", 2000);
     return;
   }
+  if (scope === "group" && isShortGroup(question)) {
+    await gradeShortGroupAnswers(question, { auto: true });
+    return;
+  }
+  const part = getActiveShortPart(question);
+  if (!part) return;
   setShortRetryVisible(false);
   setShortReviewOpen(true);
-  updateShortReviewStatus(question);
+  updateShortReviewStatus(part);
   if (state.shortAnswerPending) {
     setShortcutTempStatus("grade", "Vurderer …", 1500);
     return;
   }
-  const upload = state.sketchUploads.get(question.key);
-  const analysis = state.sketchAnalysis.get(question.key);
+  const upload = state.sketchUploads.get(part.key);
+  const analysis = state.sketchAnalysis.get(part.key);
   if (upload && !analysis) {
-    void analyzeSketch();
-    return;
+    await analyzeSketch(part);
   }
-  void gradeShortAnswer({ auto: true });
+  await gradeShortAnswer({ auto: true });
 }
 
 function performShortcutAction(action) {
@@ -8690,7 +11345,12 @@ function performShortcutAction(action) {
       handleNextClick();
       acted = true;
     } else {
-      setShortcutTempStatus("next", "Mangler svar", 1500);
+      if (question?.type === "short") {
+        const status = state.shortAnswerPending ? "Vurderer …" : "Vurdér først";
+        setShortcutTempStatus("next", status, 1500);
+      } else {
+        setShortcutTempStatus("next", "Mangler svar", 1500);
+      }
     }
   } else if (action === "skip") {
     if (!elements.skipBtn?.disabled) {
@@ -8700,13 +11360,15 @@ function performShortcutAction(action) {
       setShortcutTempStatus("skip", "Ikke nu", 1500);
     }
   } else if (action === "grade") {
-    triggerShortAutoGrade();
+    triggerShortAutoGrade({ scope: "group" });
     acted = true;
   } else if (action === "mic") {
     toggleMicRecording();
     acted = true;
   } else if (action === "figure") {
-    if (question?.images?.length) {
+    const target =
+      question?.type === "short" && isShortGroup(question) ? getActiveShortPart(question) : question;
+    if (target?.images?.length) {
       toggleFigure();
       acted = true;
     } else {
@@ -8857,7 +11519,34 @@ function attachEvents() {
     elements.upgradeBtn.addEventListener("click", handleCheckout);
   }
   if (elements.portalBtn) {
-    elements.portalBtn.addEventListener("click", handlePortal);
+    elements.portalBtn.addEventListener("click", handleBilling);
+  }
+  if (elements.billingBackBtn) {
+    elements.billingBackBtn.addEventListener("click", () => showScreen("account"));
+  }
+  if (elements.billingUpdateMethodBtn) {
+    elements.billingUpdateMethodBtn.addEventListener("click", openBillingUpdatePanel);
+  }
+  if (elements.billingChangeMethodBtn) {
+    elements.billingChangeMethodBtn.addEventListener("click", openBillingUpdatePanel);
+  }
+  if (elements.billingUpdateCloseBtn) {
+    elements.billingUpdateCloseBtn.addEventListener("click", closeBillingUpdatePanel);
+  }
+  if (elements.billingUpdateCancelBtn) {
+    elements.billingUpdateCancelBtn.addEventListener("click", closeBillingUpdatePanel);
+  }
+  if (elements.billingUpdateForm) {
+    elements.billingUpdateForm.addEventListener("submit", submitBillingUpdate);
+  }
+  if (elements.billingToggleCancelBtn) {
+    elements.billingToggleCancelBtn.addEventListener("click", handleBillingToggleCancel);
+  }
+  if (elements.billingRefreshBtn) {
+    elements.billingRefreshBtn.addEventListener("click", () => loadBillingOverview({ notify: true }));
+  }
+  if (elements.billingUpgradeBtn) {
+    elements.billingUpgradeBtn.addEventListener("click", handleCheckout);
   }
   if (elements.checkoutBackBtn) {
     elements.checkoutBackBtn.addEventListener("click", closeCheckout);
@@ -8932,8 +11621,39 @@ function attachEvents() {
   elements.rulesButton.addEventListener("click", showRules);
   elements.closeModal.addEventListener("click", hideRules);
   elements.modalClose.addEventListener("click", hideRules);
-  elements.backToMenu.addEventListener("click", goToMenu);
+  elements.backToMenu.addEventListener("click", pauseSession);
   elements.returnMenuBtn.addEventListener("click", goToMenu);
+  if (elements.resumeRoundBtn) {
+    elements.resumeRoundBtn.addEventListener("click", resumeSession);
+  }
+  if (elements.finishRoundBtn) {
+    elements.finishRoundBtn.addEventListener("click", () => {
+      if (!state.results.length) {
+        updatePausedSessionUI();
+        return;
+      }
+      state.sessionPaused = false;
+      updatePausedSessionUI();
+      finishSession();
+    });
+  }
+  if (elements.cancelRoundBtn) {
+    elements.cancelRoundBtn.addEventListener("click", () => {
+      if (!state.sessionActive) return;
+      if (!state.cancelRoundConfirmArmed) {
+        state.cancelRoundConfirmArmed = true;
+        elements.cancelRoundBtn.textContent = "Bekræft annullering";
+        if (state.cancelRoundConfirmTimer) {
+          clearTimeout(state.cancelRoundConfirmTimer);
+        }
+        state.cancelRoundConfirmTimer = setTimeout(() => {
+          resetCancelRoundConfirm();
+        }, 4000);
+        return;
+      }
+      cancelSession();
+    });
+  }
   elements.playAgainBtn.addEventListener("click", handlePlayAgainClick);
   if (elements.restartRoundBtn) {
     elements.restartRoundBtn.addEventListener("click", handleRestartRoundClick);
@@ -8992,7 +11712,10 @@ function attachEvents() {
       state.settings.ttsIncludeOptions = event.target.checked;
       saveSettings();
       clearTtsPrefetch();
+      clearTtsPartPrefetch();
       scheduleTtsPrefetch();
+      const current = state.activeQuestions[state.currentIndex];
+      prefetchShortGroupTts(current, { skipKey: state.activeShortPartKey });
     });
   }
   if (elements.ttsVoiceSelect) {
@@ -9002,7 +11725,10 @@ function attachEvents() {
       event.target.value = nextVoice;
       saveSettings();
       clearTtsPrefetch();
+      clearTtsPartPrefetch();
       scheduleTtsPrefetch();
+      const current = state.activeQuestions[state.currentIndex];
+      prefetchShortGroupTts(current, { skipKey: state.activeShortPartKey });
     });
   }
   if (elements.ttsSpeedRange) {
@@ -9017,7 +11743,10 @@ function attachEvents() {
       updateTtsSpeedLabel(normalized);
       saveSettings();
       clearTtsPrefetch();
+      clearTtsPartPrefetch();
       scheduleTtsPrefetch();
+      const current = state.activeQuestions[state.currentIndex];
+      prefetchShortGroupTts(current, { skipKey: state.activeShortPartKey });
     });
   }
 
@@ -9031,19 +11760,32 @@ function attachEvents() {
     applySessionDisplaySettings();
   });
 
+  if (screens.quiz) {
+    screens.quiz.addEventListener("click", (event) => {
+      const question = state.activeQuestions[state.currentIndex];
+      if (!question || question.type !== "short") return;
+      if (event.target.closest(".short-part")) return;
+      clearShortPartSelection();
+    });
+  }
+
   if (elements.shortAnswerInput) {
     elements.shortAnswerInput.addEventListener("input", () => {
       const question = state.activeQuestions[state.currentIndex];
       if (!question || question.type !== "short") return;
-      const currentDraft = getShortDraft(question.key);
+      const part = getActiveShortPart(question);
+      if (!part) return;
+      const currentDraft = getShortDraft(part.key);
       const nextText = elements.shortAnswerInput.value;
       const scored = currentDraft.scored && currentDraft.text === nextText;
-      saveShortDraft(question.key, {
+      saveShortDraft(part.key, {
         text: nextText,
         points: Number(elements.shortAnswerScoreRange.value) || 0,
         scored,
       });
-      updateShortReviewStatus(question);
+      updateShortPartStatus(part);
+      updateShortGroupStatus(question);
+      updateShortReviewStatus(part);
       updateShortAnswerActions(question);
     });
   }
@@ -9058,7 +11800,13 @@ function attachEvents() {
     elements.shortAnswerAiRetryBtn.addEventListener("click", async () => {
       setShortRetryVisible(false);
       await checkAiAvailability();
-      triggerShortAutoGrade();
+      triggerShortAutoGrade({ scope: "active" });
+    });
+  }
+
+  if (elements.shortGradeBtn) {
+    elements.shortGradeBtn.addEventListener("click", () => {
+      triggerShortAutoGrade({ scope: "group" });
     });
   }
 
@@ -9066,62 +11814,21 @@ function attachEvents() {
     elements.shortFigureGenerateBtn.addEventListener("click", () => {
       const question = state.activeQuestions[state.currentIndex];
       if (!question || question.type !== "short") return;
-      fetchFigureCaptionForQuestion(question, { force: true });
+      const part = getActiveShortPart(question);
+      if (!part) return;
+      fetchFigureCaptionForQuestion(part, { force: true });
     });
   }
 
   if (elements.shortAnswerShowAnswer) {
-    elements.shortAnswerShowAnswer.addEventListener("click", async () => {
-      if (!elements.shortAnswerModel) return;
-      elements.shortAnswerModel.classList.toggle("hidden");
-      const isHidden = elements.shortAnswerModel.classList.contains("hidden");
-      elements.shortAnswerShowAnswer.textContent = isHidden ? "Vis facit" : "Skjul facit";
-      if (!isHidden) {
-        const question = state.activeQuestions[state.currentIndex];
-        if (question && question.type === "short" && shouldUseFigureCaption(question)) {
-          if (!getCombinedFigureCaption(question)) {
-            await fetchFigureCaptionForQuestion(question);
-          }
-        }
-      }
+    elements.shortAnswerShowAnswer.addEventListener("click", () => {
+      void toggleShortAnswerModelVisibility();
     });
   }
 
-  if (elements.sketchUpload) {
-    elements.sketchUpload.addEventListener("change", (event) => {
-      const file = event.target.files && event.target.files[0];
-      handleSketchUpload(file, { autoAnalyze: true });
-    });
-  }
-
-  if (elements.sketchDropzone) {
-    const dropzone = elements.sketchDropzone;
-    const highlight = () => dropzone.classList.add("is-dragover");
-    const unhighlight = () => dropzone.classList.remove("is-dragover");
-    ["dragenter", "dragover"].forEach((eventName) => {
-      dropzone.addEventListener(eventName, (event) => {
-        event.preventDefault();
-        highlight();
-      });
-    });
-    ["dragleave", "dragend"].forEach((eventName) => {
-      dropzone.addEventListener(eventName, () => {
-        unhighlight();
-      });
-    });
-    dropzone.addEventListener("drop", (event) => {
-      event.preventDefault();
-      unhighlight();
-      const file = event.dataTransfer?.files && event.dataTransfer.files[0];
-      handleSketchUpload(file, { autoAnalyze: true });
-    });
-  }
-
-  if (elements.sketchRetryBtn) {
-    elements.sketchRetryBtn.addEventListener("click", async () => {
-      setSketchRetryVisible(false);
-      await checkAiAvailability();
-      await analyzeSketch();
+  if (elements.shortAnswerShowAnswerInline) {
+    elements.shortAnswerShowAnswerInline.addEventListener("click", () => {
+      void toggleShortAnswerModelVisibility();
     });
   }
 
@@ -9382,7 +12089,7 @@ async function loadQuestions() {
     .filter(Boolean);
   buildMcqDuplicateGroups(mcqQuestions);
 
-  const shortQuestions = shortData
+  const shortParts = shortData
     .map((question) => {
       const normalizedCategory = normalizeCategory(question.category);
       if (!normalizedCategory) return null;
@@ -9402,17 +12109,29 @@ async function loadQuestions() {
         yearDisplay,
         number: question.opgave,
       };
+      const groupKey = getShortGroupKey(payload);
       return {
         ...payload,
+        groupKey,
         key: getQuestionKey(payload),
       };
     })
     .filter(Boolean);
 
-  state.shortQuestionGroups = buildShortQuestionGroups(shortQuestions);
-  state.allQuestions = [...mcqQuestions, ...shortQuestions];
+  state.shortQuestionGroups = buildShortQuestionGroups(shortParts);
+  const shortGroups = buildShortGroups(shortParts);
+  state.shortGroupsByKey = new Map(shortGroups.map((group) => [group.key, group]));
+  state.allQuestions = [...mcqQuestions, ...shortGroups];
   const availableImages = new Set();
   state.allQuestions.forEach((question) => {
+    if (question.type === "short") {
+      getShortParts(question).forEach((part) => {
+        if (Array.isArray(part.images)) {
+          part.images.forEach((path) => availableImages.add(path));
+        }
+      });
+      return;
+    }
     if (Array.isArray(question.images)) {
       question.images.forEach((path) => availableImages.add(path));
     }
@@ -9440,6 +12159,7 @@ async function loadQuestions() {
   savePerformance();
   localStorage.setItem(STORAGE_KEYS.seen, JSON.stringify([...state.seenKeys]));
   localStorage.setItem(STORAGE_KEYS.mistakes, JSON.stringify([...state.lastMistakeKeys]));
+  refreshSeenGroups();
   scheduleUserStateSync();
   state.counts = buildCounts(state.allQuestions);
   state.countsByType = {
@@ -9464,7 +12184,7 @@ async function loadQuestions() {
   });
   state.filters.years = new Set(defaultYears);
   state.filters.categories = new Set(state.available.categories);
-  elements.questionCountChip.textContent = `${mcqQuestions.length} MCQ · ${shortQuestions.length} kortsvar`;
+  elements.questionCountChip.textContent = `${mcqQuestions.length} MCQ · ${shortGroups.length} kortsvar`;
   updateChips();
   updateSummary();
 }
@@ -9474,6 +12194,8 @@ async function init() {
   attachEvents();
   resetDemoQuizState();
   setAccountStatus("");
+  setBillingStatus("");
+  setBillingUpdateStatus("");
   updateTopBar();
   elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
   applyTheme(getInitialTheme());

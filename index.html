@@ -175,7 +175,7 @@
           <section class="sales-section demo-section reveal" id="demo-section" style="--delay: 0.12s">
             <div class="section-header">
               <h2>Prøv flowet på 6 spørgsmål</h2>
-              <p>5 multiple choice og 1 kortsvar, genereret til dig. Ét forsøg pr. dag.</p>
+              <p>5 multiple choice og 1 kortsvar, trukket tilfældigt fra de rigtige spørgsmål. Ét forsøg pr. dag.</p>
             </div>
             <div class="demo-grid">
               <div class="demo-copy">
@@ -193,7 +193,7 @@
                 <div class="demo-card-header">
                   <div>
                     <div class="demo-card-label">Prøvespil</div>
-                    <div class="demo-card-title" id="demo-card-title">Generér dagens mini-runde</div>
+                    <div class="demo-card-title" id="demo-card-title">Træk dagens mini-runde</div>
                   </div>
                   <div class="demo-card-meta">
                     <span class="demo-progress" id="demo-progress">0/6</span>
@@ -203,38 +203,41 @@
                 <div class="demo-body">
                   <div class="demo-loading hidden" id="demo-loading" aria-live="polite">
                     <div class="demo-loading-spinner" aria-hidden="true"></div>
-                    <div class="demo-loading-text">Genererer dagens prøvespil …</div>
+                    <div class="demo-loading-text">Trækker dagens prøvespil …</div>
                   </div>
                   <div class="demo-empty" id="demo-empty">
-                    <p>Du får 5 MCQ og 1 kortsvar med det samme.</p>
+                    <p>Du får 5 MCQ og 1 kortsvar fra de rigtige opgaver med det samme.</p>
                     <button id="demo-start-btn" class="btn primary" type="button">Start prøvespil</button>
                     <div class="demo-limit" id="demo-limit">Én gang pr. dag</div>
                   </div>
                   <div class="demo-question hidden" id="demo-question">
-                    <div class="demo-question-meta">
-                      <span class="demo-chip" id="demo-question-type">MCQ</span>
-                      <span class="demo-step" id="demo-step">Spørgsmål 1/6</span>
-                    </div>
-                    <div class="demo-question-text" id="demo-question-text">—</div>
-                    <div class="demo-options" id="demo-options"></div>
-                    <div class="demo-short hidden" id="demo-short">
-                      <label for="demo-short-input">Dit kortsvar</label>
-                      <textarea
-                        id="demo-short-input"
-                        rows="3"
-                        placeholder="Skriv 1-2 sætninger"
-                      ></textarea>
-                      <button id="demo-short-check" class="btn secondary small" type="button">
-                        Tjek kortsvar
-                      </button>
-                      <div class="demo-short-guidance" id="demo-short-guidance">
-                        Fokusér på de vigtigste begreber.
+                    <div class="demo-question-card">
+                      <div class="question-meta demo-question-meta">
+                        <span class="chip soft" id="demo-question-type">MCQ</span>
+                        <span class="chip soft" id="demo-question-category">—</span>
+                        <span class="chip" id="demo-question-year">—</span>
+                        <span class="chip" id="demo-step">Spørgsmål 1/6</span>
                       </div>
-                    </div>
-                    <div class="demo-feedback" id="demo-feedback"></div>
-                    <div class="demo-controls">
-                      <button id="demo-next-btn" class="btn primary" type="button" disabled>Næste</button>
-                      <button id="demo-exit-btn" class="btn ghost small" type="button">Luk</button>
+                      <h3 class="demo-question-text" id="demo-question-text">—</h3>
+                      <div class="options-grid demo-options" id="demo-options"></div>
+                      <div class="short-answer demo-short hidden" id="demo-short">
+                        <div class="short-group-meta">
+                          <span class="field-label">Delspørgsmål</span>
+                          <span class="short-group-status" id="demo-short-status"></span>
+                        </div>
+                        <div class="short-part-list" id="demo-short-list"></div>
+                        <button id="demo-short-check" class="btn secondary small" type="button">
+                          Tjek kortsvar
+                        </button>
+                        <div class="short-sketch-hint" id="demo-short-guidance">
+                          Fokusér på de vigtigste begreber.
+                        </div>
+                      </div>
+                      <div class="demo-feedback" id="demo-feedback"></div>
+                      <div class="demo-controls">
+                        <button id="demo-next-btn" class="btn primary" type="button" disabled>Næste</button>
+                        <button id="demo-exit-btn" class="btn ghost small" type="button">Luk</button>
+                      </div>
                     </div>
                   </div>
                   <div class="demo-result hidden" id="demo-result">
@@ -486,22 +489,22 @@
                       <button class="preset-card" type="button" data-preset="exam" aria-pressed="false">
                         <div class="preset-title">Eksamen</div>
                         <div class="preset-text">Balanceret blanding med realistisk tempo.</div>
-                        <div class="preset-meta">24 spg · Standard</div>
+                        <div class="preset-meta">24 MCQ + 6 kortsvar · Standard</div>
                       </button>
                       <button class="preset-card" type="button" data-preset="review" aria-pressed="false">
                         <div class="preset-title">Repetition</div>
                         <div class="preset-text">Bred dækning med færre gentagelser.</div>
-                        <div class="preset-meta">30 spg · Bredt</div>
+                        <div class="preset-meta">30 MCQ + 10 kortsvar · Bredt</div>
                       </button>
                       <button class="preset-card" type="button" data-preset="weak" aria-pressed="false">
                         <div class="preset-title">Svage områder</div>
                         <div class="preset-text">Fokus på fejl og smart prioritet.</div>
-                        <div class="preset-meta">20 spg · Fokus</div>
+                        <div class="preset-meta">20 MCQ + 5 kortsvar · Fokus</div>
                       </button>
                       <button class="preset-card" type="button" data-preset="tempo" aria-pressed="false">
                         <div class="preset-title">Tempo</div>
                         <div class="preset-text">Hurtig rytme med auto-videre.</div>
-                        <div class="preset-meta">18 spg · Tid</div>
+                        <div class="preset-meta">18 MCQ + 4 kortsvar · Tid</div>
                       </button>
                     </div>
                   </div>
@@ -789,6 +792,28 @@
                 </div>
               </section>
 
+              <section class="panel paused-panel hidden reveal" id="paused-session-panel" style="--delay: 0.12s">
+                <div class="panel-header">
+                  <h2>Pauset runde</h2>
+                  <p id="paused-session-hint">
+                    Du har en runde i gang. Du kan vende tilbage præcis hvor du slap.
+                  </p>
+                </div>
+                <div class="summary-card paused-card">
+                  <div class="summary-item">Fremdrift: <strong id="paused-progress">—</strong></div>
+                  <div class="summary-item">Besvaret: <strong id="paused-answered">—</strong></div>
+                  <div class="summary-item">Score lige nu: <strong id="paused-score">—</strong></div>
+                </div>
+                <div class="cta-stack paused-actions">
+                  <button id="resume-round-btn" class="btn primary" type="button">Fortsæt runde</button>
+                  <button id="finish-round-btn" class="btn secondary" type="button">
+                    Afslut runde og få resultat
+                  </button>
+                  <button id="cancel-round-btn" class="btn danger" type="button">Annuller runde</button>
+                </div>
+                <div class="hint" id="paused-round-note">Ændringer i menuen påvirker næste runde.</div>
+              </section>
+
               <section class="panel summary reveal" style="--delay: 0.15s">
                 <div class="panel-header">
                   <h2>Din runde</h2>
@@ -1040,44 +1065,12 @@
                 </figure>
                 <div id="options-container" class="options-grid"></div>
                 <div id="short-answer-container" class="short-answer hidden">
-                  <label class="field-label" for="short-answer-text">Dit svar</label>
-                  <div class="short-answer-input" id="short-answer-input-wrap">
-                    <textarea
-                      id="short-answer-text"
-                      rows="6"
-                      placeholder="Skriv dit svar her. Brug gerne punktform og nævn nøglebegreber."
-                    ></textarea>
-                    <div
-                      class="transcribe-indicator hidden"
-                      id="transcribe-indicator"
-                      data-state="transcribing"
-                      aria-live="polite"
-                    >
-                      <span class="transcribe-spinner" aria-hidden="true"></span>
-                      <span id="transcribe-text">Transkriberer …</span>
-                    </div>
+                  <div class="short-group-meta">
+                    <span class="field-label">Delspørgsmål</span>
+                    <span class="short-group-status" id="short-group-status"></span>
                   </div>
+                  <div class="short-part-list" id="short-part-list"></div>
                   <div class="short-sketch-hint hidden" id="short-sketch-hint"></div>
-                  <div class="sketch-panel hidden" id="sketch-panel">
-                    <div class="sketch-panel-head">
-                      <span id="sketch-panel-title">Skitse-analyse (auto)</span>
-                    </div>
-                    <div class="sketch-panel-body" id="sketch-panel-body">
-                      <label class="sketch-upload" id="sketch-dropzone" for="sketch-upload">
-                        <input type="file" id="sketch-upload" accept="image/*" />
-                        <span class="sketch-upload-text">Vælg billede af din skitse</span>
-                        <span class="sketch-drop-hint">Træk &amp; slip her</span>
-                      </label>
-                      <img class="sketch-preview hidden" id="sketch-preview" alt="Forhåndsvisning af skitse" />
-                      <div class="sketch-actions">
-                        <span class="sketch-status" id="sketch-status"></span>
-                        <button class="btn ghost small hidden" id="sketch-retry-btn" type="button">
-                          Prøv igen
-                        </button>
-                      </div>
-                      <div class="sketch-feedback" id="sketch-feedback"></div>
-                    </div>
-                  </div>
                   <div class="review-drawer" id="short-review-drawer" data-open="false">
                     <div class="short-toolbar">
                       <div class="score-control">
@@ -1127,7 +1120,7 @@
                   </div>
                   <div class="question-hint-text hidden" id="question-hint-text"></div>
                 </div>
-                <div class="actions">
+                <div class="actions question-actions">
                   <button
                     class="btn ghost mic-btn hidden"
                     id="mic-btn"
@@ -1136,6 +1129,9 @@
                     title="Optag svar (M)"
                   >
                     <span class="mic-icon" aria-hidden="true">&#x1F3A4;</span>
+                  </button>
+                  <button class="btn secondary hidden" id="short-grade-btn" type="button">
+                    Vurdér
                   </button>
                   <button class="btn secondary" id="next-btn" type="button" disabled>Næste</button>
                 </div>
@@ -1397,6 +1393,130 @@
           </div>
         </div>
       </section>
+      <section id="billing-screen" class="screen hidden">
+        <div class="billing-shell">
+          <header class="billing-hero reveal" style="--delay: 0s">
+            <div class="billing-hero-head">
+              <div>
+                <div class="eyebrow">Abonnement</div>
+                <h1>Administrer Pro</h1>
+                <p>Følg betalinger, metode og fakturaer direkte i appen.</p>
+              </div>
+              <button id="billing-back-btn" class="btn ghost" type="button">Tilbage til konto</button>
+            </div>
+            <div class="billing-hero-card">
+              <div class="billing-hero-grid">
+                <div class="billing-metric">
+                  <div class="billing-metric-label">Plan</div>
+                  <div class="billing-metric-value" id="billing-plan">—</div>
+                  <div class="billing-metric-meta" id="billing-plan-meta">—</div>
+                </div>
+                <div class="billing-metric">
+                  <div class="billing-metric-label">Status</div>
+                  <div class="billing-metric-value" id="billing-status-badge">—</div>
+                  <div class="billing-metric-meta" id="billing-status-meta">—</div>
+                </div>
+                <div class="billing-metric">
+                  <div class="billing-metric-label">Næste betaling</div>
+                  <div class="billing-metric-value" id="billing-next-amount">—</div>
+                  <div class="billing-metric-meta" id="billing-next-date">—</div>
+                </div>
+                <div class="billing-metric">
+                  <div class="billing-metric-label">Betalingsmetode</div>
+                  <div class="billing-metric-value" id="billing-payment-label">—</div>
+                  <div class="billing-metric-meta" id="billing-payment-meta">—</div>
+                </div>
+              </div>
+              <div class="billing-hero-actions">
+                <button id="billing-update-method-btn" class="btn primary" type="button">
+                  Opdatér betalingsmetode
+                </button>
+                <button id="billing-toggle-cancel-btn" class="btn ghost" type="button">
+                  Opsig abonnement
+                </button>
+                <button id="billing-upgrade-btn" class="btn primary hidden" type="button">Aktivér Pro</button>
+                <button id="billing-refresh-btn" class="btn ghost" type="button">Opdatér</button>
+              </div>
+              <div class="field-hint" id="billing-hero-hint">—</div>
+            </div>
+          </header>
+
+          <div class="billing-status" id="billing-status"></div>
+
+          <div class="billing-grid">
+            <section class="panel billing-panel wide reveal" style="--delay: 0.05s">
+              <div class="panel-header">
+                <h2>Betalingsmetode</h2>
+                <p>Skift kort eller wallet uden at forlade appen.</p>
+              </div>
+              <div class="billing-method-card" id="billing-method-card">
+                <div>
+                  <div class="billing-method-title" id="billing-method-title">—</div>
+                  <div class="billing-method-meta" id="billing-method-meta">—</div>
+                </div>
+                <button id="billing-change-method-btn" class="btn ghost small" type="button">Skift metode</button>
+              </div>
+              <div class="billing-update hidden" id="billing-update-panel">
+                <div class="billing-update-head">
+                  <div>
+                    <h3>Ny betalingsmetode</h3>
+                    <p>Gem en ny metode, så Pro aldrig stopper midt i flowet.</p>
+                  </div>
+                  <button id="billing-update-close-btn" class="icon-btn" type="button">Luk</button>
+                </div>
+                <div class="billing-update-status" id="billing-update-status"></div>
+                <form id="billing-update-form">
+                  <div id="billing-payment-element" class="billing-payment-element"></div>
+                  <div class="billing-update-actions">
+                    <button id="billing-update-submit-btn" class="btn primary" type="submit">
+                      Gem betalingsmetode
+                    </button>
+                    <button id="billing-update-cancel-btn" class="btn ghost" type="button">Annuller</button>
+                  </div>
+                </form>
+                <div class="field-hint">Du kan altid ændre eller fjerne metoden igen.</div>
+              </div>
+            </section>
+
+            <section class="panel billing-panel reveal" style="--delay: 0.1s">
+              <div class="panel-header">
+                <h2>Plan &amp; fornyelse</h2>
+                <p>Overblik over plan, cyklus og næste skridt.</p>
+              </div>
+              <div class="billing-plan-card">
+                <div>
+                  <div class="billing-plan-name" id="billing-plan-name">—</div>
+                  <div class="billing-plan-note" id="billing-plan-note">—</div>
+                </div>
+                <div class="billing-plan-price" id="billing-plan-price">—</div>
+              </div>
+              <div class="billing-plan-cycle" id="billing-plan-cycle">—</div>
+              <div class="billing-timeline" id="billing-timeline"></div>
+            </section>
+
+            <section class="panel billing-panel wide reveal" style="--delay: 0.15s">
+              <div class="panel-header">
+                <h2>Fakturaer &amp; kvitteringer</h2>
+                <p>Hent seneste kvitteringer eller fuld faktura.</p>
+              </div>
+              <div class="billing-invoice-list" id="billing-invoice-list"></div>
+            </section>
+
+            <section class="panel billing-panel reveal" style="--delay: 0.2s">
+              <div class="panel-header">
+                <h2>Betalingsformer</h2>
+                <p>Tilgængelige metoder i checkout (Stripe).</p>
+              </div>
+              <div class="billing-method-tags" id="billing-method-tags"></div>
+              <div class="billing-security">
+                <div class="billing-security-item">PCI-sikret håndtering</div>
+                <div class="billing-security-item">Kvitteringer sendes til din e-mail</div>
+                <div class="billing-security-item">Opsig når du vil</div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
       <section id="checkout-screen" class="screen hidden">
         <div class="checkout-shell">
           <header class="checkout-hero">
@@ -1473,7 +1593,7 @@
               <li>+3 point for korrekt, -1 for forkert, 0 for at springe over.</li>
               <li>Kortsvar bedømmes på 0–max point pr. delspørgsmål (med eller uden hjælp).</li>
               <li>Samlet score og 7-trin karakter beregnes 50/50 mellem flervalg og kortsvar.</li>
-              <li>Kortsvar under 5 point tæller som fejlet.</li>
+              <li>Kortsvar under 50% tæller som fejlet.</li>
               <li>Figurer er skjult – brug “Vis figur” når du har brug for dem.</li>
               <li>Du kan skræddersy runden med emner, årgange og blanding.</li>
               <li>Uendelig træning fortsætter, indtil du afslutter runden.</li>

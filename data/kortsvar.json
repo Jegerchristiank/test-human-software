@@ -173,7 +173,7 @@
     "opgaveIntro": null,
     "label": "b",
     "prompt": "Beskriv mindst 2 funktioner af saltsyre i ventriklen.",
-    "answer": "Der bør blot nævnes to af nedenstående muligheder - og for det 50% korrekte svar svarende til bestået opgave er benævnelse af en af mulighederne tilstrækkeligt.\n* Omdannelse af pepsinogen til pepsin.\n* Forsuring af ventrikelindhold, så pepsin forbliver stabilt.\n* Nedbrydning af bindevæv og muskelvæv.\n* Denaturering af proteiner.\n* Drab af bakterier indtaget med føden.",
+    "answer": "Der bør blot nævnes to af nedenstående muligheder - og for det 50% korrekte svar svarende til bestået opgave er benævnelse af en af mulighederne tilstrækkeligt.\n\n* Omdannelse af pepsinogen til pepsin.\n* Forsuring af ventrikelindhold, så pepsin forbliver stabilt.\n* Nedbrydning af bindevæv og muskelvæv.\n* Denaturering af proteiner.\n* Drab af bakterier indtaget med føden.",
     "sources": [
       "Pensum: Side 514."
     ],
@@ -801,13 +801,13 @@
     "category": "Endokrinologi",
     "opgave": 4,
     "opgaveTitle": "Endokrinologi",
-    "opgaveIntro": "Sekretionen af kortisol er under hormonel kontrol.",
+    "opgaveIntro": "Underspørgsmål 1 - Sekretionen af kortisol er under hormonel kontrol.",
     "label": "a",
     "prompt": "Lav en skitse der viser hvilke kirtler der direkte og indirekte er involveret i kortisolsekretionen.",
     "answer": "En tegning som angivet nedenfor er tilstrækkelig. Fra hypothalamus frigives ACTH-RH, som via hypofysestilken når hypofysens forlap og stimulerer frigivelse af ACTH. ACTH transporteres via det systemiske kredsløb til binyrerne, hvor det stimulerer produktion og frigivelse af kortisol, som efterfølgende virker på målvævene.",
     "sources": [],
     "images": [
-      "billeder/bog/0617.jpg"
+      "billeder/opgaver/2021-04-a.jpg"
     ]
   },
   {
@@ -817,13 +817,13 @@
     "category": "Endokrinologi",
     "opgave": 4,
     "opgaveTitle": "Endokrinologi",
-    "opgaveIntro": "Sekretionen af kortisol er under hormonel kontrol.",
+    "opgaveIntro": "Underspørgsmål 1 - Sekretionen af kortisol er under hormonel kontrol.",
     "label": "b",
     "prompt": "Angiv navnene på de involverede hormoner.",
     "answer": "En tegning som angivet nedenfor er tilstrækkelig. Fra hypothalamus frigives ACTH-RH, som via hypofysestilken når hypofysens forlap og stimulerer frigivelse af ACTH. ACTH transporteres via det systemiske kredsløb til binyrerne, hvor det stimulerer produktion og frigivelse af kortisol, som efterfølgende virker på målvævene.",
     "sources": [],
     "images": [
-      "billeder/bog/0617.jpg"
+      "billeder/opgaver/2021-04-a.jpg"
     ]
   },
   {
@@ -833,13 +833,13 @@
     "category": "Endokrinologi",
     "opgave": 4,
     "opgaveTitle": "Endokrinologi",
-    "opgaveIntro": "Sekretionen af kortisol er under hormonel kontrol.",
+    "opgaveIntro": "Underspørgsmål 1 - Sekretionen af kortisol er under hormonel kontrol.",
     "label": "c",
     "prompt": "Vis feedback-styringen mellem kirtlerne.",
     "answer": "En tegning som angivet nedenfor er tilstrækkelig. Fra hypothalamus frigives ACTH-RH, som via hypofysestilken når hypofysens forlap og stimulerer frigivelse af ACTH. ACTH transporteres via det systemiske kredsløb til binyrerne, hvor det stimulerer produktion og frigivelse af kortisol, som efterfølgende virker på målvævene.",
     "sources": [],
     "images": [
-      "billeder/bog/0617.jpg"
+      "billeder/opgaver/2021-04-a.jpg"
     ]
   },
   {
@@ -849,7 +849,7 @@
     "category": "Fordøjelseskanalen",
     "opgave": 5,
     "opgaveTitle": "Fordøjelseskanalen",
-    "opgaveIntro": "Langt størstedelen af de absorberbare bestanddele i føden optages i tyndtarmen.",
+    "opgaveIntro": "Underspørgsmål 1 - Langt størstedelen af de absorberbare bestanddele i føden optages i tyndtarmen.",
     "label": "a",
     "prompt": "Lav en skitse der viser de forskellige lag i et tværsnit gennem tyndtarmens væg.",
     "answer": "Et tværsnit af de forskellige lag er vist i den tilhørende figur.",
@@ -865,7 +865,7 @@
     "category": "Fordøjelseskanalen",
     "opgave": 5,
     "opgaveTitle": "Fordøjelseskanalen",
-    "opgaveIntro": "Langt størstedelen af de absorberbare bestanddele i føden optages i tyndtarmen.",
+    "opgaveIntro": "Underspørgsmål 1 - Langt størstedelen af de absorberbare bestanddele i føden optages i tyndtarmen.",
     "label": "b",
     "prompt": "Redegør kort for hvilke anatomiske faktorer der forøger den absorptive overflade.",
     "answer": "Tilstedeværelse af cirkulære folder, villi og mikrovilli øger meget kraftigt den flade, der er tilgængelig for absorption.",
@@ -879,7 +879,7 @@
     "category": "Fordøjelseskanalen",
     "opgave": 5,
     "opgaveTitle": "Fordøjelseskanalen",
-    "opgaveIntro": "Langt størstedelen af de absorberbare bestanddele i føden optages i tyndtarmen.",
+    "opgaveIntro": "Underspørgsmål 1 - Langt størstedelen af de absorberbare bestanddele i føden optages i tyndtarmen.",
     "label": "c",
     "prompt": "Beskriv de bevægelsestyper, der er karakteristiske for tyndtarmen og som medvirker til at opblande føden og flytte den fremad.",
     "answer": "Se figurer 15.28–15.29.",
@@ -915,7 +915,9 @@
     "label": "a",
     "prompt": "Lav en skitse af mitokondriets struktur.",
     "answer": "p. 49, figur 2.3.",
-    "sources": [],
+    "sources": [
+      "p. 49, figur 2.3."
+    ],
     "images": [
       "billeder/opgaver/2020-01-a.jpg"
     ]
@@ -1146,7 +1148,7 @@
     "category": "Fordøjelsessystemet – leveren",
     "opgave": 1,
     "opgaveTitle": "Fordøjelsessystemet – leveren",
-    "opgaveIntro": "For galde redegøres kort for følgende",
+    "opgaveIntro": null,
     "label": "a",
     "prompt": "Hvor galden produceres.",
     "answer": "Galden produceres i leveren af levercellerne (hepatocytterne).",
@@ -1160,7 +1162,7 @@
     "category": "Fordøjelsessystemet – leveren",
     "opgave": 1,
     "opgaveTitle": "Fordøjelsessystemet – leveren",
-    "opgaveIntro": "For galde redegøres kort for følgende",
+    "opgaveIntro": null,
     "label": "b",
     "prompt": "Hvordan galden transporteres og opbevares.",
     "answer": "Galden transporteres først i galdekapillærer og galdegange inde i leveren. Uden for leveren samles galdevejene i ductus choledocus, som munder i duodenum. Undervejs afgår en sidegren til galdeblæren, hvor galden opbevares og opkoncentreres mellem måltiderne.",
@@ -1174,7 +1176,7 @@
     "category": "Fordøjelsessystemet – leveren",
     "opgave": 1,
     "opgaveTitle": "Fordøjelsessystemet – leveren",
-    "opgaveIntro": "For galde redegøres kort for følgende",
+    "opgaveIntro": null,
     "label": "c",
     "prompt": "Hvor i kroppen galden udøver sin fysiologiske funktion og hvad funktionen er.",
     "answer": "Galden udøver sin funktion i tyndtarmen, hvor galdesaltene emulgerer fedtstoffer ved at opdele store fedtdråber i små partikler, hvorved overfladen øges og fedtoptagelsen muliggøres.",
@@ -1188,7 +1190,7 @@
     "category": "Fordøjelsessystemet – leveren",
     "opgave": 1,
     "opgaveTitle": "Fordøjelsessystemet – leveren",
-    "opgaveIntro": "For galde redegøres kort for følgende",
+    "opgaveIntro": null,
     "label": "d",
     "prompt": "Hvad der sker med galden efter den har udøvet sin fysiologiske funktion.",
     "answer": "Hovedparten genoptages og transporteres via vena porta tilbage til leveren, hvor den genanvendes. En mindre del udskilles med tarmindholdet.",
@@ -1202,7 +1204,7 @@
     "category": "Kroppens temperaturregulering",
     "opgave": 2,
     "opgaveTitle": "Kroppens temperaturregulering",
-    "opgaveIntro": "Redegør kort for mindst to måder hvorpå kroppen kan optage eller afgive varme.",
+    "opgaveIntro": null,
     "label": "a",
     "prompt": "Varmestråling (radiation).",
     "answer": "Alle objekter udveksler energi ved infrarød stråling. Netto varmeafgivelse eller -optagelse afhænger af om omgivelsernes temperatur er lavere eller højere end kroppens overfladetemperatur.",
@@ -1216,7 +1218,7 @@
     "category": "Kroppens temperaturregulering",
     "opgave": 2,
     "opgaveTitle": "Kroppens temperaturregulering",
-    "opgaveIntro": "Redegør kort for mindst to måder hvorpå kroppen kan optage eller afgive varme.",
+    "opgaveIntro": null,
     "label": "b",
     "prompt": "Varmeledning (konduktion).",
     "answer": "Direkte varmeoverførsel mellem genstande med forskellig temperatur ved fysisk kontakt, fx varmeafgivelse til et koldt gulv eller varmeoptagelse fra en varm overflade.",
@@ -1230,7 +1232,7 @@
     "category": "Kroppens temperaturregulering",
     "opgave": 2,
     "opgaveTitle": "Kroppens temperaturregulering",
-    "opgaveIntro": "Redegør kort for mindst to måder hvorpå kroppen kan optage eller afgive varme.",
+    "opgaveIntro": null,
     "label": "c",
     "prompt": "Varmestrømning (konvektion).",
     "answer": "Opvarmning af luft eller vand omkring kroppen, som derefter strømmer bort og erstattes af koldere luft eller væske. Kan også føre til varmeoptagelse, hvis mediet er varmere end kroppen.",
@@ -1244,7 +1246,7 @@
     "category": "Kroppens temperaturregulering",
     "opgave": 2,
     "opgaveTitle": "Kroppens temperaturregulering",
-    "opgaveIntro": "Redegør kort for mindst to måder hvorpå kroppen kan optage eller afgive varme.",
+    "opgaveIntro": null,
     "label": "d",
     "prompt": "Fordampning (evaporation).",
     "answer": "Når vand fordamper fra hud og luftveje, optages energi i form af varme fra kroppen. Svedsekretion øger varmetabet ved behov.",
@@ -1261,7 +1263,7 @@
     "opgaveIntro": null,
     "label": "a",
     "prompt": "Angiv navnene på de markerede strukturer i et udsnit af en rørknogles væg.",
-    "answer": "Boks A: Periost.\nBoks B: Spongiøst knoglevæv.\nBoks C: Kompakt knoglevæv.",
+    "answer": "Boks A: Periost. Boks B: Spongiøst knoglevæv. Boks C: Kompakt knoglevæv.",
     "sources": [],
     "images": [
       "billeder/opgaver/2020syg-03-a.png"
@@ -1321,7 +1323,7 @@
     "opgaveIntro": null,
     "label": "a",
     "prompt": "Lav en tegning af en nervecelle og benævn de karakteristiske strukturer.",
-    "answer": "Angivet i den tilhørende figur.\nBemærkning: Hvis den yderste opsplitning af axonet betegnes som dendrit, betragtes dette som korrekt.",
+    "answer": "Angivet i den tilhørende figur. Bemærkning: Hvis den yderste opsplitning af axonet betegnes som dendrit, betragtes dette som korrekt.",
     "sources": [],
     "images": [
       "billeder/opgaver/2020syg-04-a1.jpg",
@@ -1366,7 +1368,7 @@
     "opgaveIntro": null,
     "label": "b",
     "prompt": "Beskriv mindst tre specifikke funktioner, som proteiner varetager i kroppen.",
-    "answer": "Proteiner kan fungere som enzymer og katalysere biokemiske reaktioner.\nProteiner kan fungere som strukturelle byggematerialer i væv som hud, sener og knogler.\nProteiner kan fungere som motorproteiner og muliggøre bevægelse, fx muskelkontraktion.\nProteiner kan indgå i immunforsvaret som antistoffer.\nProteiner kan fungere som signalmolekyler, receptorer eller transportproteiner, fx hæmoglobin.",
+    "answer": "Proteiner kan fungere som enzymer og katalysere biokemiske reaktioner. Proteiner kan fungere som strukturelle byggematerialer i væv som hud, sener og knogler. Proteiner kan fungere som motorproteiner og muliggøre bevægelse, fx muskelkontraktion. Proteiner kan indgå i immunforsvaret som antistoffer. Proteiner kan fungere som signalmolekyler, receptorer eller transportproteiner, fx hæmoglobin.",
     "sources": [],
     "images": []
   },
@@ -1412,7 +1414,7 @@
     "opgaveIntro": null,
     "label": null,
     "prompt": "Beskriv virkningen af negativ feedback som styringsmekanisme i kroppen samt hvilke komponenter der indgår i en negativ feedback-løkke. Beskriv kort de komponenter der indgår i den negative feedback-løkke der regulerer kroppens temperatur.",
-    "answer": "Virkningen af en negativ feedback-løkke er homeostase, dvs. stabilisering af et system ved at bringe det tilbage mod et ønsket set-point efter en afvigelse. De principielle komponenter er receptorer, der måler systemets tilstand, et kontrolcenter der integrerer input og sender signaler, samt effektorer der ændrer systemets tilstand.\nVed temperaturregulering sender termosensorer i huden og dybt i kroppen signaler til temperaturkontrolcentret i hypothalamus. Herfra sendes signaler til effektorer såsom svedkirtler og overfladiske hudkar samt tværstribet skeletmuskulatur. Ved lav kropstemperatur ses karkontraktion, nedsat svedproduktion og kulderystelser; ved høj temperatur ses karkarudvidelse og øget svedproduktion. Derudover indgår bevidst adfærd. Tilsammen bringes kropstemperaturen tilbage mod set-point.",
+    "answer": "Virkningen af en negativ feedback-løkke er homeostase, dvs. stabilisering af et system ved at bringe det tilbage mod et ønsket set-point efter en afvigelse. De principielle komponenter er receptorer, der måler systemets tilstand, et kontrolcenter der integrerer input og sender signaler, samt effektorer der ændrer systemets tilstand. Ved temperaturregulering sender termosensorer i huden og dybt i kroppen signaler til temperaturkontrolcentret i hypothalamus. Herfra sendes signaler til effektorer såsom svedkirtler og overfladiske hudkar samt tværstribet skeletmuskulatur. Ved lav kropstemperatur ses karkontraktion, nedsat svedproduktion og kulderystelser; ved høj temperatur ses karkarudvidelse og øget svedproduktion. Derudover indgår bevidst adfærd. Tilsammen bringes kropstemperaturen tilbage mod set-point.",
     "sources": [],
     "images": []
   },
@@ -1498,7 +1500,7 @@
     "opgaveIntro": null,
     "label": null,
     "prompt": "Beskriv kort virkningen af positiv feedback som styringsmekanisme i kroppen. Beskriv endvidere en positiv feedback-løkke, der er involveret i generering af veer under fødslen.",
-    "answer": "Ved positiv feedback vil systemets reaktion på en forstyrrelse medføre, at systemet bevæger sig yderligere væk fra sit ligevægtspunkt (set-point). Positiv feedback er således en selvforstærkende proces.\nVed fødslen vil barnets hoved mod slutningen af graviditeten strække livmoderen, særligt cervix. Dette stræk medfører via nerveforbindelser til centralnervesystemet frigivelse af oxytocin fra hypofysens baglap. Oxytocin stimulerer livmoderens muskulatur til kontraktion, hvilket presser barnets hoved hårdere mod cervix og forårsager yderligere stræk. Dette giver et endnu kraftigere signal til livmoderen om at kontrahere sig. Processen er selvforstærkende og fører i sidste ende til fødslen.",
+    "answer": "Ved positiv feedback vil systemets reaktion på en forstyrrelse medføre, at systemet bevæger sig yderligere væk fra sit ligevægtspunkt (set-point). Positiv feedback er således en selvforstærkende proces. Ved fødslen vil barnets hoved mod slutningen af graviditeten strække livmoderen, særligt cervix. Dette stræk medfører via nerveforbindelser til centralnervesystemet frigørelse af oxytocin fra hypofysens baglap. Oxytocin stimulerer livmoderens muskulatur til kontraktion, hvilket presser barnets hoved hårdere mod cervix og forårsager yderligere stræk. Dette giver et endnu kraftigere signal til livmoderen om at kontrahere sig. Processen er selvforstærkende og fører i sidste ende til fødslen.",
     "sources": [],
     "images": []
   },
@@ -1679,7 +1681,7 @@
     "opgaveTitle": "Bevægeapparatet",
     "opgaveIntro": null,
     "label": null,
-    "prompt": "Beskriv processen i den neuro-muskulære kontakt (neuromuscular junction) i skeletmuskulatur fra et aktionspotential når den presynaptiske terminal til et aktionspotential er genereret i muskelcellens membran.",
+    "prompt": "Opgave 1. Bevægeapparatet Beskriv processen i den neuro-muskulære kontakt (neuromuscular junction) i skeletmuskulatur fra et aktionspotential når den presynaptiske terminal til et aktionspotential er genereret i muskelcellens membran. (P. 154–157)",
     "answer": "Se ovenstående figur.",
     "sources": [
       "(P. 154–157)"
@@ -1779,7 +1781,7 @@
     "opgaveTitle": "Lungefysiologi",
     "opgaveIntro": null,
     "label": null,
-    "prompt": "En forsøgsperson (voksen, almindelig størrelse, i hvile) tilsluttes et spirometer og ånder normalt. Undervejs foretager vedkommende en maksimalt dyb indånding og senere en maksimalt dyb udånding. Lav en skitse af spirogrammet, anfør navne og omtrentlige størrelser for de forskellige lungevolumina (volumes). Angiv tillige navn og størrelse på mindst to lungekapaciteter (capacities) der kan dannes som en sum af to eller flere lungevolumina.",
+    "prompt": "En forsøgsperson (voksen, almindelig størrelse, i hvile) tilsluttes et spirometer og ånder normalt. Undervejs foretager vedkommende en maksimalt dyb indånding og senere en maksimalt dyb udånding. Lav en skitse af spirogrammet, anfør navne og omtrentlige størrelser for de forskellige lungevolumina (volumes). Angiv tillige navn og størrelse på mindst to lungekapaciteter (capacities) der kan dannes som en sum af to eller flere lungevolumina. (Fig. 15.12 p. 422 – tekst p. 421–422)",
     "answer": "Angivet på ovenstående figur.",
     "sources": [
       "(Fig. 15.12 p. 422 – tekst p. 421–422)"
@@ -1797,7 +1799,7 @@
     "opgaveTitle": "Hjertet og lungerne",
     "opgaveIntro": null,
     "label": null,
-    "prompt": "Beskriv rækkefølgen af kamre og kar blodet flyder igennem på dets vej fra indmundingen af vena cava superior og vena cava inferior (hulvenerne) til aorta (legemets hovedpulsåre).",
+    "prompt": "Beskriv rækkefølgen af kamre og kar blodet flyder igennem på dets vej fra indmundingen af vena cava superior og vena cava inferior (hulvenerne) til aorta (legemets hovedpulsåre). (P. 323–324)",
     "answer": "På ovenstående tegning er den store kreds nr. 1–8. Klapperne forventes ikke beskrevet, da disse hverken udgør kamre eller kar.",
     "sources": [
       "(P. 323–324)"
@@ -1815,7 +1817,7 @@
     "opgaveTitle": "Hormoner – hypofysen",
     "opgaveIntro": null,
     "label": null,
-    "prompt": "Redegør for hvorledes nerveceller i hypothalamus stimulerer eller hæmmer den forreste hypofyselap (anterior pituitary lobe) til hormonsekretion eller ophør af hormonsekretion.",
+    "prompt": "Redegør for hvorledes nerveceller i hypothalamus stimulerer eller hæmmer den forreste hypofyselap (anterior pituitary lobe) til hormonsekretion eller ophør af hormonsekretion. (P. 272–276)",
     "answer": "Se punkterne 1–4 på ovenstående tegning.",
     "sources": [
       "(P. 272–276)"

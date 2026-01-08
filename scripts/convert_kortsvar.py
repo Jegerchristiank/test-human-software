@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from dataclasses import dataclass, field
@@ -13,7 +14,13 @@ IMAGES_PATH = ROOT_PATH / "billeder" / "opgaver"
 
 YEAR_RE = re.compile(r"^(?P<year>\d{4})(?:\s*[-–]\s*(?P<session>.*))?$", re.IGNORECASE)
 OPGAVE_RE = re.compile(r"^Opgave\s+(?P<number>\d+)\.?\s*(?P<title>.*)$", re.IGNORECASE)
+HOVEDEMN_RE = re.compile(r"^Hovedemne\s+(?P<number>\d+)\s*[:–-]\s*(?P<title>.*)$", re.IGNORECASE)
 SUBQ_RE = re.compile(r"^(?P<label>[A-Za-z])\)\s*(?P<text>.*)$")
+UNDERSPOERG_RE = re.compile(
+    r"^Underspørgsmål\s+(?P<number>\d+)\s*[-–]\s*(?:(?P<label>[A-Za-z])\)\s*)?(?P<text>.*)$",
+    re.IGNORECASE,
+)
+HOVEDEMN_TITLE_RE = re.compile(r"^Hovedemne\s+\d+\s*[:–-]\s*", re.IGNORECASE)
 
 FIGURE_CUE_RE = re.compile(r"\b(figur|figurer|skitse|tegning|diagram|illustration)\b", re.IGNORECASE)
 REFERENCE_RE = re.compile(r"^(Pensum:|\(?P\.|\(?Fig\.|Fig\.|Figurer|Figur|p\.|P\.)", re.IGNORECASE)
@@ -63,7 +70,7 @@ def is_heading_line(line: str) -> bool:
     if not line:
         return False
     lowered = line.lower()
-    if lowered.startswith("opgave") or lowered.startswith("svar") or lowered.startswith("pensum"):
+    if lowered.startswith(("opgave", "svar", "pensum", "underspørgsmål", "hovedemne")):
         return False
     if extract_reference(line):
         return False
@@ -80,6 +87,8 @@ def extract_reference(line: str) -> Optional[str]:
     if not line:
         return None
     stripped = line.strip()
+    if stripped.lower().startswith("kilde:"):
+        return stripped.split(":", 1)[1].strip()
     if stripped.lower().startswith("pensum:"):
         return stripped
     if REFERENCE_RE.match(stripped):
@@ -201,6 +210,16 @@ def parse_raw_data(raw_text: str) -> List[ShortQuestion]:
             i += 1
             continue
 
+        hovedemne_match = HOVEDEMN_RE.match(line)
+        if hovedemne_match:
+            finalize_question()
+            opgave_number = int(hovedemne_match.group("number"))
+            auto_opgave_number = max(auto_opgave_number, opgave_number)
+            opgave_title = hovedemne_match.group("title").strip() or f"Hovedemne {opgave_number}"
+            opgave_intro_lines = []
+            i += 1
+            continue
+
         if is_heading_line(line):
             # Treat as implicit opgave title when no explicit header is used
             finalize_question()
@@ -208,6 +227,50 @@ def parse_raw_data(raw_text: str) -> List[ShortQuestion]:
             opgave_number = auto_opgave_number
             opgave_title = line
             opgave_intro_lines = []
+            i += 1
+            continue
+
+        undersp_match = UNDERSPOERG_RE.match(line)
+        if undersp_match:
+            label = undersp_match.group("label")
+            text = undersp_match.group("text").strip()
+
+            if label:
+                finalize_question()
+                if opgave_number is None:
+                    opgave_number = int(undersp_match.group("number"))
+                    auto_opgave_number = max(auto_opgave_number, opgave_number)
+                    if opgave_title is None:
+                        opgave_title = f"Opgave {opgave_number}"
+                current_label = label
+                prompt_lines = [text] if text else [""]
+                answer_lines = []
+                sources = []
+                answer_started = False
+                i += 1
+                continue
+
+            next_nonempty = None
+            for j in range(i + 1, len(lines)):
+                if lines[j].strip():
+                    next_nonempty = lines[j].strip()
+                    break
+            if next_nonempty and SUBQ_RE.match(next_nonempty):
+                opgave_intro_lines.append(line.rstrip(":"))
+                i += 1
+                continue
+
+            finalize_question()
+            if opgave_number is None:
+                opgave_number = int(undersp_match.group("number"))
+                auto_opgave_number = max(auto_opgave_number, opgave_number)
+                if opgave_title is None:
+                    opgave_title = f"Opgave {opgave_number}"
+            current_label = None
+            prompt_lines = [text] if text else [""]
+            answer_lines = []
+            sources = []
+            answer_started = False
             i += 1
             continue
 
@@ -224,8 +287,9 @@ def parse_raw_data(raw_text: str) -> List[ShortQuestion]:
 
         # Reference-only lines
         ref = extract_reference(line)
-        if ref and (prompt_lines or answer_started):
-            sources.append(ref)
+        if ref is not None and (prompt_lines or answer_started):
+            if ref:
+                sources.append(ref)
             i += 1
             continue
 
@@ -288,7 +352,10 @@ def fill_missing_answers(questions: List[ShortQuestion]) -> None:
                     question.sources = fallback.sources[:]
 
 
-def assign_images(questions: List[ShortQuestion]) -> tuple[List[str], List[str]]:
+def assign_images(
+    questions: List[ShortQuestion],
+    images_path: Path = IMAGES_PATH,
+) -> tuple[List[str], List[str]]:
     by_key = {}
     by_group = {}
     for question in questions:
@@ -299,7 +366,9 @@ def assign_images(questions: List[ShortQuestion]) -> tuple[List[str], List[str]]
 
     images_by_key = {}
     images_by_group = {}
-    image_files = sorted([p for p in IMAGES_PATH.iterdir() if p.is_file() and p.name != ".DS_Store"])
+    image_files = sorted(
+        [p for p in images_path.iterdir() if p.is_file() and p.name != ".DS_Store"]
+    )
     for image in image_files:
         parsed = parse_image_filename(image)
         if not parsed:
@@ -363,12 +432,16 @@ def assign_images(questions: List[ShortQuestion]) -> tuple[List[str], List[str]]
 
 
 def write_output(questions: List[ShortQuestion], output_path: Path) -> None:
+    def normalize_category(title: Optional[str]) -> str:
+        cleaned = HOVEDEMN_TITLE_RE.sub("", title or "").strip()
+        return cleaned or (title or "")
+
     serializable = [
         {
             "type": "short",
             "year": question.year,
             "session": question.session,
-            "category": question.opgave_title,
+            "category": normalize_category(question.opgave_title),
             "opgave": question.opgave,
             "opgaveTitle": question.opgave_title,
             "opgaveIntro": question.opgave_intro,
@@ -384,17 +457,31 @@ def write_output(questions: List[ShortQuestion], output_path: Path) -> None:
 
 
 def main() -> None:
-    raw_text = RAW_PATH.read_text(encoding="utf-8")
+    parser = argparse.ArgumentParser(description="Convert raw short answer data to JSON.")
+    parser.add_argument("--input", type=Path, help="Path to raw kortsvar file.")
+    parser.add_argument("--output", type=Path, help="Destination for kortsvar.json.")
+    parser.add_argument("--images", type=Path, help="Folder with figure images.")
+    args = parser.parse_args()
+
+    input_path = args.input or RAW_PATH
+    output_path = args.output or OUTPUT_PATH
+    images_path = args.images or IMAGES_PATH
+    if not input_path.exists():
+        raise FileNotFoundError(f"Raw data not found: {input_path}")
+    if not images_path.exists():
+        raise FileNotFoundError(f"Images folder not found: {images_path}")
+
+    raw_text = input_path.read_text(encoding="utf-8")
     questions = parse_raw_data(raw_text)
     fill_missing_answers(questions)
-    missing_for_questions, unmatched_images = assign_images(questions)
-    write_output(questions, OUTPUT_PATH)
+    missing_for_questions, unmatched_images = assign_images(questions, images_path=images_path)
+    write_output(questions, output_path)
     years = sorted({q.year for q in questions})
     print(
         f"Parsed {len(questions)} kortsvar-spørgsmål across {len(years)} years: "
         f"{', '.join(str(year) for year in years)}"
     )
-    print(f"Saved structured data to {OUTPUT_PATH}")
+    print(f"Saved structured data to {output_path}")
 
     if missing_for_questions:
         print("Questions referencing figures without matched images:")

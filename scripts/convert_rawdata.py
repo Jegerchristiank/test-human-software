@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 import re
 from dataclasses import dataclass
@@ -7,8 +8,10 @@ from pathlib import Path
 from typing import List, Optional
 
 
-RAW_PATH = Path(__file__).resolve().parent.parent / "rawdata"
-OUTPUT_PATH = Path(__file__).resolve().parent.parent / "data" / "questions.json"
+ROOT_PATH = Path(__file__).resolve().parent.parent
+RAW_PATH = ROOT_PATH / "rawdata-mc"
+LEGACY_RAW_PATH = ROOT_PATH / "rawdata"
+OUTPUT_PATH = ROOT_PATH / "data" / "questions.json"
 
 
 @dataclass
@@ -42,8 +45,9 @@ def parse_raw_data(raw_text: str) -> List[Question]:
     current_session: Optional[str] = None
     i = 0
 
-    question_header_re = re.compile(r"^Spørgsmål\s+(\d+)\s+–\s+(.*)$")
+    question_header_re = re.compile(r"^Spørgsmål\s+(\d+)\s+[-–]\s+(.*)$", re.IGNORECASE)
     year_header_re = re.compile(r"^(\d{4})(?:\s*[-–]\s*(.*))?$")
+    correct_re = re.compile(r"\(korrekt\)", re.IGNORECASE)
 
     def normalize_session(label: str) -> Optional[str]:
         cleaned = label.strip().lower()
@@ -101,8 +105,8 @@ def parse_raw_data(raw_text: str) -> List[Question]:
                     raise ValueError(f"Unexpected option format near question {number}: '{option_line}'")
 
                 option_text = option_match.group(1).strip()
-                is_correct = "(KORREKT)" in option_text
-                option_text = option_text.replace("(KORREKT)", "").strip()
+                is_correct = bool(correct_re.search(option_text))
+                option_text = correct_re.sub("", option_text).strip()
                 options.append(Option(label=expected_label, text=option_text, is_correct=is_correct))
                 correct_found = correct_found or is_correct
                 i += 1
@@ -146,16 +150,36 @@ def write_questions(questions: List[Question], output_path: Path) -> None:
     output_path.write_text(json.dumps(serializable, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def resolve_input_path(candidate: Optional[Path]) -> Path:
+    if candidate:
+        return candidate
+    if RAW_PATH.exists():
+        return RAW_PATH
+    if LEGACY_RAW_PATH.exists():
+        return LEGACY_RAW_PATH
+    return RAW_PATH
+
+
 def main() -> None:
-    raw_text = RAW_PATH.read_text(encoding="utf-8")
+    parser = argparse.ArgumentParser(description="Convert raw MCQ data to JSON.")
+    parser.add_argument("--input", type=Path, help="Path to raw MCQ file.")
+    parser.add_argument("--output", type=Path, help="Destination for questions.json.")
+    args = parser.parse_args()
+
+    input_path = resolve_input_path(args.input)
+    output_path = args.output or OUTPUT_PATH
+    if not input_path.exists():
+        raise FileNotFoundError(f"Raw data not found: {input_path}")
+
+    raw_text = input_path.read_text(encoding="utf-8")
     questions = parse_raw_data(raw_text)
-    write_questions(questions, OUTPUT_PATH)
+    write_questions(questions, output_path)
     unique_years = sorted({q.year for q in questions})
     print(
         f"Parsed {len(questions)} questions across {len(unique_years)} years: "
         f"{', '.join(str(year) for year in unique_years)}"
     )
-    print(f"Saved structured data to {OUTPUT_PATH}")
+    print(f"Saved structured data to {output_path}")
 
 
 if __name__ == "__main__":

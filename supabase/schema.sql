@@ -125,6 +125,7 @@ create index if not exists idx_usage_events_user_id on public.usage_events (user
 create table if not exists public.user_state (
   user_id uuid primary key references auth.users(id) on delete cascade,
   settings jsonb,
+  show_meta boolean not null default true,
   history jsonb,
   seen jsonb,
   mistakes jsonb,

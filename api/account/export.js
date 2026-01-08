@@ -48,7 +48,7 @@ module.exports = async function handler(req, res) {
     const { data: userState } = await supabase
       .from("user_state")
       .select(
-        "settings, history, seen, mistakes, performance, figure_captions, best_score, theme, created_at, updated_at"
+        "settings, history, seen, mistakes, performance, figure_captions, best_score, theme, show_meta, created_at, updated_at"
       )
       .eq("user_id", user.id)
       .maybeSingle();

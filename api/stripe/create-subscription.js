@@ -4,61 +4,7 @@ const { getUserFromRequest, getProfileForUser, getActiveSubscription } = require
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { getBaseUrl } = require("../_lib/url");
 const { enforceRateLimit } = require("../_lib/rateLimit");
-
-const SUPPORTED_PAYMENT_METHODS = new Set([
-  "ach_debit",
-  "acss_debit",
-  "affirm",
-  "amazon_pay",
-  "au_becs_debit",
-  "bacs_debit",
-  "bancontact",
-  "boleto",
-  "card",
-  "cashapp",
-  "crypto",
-  "custom",
-  "customer_balance",
-  "eps",
-  "fpx",
-  "giropay",
-  "grabpay",
-  "ideal",
-  "kakao_pay",
-  "klarna",
-  "konbini",
-  "kr_card",
-  "link",
-  "multibanco",
-  "naver_pay",
-  "nz_bank_account",
-  "p24",
-  "pay_by_bank",
-  "payco",
-  "paynow",
-  "paypal",
-  "payto",
-  "promptpay",
-  "revolut_pay",
-  "sepa_debit",
-  "sofort",
-  "stripe_balance",
-  "us_bank_account",
-  "wechat_pay",
-]);
-
-function resolvePaymentMethodTypes() {
-  const raw = String(process.env.STRIPE_PAYMENT_METHOD_TYPES || "")
-    .split(",")
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean);
-  const filtered = raw.filter((entry) => SUPPORTED_PAYMENT_METHODS.has(entry));
-  if (!filtered.length) return [];
-  if (!filtered.includes("card")) {
-    filtered.unshift("card");
-  }
-  return [...new Set(filtered)];
-}
+const { resolveSubscriptionPaymentMethodTypes } = require("../_lib/stripe");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -117,7 +63,7 @@ module.exports = async function handler(req, res) {
     }
 
     const price = await stripe.prices.retrieve(priceId, { expand: ["product"] });
-    const paymentMethodTypes = resolvePaymentMethodTypes();
+    const paymentMethodTypes = resolveSubscriptionPaymentMethodTypes();
     const paymentSettings = {
       save_default_payment_method: "on_subscription",
       ...(paymentMethodTypes.length ? { payment_method_types: paymentMethodTypes } : {}),
