@@ -361,6 +361,10 @@ const TTS_SPEED_MAX = 1.3;
 const TTS_SPEED_STEP = 0.05;
 const TTS_MAX_CHARS = 2000;
 const SKETCH_MAX_BYTES = 5 * 1024 * 1024;
+const SKETCH_CANVAS_WIDTH = 1400;
+const SKETCH_CANVAS_HEIGHT = 900;
+const SKETCH_EXPORT_QUALITY = 0.85;
+const SKETCH_DEFAULT_COLOR = "#111827";
 const FIGURE_CAPTION_QUEUE_DELAY = 450;
 const TRANSCRIBE_LANGUAGE = "da";
 const AUDIO_MIME_TYPES = [
@@ -472,6 +476,9 @@ const state = {
   sessionActive: false,
   sessionPaused: false,
   sessionPausedAt: null,
+  sessionNeedsRender: false,
+  activeSessionLoaded: false,
+  activeSessionDirty: false,
   cancelRoundConfirmArmed: false,
   cancelRoundConfirmTimer: null,
   startTime: null,
@@ -515,6 +522,7 @@ const state = {
   questionsLoading: null,
   userStateSyncTimer: null,
   userStateSyncInFlight: false,
+  userStateSyncQueued: false,
   userStateLoadPromise: null,
   userStateApplying: false,
   profileRetryTimer: null,
@@ -598,6 +606,7 @@ const state = {
   shortPartNodes: new Map(),
   activeShortPartKey: null,
   shortPartSelectionActive: false,
+  shortGroupCompletion: new Set(),
   reviewHintQueue: [],
   reviewHintProcessing: false,
   reviewFilters: {
@@ -615,6 +624,22 @@ const state = {
   figureCaptionQueued: new Set(),
   figureCaptionProcessing: false,
   figureCaptionTimer: null,
+  sketchEditor: {
+    active: false,
+    part: null,
+    tool: "draw",
+    color: SKETCH_DEFAULT_COLOR,
+    brushSize: 6,
+    textSize: 20,
+    isDrawing: false,
+    lastPoint: null,
+    activeTextBox: null,
+    textDrag: null,
+    hasInk: false,
+    dirty: false,
+    cleared: false,
+    ctx: null,
+  },
   sketchUploads: new Map(),
   sketchAnalysis: new Map(),
   questionHints: new Map(),
@@ -724,6 +749,7 @@ const elements = {
   checkoutCancelBtn: document.getElementById("checkout-cancel-btn"),
   checkoutForm: document.getElementById("checkout-form"),
   checkoutSubmitBtn: document.getElementById("checkout-submit-btn"),
+  checkoutHostedBtn: document.getElementById("checkout-hosted-btn"),
   checkoutStatus: document.getElementById("checkout-status"),
   checkoutElement: document.getElementById("checkout-element"),
   checkoutExpress: document.getElementById("checkout-express"),
@@ -739,6 +765,7 @@ const elements = {
   billingPlanMeta: document.getElementById("billing-plan-meta"),
   billingStatusBadge: document.getElementById("billing-status-badge"),
   billingStatusMeta: document.getElementById("billing-status-meta"),
+  billingNextLabel: document.getElementById("billing-next-label"),
   billingNextAmount: document.getElementById("billing-next-amount"),
   billingNextDate: document.getElementById("billing-next-date"),
   billingPaymentLabel: document.getElementById("billing-payment-label"),
@@ -747,6 +774,7 @@ const elements = {
   billingUpdateMethodBtn: document.getElementById("billing-update-method-btn"),
   billingToggleCancelBtn: document.getElementById("billing-toggle-cancel-btn"),
   billingUpgradeBtn: document.getElementById("billing-upgrade-btn"),
+  billingPortalBtn: document.getElementById("billing-portal-btn"),
   billingRefreshBtn: document.getElementById("billing-refresh-btn"),
   billingMethodTitle: document.getElementById("billing-method-title"),
   billingMethodMeta: document.getElementById("billing-method-meta"),
@@ -802,6 +830,25 @@ const elements = {
   closeModal: document.getElementById("close-modal"),
   modalClose: document.getElementById("modal-close-btn"),
   modal: document.getElementById("rules-modal"),
+  sketchModal: document.getElementById("sketch-modal"),
+  sketchModalClose: document.getElementById("sketch-modal-close"),
+  sketchModalDismiss: document.getElementById("sketch-modal-dismiss"),
+  sketchModalAnalyze: document.getElementById("sketch-modal-analyze"),
+  sketchModalTitle: document.getElementById("sketch-modal-title"),
+  sketchModalHint: document.getElementById("sketch-modal-hint"),
+  sketchCanvasWrap: document.getElementById("sketch-canvas-wrap"),
+  sketchCanvas: document.getElementById("sketch-canvas"),
+  sketchTextLayer: document.getElementById("sketch-text-layer"),
+  sketchToolDraw: document.getElementById("sketch-tool-draw"),
+  sketchToolErase: document.getElementById("sketch-tool-erase"),
+  sketchToolText: document.getElementById("sketch-tool-text"),
+  sketchBrushSize: document.getElementById("sketch-brush-size"),
+  sketchBrushValue: document.getElementById("sketch-brush-value"),
+  sketchTextSize: document.getElementById("sketch-text-size"),
+  sketchTextValue: document.getElementById("sketch-text-value"),
+  sketchClearBtn: document.getElementById("sketch-clear-btn"),
+  sketchDeleteTextBtn: document.getElementById("sketch-delete-text"),
+  sketchColorButtons: Array.from(document.querySelectorAll(".sketch-color-btn")),
   figureModal: document.getElementById("figure-modal"),
   figureModalClose: document.getElementById("figure-modal-close"),
   figureModalTitle: document.getElementById("figure-modal-title"),
@@ -939,6 +986,11 @@ const elements = {
   shortAnswerSources: document.getElementById("short-sources"),
   shortAnswerHint: document.getElementById("short-score-hint"),
   shortSketchHint: document.getElementById("short-sketch-hint"),
+  shortAverageSummary: document.getElementById("short-average-summary"),
+  shortAverageCircle: document.getElementById("short-average-circle"),
+  shortAverageValue: document.getElementById("short-average-value"),
+  shortAverageMax: document.getElementById("short-average-max"),
+  shortAverageCaption: document.getElementById("short-average-caption"),
   shortReviewDrawer: document.getElementById("short-review-drawer"),
   feedbackArea: document.getElementById("feedback-area"),
   skipBtn: document.getElementById("skip-btn"),
@@ -1037,11 +1089,139 @@ function getLocalUserStateUpdatedAt() {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function getSessionElapsedMs() {
+  if (!state.startTime) return 0;
+  const end = state.sessionPaused && state.sessionPausedAt ? state.sessionPausedAt : Date.now();
+  return Math.max(0, end - state.startTime);
+}
+
+function getActiveQuestionKeys() {
+  return state.activeQuestions.map((question) => question?.key).filter(Boolean);
+}
+
+function getActivePartKeys() {
+  const keys = new Set();
+  state.activeQuestions.forEach((question) => {
+    if (!question || question.type !== "short") return;
+    getShortParts(question).forEach((part) => {
+      if (part?.key) {
+        keys.add(part.key);
+      }
+    });
+  });
+  return keys;
+}
+
+function buildActiveSessionPayload() {
+  if (!state.sessionActive || !state.activeQuestions.length) return null;
+  const activeQuestionKeys = getActiveQuestionKeys();
+  if (!activeQuestionKeys.length) return null;
+  const questionKeySet = new Set(activeQuestionKeys);
+  const partKeySet = getActivePartKeys();
+
+  const results = state.results
+    .map((entry) => {
+      if (!entry || !entry.type || !entry.question?.key) return null;
+      if (entry.type === "mcq") {
+        return {
+          type: "mcq",
+          questionKey: entry.question.key,
+          selected: entry.selected ?? null,
+          isCorrect: Boolean(entry.isCorrect),
+          skipped: Boolean(entry.skipped),
+          delta: Number(entry.delta) || 0,
+        };
+      }
+      if (entry.type === "short") {
+        const groupKey = entry.groupKey || getShortResultGroupKey(entry) || "";
+        return {
+          type: "short",
+          questionKey: entry.question.key,
+          groupKey,
+          response: entry.response || "",
+          awardedPoints: Number(entry.awardedPoints) || 0,
+          maxPoints: Number(entry.maxPoints) || 0,
+          skipped: Boolean(entry.skipped),
+          ai: entry.ai || null,
+        };
+      }
+      return null;
+    })
+    .filter(Boolean);
+
+  const optionOrder = [];
+  state.optionOrder.forEach((value, key) => {
+    if (!questionKeySet.has(key)) return;
+    optionOrder.push({
+      key,
+      options: Array.isArray(value?.options) ? value.options : [],
+      correctLabel: value?.correctLabel || "",
+    });
+  });
+
+  const shortDrafts = [];
+  state.shortAnswerDrafts.forEach((value, key) => {
+    if (!partKeySet.has(key)) return;
+    shortDrafts.push({
+      key,
+      text: value?.text || "",
+      points: Number(value?.points) || 0,
+      scored: Boolean(value?.scored),
+    });
+  });
+
+  const shortAnswerAI = [];
+  state.shortAnswerAI.forEach((value, key) => {
+    if (!partKeySet.has(key)) return;
+    shortAnswerAI.push({
+      key,
+      score: Number(value?.score) || 0,
+      feedback: value?.feedback || "",
+      missing: Array.isArray(value?.missing) ? value.missing : [],
+      matched: Array.isArray(value?.matched) ? value.matched : [],
+    });
+  });
+
+  const infiniteState = state.infiniteState
+    ? {
+        poolKeys: state.infiniteState.pool.map((question) => question?.key).filter(Boolean),
+        remainingKeys: state.infiniteState.remaining
+          .map((question) => question?.key)
+          .filter(Boolean),
+        usedKeys: [...(state.infiniteState.usedKeys || new Set())],
+        cycle: Number(state.infiniteState.cycle) || 0,
+      }
+    : null;
+
+  return {
+    version: 1,
+    paused: Boolean(state.sessionPaused),
+    elapsedMs: getSessionElapsedMs(),
+    currentIndex: state.currentIndex,
+    activeQuestionKeys,
+    results,
+    score: Number(state.score) || 0,
+    scoreBreakdown: {
+      mcq: Number(state.scoreBreakdown.mcq) || 0,
+      short: Number(state.scoreBreakdown.short) || 0,
+    },
+    sessionSettings: state.sessionSettings,
+    optionOrder,
+    shortDrafts,
+    shortAnswerAI,
+    activeShortPartKey: state.activeShortPartKey || null,
+    infiniteState,
+  };
+}
+
 function buildUserStatePayload() {
   if (!state.session?.user) return null;
+  const activeSession = buildActiveSessionPayload();
+  const includeActiveSession = state.sessionActive || state.activeSessionDirty;
   return {
     user_id: state.session.user.id,
     settings: state.settings,
+    ...(includeActiveSession ? { active_session: activeSession } : {}),
     history: getHistoryEntries(),
     seen: [...state.seenKeys],
     mistakes: [...state.lastMistakeKeys],
@@ -1051,6 +1231,21 @@ function buildUserStatePayload() {
     theme: localStorage.getItem(STORAGE_KEYS.theme) || "light",
     show_meta: state.settings.showMeta,
   };
+}
+
+async function syncActiveSessionSnapshot(payload) {
+  if (!state.backendAvailable || !state.supabase || !state.session?.user) return;
+  const snapshot = payload === undefined ? buildActiveSessionPayload() : payload;
+  const { error } = await state.supabase.from("user_state").upsert(
+    {
+      user_id: state.session.user.id,
+      active_session: snapshot,
+    },
+    { onConflict: "user_id" }
+  );
+  if (error) {
+    console.warn("Kunne ikke synkronisere aktiv runde", error);
+  }
 }
 
 function scheduleUserStateSync() {
@@ -1064,10 +1259,26 @@ function scheduleUserStateSync() {
   }, USER_STATE_SYNC_DELAY);
 }
 
+function flushUserStateSync() {
+  touchUserStateUpdatedAt();
+  if (state.userStateSyncTimer) {
+    clearTimeout(state.userStateSyncTimer);
+    state.userStateSyncTimer = null;
+  }
+  if (state.userStateSyncInFlight) {
+    state.userStateSyncQueued = true;
+    return;
+  }
+  void syncUserStateNow();
+}
+
 async function syncUserStateNow() {
   if (state.userStateApplying) return;
   if (!state.backendAvailable || !state.supabase || !state.session?.user) return;
-  if (state.userStateSyncInFlight) return;
+  if (state.userStateSyncInFlight) {
+    state.userStateSyncQueued = true;
+    return;
+  }
   const payload = buildUserStatePayload();
   if (!payload) return;
   state.userStateSyncInFlight = true;
@@ -1076,13 +1287,276 @@ async function syncUserStateNow() {
   });
   if (error) {
     console.warn("Kunne ikke synkronisere brugerdata", error);
+  } else {
+    state.activeSessionDirty = false;
   }
   state.userStateSyncInFlight = false;
+  if (state.userStateSyncQueued) {
+    state.userStateSyncQueued = false;
+    void syncUserStateNow();
+  }
+}
+
+function buildQuestionLookup() {
+  const lookup = new Map();
+  state.allQuestions.forEach((question) => {
+    if (question?.key) {
+      lookup.set(question.key, question);
+    }
+  });
+  if (state.shortQuestionGroups) {
+    state.shortQuestionGroups.forEach((parts) => {
+      parts.forEach((part) => {
+        if (part?.key) {
+          lookup.set(part.key, part);
+        }
+      });
+    });
+  }
+  return lookup;
+}
+
+function restoreOptionOrder(entries, questionKeySet) {
+  const map = new Map();
+  if (!Array.isArray(entries)) return map;
+  entries.forEach((entry) => {
+    if (!entry?.key || !questionKeySet.has(entry.key)) return;
+    map.set(entry.key, {
+      options: Array.isArray(entry.options) ? entry.options : [],
+      correctLabel: entry.correctLabel || "",
+    });
+  });
+  return map;
+}
+
+function restoreShortDrafts(entries, partKeySet) {
+  const map = new Map();
+  if (!Array.isArray(entries)) return map;
+  entries.forEach((entry) => {
+    if (!entry?.key || !partKeySet.has(entry.key)) return;
+    map.set(entry.key, {
+      text: entry.text || "",
+      points: Number(entry.points) || 0,
+      scored: Boolean(entry.scored),
+    });
+  });
+  return map;
+}
+
+function restoreShortAnswerAI(entries, partKeySet) {
+  const map = new Map();
+  if (!Array.isArray(entries)) return map;
+  entries.forEach((entry) => {
+    if (!entry?.key || !partKeySet.has(entry.key)) return;
+    map.set(entry.key, {
+      score: Number(entry.score) || 0,
+      feedback: entry.feedback || "",
+      missing: Array.isArray(entry.missing) ? entry.missing : [],
+      matched: Array.isArray(entry.matched) ? entry.matched : [],
+    });
+  });
+  return map;
+}
+
+function restoreResults(entries, lookup) {
+  if (!Array.isArray(entries)) return [];
+  return entries
+    .map((entry) => {
+      if (!entry?.type || !entry.questionKey) return null;
+      const question = lookup.get(entry.questionKey);
+      if (!question) return null;
+      if (entry.type === "mcq") {
+        return {
+          question,
+          type: "mcq",
+          selected: entry.selected ?? null,
+          isCorrect: Boolean(entry.isCorrect),
+          skipped: Boolean(entry.skipped),
+          delta: Number(entry.delta) || 0,
+        };
+      }
+      if (entry.type === "short") {
+        const groupKey = entry.groupKey || (question.groupKey ? `short-group-${question.groupKey}` : "");
+        return {
+          question,
+          groupKey,
+          type: "short",
+          response: entry.response || "",
+          awardedPoints: Number(entry.awardedPoints) || 0,
+          maxPoints: Number(entry.maxPoints) || question.maxPoints || 0,
+          skipped: Boolean(entry.skipped),
+          ai: entry.ai || null,
+        };
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
+function getCompletedQuestionKeySet(results) {
+  const completed = new Set();
+  results.forEach((entry) => {
+    if (entry?.type === "mcq" && entry.question?.key) {
+      completed.add(entry.question.key);
+      return;
+    }
+    if (entry?.type === "short") {
+      const groupKey =
+        entry.groupKey ||
+        (entry.question?.groupKey ? `short-group-${entry.question.groupKey}` : "");
+      if (groupKey) {
+        completed.add(groupKey);
+      }
+    }
+  });
+  return completed;
+}
+
+function buildScoreBreakdownFromResults(results) {
+  let mcq = 0;
+  const shortGroups = new Map();
+  results.forEach((entry) => {
+    if (!entry) return;
+    if (entry.type === "mcq") {
+      mcq += Number(entry.delta) || 0;
+      return;
+    }
+    if (entry.type === "short") {
+      const groupKey =
+        entry.groupKey ||
+        (entry.question?.groupKey ? `short-group-${entry.question.groupKey}` : "");
+      if (!groupKey) return;
+      const bucket = shortGroups.get(groupKey) || { total: 0, count: 0 };
+      bucket.total += Number(entry.awardedPoints) || 0;
+      bucket.count += 1;
+      shortGroups.set(groupKey, bucket);
+    }
+  });
+  let short = 0;
+  shortGroups.forEach((bucket) => {
+    if (!bucket.count) return;
+    short += Number((bucket.total / bucket.count).toFixed(1));
+  });
+  return { mcq, short };
+}
+
+function restoreInfiniteState(payload, lookup) {
+  if (!payload || typeof payload !== "object") return null;
+  const poolKeys = Array.isArray(payload.poolKeys) ? payload.poolKeys : [];
+  const remainingKeys = Array.isArray(payload.remainingKeys) ? payload.remainingKeys : [];
+  const usedKeys = Array.isArray(payload.usedKeys) ? payload.usedKeys : [];
+  const pool = poolKeys.map((key) => lookup.get(key)).filter(Boolean);
+  const remaining = remainingKeys.map((key) => lookup.get(key)).filter(Boolean);
+  return {
+    pool,
+    remaining,
+    usedKeys: new Set(usedKeys.filter(Boolean)),
+    cycle: Number(payload.cycle) || 0,
+  };
+}
+
+function normalizeActiveSessionPayload(payload) {
+  if (!payload) return null;
+  if (typeof payload === "string") {
+    try {
+      const parsed = JSON.parse(payload);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch (error) {
+      return null;
+    }
+  }
+  return payload;
+}
+
+async function restoreActiveSession(payload) {
+  if (!payload || typeof payload !== "object") return;
+  if (state.sessionActive) return;
+
+  await ensureQuestionsLoaded();
+
+  const activeQuestionKeys = Array.isArray(payload.activeQuestionKeys)
+    ? payload.activeQuestionKeys
+    : [];
+  if (!activeQuestionKeys.length) return;
+
+  const lookup = buildQuestionLookup();
+  const activeQuestions = activeQuestionKeys
+    .map((key) => lookup.get(key))
+    .filter(Boolean);
+  if (!activeQuestions.length) return;
+
+  const questionKeySet = new Set(activeQuestionKeys);
+  const partKeySet = new Set();
+  activeQuestions.forEach((question) => {
+    if (!question || question.type !== "short") return;
+    getShortParts(question).forEach((part) => {
+      if (part?.key) {
+        partKeySet.add(part.key);
+      }
+    });
+  });
+
+  const results = restoreResults(payload.results, lookup);
+
+  state.sessionActive = true;
+  state.sessionPaused = true;
+  state.sessionPausedAt = Date.now();
+  state.sessionNeedsRender = true;
+  state.activeSessionLoaded = true;
+  state.activeSessionDirty = false;
+  state.sessionSettings = {
+    ...DEFAULT_SETTINGS,
+    ...(payload.sessionSettings && typeof payload.sessionSettings === "object"
+      ? payload.sessionSettings
+      : {}),
+  };
+  state.activeQuestions = activeQuestions;
+  state.results = results;
+  state.score = Number(payload.score) || 0;
+  if (payload.scoreBreakdown && typeof payload.scoreBreakdown === "object") {
+    state.scoreBreakdown = {
+      mcq: Number(payload.scoreBreakdown.mcq) || 0,
+      short: Number(payload.scoreBreakdown.short) || 0,
+    };
+  } else {
+    state.scoreBreakdown = buildScoreBreakdownFromResults(results);
+  }
+  state.optionOrder = restoreOptionOrder(payload.optionOrder, questionKeySet);
+  state.shortAnswerDrafts = restoreShortDrafts(payload.shortDrafts, partKeySet);
+  state.shortAnswerAI = restoreShortAnswerAI(payload.shortAnswerAI, partKeySet);
+  state.infiniteState = restoreInfiniteState(payload.infiniteState, lookup);
+  state.shortAnswerPending = false;
+  state.sketchUploads = new Map();
+  state.sketchAnalysis = new Map();
+  state.locked = false;
+  state.questionStartedAt = null;
+  state.activeShortPartKey = partKeySet.has(payload.activeShortPartKey)
+    ? payload.activeShortPartKey
+    : null;
+  state.shortPartSelectionActive = Boolean(state.activeShortPartKey);
+  const elapsedMs = Number(payload.elapsedMs) || 0;
+  state.startTime = elapsedMs ? Date.now() - elapsedMs : Date.now();
+
+  const completed = getCompletedQuestionKeySet(results);
+  const resumeIndex = activeQuestions.findIndex(
+    (question) => question?.key && !completed.has(question.key)
+  );
+  const fallbackIndex = clampInt(payload.currentIndex, 0, activeQuestions.length - 1, 0);
+  state.currentIndex = resumeIndex >= 0 ? resumeIndex : fallbackIndex;
+
+  updateSessionScoreMeta(state.activeQuestions);
+  updateSessionPill();
+  applySessionDisplaySettings();
+  updateTopBar();
+  updatePausedSessionUI();
+  updateSummary();
+  state.lastAppScreen = "menu";
 }
 
 function applyUserState(remote) {
   if (!remote) return;
   state.userStateApplying = true;
+  const activeSession = normalizeActiveSessionPayload(remote.active_session);
   if (remote.settings && typeof remote.settings === "object") {
     const nextSettings = { ...DEFAULT_SETTINGS, ...remote.settings, assistantCollapsed: false };
     if (typeof remote.show_meta === "boolean") {
@@ -1135,6 +1609,11 @@ function applyUserState(remote) {
   if (elements.bestScoreValue) {
     elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
   }
+  if (!state.sessionActive && activeSession) {
+    void restoreActiveSession(activeSession);
+  } else {
+    updatePausedSessionUI();
+  }
 }
 
 async function loadUserStateFromSupabase() {
@@ -1145,7 +1624,7 @@ async function loadUserStateFromSupabase() {
     const result = await guardedStep(
       state.supabase
         .from("user_state")
-        .select("settings, history, seen, mistakes, performance, figure_captions, best_score, theme, show_meta, updated_at")
+        .select("settings, active_session, history, seen, mistakes, performance, figure_captions, best_score, theme, show_meta, updated_at")
         .eq("user_id", state.session.user.id)
         .maybeSingle(),
       USER_STATE_TIMEOUT_MS,
@@ -1153,27 +1632,39 @@ async function loadUserStateFromSupabase() {
     );
     if (!result) {
       maybeApplyDemoHistoryEntry();
+      state.activeSessionLoaded = true;
       return null;
     }
     const { data, error } = result;
     if (error) {
       console.warn("Kunne ikke hente brugerdata", error);
       maybeApplyDemoHistoryEntry();
+      state.activeSessionLoaded = true;
       return null;
     }
     if (!data) {
       scheduleUserStateSync();
       maybeApplyDemoHistoryEntry();
+      state.activeSessionLoaded = true;
       return null;
     }
+    const activeSession = normalizeActiveSessionPayload(data.active_session);
     const localUpdatedAt = getLocalUserStateUpdatedAt();
     const remoteUpdatedAt = data.updated_at ? Date.parse(data.updated_at) : null;
-    if (!localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt)) {
-      applyUserState(data);
+    const shouldApplyRemote =
+      !localUpdatedAt || (remoteUpdatedAt && remoteUpdatedAt > localUpdatedAt);
+    if (shouldApplyRemote) {
+      applyUserState({ ...data, active_session: activeSession });
     } else {
+      if (!state.sessionActive && activeSession) {
+        await restoreActiveSession(activeSession);
+      } else {
+        updatePausedSessionUI();
+      }
       scheduleUserStateSync();
     }
     maybeApplyDemoHistoryEntry();
+    state.activeSessionLoaded = true;
     return data;
   })();
 
@@ -1668,6 +2159,7 @@ function setBillingControlsEnabled(enabled) {
     elements.billingUpdateMethodBtn,
     elements.billingToggleCancelBtn,
     elements.billingUpgradeBtn,
+    elements.billingPortalBtn,
     elements.billingRefreshBtn,
     elements.billingChangeMethodBtn,
     elements.billingUpdateSubmitBtn,
@@ -2073,6 +2565,9 @@ function updateBillingUI() {
     (subscription ? "Fuld adgang til alle Pro-funktioner." : "Aktivér Pro for at komme i gang.");
   const priceAmount = resolveUnitAmount(price);
   const planInterval = price?.recurring ? formatIntervalLabel(price.recurring) : "Engangsbetaling";
+  const normalizedStatus = String(subscription?.status || "").toLowerCase();
+  const isCanceled = Boolean(subscription?.cancel_at_period_end) ||
+    ["canceled", "incomplete_expired"].includes(normalizedStatus);
   const statusLabel = subscription
     ? subscription.cancel_at_period_end
       ? "Opsagt"
@@ -2080,13 +2575,23 @@ function updateBillingUI() {
     : "Ingen aktiv betaling";
   const tone = resolveBillingTone(subscription?.status, subscription?.cancel_at_period_end);
   const summary = formatPaymentMethodSummary(paymentMethod);
-  const nextAmount = typeof upcoming?.amount_due === "number" ? upcoming.amount_due : priceAmount;
   const nextCurrency = upcoming?.currency || price?.currency;
-  const nextDate =
-    upcoming?.next_payment_attempt ||
-    upcoming?.period_end ||
-    subscription?.current_period_end ||
-    null;
+  let nextLabel = "Næste betaling";
+  let nextAmount = null;
+  let nextDateText = "—";
+  if (isCanceled) {
+    nextLabel = "Adgang udløber";
+    const endDate = subscription?.current_period_end || upcoming?.period_end || null;
+    nextDateText = endDate ? `Udløber ${formatBillingDate(endDate)}` : "Ingen kommende betalinger.";
+  } else if (subscription) {
+    nextAmount = typeof upcoming?.amount_due === "number" ? upcoming.amount_due : priceAmount;
+    const nextDate =
+      upcoming?.next_payment_attempt ||
+      upcoming?.period_end ||
+      subscription?.current_period_end ||
+      null;
+    nextDateText = nextDate ? `Forfalder ${formatBillingDate(nextDate)}` : "—";
+  }
 
   if (elements.billingPlan) {
     elements.billingPlan.textContent = planLabel;
@@ -2146,8 +2651,11 @@ function updateBillingUI() {
       ? formatCurrency(nextAmount, nextCurrency)
       : "—";
   }
+  if (elements.billingNextLabel) {
+    elements.billingNextLabel.textContent = nextLabel;
+  }
   if (elements.billingNextDate) {
-    elements.billingNextDate.textContent = nextDate ? `Forfalder ${formatBillingDate(nextDate)}` : "—";
+    elements.billingNextDate.textContent = nextDateText;
   }
   if (elements.billingPaymentLabel) {
     elements.billingPaymentLabel.textContent = summary.title;
@@ -3002,13 +3510,30 @@ async function startDemoQuiz() {
   }
 }
 
+function isSameOrigin(url) {
+  if (!url) return false;
+  const rawUrl = typeof url === "string" ? url : url.url || url.href;
+  if (!rawUrl) return false;
+  try {
+    const parsed = new URL(rawUrl, window.location.origin);
+    return parsed.origin === window.location.origin;
+  } catch (error) {
+    return false;
+  }
+}
+
 async function apiFetch(url, options = {}) {
-  const { timeoutMs, ...rest } = options;
+  const { timeoutMs, ai, ...rest } = options;
   const headers = { ...(rest.headers || {}) };
   if (state.session?.access_token) {
     headers.Authorization = `Bearer ${state.session.access_token}`;
   }
-  if (state.useOwnKey && state.userOpenAiKey) {
+  if (
+    state.useOwnKey &&
+    state.userOpenAiKey &&
+    ai === true &&
+    isSameOrigin(url)
+  ) {
     headers["x-user-openai-key"] = state.userOpenAiKey;
   }
   const fetchOptions = { ...rest, headers };
@@ -3019,7 +3544,11 @@ async function apiFetch(url, options = {}) {
       if (typeof AbortSignal !== "undefined" && typeof AbortSignal.any === "function") {
         fetchOptions.signal = AbortSignal.any([fetchOptions.signal, controller.signal]);
       } else {
-        fetchOptions.signal.addEventListener("abort", () => controller.abort(), { once: true });
+        if (fetchOptions.signal.aborted) {
+          controller.abort();
+        } else {
+          fetchOptions.signal.addEventListener("abort", () => controller.abort(), { once: true });
+        }
         fetchOptions.signal = controller.signal;
       }
     } else {
@@ -3232,10 +3761,13 @@ async function refreshProfile() {
     updateAccountUI();
     updateUserChip();
     resetProfileRetry();
-    void loadUserStateFromSupabase();
   } catch (error) {
     // Ignore profile fetch errors for now.
     scheduleProfileRetry();
+  } finally {
+    if (state.session?.user) {
+      void loadUserStateFromSupabase();
+    }
   }
 }
 
@@ -3486,6 +4018,9 @@ function setCheckoutControlsEnabled(enabled) {
   if (elements.checkoutSubmitBtn) {
     elements.checkoutSubmitBtn.disabled = !canSubmit;
   }
+  if (elements.checkoutHostedBtn) {
+    elements.checkoutHostedBtn.disabled = !enabled;
+  }
   if (elements.checkoutCancelBtn) {
     elements.checkoutCancelBtn.disabled = !enabled;
   }
@@ -3501,13 +4036,17 @@ function getStripeClient() {
   return state.stripeClient;
 }
 
-function clearCheckoutElement() {
+function unmountCheckoutElement() {
   if (state.stripePaymentElement) {
     state.stripePaymentElement.unmount();
   }
-  clearExpressCheckout();
   state.stripePaymentElement = null;
   state.stripeElements = null;
+}
+
+function clearCheckoutElement() {
+  unmountCheckoutElement();
+  clearExpressCheckout();
   state.checkoutClientSecret = null;
   state.checkoutSubscriptionId = null;
   state.checkoutPrice = null;
@@ -3529,12 +4068,16 @@ function clearCheckoutElement() {
   }
 }
 
-function clearBillingPaymentElement() {
+function unmountBillingPaymentElement() {
   if (state.billingPaymentElement) {
     state.billingPaymentElement.unmount();
   }
   state.billingPaymentElement = null;
   state.billingElements = null;
+}
+
+function clearBillingPaymentElement() {
+  unmountBillingPaymentElement();
   state.billing.setupClientSecret = null;
   if (elements.billingPaymentElement) {
     elements.billingPaymentElement.textContent = "";
@@ -3714,6 +4257,80 @@ async function createBillingSetupIntent() {
   return res.json();
 }
 
+async function openHostedCheckout() {
+  if (!requireAuthGuard()) return;
+  if (!state.config?.stripeConfigured) {
+    setCheckoutStatus("Betaling er ikke sat op endnu.", true);
+    return;
+  }
+  setCheckoutStatus("Åbner Stripe Checkout …");
+  setCheckoutControlsEnabled(false);
+  try {
+    const res = await apiFetch("/api/stripe/create-checkout-session", { method: "POST" });
+    if (!res.ok) {
+      let message = "Kunne ikke åbne Stripe Checkout.";
+      try {
+        const data = await res.json();
+        const errorCode = String(data?.error || "").toLowerCase();
+        if (errorCode === "payment_not_configured") {
+          message = "Betaling er ikke sat op endnu.";
+        } else if (errorCode === "unauthenticated") {
+          message = "Log ind for at fortsætte.";
+        } else if (errorCode === "rate_limited") {
+          message = "For mange forsøg. Vent et øjeblik og prøv igen.";
+        }
+      } catch (error) {
+        // Ignore JSON parse errors.
+      }
+      throw new Error(message);
+    }
+    const data = await res.json();
+    const url = String(data?.url || "").trim();
+    if (!url) {
+      throw new Error("Stripe Checkout link mangler.");
+    }
+    window.location.href = url;
+  } catch (error) {
+    setCheckoutStatus(error.message || "Kunne ikke åbne Stripe Checkout.", true);
+    setCheckoutControlsEnabled(true);
+  }
+}
+
+async function openStripePortal() {
+  if (!requireAuthGuard()) return;
+  setBillingStatus("Åbner Stripe portal …");
+  setBillingControlsEnabled(false);
+  try {
+    const res = await apiFetch("/api/stripe/create-portal-session", { method: "POST" });
+    if (!res.ok) {
+      let message = "Kunne ikke åbne Stripe portal.";
+      try {
+        const data = await res.json();
+        const errorCode = String(data?.error || "").toLowerCase();
+        if (errorCode === "payment_not_configured") {
+          message = "Betaling er ikke sat op endnu.";
+        } else if (errorCode === "unauthenticated") {
+          message = "Log ind for at fortsætte.";
+        } else if (errorCode === "rate_limited") {
+          message = "For mange forsøg. Vent et øjeblik og prøv igen.";
+        }
+      } catch (error) {
+        // Ignore JSON parse errors.
+      }
+      throw new Error(message);
+    }
+    const data = await res.json();
+    const url = String(data?.url || "").trim();
+    if (!url) {
+      throw new Error("Stripe portal link mangler.");
+    }
+    window.location.href = url;
+  } catch (error) {
+    setBillingStatus(error.message || "Kunne ikke åbne Stripe portal.", true);
+    setBillingControlsEnabled(true);
+  }
+}
+
 async function completeCheckoutSuccess() {
   setCheckoutStatus("Betalingen er gennemført. Opdaterer adgang …");
   await refreshAccessStatus();
@@ -3811,7 +4428,7 @@ async function mountCheckoutElement(clientSecret) {
   if (!elements.checkoutElement) {
     throw new Error("Checkout er ikke klar.");
   }
-  clearCheckoutElement();
+  unmountCheckoutElement();
   const stripe = getStripeClient();
   if (!stripe) {
     throw new Error("Stripe er ikke tilgængeligt.");
@@ -3834,7 +4451,7 @@ async function mountBillingPaymentElement(clientSecret) {
   if (!elements.billingPaymentElement) {
     throw new Error("Betalingsfeltet er ikke klar.");
   }
-  clearBillingPaymentElement();
+  unmountBillingPaymentElement();
   const stripe = getStripeClient();
   if (!stripe) {
     throw new Error("Stripe er ikke tilgængeligt.");
@@ -3872,6 +4489,7 @@ async function openCheckout() {
   showScreen("checkout");
   setCheckoutStatus("Klargør betaling …");
   setCheckoutControlsEnabled(false);
+  clearCheckoutElement();
   try {
     const data = await createSubscriptionIntent();
     state.checkoutClientSecret = data.clientSecret;
@@ -4001,6 +4619,7 @@ async function openBillingUpdatePanel() {
   setBillingUpdatePanelVisible(true);
   setBillingUpdateStatus("Klargør betalingsmetode …");
   setBillingControlsEnabled(false);
+  clearBillingPaymentElement();
   try {
     const data = await createBillingSetupIntent();
     state.billing.setupClientSecret = data.clientSecret || null;
@@ -4310,6 +4929,22 @@ async function handleLogout() {
   state.billing.isUpdating = false;
   state.billing.setupClientSecret = null;
   state.userStateLoadPromise = null;
+  state.userStateSyncQueued = false;
+  state.activeSessionLoaded = false;
+  state.activeSessionDirty = false;
+  state.sessionActive = false;
+  state.sessionPaused = false;
+  state.sessionPausedAt = null;
+  state.sessionNeedsRender = false;
+  state.activeQuestions = [];
+  state.results = [];
+  state.score = 0;
+  state.scoreBreakdown = { mcq: 0, short: 0 };
+  state.shortAnswerDrafts = new Map();
+  state.shortAnswerAI = new Map();
+  state.shortGroupCompletion = new Set();
+  state.optionOrder = new Map();
+  state.infiniteState = null;
   clearBillingPaymentElement();
   state.demoMode = false;
   state.useOwnKey = false;
@@ -4468,7 +5103,9 @@ function buildShortGroups(questions) {
 }
 
 function normalizeCategory(category) {
+  if (typeof category !== "string") return null;
   const trimmed = category.trim();
+  if (!trimmed) return null;
   if (DEPRECATED_CATEGORY.test(trimmed)) return null;
   return CATEGORY_ALIASES[trimmed] || trimmed;
 }
@@ -4833,7 +5470,8 @@ function buildShortAnswerForGrading(question, options = {}) {
       question = activePart;
     }
   }
-  const textAnswer = elements.shortAnswerInput?.value.trim() || "";
+  const draft = getShortDraft(question.key);
+  const textAnswer = String(draft.text || "").trim();
   const analysis = state.sketchAnalysis.get(question.key);
   let sketchDescription =
     options.sketchDescription !== undefined
@@ -4885,10 +5523,13 @@ async function resolveShortModelAnswer(question, { useSketch = false } = {}) {
 function applyShortAnswerGradeResult(question, data, { fallbackFeedback } = {}) {
   if (!question) return;
   const suggested = clamp(Number(data.score) || 0, 0, question.maxPoints || 0);
-  syncShortScoreInputs(suggested, { scored: true });
+  syncShortScoreInputs(suggested, { scored: true, part: question });
   const feedback = String(data.feedback || "").trim();
-  elements.shortAnswerAiFeedback.textContent =
-    feedback || fallbackFeedback || "Auto-vurdering klar. Justér point efter behov.";
+  const nodes = resolveShortReviewElements(question);
+  if (nodes.aiFeedback) {
+    nodes.aiFeedback.textContent =
+      feedback || fallbackFeedback || "Auto-vurdering klar. Justér point efter behov.";
+  }
   setShortcutTempStatus("grade", "Vurderet", 2000);
   state.shortAnswerAI.set(question.key, {
     score: suggested,
@@ -5424,14 +6065,51 @@ function updateShortcutFigureIndicator(question) {
   }
 }
 
-function setShortFigureStatus(message, isWarn = false) {
-  if (!elements.shortFigureStatus) return;
-  elements.shortFigureStatus.textContent = message;
-  elements.shortFigureStatus.classList.toggle("warn", Boolean(isWarn));
+function resolveShortReviewElements(part) {
+  const nodes = part ? state.shortPartNodes.get(part.key) : null;
+  return {
+    scoreRange: nodes?.scoreRange || elements.shortAnswerScoreRange,
+    scoreHint: nodes?.scoreHint || elements.shortAnswerHint,
+    scoreMax: nodes?.scoreMax || elements.shortAnswerMaxPoints,
+    aiFeedback: nodes?.aiFeedback || elements.shortAnswerAiFeedback,
+    aiStatus: nodes?.aiStatus || elements.shortAnswerAiStatus,
+    aiRetryBtn: nodes?.aiRetryBtn || elements.shortAnswerAiRetryBtn,
+    showAnswerBtn:
+      nodes?.showAnswerBtn || elements.shortAnswerShowAnswer || elements.shortAnswerShowAnswerInline,
+    modelWrap: nodes?.modelWrap || elements.shortAnswerModel,
+    modelTitle: nodes?.modelTitle || elements.shortModelTitle,
+    modelText: nodes?.modelText || elements.shortModelText,
+    modelTag: nodes?.modelTag || elements.shortModelTag,
+    figureAnswer: nodes?.figureAnswer || elements.shortFigureAnswer,
+    figureStatus: nodes?.figureStatus || elements.shortFigureStatus,
+    figureText: nodes?.figureText || elements.shortFigureText,
+    figureGenerateBtn: nodes?.figureGenerateBtn || elements.shortFigureGenerateBtn,
+    sources: nodes?.sources || elements.shortAnswerSources,
+    hintWrap: nodes?.hintWrap || elements.questionHint,
+    hintStatus: nodes?.hintStatus || elements.questionHintStatus,
+    hintText: nodes?.hintText || elements.questionHintText,
+    isPartScoped: Boolean(nodes),
+  };
+}
+
+function setShortFigureStatus(message, isWarn = false, part = null) {
+  let targetPart = part;
+  if (!targetPart) {
+    const current = state.activeQuestions[state.currentIndex];
+    if (current && current.type === "short") {
+      targetPart = isShortGroup(current) ? getActiveShortPart(current) : current;
+    }
+  }
+  const nodes = resolveShortReviewElements(targetPart);
+  if (!nodes.figureStatus) return;
+  nodes.figureStatus.textContent = message;
+  nodes.figureStatus.classList.toggle("warn", Boolean(isWarn));
 }
 
 function updateShortAnswerModel(question) {
-  if (!question || !elements.shortAnswerModel) return;
+  if (!question) return;
+  const nodes = resolveShortReviewElements(question);
+  if (!nodes.modelWrap) return;
   const group = getShortGroupForQuestion(question);
   const groupParts = group ? getShortParts(group) : [];
   const isMultiPart = groupParts.length > 1;
@@ -5445,7 +6123,7 @@ function updateShortAnswerModel(question) {
   let modelText = fallbackAnswer;
   let showTag = false;
 
-  if (isMultiPart) {
+  if (isMultiPart && !nodes.isPartScoped) {
     const blocks = groupParts.map((part, index) => {
       const label = part.label ? part.label.toUpperCase() : String(index + 1);
       const prompt = String(part.text || part.prompt || "").trim();
@@ -5463,63 +6141,67 @@ function updateShortAnswerModel(question) {
     }
   }
 
-  if (elements.shortModelTitle) {
-    elements.shortModelTitle.textContent = modelTitle;
+  if (nodes.modelTitle) {
+    nodes.modelTitle.textContent = modelTitle;
   }
-  if (elements.shortModelText) {
-    elements.shortModelText.textContent = modelText;
-  } else {
-    const textEl = elements.shortAnswerModel.querySelector("p");
+  if (nodes.modelText) {
+    nodes.modelText.textContent = modelText;
+  } else if (nodes.modelWrap) {
+    const textEl = nodes.modelWrap.querySelector("p");
     if (textEl) textEl.textContent = modelText;
   }
-  if (elements.shortModelTag) {
-    elements.shortModelTag.textContent = "Figurbeskrivelse";
-    elements.shortModelTag.classList.toggle("hidden", !showTag);
+  if (nodes.modelTag) {
+    nodes.modelTag.textContent = "Figurbeskrivelse";
+    nodes.modelTag.classList.toggle("hidden", !showTag);
   }
 
-  if (elements.shortFigureGenerateBtn) {
-    elements.shortFigureGenerateBtn.disabled = !state.aiStatus.available;
-    elements.shortFigureGenerateBtn.textContent = figureCaption ? "Opdater" : "Generér";
+  if (nodes.figureGenerateBtn) {
+    nodes.figureGenerateBtn.disabled = !state.aiStatus.available;
+    nodes.figureGenerateBtn.textContent = figureCaption ? "Opdater" : "Generér";
   }
 
-  if (elements.shortFigureAnswer) {
+  if (nodes.figureAnswer) {
     const showFigureBlock = hasImages && (!useFigureCaption || !figureCaption);
-    elements.shortFigureAnswer.classList.toggle("hidden", !showFigureBlock);
+    nodes.figureAnswer.classList.toggle("hidden", !showFigureBlock);
     if (showFigureBlock) {
       if (!useFigureCaption && figureCaption) {
-        if (elements.shortFigureText) {
-          elements.shortFigureText.textContent = figureCaption;
+        if (nodes.figureText) {
+          nodes.figureText.textContent = figureCaption;
         }
-        setShortFigureStatus("Figurbeskrivelse klar.", false);
+        setShortFigureStatus("Figurbeskrivelse klar.", false, question);
       } else if (useFigureCaption) {
-        if (elements.shortFigureText) {
-          elements.shortFigureText.textContent = "";
+        if (nodes.figureText) {
+          nodes.figureText.textContent = "";
         }
         setShortFigureStatus(
           state.aiStatus.available
             ? "Facit henviser til figuren. Generér en beskrivelse."
             : "Hjælp er ikke klar lige nu.",
-          !state.aiStatus.available
+          !state.aiStatus.available,
+          question
         );
       } else {
-        if (elements.shortFigureText) {
-          elements.shortFigureText.textContent = "";
+        if (nodes.figureText) {
+          nodes.figureText.textContent = "";
         }
         setShortFigureStatus(
           state.aiStatus.available
             ? "Generér en figurbeskrivelse hvis du vil."
             : "Hjælp er ikke klar lige nu.",
-          !state.aiStatus.available
+          !state.aiStatus.available,
+          question
         );
       }
     } else {
-      setShortFigureStatus("", false);
+      setShortFigureStatus("", false, question);
     }
   }
 
-  elements.shortAnswerSources.textContent = question.sources?.length
-    ? `Kilder: ${question.sources.join(" ")}`
-    : "";
+  if (nodes.sources) {
+    nodes.sources.textContent = question.sources?.length
+      ? `Kilder: ${question.sources.join(" ")}`
+      : "";
+  }
 }
 
 function getSketchNodes(part) {
@@ -5567,6 +6249,547 @@ function updateSketchPanel(part) {
   }
 }
 
+function isSketchModalOpen() {
+  return Boolean(elements.sketchModal && !elements.sketchModal.classList.contains("hidden"));
+}
+
+function setSketchModalHint(text = "") {
+  if (!elements.sketchModalHint) return;
+  elements.sketchModalHint.textContent = text;
+}
+
+function setSketchModalTitle(part) {
+  if (!elements.sketchModalTitle || !part) return;
+  const label = part.label ? part.label.toUpperCase() : "";
+  const prompt = String(part.text || part.prompt || "").trim();
+  let title = "Delspørgsmål";
+  if (label) {
+    title = `${title} ${label}`;
+  }
+  elements.sketchModalTitle.textContent = prompt ? `${title}: ${prompt}` : title;
+}
+
+function clearSketchTextLayer() {
+  if (!elements.sketchTextLayer) return;
+  elements.sketchTextLayer.innerHTML = "";
+  setActiveSketchTextBox(null);
+}
+
+function resetSketchCanvas(dataUrl = "") {
+  if (!elements.sketchCanvas) return;
+  elements.sketchCanvas.width = SKETCH_CANVAS_WIDTH;
+  elements.sketchCanvas.height = SKETCH_CANVAS_HEIGHT;
+  const ctx = elements.sketchCanvas.getContext("2d");
+  if (!ctx) return;
+  state.sketchEditor.ctx = ctx;
+  ctx.clearRect(0, 0, elements.sketchCanvas.width, elements.sketchCanvas.height);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, elements.sketchCanvas.width, elements.sketchCanvas.height);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  state.sketchEditor.hasInk = false;
+  state.sketchEditor.cleared = false;
+  if (!dataUrl) return;
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0, elements.sketchCanvas.width, elements.sketchCanvas.height);
+    state.sketchEditor.hasInk = true;
+  };
+  img.src = dataUrl;
+}
+
+function clearSketchCanvas() {
+  if (!elements.sketchCanvas) return;
+  const ctx = state.sketchEditor.ctx || elements.sketchCanvas.getContext("2d");
+  if (!ctx) return;
+  ctx.clearRect(0, 0, elements.sketchCanvas.width, elements.sketchCanvas.height);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, elements.sketchCanvas.width, elements.sketchCanvas.height);
+  state.sketchEditor.hasInk = false;
+  state.sketchEditor.dirty = true;
+  state.sketchEditor.cleared = true;
+  clearSketchTextLayer();
+}
+
+function getSketchCanvasMetrics() {
+  if (!elements.sketchCanvas) return null;
+  const rect = elements.sketchCanvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return null;
+  const scaleX = elements.sketchCanvas.width / rect.width;
+  const scaleY = elements.sketchCanvas.height / rect.height;
+  return { rect, scaleX, scaleY };
+}
+
+function getSketchPoint(event) {
+  const metrics = getSketchCanvasMetrics();
+  if (!metrics) return null;
+  const { rect, scaleX, scaleY } = metrics;
+  const rawX = event.clientX - rect.left;
+  const rawY = event.clientY - rect.top;
+  const cssX = clamp(rawX, 0, rect.width);
+  const cssY = clamp(rawY, 0, rect.height);
+  return {
+    cssX,
+    cssY,
+    canvasX: cssX * scaleX,
+    canvasY: cssY * scaleY,
+    scale: (scaleX + scaleY) / 2,
+    rect,
+  };
+}
+
+function syncSketchToolbar() {
+  if (elements.sketchBrushSize) {
+    elements.sketchBrushSize.value = String(state.sketchEditor.brushSize);
+  }
+  if (elements.sketchBrushValue) {
+    elements.sketchBrushValue.textContent = String(state.sketchEditor.brushSize);
+  }
+  if (elements.sketchTextSize) {
+    elements.sketchTextSize.value = String(state.sketchEditor.textSize);
+  }
+  if (elements.sketchTextValue) {
+    elements.sketchTextValue.textContent = String(state.sketchEditor.textSize);
+  }
+}
+
+function setSketchTool(tool) {
+  const nextTool = tool === "text" ? "text" : tool === "erase" ? "erase" : "draw";
+  state.sketchEditor.tool = nextTool;
+  if (elements.sketchToolDraw) {
+    elements.sketchToolDraw.classList.toggle("active", nextTool === "draw");
+  }
+  if (elements.sketchToolErase) {
+    elements.sketchToolErase.classList.toggle("active", nextTool === "erase");
+  }
+  if (elements.sketchToolText) {
+    elements.sketchToolText.classList.toggle("active", nextTool === "text");
+  }
+  if (elements.sketchCanvas) {
+    elements.sketchCanvas.style.cursor = nextTool === "text" ? "text" : "crosshair";
+  }
+}
+
+function setSketchColor(color) {
+  if (!color) return;
+  state.sketchEditor.color = color;
+  if (elements.sketchColorButtons?.length) {
+    elements.sketchColorButtons.forEach((btn) => {
+      btn.classList.toggle("is-active", btn.dataset.color === color);
+    });
+  }
+  if (state.sketchEditor.activeTextBox) {
+    state.sketchEditor.activeTextBox.style.color = color;
+    state.sketchEditor.dirty = true;
+  }
+}
+
+function setSketchBrushSize(value) {
+  const next = Math.max(1, Number(value) || state.sketchEditor.brushSize);
+  state.sketchEditor.brushSize = next;
+  if (elements.sketchBrushSize) {
+    elements.sketchBrushSize.value = String(next);
+  }
+  if (elements.sketchBrushValue) {
+    elements.sketchBrushValue.textContent = String(next);
+  }
+}
+
+function setSketchTextSize(value) {
+  const next = Math.max(8, Number(value) || state.sketchEditor.textSize);
+  state.sketchEditor.textSize = next;
+  if (elements.sketchTextSize) {
+    elements.sketchTextSize.value = String(next);
+  }
+  if (elements.sketchTextValue) {
+    elements.sketchTextValue.textContent = String(next);
+  }
+  if (state.sketchEditor.activeTextBox) {
+    state.sketchEditor.activeTextBox.style.fontSize = `${next}px`;
+    state.sketchEditor.dirty = true;
+  }
+}
+
+function setActiveSketchTextBox(box) {
+  if (state.sketchEditor.activeTextBox) {
+    state.sketchEditor.activeTextBox.classList.remove("is-active");
+  }
+  state.sketchEditor.activeTextBox = box;
+  if (box) {
+    box.classList.add("is-active");
+    const size = Number.parseFloat(getComputedStyle(box).fontSize) || state.sketchEditor.textSize;
+    setSketchTextSize(size);
+  }
+  if (elements.sketchDeleteTextBtn) {
+    elements.sketchDeleteTextBtn.disabled = !box;
+  }
+}
+
+function removeActiveSketchTextBox() {
+  const box = state.sketchEditor.activeTextBox;
+  if (!box) return;
+  box.remove();
+  state.sketchEditor.textDrag = null;
+  setActiveSketchTextBox(null);
+  state.sketchEditor.dirty = true;
+}
+
+function handleSketchTextPointerDown(event, box) {
+  if (!state.sketchEditor.active || !box) return;
+  if (event.button !== 0) return;
+  const isEditTool = state.sketchEditor.tool === "text";
+  if (!isEditTool) {
+    event.preventDefault();
+    box.blur();
+  }
+  setActiveSketchTextBox(box);
+  const left = Number.parseFloat(box.style.left) || 0;
+  const top = Number.parseFloat(box.style.top) || 0;
+  const rect = box.getBoundingClientRect();
+  state.sketchEditor.textDrag = {
+    box,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    originLeft: left,
+    originTop: top,
+    boxWidth: rect.width,
+    boxHeight: rect.height,
+    moved: false,
+  };
+  try {
+    box.setPointerCapture(event.pointerId);
+  } catch (error) {
+    // Ignore pointer capture errors.
+  }
+}
+
+function handleSketchTextPointerMove(event) {
+  const drag = state.sketchEditor.textDrag;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  const dx = event.clientX - drag.startX;
+  const dy = event.clientY - drag.startY;
+  if (!drag.moved) {
+    if (Math.hypot(dx, dy) < 4) return;
+    drag.moved = true;
+    drag.box.blur();
+  }
+  const wrapRect = elements.sketchCanvasWrap?.getBoundingClientRect();
+  if (!wrapRect) return;
+  const maxLeft = Math.max(0, wrapRect.width - drag.boxWidth);
+  const maxTop = Math.max(0, wrapRect.height - drag.boxHeight);
+  const nextLeft = clamp(drag.originLeft + dx, 0, maxLeft);
+  const nextTop = clamp(drag.originTop + dy, 0, maxTop);
+  drag.box.style.left = `${nextLeft}px`;
+  drag.box.style.top = `${nextTop}px`;
+  state.sketchEditor.dirty = true;
+  event.preventDefault();
+}
+
+function handleSketchTextPointerUp(event) {
+  const drag = state.sketchEditor.textDrag;
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  state.sketchEditor.textDrag = null;
+  try {
+    if (drag.box.hasPointerCapture(event.pointerId)) {
+      drag.box.releasePointerCapture(event.pointerId);
+    }
+  } catch (error) {
+    // Ignore pointer release errors.
+  }
+  if (!drag.moved) {
+    setActiveSketchTextBox(drag.box);
+  }
+}
+
+function createSketchTextBox(cssX, cssY) {
+  if (!elements.sketchTextLayer) return;
+  const metrics = getSketchCanvasMetrics();
+  if (!metrics) return;
+  const box = document.createElement("textarea");
+  box.className = "sketch-text-box";
+  box.placeholder = "Skriv her";
+  box.style.left = `${Math.max(0, Math.min(cssX, metrics.rect.width - 20))}px`;
+  box.style.top = `${Math.max(0, Math.min(cssY, metrics.rect.height - 20))}px`;
+  box.style.fontSize = `${state.sketchEditor.textSize}px`;
+  box.style.color = state.sketchEditor.color;
+  box.addEventListener("input", () => {
+    state.sketchEditor.dirty = true;
+    if (box.scrollHeight > box.clientHeight) {
+      box.style.height = `${box.scrollHeight}px`;
+    }
+  });
+  box.addEventListener("focus", () => {
+    setActiveSketchTextBox(box);
+  });
+  box.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      box.blur();
+    }
+    if ((event.key === "Delete" || event.key === "Backspace") && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      removeActiveSketchTextBox();
+      return;
+    }
+    if ((event.key === "Delete" || event.key === "Backspace") && !box.value) {
+      event.preventDefault();
+      box.remove();
+      setActiveSketchTextBox(null);
+      state.sketchEditor.dirty = true;
+    }
+  });
+  box.addEventListener("pointerdown", (event) => {
+    handleSketchTextPointerDown(event, box);
+  });
+  box.addEventListener("pointermove", handleSketchTextPointerMove);
+  box.addEventListener("pointerup", handleSketchTextPointerUp);
+  box.addEventListener("pointercancel", handleSketchTextPointerUp);
+  elements.sketchTextLayer.appendChild(box);
+  setActiveSketchTextBox(box);
+  box.focus();
+  state.sketchEditor.dirty = true;
+}
+
+function handleSketchPointerDown(event) {
+  if (!state.sketchEditor.active || !elements.sketchCanvas) return;
+  if (event.button !== 0) return;
+  if (state.sketchEditor.tool === "text") {
+    const point = getSketchPoint(event);
+    if (point) {
+      createSketchTextBox(point.cssX, point.cssY);
+    }
+    return;
+  }
+  const isEraser = state.sketchEditor.tool === "erase";
+  const point = getSketchPoint(event);
+  if (!point) return;
+  const ctx = state.sketchEditor.ctx || elements.sketchCanvas.getContext("2d");
+  if (!ctx) return;
+  ctx.globalCompositeOperation = isEraser ? "destination-out" : "source-over";
+  ctx.strokeStyle = isEraser ? "rgba(0,0,0,1)" : state.sketchEditor.color;
+  ctx.lineWidth = Math.max(1, state.sketchEditor.brushSize * point.scale);
+  ctx.beginPath();
+  ctx.moveTo(point.canvasX, point.canvasY);
+  state.sketchEditor.isDrawing = true;
+  state.sketchEditor.lastPoint = { x: point.canvasX, y: point.canvasY };
+  if (!isEraser) {
+    state.sketchEditor.hasInk = true;
+  }
+  state.sketchEditor.dirty = true;
+  elements.sketchCanvas.setPointerCapture(event.pointerId);
+  event.preventDefault();
+}
+
+function handleSketchPointerMove(event) {
+  if (!state.sketchEditor.active || !state.sketchEditor.isDrawing || !elements.sketchCanvas) return;
+  const point = getSketchPoint(event);
+  if (!point) return;
+  const ctx = state.sketchEditor.ctx || elements.sketchCanvas.getContext("2d");
+  if (!ctx) return;
+  ctx.lineTo(point.canvasX, point.canvasY);
+  ctx.stroke();
+  state.sketchEditor.lastPoint = { x: point.canvasX, y: point.canvasY };
+  event.preventDefault();
+}
+
+function handleSketchPointerUp(event) {
+  if (!state.sketchEditor.active || !elements.sketchCanvas) return;
+  if (!state.sketchEditor.isDrawing) return;
+  state.sketchEditor.isDrawing = false;
+  const ctx = state.sketchEditor.ctx || elements.sketchCanvas.getContext("2d");
+  if (ctx) {
+    ctx.globalCompositeOperation = "source-over";
+  }
+  if (elements.sketchCanvas.hasPointerCapture(event.pointerId)) {
+    elements.sketchCanvas.releasePointerCapture(event.pointerId);
+  }
+  event.preventDefault();
+}
+
+async function exportSketchDataUrl() {
+  if (!elements.sketchCanvas) return null;
+  const hasText = Boolean(
+    elements.sketchTextLayer &&
+      Array.from(elements.sketchTextLayer.querySelectorAll(".sketch-text-box"))
+        .some((box) => box.value.trim())
+  );
+  if (!state.sketchEditor.hasInk && !hasText) {
+    return null;
+  }
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = elements.sketchCanvas.width;
+  exportCanvas.height = elements.sketchCanvas.height;
+  const ctx = exportCanvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+  ctx.drawImage(elements.sketchCanvas, 0, 0);
+
+  const metrics = getSketchCanvasMetrics();
+  if (metrics && elements.sketchTextLayer) {
+    const { rect, scaleX, scaleY } = metrics;
+    const scale = (scaleX + scaleY) / 2;
+    const textBoxes = Array.from(elements.sketchTextLayer.querySelectorAll(".sketch-text-box"));
+    textBoxes.forEach((box) => {
+      const value = box.value;
+      if (!value.trim()) return;
+      const style = getComputedStyle(box);
+      const fontSize = Number.parseFloat(style.fontSize) || state.sketchEditor.textSize;
+      const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
+      const paddingTop = Number.parseFloat(style.paddingTop) || 0;
+      const boxRect = box.getBoundingClientRect();
+      const startX = (boxRect.left - rect.left + paddingLeft) * scaleX;
+      const startY = (boxRect.top - rect.top + paddingTop) * scaleY;
+      const lineHeight = fontSize * 1.3;
+      ctx.fillStyle = style.color || "#111827";
+      ctx.textBaseline = "top";
+      ctx.font = `${fontSize * scale}px ${style.fontFamily || "sans-serif"}`;
+      value.split(/\n/).forEach((line, index) => {
+        ctx.fillText(line, startX, startY + index * lineHeight * scale);
+      });
+    });
+  }
+
+  const blob = await new Promise((resolve) => {
+    exportCanvas.toBlob(resolve, "image/jpeg", SKETCH_EXPORT_QUALITY);
+  });
+  if (!blob) return null;
+  if (blob.size > SKETCH_MAX_BYTES) {
+    setSketchModalHint("Skitse er for stor. Prøv at rydde lidt og gem igen.");
+    return null;
+  }
+  const dataUrl = await new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(blob);
+  });
+  if (!dataUrl) {
+    setSketchModalHint("Kunne ikke læse skitsen. Prøv igen.");
+    return null;
+  }
+  const sizeMb = (blob.size / (1024 * 1024)).toFixed(1);
+  return {
+    dataUrl,
+    label: `Tegnet skitse · ${sizeMb} MB`,
+  };
+}
+
+function saveSketchDataUrl(dataUrl, label, { part = null, autoAnalyze = false } = {}) {
+  const question = state.activeQuestions[state.currentIndex];
+  if (!question || question.type !== "short") return;
+  const targetPart = part || getActiveShortPart(question);
+  if (!targetPart) return;
+  if (state.activeShortPartKey !== targetPart.key) {
+    setActiveShortPart(targetPart);
+  }
+  const nodes = getSketchNodes(targetPart);
+  state.sketchUploads.set(targetPart.key, { dataUrl, label });
+  state.sketchAnalysis.delete(targetPart.key);
+  setSketchRetryVisible(false, targetPart);
+  if (nodes?.sketchStatus) {
+    nodes.sketchStatus.textContent = label || "Skitse valgt";
+  }
+  if (nodes?.sketchFeedback) {
+    nodes.sketchFeedback.textContent = "";
+  }
+  if (nodes?.sketchPreview) {
+    nodes.sketchPreview.src = dataUrl;
+    nodes.sketchPreview.classList.remove("hidden");
+  }
+  if (autoAnalyze) {
+    void analyzeSketch(targetPart);
+  }
+  updateShortGroupStatus(state.activeQuestions[state.currentIndex]);
+  updateShortAnswerActions(state.activeQuestions[state.currentIndex]);
+}
+
+function removeSketchUpload(part) {
+  if (!part) return;
+  state.sketchUploads.delete(part.key);
+  state.sketchAnalysis.delete(part.key);
+  const nodes = getSketchNodes(part);
+  if (nodes?.sketchStatus) {
+    nodes.sketchStatus.textContent = "";
+  }
+  if (nodes?.sketchFeedback) {
+    nodes.sketchFeedback.textContent = "";
+  }
+  if (nodes?.sketchPreview) {
+    nodes.sketchPreview.src = "";
+    nodes.sketchPreview.classList.add("hidden");
+  }
+  updateShortGroupStatus(state.activeQuestions[state.currentIndex]);
+  updateShortAnswerActions(state.activeQuestions[state.currentIndex]);
+}
+
+function openSketchModal(part = null) {
+  if (!elements.sketchModal || !elements.sketchCanvas) return;
+  const question = state.activeQuestions[state.currentIndex];
+  if (!question || question.type !== "short") return;
+  const targetPart = part || getActiveShortPart(question);
+  if (!targetPart) return;
+  if (state.activeShortPartKey !== targetPart.key) {
+    setActiveShortPart(targetPart);
+  }
+  state.sketchEditor.part = targetPart;
+  state.sketchEditor.active = true;
+  state.sketchEditor.isDrawing = false;
+  state.sketchEditor.lastPoint = null;
+  state.sketchEditor.dirty = false;
+  state.sketchEditor.cleared = false;
+  state.sketchEditor.textDrag = null;
+  state.sketchEditor.tool = "draw";
+  setActiveSketchTextBox(null);
+  clearSketchTextLayer();
+  const existing = state.sketchUploads.get(targetPart.key);
+  resetSketchCanvas(existing?.dataUrl || "");
+  setSketchModalTitle(targetPart);
+  setSketchModalHint("Luk gemmer skitsen uden analyse.");
+  setSketchTool(state.sketchEditor.tool);
+  setSketchColor(state.sketchEditor.color || SKETCH_DEFAULT_COLOR);
+  syncSketchToolbar();
+  elements.sketchModal.classList.remove("hidden");
+}
+
+async function closeSketchModal({ analyze = false } = {}) {
+  if (!elements.sketchModal || elements.sketchModal.classList.contains("hidden")) return;
+  const part = state.sketchEditor.part;
+  const existing = part ? state.sketchUploads.get(part.key) : null;
+  let saved = false;
+  if (part && (state.sketchEditor.dirty || !existing)) {
+    const exportResult = await exportSketchDataUrl();
+    if (!exportResult) {
+      if (analyze) return;
+    } else {
+      saveSketchDataUrl(exportResult.dataUrl, exportResult.label, {
+        part,
+        autoAnalyze: analyze,
+      });
+      saved = true;
+    }
+  }
+  if (part && state.sketchEditor.cleared && !state.sketchEditor.hasInk) {
+    const hasText = Boolean(
+      elements.sketchTextLayer &&
+        Array.from(elements.sketchTextLayer.querySelectorAll(".sketch-text-box"))
+          .some((box) => box.value.trim())
+    );
+    if (!hasText) {
+      removeSketchUpload(part);
+    }
+  }
+  elements.sketchModal.classList.add("hidden");
+  state.sketchEditor.active = false;
+  state.sketchEditor.part = null;
+  state.sketchEditor.isDrawing = false;
+  state.sketchEditor.lastPoint = null;
+  state.sketchEditor.textDrag = null;
+  if (analyze && part && !saved && existing) {
+    void analyzeSketch(part);
+  }
+}
+
 function resetShortAnswerUI() {
   if (!elements.shortAnswerContainer) return;
   cancelMicRecording();
@@ -5580,6 +6803,7 @@ function resetShortAnswerUI() {
   state.shortPartNodes.clear();
   state.activeShortPartKey = null;
   state.shortPartSelectionActive = false;
+  state.shortGroupCompletion.clear();
   elements.shortAnswerInputWrap = null;
   elements.shortAnswerInput = null;
   elements.transcribeIndicator = null;
@@ -5629,6 +6853,9 @@ function resetShortAnswerUI() {
     elements.shortSketchHint.classList.add("hidden");
     elements.shortSketchHint.textContent = "";
   }
+  if (elements.shortAverageSummary) {
+    elements.shortAverageSummary.classList.add("hidden");
+  }
   setShortReviewOpen(false);
   if (elements.shortReviewStatus) {
     elements.shortReviewStatus.textContent = "Klar til vurdering";
@@ -5658,9 +6885,10 @@ function updateShortReviewStatus(question) {
   elements.shortReviewStatus.textContent = status;
 }
 
-function setShortRetryVisible(visible) {
-  if (!elements.shortAnswerAiRetryBtn) return;
-  elements.shortAnswerAiRetryBtn.classList.toggle("hidden", !visible);
+function setShortRetryVisible(visible, part = null) {
+  const nodes = resolveShortReviewElements(part);
+  if (!nodes.aiRetryBtn) return;
+  nodes.aiRetryBtn.classList.toggle("hidden", !visible);
 }
 
 function setSketchRetryVisible(visible, part = null) {
@@ -5740,6 +6968,11 @@ function setShortAnswerPending(isPending) {
   if (elements.shortAnswerAiRetryBtn) {
     elements.shortAnswerAiRetryBtn.disabled = state.shortAnswerPending;
   }
+  state.shortPartNodes.forEach((nodes) => {
+    if (nodes.aiRetryBtn) {
+      nodes.aiRetryBtn.disabled = state.shortAnswerPending;
+    }
+  });
   const isShort = question?.type === "short";
   setShortcutBusy("grade", state.shortAnswerPending);
   setShortcutDisabled("grade", !isShort);
@@ -5951,8 +7184,12 @@ function setShortActionVisibility(isShort) {
   }
 }
 
-function setShortAnswerToggleLabel(isHidden) {
+function setShortAnswerToggleLabel(isHidden, button = null) {
   const label = isHidden ? "Vis facit" : "Skjul facit";
+  if (button) {
+    button.textContent = label;
+    return;
+  }
   if (elements.shortAnswerShowAnswer) {
     elements.shortAnswerShowAnswer.textContent = label;
   }
@@ -5961,25 +7198,28 @@ function setShortAnswerToggleLabel(isHidden) {
   }
 }
 
-function setShortAnswerModelVisible(isVisible) {
-  if (!elements.shortAnswerModel) return;
-  elements.shortAnswerModel.classList.toggle("hidden", !isVisible);
-  setShortAnswerToggleLabel(!isVisible);
+function setShortAnswerModelVisible(isVisible, part = null) {
+  const nodes = resolveShortReviewElements(part);
+  if (!nodes.modelWrap) return;
+  nodes.modelWrap.classList.toggle("hidden", !isVisible);
+  setShortAnswerToggleLabel(!isVisible, nodes.showAnswerBtn || null);
 }
 
-async function toggleShortAnswerModelVisibility() {
-  if (!elements.shortAnswerModel) return;
-  const shouldShow = elements.shortAnswerModel.classList.contains("hidden");
-  setShortAnswerModelVisible(shouldShow);
+async function toggleShortAnswerModelVisibility(part = null) {
+  const question = state.activeQuestions[state.currentIndex];
+  let target = part;
+  if (!target && question && question.type === "short") {
+    target = isShortGroup(question) ? getActiveShortPart(question) : question;
+  }
+  const nodes = resolveShortReviewElements(target);
+  if (!nodes.modelWrap) return;
+  const shouldShow = nodes.modelWrap.classList.contains("hidden");
+  setShortAnswerModelVisible(shouldShow, target);
   if (!shouldShow) return;
   setShortReviewOpen(true);
-  const question = state.activeQuestions[state.currentIndex];
-  if (question && question.type === "short") {
-    const part = getActiveShortPart(question);
-    if (part && shouldUseFigureCaption(part)) {
-      if (!getCombinedFigureCaption(part)) {
-        await fetchFigureCaptionForQuestion(part);
-      }
+  if (target && shouldUseFigureCaption(target)) {
+    if (!getCombinedFigureCaption(target)) {
+      await fetchFigureCaptionForQuestion(target);
     }
   }
 }
@@ -6009,50 +7249,133 @@ function updateShortGroupStatus(question) {
   elements.shortGroupStatus.textContent = total ? `${scored}/${total} vurderet${activeLabel}` : "";
 }
 
+function updateShortAverageSummary(question) {
+  if (!elements.shortAverageSummary || !elements.shortAverageCircle) return;
+  if (!question || question.type !== "short" || !isShortGroup(question)) {
+    elements.shortAverageSummary.classList.add("hidden");
+    return;
+  }
+  const parts = getShortParts(question);
+  if (parts.length <= 1) {
+    elements.shortAverageSummary.classList.add("hidden");
+    return;
+  }
+  const totals = parts.reduce(
+    (acc, part) => {
+      const maxPoints = Number(part.maxPoints) || 0;
+      const draft = getShortDraft(part.key);
+      const awarded = hasShortPartAnswer(part)
+        ? clamp(Number(draft.points) || 0, 0, maxPoints)
+        : 0;
+      acc.awarded += awarded;
+      acc.max += maxPoints;
+      return acc;
+    },
+    { awarded: 0, max: 0 }
+  );
+  const avgAwarded = parts.length ? totals.awarded / parts.length : 0;
+  const avgMax = parts.length ? totals.max / parts.length : 0;
+  const ratio = avgMax > 0 ? avgAwarded / avgMax : 0;
+  elements.shortAverageCircle.style.setProperty(
+    "--short-average-progress",
+    String(clamp(ratio, 0, 1))
+  );
+  if (elements.shortAverageValue) {
+    elements.shortAverageValue.textContent = avgAwarded.toFixed(1);
+  }
+  if (elements.shortAverageMax) {
+    elements.shortAverageMax.textContent = `/ ${avgMax.toFixed(1)}`;
+  }
+  if (elements.shortAverageCaption) {
+    elements.shortAverageCaption.textContent = "Gennemsnit pr. delspørgsmål";
+  }
+}
+
+function updateShortGroupCompletionUI(question) {
+  if (!elements.shortAverageSummary) return;
+  if (!question || question.type !== "short" || !isShortGroup(question)) {
+    elements.shortAverageSummary.classList.add("hidden");
+    return;
+  }
+  const parts = getShortParts(question);
+  if (parts.length <= 1) {
+    elements.shortAverageSummary.classList.add("hidden");
+    return;
+  }
+  const hasAnyResponse = parts.some(
+    (part) => hasShortPartAnswer(part) || getShortDraft(part.key).scored
+  );
+  const groupKey = question.key || "";
+  if (!hasAnyResponse) {
+    elements.shortAverageSummary.classList.add("hidden");
+    state.shortGroupCompletion.delete(groupKey);
+    return;
+  }
+  const allScored = parts.every(
+    (part) => !hasShortPartAnswer(part) || getShortDraft(part.key).scored
+  );
+  if (!allScored) {
+    elements.shortAverageSummary.classList.add("hidden");
+    state.shortGroupCompletion.delete(groupKey);
+    return;
+  }
+  if (!state.shortGroupCompletion.has(groupKey)) {
+    state.shortGroupCompletion.add(groupKey);
+    if (state.shortPartSelectionActive) {
+      clearShortPartSelection();
+      return;
+    }
+  }
+  if (state.shortPartSelectionActive) {
+    elements.shortAverageSummary.classList.add("hidden");
+    return;
+  }
+  parts.forEach((part) => setShortPartCollapsed(part, true));
+  updateShortAverageSummary(question);
+  elements.shortAverageSummary.classList.remove("hidden");
+}
+
+function syncShortPartReview(part) {
+  if (!part) return;
+  const nodes = resolveShortReviewElements(part);
+  const cached = getShortDraft(part.key);
+  const maxPoints = part.maxPoints || 0;
+  const rangeStep = 0.5;
+  if (nodes.scoreRange) {
+    nodes.scoreRange.min = "0";
+    nodes.scoreRange.max = String(maxPoints);
+    nodes.scoreRange.step = String(rangeStep);
+    nodes.scoreRange.value = String(cached.points ?? 0);
+  }
+  if (nodes.scoreMax) {
+    nodes.scoreMax.textContent = maxPoints.toFixed(1);
+  }
+  updateShortScoreHint(maxPoints, cached.points ?? 0, nodes.scoreHint);
+
+  const aiState = state.shortAnswerAI.get(part.key);
+  if (nodes.aiFeedback) {
+    nodes.aiFeedback.textContent = aiState?.feedback || "";
+  }
+  if (nodes.aiStatus) {
+    const label = state.aiStatus.available
+      ? "Hjælp klar"
+      : state.aiStatus.message || "Hjælp er ikke klar";
+    nodes.aiStatus.textContent = label;
+    nodes.aiStatus.classList.toggle("warn", !state.aiStatus.available);
+  }
+  if (nodes.modelWrap && nodes.showAnswerBtn) {
+    const isHidden = nodes.modelWrap.classList.contains("hidden");
+    setShortAnswerToggleLabel(isHidden, nodes.showAnswerBtn);
+  }
+}
+
 function syncActiveShortPartUI(part) {
   if (!part) return;
   const cached = getShortDraft(part.key);
   if (elements.shortAnswerInput) {
     elements.shortAnswerInput.value = cached.text || "";
   }
-  const maxPoints = part.maxPoints || 0;
-  const rangeStep = 0.5;
-  if (elements.shortAnswerScoreRange) {
-    elements.shortAnswerScoreRange.min = "0";
-    elements.shortAnswerScoreRange.max = String(maxPoints);
-    elements.shortAnswerScoreRange.step = String(rangeStep);
-    elements.shortAnswerScoreRange.value = String(cached.points ?? 0);
-  }
-  if (elements.shortAnswerMaxPoints) {
-    elements.shortAnswerMaxPoints.textContent = maxPoints.toFixed(1);
-  }
-  updateShortScoreHint(maxPoints, cached.points ?? 0);
-
-  const aiState = state.shortAnswerAI.get(part.key);
-  if (elements.shortAnswerAiFeedback) {
-    elements.shortAnswerAiFeedback.textContent = aiState?.feedback || "";
-  }
-  if (elements.shortAnswerAiStatus) {
-    const label = state.aiStatus.available
-      ? "Hjælp klar"
-      : state.aiStatus.message || "Hjælp er ikke klar";
-    elements.shortAnswerAiStatus.textContent = label;
-    elements.shortAnswerAiStatus.classList.toggle("warn", !state.aiStatus.available);
-  }
-  setShortRetryVisible(false);
-
-  if (elements.shortSketchHint) {
-    if (requiresSketch(part)) {
-      elements.shortSketchHint.textContent =
-        "Upload en skitse - analysen starter automatisk og bruges i auto-bedømmelsen.";
-      elements.shortSketchHint.classList.remove("hidden");
-    } else {
-      elements.shortSketchHint.textContent = "";
-      elements.shortSketchHint.classList.add("hidden");
-    }
-  }
-
-  setShortAnswerModelVisible(false);
+  syncShortPartReview(part);
   updateShortAnswerModel(part);
   updateSketchPanel(part);
   updateShortReviewStatus(part);
@@ -6098,6 +7421,7 @@ function setActiveShortPart(part, { focus = false, announce = false } = {}) {
   updateQuestionHintUI(part);
   updateShortPartFigure(part);
   updateShortcutFigureIndicator(part);
+  updateShortGroupCompletionUI(current);
 
   if (current && current.type === "short" && isShortGroup(current)) {
     prefetchShortGroupTts(current, { skipKey: part.key });
@@ -6117,6 +7441,7 @@ function clearShortPartSelection() {
   const current = state.activeQuestions[state.currentIndex];
   if (current && current.type === "short") {
     updateShortGroupStatus(current);
+    updateShortGroupCompletionUI(current);
   }
 }
 
@@ -6135,6 +7460,19 @@ function buildSketchPanelNodes(part) {
 
   const sketchPanelBody = document.createElement("div");
   sketchPanelBody.className = "sketch-panel-body";
+
+  const sketchActionRow = document.createElement("div");
+  sketchActionRow.className = "sketch-action-row";
+  const sketchDrawBtn = document.createElement("button");
+  sketchDrawBtn.type = "button";
+  sketchDrawBtn.className = "btn ghost small";
+  sketchDrawBtn.textContent = "Tegn skitse";
+  const sketchActionNote = document.createElement("span");
+  sketchActionNote.className = "sketch-action-note";
+  sketchActionNote.textContent = "eller upload";
+  sketchActionRow.appendChild(sketchDrawBtn);
+  sketchActionRow.appendChild(sketchActionNote);
+  sketchPanelBody.appendChild(sketchActionRow);
 
   const sketchDropzone = document.createElement("label");
   sketchDropzone.className = "sketch-upload";
@@ -6183,12 +7521,159 @@ function buildSketchPanelNodes(part) {
     sketchPanel,
     sketchPanelTitle,
     sketchPanelBody,
+    sketchDrawBtn,
     sketchUpload,
     sketchStatus,
     sketchRetryBtn,
     sketchFeedback,
     sketchPreview,
     sketchDropzone,
+  };
+}
+
+function buildShortPartReviewNodes(part) {
+  const review = document.createElement("div");
+  review.className = "review-drawer short-part-review";
+  review.dataset.open = "true";
+
+  const toolbar = document.createElement("div");
+  toolbar.className = "short-toolbar";
+
+  const scoreControl = document.createElement("div");
+  scoreControl.className = "score-control";
+
+  const scoreLabel = document.createElement("div");
+  scoreLabel.className = "score-label";
+  scoreLabel.textContent = "Point ";
+
+  const scoreMaxWrap = document.createElement("span");
+  scoreMaxWrap.className = "score-max";
+  scoreMaxWrap.textContent = "/ ";
+  const scoreMaxValue = document.createElement("span");
+  scoreMaxWrap.appendChild(scoreMaxValue);
+  scoreLabel.appendChild(scoreMaxWrap);
+
+  const scoreInputs = document.createElement("div");
+  scoreInputs.className = "score-inputs";
+  const scoreRange = document.createElement("input");
+  scoreRange.type = "range";
+  scoreRange.min = "0";
+  scoreRange.max = String(part.maxPoints || 0);
+  scoreRange.step = "0.5";
+  scoreRange.value = "0";
+  scoreInputs.appendChild(scoreRange);
+
+  const scoreHint = document.createElement("div");
+  scoreHint.className = "score-hint";
+
+  scoreControl.appendChild(scoreLabel);
+  scoreControl.appendChild(scoreInputs);
+  scoreControl.appendChild(scoreHint);
+
+  const shortButtons = document.createElement("div");
+  shortButtons.className = "short-buttons";
+  const showAnswerBtn = document.createElement("button");
+  showAnswerBtn.type = "button";
+  showAnswerBtn.className = "btn ghost small";
+  showAnswerBtn.textContent = "Vis facit";
+  shortButtons.appendChild(showAnswerBtn);
+
+  toolbar.appendChild(scoreControl);
+  toolbar.appendChild(shortButtons);
+
+  const aiStatus = document.createElement("div");
+  aiStatus.className = "ai-status";
+  const aiFeedback = document.createElement("div");
+  aiFeedback.className = "short-ai-feedback";
+  const aiActions = document.createElement("div");
+  aiActions.className = "short-ai-actions";
+  const aiRetryBtn = document.createElement("button");
+  aiRetryBtn.type = "button";
+  aiRetryBtn.className = "btn ghost small hidden";
+  aiRetryBtn.textContent = "Prøv igen";
+  aiActions.appendChild(aiRetryBtn);
+
+  const modelWrap = document.createElement("div");
+  modelWrap.className = "short-model hidden";
+  const modelHead = document.createElement("div");
+  modelHead.className = "short-model-head";
+  const modelTitle = document.createElement("h4");
+  modelTitle.textContent = "Modelbesvarelse";
+  const modelTag = document.createElement("span");
+  modelTag.className = "short-model-tag hidden";
+  modelTag.textContent = "Figurbeskrivelse";
+  modelHead.appendChild(modelTitle);
+  modelHead.appendChild(modelTag);
+  const modelText = document.createElement("p");
+  modelWrap.appendChild(modelHead);
+  modelWrap.appendChild(modelText);
+
+  const figureAnswer = document.createElement("div");
+  figureAnswer.className = "short-figure hidden";
+  const figureHead = document.createElement("div");
+  figureHead.className = "short-figure-head";
+  const figureTitle = document.createElement("h5");
+  figureTitle.textContent = "Figurbeskrivelse";
+  const figureGenerateBtn = document.createElement("button");
+  figureGenerateBtn.type = "button";
+  figureGenerateBtn.className = "btn ghost small";
+  figureGenerateBtn.textContent = "Generér";
+  figureHead.appendChild(figureTitle);
+  figureHead.appendChild(figureGenerateBtn);
+  const figureStatus = document.createElement("div");
+  figureStatus.className = "short-figure-status";
+  const figureText = document.createElement("p");
+  figureAnswer.appendChild(figureHead);
+  figureAnswer.appendChild(figureStatus);
+  figureAnswer.appendChild(figureText);
+  modelWrap.appendChild(figureAnswer);
+
+  const sources = document.createElement("div");
+  sources.className = "short-sources";
+  modelWrap.appendChild(sources);
+
+  review.appendChild(toolbar);
+  review.appendChild(aiStatus);
+  review.appendChild(aiFeedback);
+  review.appendChild(aiActions);
+  review.appendChild(modelWrap);
+
+  const hintWrap = document.createElement("div");
+  hintWrap.className = "question-hint short-part-hint hidden";
+  const hintHead = document.createElement("div");
+  hintHead.className = "question-hint-head";
+  const hintTitle = document.createElement("span");
+  hintTitle.textContent = "Hint";
+  const hintStatus = document.createElement("span");
+  hintStatus.className = "question-hint-status";
+  hintHead.appendChild(hintTitle);
+  hintHead.appendChild(hintStatus);
+  const hintText = document.createElement("div");
+  hintText.className = "question-hint-text hidden";
+  hintWrap.appendChild(hintHead);
+  hintWrap.appendChild(hintText);
+
+  return {
+    review,
+    scoreRange,
+    scoreHint,
+    scoreMaxValue,
+    showAnswerBtn,
+    aiStatus,
+    aiFeedback,
+    aiRetryBtn,
+    modelWrap,
+    modelTitle,
+    modelText,
+    modelTag,
+    figureAnswer,
+    figureStatus,
+    figureText,
+    figureGenerateBtn,
+    sources,
+    hintWrap,
+    hintStatus,
+    hintText,
   };
 }
 
@@ -6270,6 +7755,7 @@ function buildShortPartList(question) {
     card.appendChild(inputWrap);
 
     const sketchNodes = buildSketchPanelNodes(part);
+    const reviewNodes = buildShortPartReviewNodes(part);
 
     const figureWrap = document.createElement("figure");
     figureWrap.className = "short-part-figure hidden";
@@ -6280,9 +7766,14 @@ function buildShortPartList(question) {
     figureWrap.appendChild(figureCaption);
     card.appendChild(figureWrap);
     card.appendChild(sketchNodes.sketchPanel);
+    card.appendChild(reviewNodes.review);
+    card.appendChild(reviewNodes.hintWrap);
 
     elements.shortPartList.appendChild(card);
 
+    sketchNodes.sketchDrawBtn.addEventListener("click", () => {
+      openSketchModal(part);
+    });
     sketchNodes.sketchUpload.addEventListener("change", (event) => {
       const file = event.target.files && event.target.files[0];
       void handleSketchUpload(file, { autoAnalyze: true, part });
@@ -6312,6 +7803,31 @@ function buildShortPartList(question) {
       await checkAiAvailability();
       await analyzeSketch(part);
     });
+    reviewNodes.scoreRange.addEventListener("input", (event) => {
+      if (state.activeShortPartKey !== part.key) {
+        setActiveShortPart(part);
+      }
+      syncShortScoreInputs(event.target.value, { part });
+    });
+    reviewNodes.scoreRange.addEventListener("focus", () => {
+      if (state.activeShortPartKey !== part.key) {
+        setActiveShortPart(part);
+      }
+    });
+    reviewNodes.showAnswerBtn.addEventListener("click", () => {
+      setActiveShortPart(part);
+      void toggleShortAnswerModelVisibility(part);
+    });
+    reviewNodes.aiRetryBtn.addEventListener("click", async () => {
+      setActiveShortPart(part);
+      setShortRetryVisible(false, part);
+      await checkAiAvailability();
+      triggerShortAutoGrade({ scope: "active" });
+    });
+    reviewNodes.figureGenerateBtn.addEventListener("click", () => {
+      setActiveShortPart(part);
+      fetchFigureCaptionForQuestion(part, { force: true });
+    });
 
     textarea.addEventListener("focus", () => {
       setShortPartCollapsed(part, false);
@@ -6336,16 +7852,20 @@ function buildShortPartList(question) {
     });
     textarea.addEventListener("input", () => {
       const currentDraft = getShortDraft(part.key);
+      const nextText = textarea.value;
+      const scored = Boolean(currentDraft.scored && currentDraft.text === nextText);
       saveShortDraft(part.key, {
-        text: textarea.value,
+        text: nextText,
         points: currentDraft.points ?? 0,
-        scored: Boolean(currentDraft.scored),
+        scored,
       });
       updateShortPartStatus(part);
       updateShortGroupStatus(question);
       if (state.activeShortPartKey === part.key) {
         updateShortReviewStatus(part);
       }
+      updateShortAnswerActions(question);
+      updateShortGroupCompletionUI(question);
     });
 
     state.shortPartNodes.set(part.key, {
@@ -6356,12 +7876,33 @@ function buildShortPartList(question) {
       toggleBtn,
       transcribeIndicator: indicator,
       transcribeText: indicatorText,
+      review: reviewNodes.review,
+      scoreRange: reviewNodes.scoreRange,
+      scoreHint: reviewNodes.scoreHint,
+      scoreMax: reviewNodes.scoreMaxValue,
+      showAnswerBtn: reviewNodes.showAnswerBtn,
+      aiStatus: reviewNodes.aiStatus,
+      aiFeedback: reviewNodes.aiFeedback,
+      aiRetryBtn: reviewNodes.aiRetryBtn,
+      modelWrap: reviewNodes.modelWrap,
+      modelTitle: reviewNodes.modelTitle,
+      modelText: reviewNodes.modelText,
+      modelTag: reviewNodes.modelTag,
+      figureAnswer: reviewNodes.figureAnswer,
+      figureStatus: reviewNodes.figureStatus,
+      figureText: reviewNodes.figureText,
+      figureGenerateBtn: reviewNodes.figureGenerateBtn,
+      sources: reviewNodes.sources,
+      hintWrap: reviewNodes.hintWrap,
+      hintStatus: reviewNodes.hintStatus,
+      hintText: reviewNodes.hintText,
       figureWrap,
       figureMedia,
       figureCaption,
       sketchPanel: sketchNodes.sketchPanel,
       sketchPanelTitle: sketchNodes.sketchPanelTitle,
       sketchPanelBody: sketchNodes.sketchPanelBody,
+      sketchDrawBtn: sketchNodes.sketchDrawBtn,
       sketchUpload: sketchNodes.sketchUpload,
       sketchStatus: sketchNodes.sketchStatus,
       sketchRetryBtn: sketchNodes.sketchRetryBtn,
@@ -6374,6 +7915,8 @@ function buildShortPartList(question) {
     const draft = getShortDraft(part.key);
     textarea.value = draft.text || "";
     updateShortPartStatus(part);
+    syncShortPartReview(part);
+    updateShortAnswerModel(part);
     updateSketchPanel(part);
   });
 }
@@ -6381,6 +7924,15 @@ function buildShortPartList(question) {
 function renderShortQuestion(question) {
   elements.optionsContainer.classList.add("hidden");
   elements.shortAnswerContainer.classList.remove("hidden");
+  if (elements.shortReviewDrawer) {
+    elements.shortReviewDrawer.classList.add("hidden");
+  }
+  if (elements.shortSketchHint) {
+    elements.shortSketchHint.classList.add("hidden");
+  }
+  if (elements.shortAverageSummary) {
+    elements.shortAverageSummary.classList.add("hidden");
+  }
   if (elements.questionFigure) {
     elements.questionFigure.classList.add("hidden");
   }
@@ -6423,6 +7975,7 @@ function renderShortQuestion(question) {
   if (activePart) {
     setActiveShortPart(activePart);
   }
+  updateShortGroupCompletionUI(question);
   updateShortAnswerActions(question);
   updateMicControls(question);
 }
@@ -6598,6 +8151,7 @@ async function fetchFigureCaptionByPath(imagePath, { force = false, silent = fal
     try {
       const res = await apiFetch("/api/vision", {
         method: "POST",
+        ai: true,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           task: "figure",
@@ -6863,6 +8417,7 @@ async function transcribeAudio(blob) {
     const audioData = await readFileAsDataUrl(blob);
     const res = await apiFetch("/api/transcribe", {
       method: "POST",
+      ai: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ audioData, language: TRANSCRIBE_LANGUAGE }),
       signal: controller.signal,
@@ -7002,6 +8557,8 @@ async function handleSketchUpload(file, { autoAnalyze = true, part = null } = {}
     if (autoAnalyze) {
       void analyzeSketch(targetPart);
     }
+    updateShortGroupStatus(question);
+    updateShortAnswerActions(question);
   } catch (error) {
     if (nodes?.sketchStatus) {
       nodes.sketchStatus.textContent = error.message || "Kunne ikke læse filen.";
@@ -7048,6 +8605,7 @@ async function analyzeSketch(part = null) {
   try {
     const res = await apiFetch("/api/vision", {
       method: "POST",
+      ai: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         task: "sketch",
@@ -7325,28 +8883,39 @@ function setHintEntry(question, entry) {
 }
 
 function updateQuestionHintUI(question = state.activeQuestions[state.currentIndex]) {
-  if (!elements.questionHint || !elements.questionHintText || !elements.questionHintStatus) {
-    return;
-  }
   if (question && question.type === "short" && isShortGroup(question)) {
     const activePart = getActiveShortPart(question);
     if (activePart) {
       updateQuestionHintUI(activePart);
-    } else {
+    } else if (elements.questionHint) {
       elements.questionHint.classList.add("hidden");
     }
     return;
   }
   if (!question) {
-    elements.questionHint.classList.add("hidden");
-    elements.questionHintText.classList.add("hidden");
-    elements.questionHintText.textContent = "";
-    elements.questionHintStatus.textContent = "";
+    if (elements.questionHint) {
+      elements.questionHint.classList.add("hidden");
+    }
+    if (elements.questionHintText) {
+      elements.questionHintText.classList.add("hidden");
+      elements.questionHintText.textContent = "";
+    }
+    if (elements.questionHintStatus) {
+      elements.questionHintStatus.textContent = "";
+    }
     setShortcutActive("hint", false);
     setShortcutBusy("hint", false);
     setShortcutStatus("hint", "");
     setShortcutDisabled("hint", true);
     return;
+  }
+  const hintNodes = resolveShortReviewElements(question);
+  const hintWrap = hintNodes.hintWrap;
+  const hintText = hintNodes.hintText;
+  const hintStatusEl = hintNodes.hintStatus;
+  if (!hintWrap || !hintText || !hintStatusEl) return;
+  if (elements.questionHint && hintWrap !== elements.questionHint) {
+    elements.questionHint.classList.add("hidden");
   }
   const hintEntry = getHintEntry(question);
   const hasHint = Boolean(hintEntry?.text);
@@ -7356,10 +8925,10 @@ function updateQuestionHintUI(question = state.activeQuestions[state.currentInde
   const available = state.aiStatus.available;
 
   if (!isVisible) {
-    elements.questionHint.classList.add("hidden");
-    elements.questionHintText.classList.add("hidden");
-    elements.questionHintText.textContent = "";
-    elements.questionHintStatus.textContent = "";
+    hintWrap.classList.add("hidden");
+    hintText.classList.add("hidden");
+    hintText.textContent = "";
+    hintStatusEl.textContent = "";
     setShortcutActive("hint", false);
     setShortcutBusy("hint", false);
     setShortcutStatus("hint", "");
@@ -7367,18 +8936,18 @@ function updateQuestionHintUI(question = state.activeQuestions[state.currentInde
     return;
   }
 
-  elements.questionHint.classList.remove("hidden");
+  hintWrap.classList.remove("hidden");
 
   if (!available) {
-    elements.questionHintStatus.textContent = state.aiStatus.message || "Hjælp er ikke klar";
+    hintStatusEl.textContent = state.aiStatus.message || "Hjælp er ikke klar";
   } else if (!canHint) {
-    elements.questionHintStatus.textContent = "Ingen facit til hint.";
+    hintStatusEl.textContent = "Ingen facit til hint.";
   } else if (isLoading) {
-    elements.questionHintStatus.textContent = "Henter hint …";
+    hintStatusEl.textContent = "Henter hint …";
   } else if (hasHint) {
-    elements.questionHintStatus.textContent = "Hint klar";
+    hintStatusEl.textContent = "Hint klar";
   } else {
-    elements.questionHintStatus.textContent = "Klar til hint";
+    hintStatusEl.textContent = "Klar til hint";
   }
 
   setShortcutActive("hint", isVisible);
@@ -7394,11 +8963,11 @@ function updateQuestionHintUI(question = state.activeQuestions[state.currentInde
   setShortcutDisabled("hint", false);
 
   if (hasHint) {
-    elements.questionHintText.textContent = hintEntry.text;
-    elements.questionHintText.classList.remove("hidden");
+    hintText.textContent = hintEntry.text;
+    hintText.classList.remove("hidden");
   } else {
-    elements.questionHintText.textContent = "";
-    elements.questionHintText.classList.add("hidden");
+    hintText.textContent = "";
+    hintText.classList.add("hidden");
   }
 }
 
@@ -7493,6 +9062,7 @@ async function toggleQuestionHint() {
   try {
     const res = await apiFetch("/api/hint", {
       method: "POST",
+      ai: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
@@ -7540,6 +9110,14 @@ function setAiStatus(status) {
     elements.shortAnswerAiStatus.textContent = label;
     elements.shortAnswerAiStatus.classList.toggle("warn", !status.available);
   }
+  state.shortPartNodes.forEach((nodes) => {
+    if (!nodes.aiStatus) return;
+    const label = status.available
+      ? "Hjælp klar"
+      : status.message || "Hjælp er ikke klar";
+    nodes.aiStatus.textContent = label;
+    nodes.aiStatus.classList.toggle("warn", !status.available);
+  });
 
   const current = state.activeQuestions[state.currentIndex];
   if (current && current.type === "short") {
@@ -7719,12 +9297,12 @@ function buildShortPartTtsText(
     if (title) {
       parts.push(title);
     }
-  }
-  if (question.opgaveIntro) {
-    parts.push(`Opgaveintro: ${question.opgaveIntro}`);
-  }
-  if (question.text) {
-    parts.push(question.text);
+    if (question.opgaveIntro) {
+      parts.push(`Opgaveintro: ${question.opgaveIntro}`);
+    }
+    if (question.text) {
+      parts.push(question.text);
+    }
   }
   const label = formatShortPartLabel(question, part);
   const prompt = String(part.text || part.prompt || "").trim();
@@ -7887,6 +9465,7 @@ function prefetchShortPartTts(question, part) {
 
   entry.promise = apiFetch("/api/tts", {
     method: "POST",
+    ai: true,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text, voice, speed }),
     signal: controller.signal,
@@ -7977,9 +9556,15 @@ async function playTtsForShortPart(question, part, source = "manual") {
   );
   const includeOptions = state.settings.ttsIncludeOptions;
   markShortPartAnnounced(question, part, includeMain);
-  const prefetched = await getShortPartPrefetchedBlob(part, text, voice, speed, includeOptions);
+  const prefetched = await getPrefetchedBlob(question, text, voice, speed, includeOptions);
   if (prefetched) {
+    consumeTtsPrefetch(question.key);
     await playTtsBlob(prefetched, { source });
+    return;
+  }
+  const partPrefetched = await getShortPartPrefetchedBlob(part, text, voice, speed, includeOptions);
+  if (partPrefetched) {
+    await playTtsBlob(partPrefetched, { source });
     return;
   }
   playTtsText(text, { source });
@@ -8077,7 +9662,15 @@ function prefetchNextQuestionTts() {
     clearTtsPrefetch();
     return;
   }
-  const text = buildTtsText(question);
+  let text = "";
+  if (question.type === "short" && isShortGroup(question)) {
+    const activePart = getActiveShortPart(question);
+    if (activePart) {
+      text = buildShortPartTtsText(question, activePart, { includeMain: true });
+    }
+  } else {
+    text = buildTtsText(question);
+  }
   if (!text || text.length > TTS_MAX_CHARS) {
     clearTtsPrefetch();
     return;
@@ -8109,6 +9702,7 @@ function prefetchNextQuestionTts() {
 
   const promise = apiFetch("/api/tts", {
     method: "POST",
+    ai: true,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text, voice, speed }),
     signal: controller.signal,
@@ -8243,6 +9837,7 @@ async function playTtsText(text, { source = "manual" } = {}) {
   try {
     const res = await apiFetch("/api/tts", {
       method: "POST",
+      ai: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: cleanText, voice, speed }),
       signal: controller.signal,
@@ -8559,17 +10154,19 @@ function updateShortScoreHint(maxPoints, currentPoints, hintEl = elements.shortA
 function syncShortScoreInputs(value, options = {}) {
   const question = state.activeQuestions[state.currentIndex];
   if (!question || question.type !== "short") return;
-  const part = getActiveShortPart(question);
+  const part = options.part || getActiveShortPart(question);
   if (!part) return;
+  const nodes = resolveShortReviewElements(part);
   const maxPoints = part.maxPoints || 0;
   const numeric = Number(clamp(Number(value) || 0, 0, maxPoints).toFixed(1));
   const scored = options.scored ?? true;
-  if (elements.shortAnswerScoreRange) {
-    elements.shortAnswerScoreRange.value = String(numeric);
+  if (nodes.scoreRange) {
+    nodes.scoreRange.value = String(numeric);
   }
-  updateShortScoreHint(maxPoints, numeric);
+  updateShortScoreHint(maxPoints, numeric, nodes.scoreHint);
+  const currentDraft = getShortDraft(part.key);
   saveShortDraft(part.key, {
-    text: elements.shortAnswerInput?.value || "",
+    text: currentDraft.text || "",
     points: numeric,
     scored,
   });
@@ -8577,6 +10174,7 @@ function syncShortScoreInputs(value, options = {}) {
   updateShortGroupStatus(question);
   updateShortReviewStatus(part);
   updateShortAnswerActions(question);
+  updateShortGroupCompletionUI(question);
 }
 
 function finalizeShortAnswer() {
@@ -8591,7 +10189,7 @@ function finalizeShortAnswer() {
   parts.forEach((part) => {
     const draft = getShortDraft(part.key);
     const response = String(draft.text || "").trim();
-    const hasAnswer = hasShortPartAnswer(part);
+    const hasAnswer = hasShortPartAnswer(part) || draft.scored;
     const maxPoints = part.maxPoints || 0;
     const awardedPoints = hasAnswer ? clamp(Number(draft.points) || 0, 0, maxPoints) : 0;
     awardedTotal += awardedPoints;
@@ -8661,6 +10259,9 @@ async function gradeShortGroupAnswers(question, { auto = false } = {}) {
     (part) => hasShortPartAnswer(part) && !isShortPartScored(part)
   );
   if (!partsToGrade.length) {
+    partsToGrade.push(...parts.filter((part) => hasShortPartAnswer(part)));
+  }
+  if (!partsToGrade.length) {
     updateShortGroupStatus(question);
     updateShortAnswerActions(question);
     return;
@@ -8668,10 +10269,14 @@ async function gradeShortGroupAnswers(question, { auto = false } = {}) {
 
   setShortReviewOpen(true);
   if (!state.aiStatus.available) {
-    elements.shortAnswerAiFeedback.textContent =
-      state.aiStatus.message || "Auto-bedømmelse er ikke sat op endnu.";
+    const activePart = getActiveShortPart(question);
+    const nodes = activePart ? resolveShortReviewElements(activePart) : null;
+    if (nodes?.aiFeedback) {
+      nodes.aiFeedback.textContent =
+        state.aiStatus.message || "Auto-bedømmelse er ikke sat op endnu.";
+    }
     setShortcutTempStatus("grade", "Hjælp er ikke klar", 2000);
-    setShortRetryVisible(true);
+    setShortRetryVisible(true, activePart);
     return;
   }
 
@@ -8680,7 +10285,7 @@ async function gradeShortGroupAnswers(question, { auto = false } = {}) {
     if (state.activeShortPartKey !== part.key) {
       setActiveShortPart(part);
     }
-    setShortRetryVisible(false);
+    setShortRetryVisible(false, part);
     updateShortReviewStatus(part);
     const upload = state.sketchUploads.get(part.key);
     const analysis = state.sketchAnalysis.get(part.key);
@@ -8706,37 +10311,45 @@ async function gradeShortAnswer(options = {}) {
   if (!question || question.type !== "short") return;
   const part = getActiveShortPart(question);
   if (!part) return;
-  setShortRetryVisible(false);
+  const nodes = resolveShortReviewElements(part);
+  setShortRetryVisible(false, part);
   if (!state.aiStatus.available) {
-    elements.shortAnswerAiFeedback.textContent =
-      state.aiStatus.message || "Auto-bedømmelse er ikke sat op endnu.";
+    if (nodes.aiFeedback) {
+      nodes.aiFeedback.textContent =
+        state.aiStatus.message || "Auto-bedømmelse er ikke sat op endnu.";
+    }
     setShortcutTempStatus("grade", "Hjælp er ikke klar", 2000);
-    setShortRetryVisible(true);
+    setShortRetryVisible(true, part);
     return;
   }
   const { answer: combinedAnswer, hasSketch } = buildShortAnswerForGrading(part);
   if (!combinedAnswer) {
     const upload = state.sketchUploads.get(part.key);
-    elements.shortAnswerAiFeedback.textContent = upload
-      ? "Skitseanalyse mangler. Vent på analysen, eller skriv et svar."
-      : "Skriv et svar eller upload en skitse først.";
+    if (nodes.aiFeedback) {
+      nodes.aiFeedback.textContent = upload
+        ? "Skitseanalyse mangler. Vent på analysen, eller skriv et svar."
+        : "Skriv et svar eller upload en skitse først.";
+    }
     setShortcutTempStatus("grade", "Mangler svar", 2000);
     return;
   }
 
   setShortAnswerPending(true);
   const feedbackPrefix = hasSketch ? "Vurderer skitse + tekst …" : "Vurderer dit svar …";
-  elements.shortAnswerAiFeedback.textContent = auto
-    ? hasSketch
-      ? "Auto-bedømmer skitse + tekst …"
-      : "Auto-bedømmer dit svar …"
-    : feedbackPrefix;
+  if (nodes.aiFeedback) {
+    nodes.aiFeedback.textContent = auto
+      ? hasSketch
+        ? "Auto-bedømmer skitse + tekst …"
+        : "Auto-bedømmer dit svar …"
+      : feedbackPrefix;
+  }
 
   const modelAnswer = await resolveShortModelAnswer(part, { useSketch: hasSketch });
 
   try {
     const res = await apiFetch("/api/grade", {
       method: "POST",
+      ai: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         prompt: buildShortPrompt(part),
@@ -8763,11 +10376,13 @@ async function gradeShortAnswer(options = {}) {
       ? "Skitse vurderet. Justér point efter behov."
       : "Auto-vurdering klar. Justér point efter behov.";
     applyShortAnswerGradeResult(part, data, { fallbackFeedback });
-    setShortRetryVisible(false);
+    setShortRetryVisible(false, part);
   } catch (error) {
-    elements.shortAnswerAiFeedback.textContent =
-      `Kunne ikke hente auto-bedømmelse. ${error.message || "Tjek din adgang og forbindelsen."}`;
-    setShortRetryVisible(true);
+    if (nodes.aiFeedback) {
+      nodes.aiFeedback.textContent =
+        `Kunne ikke hente auto-bedømmelse. ${error.message || "Tjek din adgang og forbindelsen."}`;
+    }
+    setShortRetryVisible(true, part);
   } finally {
     setShortAnswerPending(false);
   }
@@ -8993,6 +10608,7 @@ async function handleExplainClick(entry, textEl, button, expandButton) {
   try {
     const res = await apiFetch("/api/explain", {
       method: "POST",
+      ai: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(buildExplainPayload(entry)),
     });
@@ -9058,6 +10674,7 @@ async function handleExpandExplainClick(entry, textEl, button, explainButton) {
   try {
     const res = await apiFetch("/api/explain", {
       method: "POST",
+      ai: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
         buildExplainPayload(entry, {
@@ -9157,6 +10774,7 @@ async function handleExpandHintClick(entry, textEl, button, hintButton) {
     }
     const res = await apiFetch("/api/hint", {
       method: "POST",
+      ai: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         question: entry.question.text,
@@ -9230,6 +10848,7 @@ async function fetchReviewHint(entry, textEl, button, expandButton, { auto = fal
   try {
     const res = await apiFetch("/api/hint", {
       method: "POST",
+      ai: true,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         question: entry.question.text,
@@ -9965,6 +11584,8 @@ function showResults() {
   state.sessionActive = false;
   state.sessionPaused = false;
   state.sessionPausedAt = null;
+  state.sessionNeedsRender = false;
+  state.activeSessionDirty = true;
   resetCancelRoundConfirm();
   updatePausedSessionUI();
   state.scoreSummary = calculateScoreSummary();
@@ -10067,6 +11688,8 @@ function showResults() {
   buildReviewQueue(state.results);
   buildReviewList(state.results);
   showScreen("result");
+  void syncActiveSessionSnapshot(null);
+  flushUserStateSync();
 }
 
 function sortQuestions(questions) {
@@ -10749,6 +12372,8 @@ function startGame(options = {}) {
   state.sessionActive = true;
   state.sessionPaused = false;
   state.sessionPausedAt = null;
+  state.sessionNeedsRender = false;
+  state.activeSessionDirty = true;
   resetCancelRoundConfirm();
   updatePausedSessionUI();
   state.sessionSettings = { ...state.settings, focusMistakes: focusMistakesActive };
@@ -10761,6 +12386,7 @@ function startGame(options = {}) {
   state.results = [];
   state.shortAnswerDrafts = new Map();
   state.shortAnswerAI = new Map();
+  state.shortGroupCompletion = new Set();
   state.shortAnswerPending = false;
   state.reviewHintQueue = [];
   state.reviewHintProcessing = false;
@@ -10782,6 +12408,8 @@ function startGame(options = {}) {
   queueFigureCaptionsForQuestions(state.activeQuestions);
   showScreen("quiz");
   renderQuestion();
+  void syncActiveSessionSnapshot();
+  flushUserStateSync();
 }
 
 function handlePlayAgainClick() {
@@ -10898,26 +12526,71 @@ function pauseSession() {
   state.questionStartedAt = null;
   state.sessionPaused = true;
   state.sessionPausedAt = Date.now();
+  state.activeSessionDirty = true;
   updatePausedSessionUI();
   updateSummary();
   showScreen("menu");
+  void syncActiveSessionSnapshot();
+  flushUserStateSync();
 }
 
 function resumeSession() {
   if (!state.sessionActive || !state.sessionPaused) return;
+  const completed = getCompletedQuestionKeySet(state.results);
+  const hasIncomplete = state.activeQuestions.some(
+    (question) => question?.key && !completed.has(question.key)
+  );
+  if (!hasIncomplete && state.results.length) {
+    if (!state.sessionSettings.infiniteMode) {
+      state.sessionPaused = false;
+      state.sessionPausedAt = null;
+      state.activeSessionDirty = true;
+      finishSession();
+      scheduleUserStateSync();
+      return;
+    }
+    if (state.infiniteState) {
+      const previousLength = state.activeQuestions.length;
+      const extended = extendInfiniteQuestionSet();
+      if (extended) {
+        state.currentIndex = previousLength;
+        state.sessionNeedsRender = true;
+      } else {
+        state.sessionPaused = false;
+        state.sessionPausedAt = null;
+        state.activeSessionDirty = true;
+        finishSession();
+        scheduleUserStateSync();
+        return;
+      }
+    } else {
+      state.sessionPaused = false;
+      state.sessionPausedAt = null;
+      state.activeSessionDirty = true;
+      finishSession();
+      scheduleUserStateSync();
+      return;
+    }
+  }
   if (state.sessionPausedAt && state.startTime) {
     state.startTime += Date.now() - state.sessionPausedAt;
   }
   state.sessionPausedAt = null;
   state.sessionPaused = false;
   resetCancelRoundConfirm();
+  state.activeSessionDirty = true;
   updatePausedSessionUI();
   showScreen("quiz");
   applySessionDisplaySettings();
   updateTopBar();
-  if (!state.locked) {
+  if (state.sessionNeedsRender) {
+    state.sessionNeedsRender = false;
+    renderQuestion();
+  } else if (!state.locked) {
     state.questionStartedAt = Date.now();
   }
+  void syncActiveSessionSnapshot();
+  flushUserStateSync();
 }
 
 function cancelSession() {
@@ -10930,6 +12603,8 @@ function cancelSession() {
   state.sessionActive = false;
   state.sessionPaused = false;
   state.sessionPausedAt = null;
+  state.sessionNeedsRender = false;
+  state.activeSessionDirty = true;
   state.shouldRecordHistory = false;
   state.activeQuestions = [];
   state.currentIndex = 0;
@@ -10938,6 +12613,7 @@ function cancelSession() {
   state.results = [];
   state.shortAnswerDrafts = new Map();
   state.shortAnswerAI = new Map();
+  state.shortGroupCompletion = new Set();
   state.shortAnswerPending = false;
   state.reviewHintQueue = [];
   state.reviewHintProcessing = false;
@@ -10949,10 +12625,13 @@ function cancelSession() {
   state.startTime = null;
   state.questionStartedAt = null;
   state.activeShortPartKey = null;
+  state.shortPartSelectionActive = false;
   resetCancelRoundConfirm();
   updatePausedSessionUI();
   updateSummary();
   showScreen("menu");
+  void syncActiveSessionSnapshot(null);
+  flushUserStateSync();
 }
 
 function goToMenu() {
@@ -10965,10 +12644,14 @@ function goToMenu() {
   state.sessionActive = false;
   state.sessionPaused = false;
   state.sessionPausedAt = null;
+  state.sessionNeedsRender = false;
+  state.activeSessionDirty = true;
   resetCancelRoundConfirm();
   markQuestionsSeen(getResultsQuestions(state.results), { updateSummary: true });
   updatePausedSessionUI();
   showScreen("menu");
+  void syncActiveSessionSnapshot(null);
+  flushUserStateSync();
 }
 
 function renderChips(container, values, selectedSet, counts, type) {
@@ -11220,7 +12903,7 @@ async function checkAiAvailability() {
       return;
     }
 
-    const res = await apiFetch("/api/health");
+    const res = await apiFetch("/api/health", { ai: true });
     if (!res.ok) {
       let aiMessage = "Hjælp er ikke klar lige nu.";
       let ttsMessage = "Oplæsning er ikke klar lige nu.";
@@ -11322,7 +13005,7 @@ async function triggerShortAutoGrade(options = {}) {
   }
   const part = getActiveShortPart(question);
   if (!part) return;
-  setShortRetryVisible(false);
+  setShortRetryVisible(false, part);
   setShortReviewOpen(true);
   updateShortReviewStatus(part);
   if (state.shortAnswerPending) {
@@ -11392,7 +13075,15 @@ function performShortcutAction(action) {
 function handleKeyDown(event) {
   if (!screens.quiz.classList.contains("active")) return;
   if (elements.modal && !elements.modal.classList.contains("hidden")) return;
+  if (elements.sketchModal && !elements.sketchModal.classList.contains("hidden")) return;
   const key = event.key.toLowerCase();
+  if ((event.metaKey || event.ctrlKey) && key === "c") return;
+  const focusModeActive = Boolean(state.sessionSettings?.focusMode);
+  if (key === "escape" && focusModeActive) {
+    event.preventDefault();
+    toggleFocusMode();
+    return;
+  }
   const tag = document.activeElement?.tagName;
   const isTyping = tag === "INPUT" || tag === "TEXTAREA";
   if (isTyping && !(key === "m" && state.mic.isRecording)) return;
@@ -11545,6 +13236,9 @@ function attachEvents() {
   if (elements.billingRefreshBtn) {
     elements.billingRefreshBtn.addEventListener("click", () => loadBillingOverview({ notify: true }));
   }
+  if (elements.billingPortalBtn) {
+    elements.billingPortalBtn.addEventListener("click", openStripePortal);
+  }
   if (elements.billingUpgradeBtn) {
     elements.billingUpgradeBtn.addEventListener("click", handleCheckout);
   }
@@ -11553,6 +13247,9 @@ function attachEvents() {
   }
   if (elements.checkoutCancelBtn) {
     elements.checkoutCancelBtn.addEventListener("click", closeCheckout);
+  }
+  if (elements.checkoutHostedBtn) {
+    elements.checkoutHostedBtn.addEventListener("click", openHostedCheckout);
   }
   if (elements.checkoutForm) {
     elements.checkoutForm.addEventListener("submit", submitCheckout);
@@ -11621,6 +13318,21 @@ function attachEvents() {
   elements.rulesButton.addEventListener("click", showRules);
   elements.closeModal.addEventListener("click", hideRules);
   elements.modalClose.addEventListener("click", hideRules);
+  if (elements.sketchModalClose) {
+    elements.sketchModalClose.addEventListener("click", () => {
+      void closeSketchModal();
+    });
+  }
+  if (elements.sketchModalDismiss) {
+    elements.sketchModalDismiss.addEventListener("click", () => {
+      void closeSketchModal();
+    });
+  }
+  if (elements.sketchModalAnalyze) {
+    elements.sketchModalAnalyze.addEventListener("click", () => {
+      void closeSketchModal({ analyze: true });
+    });
+  }
   elements.backToMenu.addEventListener("click", pauseSession);
   elements.returnMenuBtn.addEventListener("click", goToMenu);
   if (elements.resumeRoundBtn) {
@@ -11838,6 +13550,14 @@ function attachEvents() {
     }
   });
 
+  if (elements.sketchModal) {
+    elements.sketchModal.addEventListener("click", (evt) => {
+      if (evt.target === elements.sketchModal) {
+        void closeSketchModal();
+      }
+    });
+  }
+
   if (elements.figureModal) {
     elements.figureModal.addEventListener("click", (evt) => {
       if (evt.target === elements.figureModal) {
@@ -11847,6 +13567,44 @@ function attachEvents() {
   }
   if (elements.figureModalClose) {
     elements.figureModalClose.addEventListener("click", closeFigureModal);
+  }
+
+  if (elements.sketchToolDraw) {
+    elements.sketchToolDraw.addEventListener("click", () => setSketchTool("draw"));
+  }
+  if (elements.sketchToolErase) {
+    elements.sketchToolErase.addEventListener("click", () => setSketchTool("erase"));
+  }
+  if (elements.sketchToolText) {
+    elements.sketchToolText.addEventListener("click", () => setSketchTool("text"));
+  }
+  if (elements.sketchBrushSize) {
+    elements.sketchBrushSize.addEventListener("input", (event) => {
+      setSketchBrushSize(event.target.value);
+    });
+  }
+  if (elements.sketchTextSize) {
+    elements.sketchTextSize.addEventListener("input", (event) => {
+      setSketchTextSize(event.target.value);
+    });
+  }
+  if (elements.sketchClearBtn) {
+    elements.sketchClearBtn.addEventListener("click", clearSketchCanvas);
+  }
+  if (elements.sketchDeleteTextBtn) {
+    elements.sketchDeleteTextBtn.addEventListener("click", removeActiveSketchTextBox);
+  }
+  if (elements.sketchColorButtons?.length) {
+    elements.sketchColorButtons.forEach((btn) => {
+      btn.addEventListener("click", () => setSketchColor(btn.dataset.color));
+    });
+  }
+  if (elements.sketchCanvas) {
+    elements.sketchCanvas.addEventListener("pointerdown", handleSketchPointerDown);
+    elements.sketchCanvas.addEventListener("pointermove", handleSketchPointerMove);
+    elements.sketchCanvas.addEventListener("pointerup", handleSketchPointerUp);
+    elements.sketchCanvas.addEventListener("pointerleave", handleSketchPointerUp);
+    elements.sketchCanvas.addEventListener("pointercancel", handleSketchPointerUp);
   }
 
   elements.questionCountRange.addEventListener("input", (event) => {
@@ -11947,6 +13705,9 @@ function attachEvents() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeFigureModal();
+      if (isSketchModalOpen()) {
+        void closeSketchModal();
+      }
     }
   });
   document.addEventListener("visibilitychange", () => {

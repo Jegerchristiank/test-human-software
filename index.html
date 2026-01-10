@@ -1070,8 +1070,24 @@
                     <span class="short-group-status" id="short-group-status"></span>
                   </div>
                   <div class="short-part-list" id="short-part-list"></div>
+                  <div class="short-average hidden" id="short-average-summary">
+                    <div
+                      class="short-average-circle"
+                      id="short-average-circle"
+                      role="img"
+                      aria-label="Gennemsnitlig score"
+                    >
+                      <div class="short-average-value">
+                        <div class="short-average-score" id="short-average-value">0.0</div>
+                        <div class="short-average-max" id="short-average-max">/ 0.0</div>
+                      </div>
+                    </div>
+                    <div class="short-average-caption" id="short-average-caption">
+                      Gennemsnit pr. delspørgsmål
+                    </div>
+                  </div>
                   <div class="short-sketch-hint hidden" id="short-sketch-hint"></div>
-                  <div class="review-drawer" id="short-review-drawer" data-open="false">
+                  <div class="review-drawer hidden" id="short-review-drawer" data-open="false">
                     <div class="short-toolbar">
                       <div class="score-control">
                         <div class="score-label">
@@ -1417,7 +1433,7 @@
                   <div class="billing-metric-meta" id="billing-status-meta">—</div>
                 </div>
                 <div class="billing-metric">
-                  <div class="billing-metric-label">Næste betaling</div>
+                  <div class="billing-metric-label" id="billing-next-label">Næste betaling</div>
                   <div class="billing-metric-value" id="billing-next-amount">—</div>
                   <div class="billing-metric-meta" id="billing-next-date">—</div>
                 </div>
@@ -1435,6 +1451,7 @@
                   Opsig abonnement
                 </button>
                 <button id="billing-upgrade-btn" class="btn primary hidden" type="button">Aktivér Pro</button>
+                <button id="billing-portal-btn" class="btn ghost" type="button">Åbn Stripe portal</button>
                 <button id="billing-refresh-btn" class="btn ghost" type="button">Opdatér</button>
               </div>
               <div class="field-hint" id="billing-hero-hint">—</div>
@@ -1544,6 +1561,7 @@
                 <div class="checkout-actions">
                   <button id="checkout-submit-btn" class="btn primary" type="submit">Betal</button>
                   <button id="checkout-cancel-btn" class="btn ghost" type="button">Annuller</button>
+                  <button id="checkout-hosted-btn" class="btn ghost" type="button">Åbn Stripe Checkout</button>
                 </div>
               </form>
               <div class="field-hint">Du kan altid opsige eller ændre abonnementet bagefter.</div>
@@ -1648,6 +1666,59 @@
       </div>
     </div>
 
+    <div class="modal hidden sketch-modal" id="sketch-modal">
+      <div class="modal-content sketch-modal-content">
+        <div class="modal-header">
+          <div>
+            <h3>Skitse</h3>
+            <p class="sketch-modal-subtitle" id="sketch-modal-title">Delspørgsmål</p>
+          </div>
+          <button class="icon-btn" id="sketch-modal-close" type="button">Luk</button>
+        </div>
+        <div class="sketch-toolbar">
+          <div class="sketch-tool-group">
+            <button class="btn ghost small sketch-tool-btn active" id="sketch-tool-draw" type="button">
+              Tegn
+            </button>
+            <button class="btn ghost small sketch-tool-btn" id="sketch-tool-erase" type="button">
+              Visk ud
+            </button>
+            <button class="btn ghost small sketch-tool-btn" id="sketch-tool-text" type="button">
+              Tekst
+            </button>
+          </div>
+          <div class="sketch-color-group" aria-label="Farver">
+            <button class="sketch-color-btn is-active" type="button" data-color="#111827" style="background: #111827" aria-label="Sort"></button>
+            <button class="sketch-color-btn" type="button" data-color="#ef4444" style="background: #ef4444" aria-label="Rød"></button>
+            <button class="sketch-color-btn" type="button" data-color="#2563eb" style="background: #2563eb" aria-label="Blå"></button>
+            <button class="sketch-color-btn" type="button" data-color="#16a34a" style="background: #16a34a" aria-label="Grøn"></button>
+          </div>
+          <label class="sketch-slider" for="sketch-brush-size">
+            <span>Pensel</span>
+            <input type="range" id="sketch-brush-size" min="2" max="24" step="1" value="6" />
+            <span class="sketch-slider-value" id="sketch-brush-value">6</span>
+          </label>
+          <label class="sketch-slider" for="sketch-text-size">
+            <span>Tekst</span>
+            <input type="range" id="sketch-text-size" min="12" max="48" step="1" value="20" />
+            <span class="sketch-slider-value" id="sketch-text-value">20</span>
+          </label>
+          <button class="btn ghost small" id="sketch-clear-btn" type="button">Ryd</button>
+          <button class="btn ghost small" id="sketch-delete-text" type="button" disabled>Slet tekst</button>
+        </div>
+        <div class="sketch-canvas-wrap" id="sketch-canvas-wrap">
+          <canvas id="sketch-canvas"></canvas>
+          <div class="sketch-text-layer" id="sketch-text-layer"></div>
+        </div>
+        <div class="sketch-modal-footer">
+          <div class="sketch-modal-hint" id="sketch-modal-hint">Luk gemmer skitsen uden analyse.</div>
+          <div class="sketch-modal-actions">
+            <button class="btn ghost" id="sketch-modal-dismiss" type="button">Luk</button>
+            <button class="btn primary" id="sketch-modal-analyze" type="button">Analyser</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="modal hidden figure-modal" id="figure-modal">
       <div class="modal-content figure-modal-content">

@@ -65,6 +65,12 @@ create policy "Profiles are deletable by owner"
   to authenticated
   using ((SELECT auth.uid()) = id);
 
+revoke insert, update on public.profiles from authenticated;
+grant insert (id, email, full_name, own_key_enabled, terms_accepted_at, privacy_accepted_at)
+  on public.profiles to authenticated;
+grant update (email, full_name, own_key_enabled, terms_accepted_at, privacy_accepted_at)
+  on public.profiles to authenticated;
+
 -- Subscriptions
 create table if not exists public.subscriptions (
   id uuid primary key default gen_random_uuid(),
@@ -125,6 +131,7 @@ create index if not exists idx_usage_events_user_id on public.usage_events (user
 create table if not exists public.user_state (
   user_id uuid primary key references auth.users(id) on delete cascade,
   settings jsonb,
+  active_session jsonb,
   show_meta boolean not null default true,
   history jsonb,
   seen jsonb,
@@ -136,6 +143,12 @@ create table if not exists public.user_state (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table if exists public.user_state
+  add column if not exists active_session jsonb;
+
+alter table if exists public.user_state
+  add column if not exists show_meta boolean not null default true;
 
 drop trigger if exists set_user_state_updated_at on public.user_state;
 create trigger set_user_state_updated_at
