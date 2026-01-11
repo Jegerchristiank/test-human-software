@@ -4,3 +4,4 @@ __pycache__/
 node_modules/
 .vercel/
 .vercel
+supabase/studio_pipeline_chunks/

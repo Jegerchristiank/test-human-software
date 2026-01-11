@@ -33,8 +33,11 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 
 ## Online setup (Supabase + Stripe + Vercel)
 1. Supabase:
-   - Kør SQL fra `supabase/schema.sql` i Supabase SQL Editor.
-   - Hvis du allerede har kørt SQL, så kør det igen for at oprette `user_state` og `rate_limits`.
+   - Run SQL from `supabase/schema.sql` in the Supabase SQL Editor (schema + policies).
+   - Generate pipeline inserts with `python3 scripts/build_studio_pipeline.py` (writes `supabase/studio_pipeline.sql`).
+   - Apply `supabase/studio_pipeline.sql` (Supabase CLI or SQL Editor chunks).
+   - If SQL Editor limits apply, run `python3 scripts/build_studio_pipeline.py --chunk-size 200` and paste chunk files from `supabase/studio_pipeline_chunks/` in order.
+   - If you already ran the old schema file, rerun `supabase/schema.sql` to ensure `user_state` and `rate_limits` exist.
 2. Stripe:
    - Opret et produkt og en price (subscription).
    - Tilføj webhook til `/api/stripe/webhook`.

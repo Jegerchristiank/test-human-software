@@ -197,3 +197,10 @@
 - Commands: cat docs/activity.md; rg --files -g ".vercel/**"; rg --files --hidden -g ".vercel/**"; ls -la; ls -la scripts/.vercel; cat scripts/.vercel/README.txt; cat scripts/.vercel/project.json; ls -la .vercel; cat .vercel/project.json; cat vercel.json; cat README.md; rg -n "sign-in" app.js *.html; date +%F.
 - Security: none (read-only inspection).
 - Follow-ups: confirm exact Vercel command, working directory, and failing URL to pinpoint the 404 source.
+
+## 2026-01-11
+- Purpose: split studio pipeline data out of supabase/schema.sql and add a generation/chunking flow to avoid SQL editor size limits.
+- Files: supabase/schema.sql, supabase/studio_pipeline.sql, scripts/build_studio_pipeline.py, README.md, .gitignore, docs/activity.md.
+- Commands: rg --files; sed -n '1,160p' docs/activity.md; sed -n '1,260p' supabase/schema.sql; rg -n "STUDIO_PIPELINE|BEGIN|DATA" supabase/schema.sql; rg -n "schema.sql|studio_pipeline|build_studio_pipeline" -S .; ls -la scripts; wc -l supabase/schema.sql; python3 - <<'PY' ...; sed -n '920,1015p' supabase/schema.sql; sed -n '1,40p' supabase/studio_pipeline.sql; wc -l supabase/schema.sql supabase/studio_pipeline.sql; tail -n 40 docs/activity.md; apply_patch (scripts/build_studio_pipeline.py); apply_patch (README.md); apply_patch (.gitignore); date +%F.
+- Security: no runtime changes; database setup now requires applying schema.sql plus studio_pipeline.sql.
+- Follow-ups: run python3 scripts/build_studio_pipeline.py --chunk-size 200 before pasting into SQL Editor if needed; verify pipeline load in Supabase.
