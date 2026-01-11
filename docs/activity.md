@@ -176,3 +176,17 @@
 - Kommandoer: apply_patch (docs/scoring-contracts.md); date +%F.
 - Sikkerhedsimplikationer: Ingen; dokumentationsopdatering.
 - Opfoelgning: Ingen.
+
+## 2026-01-11
+- Formaal: Lukke kritiske fejl fra Prompt 9 (rate limiting fail-open, account delete/export fejlhaandtering, auth fallback) og align Sygdomslaere-domæner til data, samt fjerne ubrugte Sygdomslaere-assets og opdatere tests.
+- Berorte filer: api/_lib/rateLimit.js, api/account/delete.js, api/account/export.js, api/_lib/auth.js, api/grade.js, studio-engine.js, app.js, data/sygdomslaere.json, scripts/convert_sygdomslaere.py, docs/studio-engine.md, tests/accountDelete.test.mjs, tests/rateLimitEnforce.test.mjs, tests/apiValidation.test.mjs, sygdomslaere.js, sygdomslaere.css, docs/activity.md.
+- Kommandoer: ls; sed -n '1,200p' docs/activity.md; rg -n "Prompt 9|Prompt9|Prompt\\s*9" -S .; sed -n '1,220p' api/account/delete.js; sed -n '1,220p' api/_lib/rateLimit.js; python3 - <<'PY' ...; rg -n "Samfundsbyrde|Nøglepunkter|keypoints" -S .; sed -n '1,200p' studio-engine.js; sed -n '1,200p' sygdomslaere.js; sed -n '1,200p' docs/studio-engine.md; sed -n '1,240p' api/grade.js; cat package.json; rg -n "sygdomslaere\\.js|sygdomslaere\\.css" -S .; rg -n "getUserFromRequest" -S api; npm test -- tests/apiValidation.test.mjs tests/rateLimitEnforce.test.mjs tests/accountDelete.test.mjs; date +%F.
+- Sikkerhedsimplikationer: Rate limiting fejler nu lukket med kontrolleret 503 ved backend-fejl; account delete/export stopper og logger ved Supabase-fejl; auth accepterer gyldige tokens selv ved Clerk API-fejl; grade-validering afviser ikke-understøttede studios tidligere.
+- Opfoelgning: Overvej at koere fuld test-suite hvis der er behov for bred regressionstest.
+
+## 2026-01-11
+- Purpose: switch auth back to Supabase (email/password + Google/Apple OAuth), remove Clerk assets/deps, and tighten CSP.
+- Files: api/_lib/auth.js, api/account/delete.js, api/_lib/clerk.js, app.js, auth.js, consent.js, sign-in.html, sign-up.html, consent.html, index.html, styles.css, package.json, package-lock.json, scripts/build-clerk.mjs, src/clerk-init.js, clerk-init.js, vercel.json, docs/security-contracts.md, agents.md, README.md, tests/accountDelete.test.mjs, tests/authSupabase.test.mjs, docs/activity.md.
+- Commands: rg -n "Clerk|clerk" -S .; npm install; npm test -- tests/authSupabase.test.mjs tests/accountDelete.test.mjs; date +%F.
+- Security: server auth now verifies Supabase JWTs; account deletion uses Supabase admin auth delete; CSP removed Clerk/Turnstile domains.
+- Follow-ups: configure Supabase OAuth providers + redirect URLs; note that existing Clerk user IDs are not migrated (fresh login required).

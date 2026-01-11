@@ -1089,16 +1089,6 @@ body[data-theme="dark"] .noise-layer {
   margin: 0 auto;
 }
 
-.clerk-panel {
-  margin: 0 auto 16px;
-  padding: 0;
-  width: 100%;
-}
-
-.clerk-app-container {
-  min-height: 60px;
-}
-
 .auth-resend {
   display: grid;
   gap: 8px;

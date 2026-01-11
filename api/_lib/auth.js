@@ -1,5 +1,4 @@
 const { getSupabaseAdmin } = require("./supabase");
-const { getClerkUser, verifyClerkToken } = require("./clerk");
 
 function getAuthToken(req) {
   const header = req.headers.authorization || req.headers.Authorization;
@@ -14,31 +13,13 @@ async function getUserFromRequest(req) {
   if (!token) {
     return { user: null, error: "missing_token" };
   }
-  let data;
-  let error;
   try {
-    ({ data, error } = await verifyClerkToken(token));
-  } catch (err) {
-    return { user: null, error: "invalid_token" };
-  }
-  if (error || !data?.sub) {
-    return { user: null, error: "invalid_token" };
-  }
-  try {
-    const clerkUser = await getClerkUser(data.sub);
-    const primaryEmail = clerkUser.primaryEmailAddress?.emailAddress || null;
-    const fullName = clerkUser.fullName || null;
-    return {
-      user: {
-        id: clerkUser.id,
-        email: primaryEmail,
-        user_metadata: {
-          full_name: fullName,
-          name: fullName,
-        },
-      },
-      error: null,
-    };
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data?.user) {
+      return { user: null, error: "invalid_token" };
+    }
+    return { user: data.user, error: null };
   } catch (err) {
     return { user: null, error: "invalid_token" };
   }

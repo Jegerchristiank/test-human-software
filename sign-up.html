@@ -13,7 +13,7 @@
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="mode-auth" data-testid="page-sign-up">
+  <body class="mode-auth" data-auth-mode="sign-up" data-testid="page-sign-up">
     <div class="ambient ambient-one"></div>
     <div class="ambient ambient-two"></div>
     <div class="ambient ambient-three"></div>
@@ -53,15 +53,50 @@
           <h1>Opret konto</h1>
           <p>Opret en konto for at starte din første session.</p>
         </div>
-        <div class="clerk-panel" id="clerk-panel" data-testid="clerk-panel">
-          <div
-            id="clerk-app"
-            data-testid="clerk-app"
-            class="clerk-app-container"
-            data-clerk-view="sign-up"
-            data-clerk-redirect="index.html"
-          ></div>
+        <form class="auth-form" id="auth-form" data-testid="auth-form">
+          <div class="field">
+            <label for="auth-name-input">Fulde navn</label>
+            <input
+              type="text"
+              id="auth-name-input"
+              data-testid="auth-name-input"
+              autocomplete="name"
+            />
+          </div>
+          <div class="field">
+            <label for="auth-email-input">Email</label>
+            <input
+              type="email"
+              id="auth-email-input"
+              data-testid="auth-email-input"
+              autocomplete="email"
+              required
+            />
+          </div>
+          <div class="field">
+            <label for="auth-password-input">Adgangskode</label>
+            <input
+              type="password"
+              id="auth-password-input"
+              data-testid="auth-password-input"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+          <button id="auth-signup-btn" data-testid="auth-signup-btn" class="btn primary" type="submit">
+            Opret konto
+          </button>
+        </form>
+        <div class="auth-divider" data-testid="auth-divider">eller</div>
+        <div class="auth-oauth" data-testid="auth-oauth">
+          <button id="auth-google-btn" data-testid="auth-google-btn" class="btn secondary" type="button">
+            Fortsæt med Google
+          </button>
+          <button id="auth-apple-btn" data-testid="auth-apple-btn" class="btn secondary" type="button">
+            Fortsæt med Apple
+          </button>
         </div>
+        <div class="auth-status" id="auth-status" data-testid="auth-status">Opret konto for at starte.</div>
         <div class="auth-switch" data-testid="auth-switch">
           <span>Har du allerede en konto?</span>
           <a href="sign-in.html" data-testid="auth-switch-link" data-preserve-redirect="true">Log ind</a>
@@ -70,7 +105,7 @@
       </section>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="auth.js"></script>
-    <script src="clerk-init.js"></script>
   </body>
 </html>

@@ -3,7 +3,6 @@
     "source": "rawdata-sygdomslaere.txt",
     "generatedAt": "2026-01-10T15:31:59.692041+00:00",
     "sectionOrder": [
-      "Nøglepunkter",
       "Definition",
       "Forekomst",
       "Patogenese",

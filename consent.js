@@ -12,7 +12,7 @@ const elements = {
   logoutBtn: document.getElementById("gate-logout-btn"),
 };
 
-let clerk = null;
+let supabase = null;
 let activeSession = null;
 
 function setStatus(message, isWarn = false) {
@@ -91,7 +91,7 @@ async function loadConfig() {
 }
 
 async function loadProfile() {
-  const token = await getClerkSessionToken();
+  const token = await getAccessToken();
   if (!token) {
     throw new Error("Login er ikke klar endnu.");
   }
@@ -113,18 +113,38 @@ async function loadProfile() {
   return data.profile || null;
 }
 
+function initSupabaseClient(config) {
+  if (supabase) return;
+  const supabaseLib = window.supabase;
+  if (!supabaseLib?.createClient || !config?.supabaseUrl || !config?.supabaseAnonKey) {
+    return;
+  }
+  supabase = supabaseLib.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
+}
+
 async function hydrateConsent() {
   setStatus("Henter din konto …");
   setControlsEnabled(false);
-  await loadConfig();
-  clerk = await waitForClerkReady();
-  activeSession = clerk?.session || null;
-  if (!activeSession || !clerk?.user) {
+  const config = await loadConfig();
+  initSupabaseClient(config);
+  if (!supabase) {
+    throw new Error("Login er ikke klar endnu.");
+  }
+  const { data, error } = await supabase.auth.getSession();
+  activeSession = error ? null : data?.session || null;
+  const user = activeSession?.user || null;
+  if (!user) {
     redirectToSignIn();
     return;
   }
   if (elements.email) {
-    elements.email.textContent = clerk.user.primaryEmailAddress?.emailAddress || "—";
+    elements.email.textContent = user.email || "—";
   }
 
   const profile = await loadProfile();
@@ -162,7 +182,7 @@ async function submitConsent() {
   setStatus("Gemmer samtykke …");
   setControlsEnabled(false);
   try {
-    const token = await getClerkSessionToken();
+    const token = await getAccessToken();
     if (!token) {
       throw new Error("Login er ikke klar endnu.");
     }
@@ -187,31 +207,18 @@ async function submitConsent() {
 
 async function handleLogout() {
   setControlsEnabled(false);
-  if (clerk) {
-    await clerk.signOut();
+  if (supabase) {
+    await supabase.auth.signOut();
   }
   window.location.replace("index.html");
 }
 
-function waitForClerkReady() {
-  if (window.clerk && window.clerk.loaded) {
-    return Promise.resolve(window.clerk);
-  }
-  return new Promise((resolve) => {
-    const handler = (event) => {
-      if (event?.detail?.clerk) {
-        window.removeEventListener("clerk:ready", handler);
-        resolve(event.detail.clerk);
-      }
-    };
-    window.addEventListener("clerk:ready", handler);
-  });
-}
-
-async function getClerkSessionToken() {
-  if (!clerk?.session) return null;
+async function getAccessToken() {
+  if (!supabase) return null;
   try {
-    return await clerk.session.getToken();
+    const { data, error } = await supabase.auth.getSession();
+    if (error) return null;
+    return data?.session?.access_token || null;
   } catch (error) {
     return null;
   }

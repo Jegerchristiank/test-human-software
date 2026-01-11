@@ -23,7 +23,6 @@
   };
 
   const DISEASE_DOMAINS = [
-    { key: "keypoints", label: "Nøglepunkter", core: false },
     { key: "definition", label: "Definition", core: true },
     { key: "incidence", label: "Forekomst", core: true },
     { key: "pathogenesis", label: "Patogenese", core: true },
@@ -34,7 +33,6 @@
     { key: "treatment", label: "Behandling", core: true },
     { key: "prevention", label: "Forebyggelse", core: false },
     { key: "prognosis", label: "Prognose", core: false },
-    { key: "societal", label: "Samfundsbyrde", core: false },
   ];
 
   const DISEASE_DOMAIN_SETS = {
@@ -46,7 +44,6 @@
   };
 
   const DOMAIN_GUIDANCE = {
-    "Nøglepunkter": "Fremhæv de vigtigste takeaways i punktform.",
     Definition: "Start med den præcise definition og afgrænsning.",
     Forekomst: "Angiv prævalens/incidens, alder og køn hvis relevant.",
     Patogenese: "Forklar de vigtigste mekanismer og sygdomsforløb.",
@@ -57,7 +54,6 @@
     Behandling: "Skitsér hovedlinjer i behandling og evt. 1. valg.",
     Forebyggelse: "Nævn relevante forebyggende tiltag.",
     Prognose: "Angiv forventet forløb og prognose.",
-    Samfundsbyrde: "Beskriv betydning for samfund/økonomi hvis relevant.",
   };
 
   const KEYWORD_STOPWORDS = new Set([

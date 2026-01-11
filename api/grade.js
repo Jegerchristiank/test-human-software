@@ -78,7 +78,7 @@ module.exports = async function handler(req, res) {
       },
       studio: {
         type: "string",
-        enum: ["human", "sygdomslaere"],
+        enum: ["human"],
         enumMessage: "Invalid studio",
       },
       policyId: { type: "string", maxLen: 64 },

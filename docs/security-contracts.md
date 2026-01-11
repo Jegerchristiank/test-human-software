@@ -2,7 +2,7 @@
 
 ## Scope
 - API surface: serverless endpoints under `/api/*`.
-- Auth: Clerk bearer tokens for user-bound operations.
+- Auth: Supabase Auth bearer tokens for user-bound operations.
 - Data: Supabase with Row Level Security (RLS) enforced.
 
 ## Attack Surface (Public Endpoints)
@@ -31,7 +31,7 @@
 - `POST /api/stripe/update-subscription` (auth): cancel at period end toggle.
 
 ## Authentication and Authorization
-- All user-bound endpoints require a verified Clerk JWT (Authorization: Bearer).
+- All user-bound endpoints require a verified Supabase JWT (Authorization: Bearer).
 - Server-side authorization is enforced by `user.id` and Supabase service role.
 - Stripe webhooks are authenticated via Stripe signature verification.
 
@@ -55,7 +55,7 @@
 ## Secret Handling
 - Secrets are only read from environment variables:
   `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`,
-  `STRIPE_WEBHOOK_SECRET`, `OPENAI_API_KEY`, `CLERK_SECRET_KEY`.
+  `STRIPE_WEBHOOK_SECRET`, `OPENAI_API_KEY`.
 - `/api/config` only returns publishable keys and a `stripeConfigured`
   boolean; no server secrets are returned to clients.
 

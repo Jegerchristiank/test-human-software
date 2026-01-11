@@ -127,6 +127,21 @@ describe("API validation", () => {
     expect(payload.error).toBe("Prompt too long");
   });
 
+  it("rejects non-human studio for grade", async () => {
+    const handler = await loadHandler("../api/grade.js");
+    const res = await callHandler(handler, {
+      prompt: "Prompt",
+      modelAnswer: "Model",
+      userAnswer: "Answer",
+      maxPoints: 5,
+      language: "da",
+      studio: "sygdomslaere",
+    });
+    const payload = JSON.parse(res.body);
+    expect(res.statusCode).toBe(400);
+    expect(payload.error).toBe("Invalid studio");
+  });
+
   it("rejects negative awardedPoints in hint", async () => {
     const handler = await loadHandler("../api/hint.js");
     const res = await callHandler(handler, {

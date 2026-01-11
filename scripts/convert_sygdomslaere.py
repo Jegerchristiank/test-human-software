@@ -16,7 +16,6 @@ OUTPUT_PATH = ROOT_PATH / "data" / "sygdomslaere.json"
 
 RESERVED_COLUMNS = {"sygdom", "tyngde", "emne", "prioritet"}
 SECTION_ORDER = [
-    "Nøglepunkter",
     "Definition",
     "Forekomst",
     "Patogenese",

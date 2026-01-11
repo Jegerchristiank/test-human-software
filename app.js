@@ -397,7 +397,6 @@ const DISEASE_CATEGORY_ORDER = [
 ];
 
 const DISEASE_SECTION_ORDER = [
-  "Nøglepunkter",
   "Definition",
   "Forekomst",
   "Patogenese",
@@ -408,7 +407,6 @@ const DISEASE_SECTION_ORDER = [
   "Behandling",
   "Forebyggelse",
   "Prognose",
-  "Samfundsbyrde",
 ];
 
 const PRIORITY_ORDER = ["high", "medium", "low"];
@@ -893,8 +891,6 @@ const state = {
   settings: loadSettings(),
   config: null,
   supabase: null,
-  clerk: null,
-  clerkReady: false,
   session: null,
   user: null,
   profile: null,
@@ -1162,8 +1158,6 @@ const elements = {
   authDivider: document.getElementById("auth-divider"),
   authOauthGroup: document.getElementById("auth-oauth"),
   authNote: document.getElementById("auth-note"),
-  clerkPanel: document.getElementById("clerk-panel"),
-  clerkApp: document.getElementById("clerk-app"),
   accountBtn: document.getElementById("account-btn"),
   accountBackBtn: document.getElementById("account-back-btn"),
   billingBackBtn: document.getElementById("billing-back-btn"),
@@ -2918,9 +2912,6 @@ function setLoadingState(isLoading) {
     scheduleLoadingFallback();
     return;
   }
-  if (!state.authReady && state.clerkReady) {
-    state.authReady = true;
-  }
   state.loadingStartedAt = null;
   resetLoadingFallback();
   try {
@@ -2940,10 +2931,6 @@ function setAuthStatus(message, isWarn = false) {
 
 function setAuthResendVisible(isVisible) {
   if (!elements.authResend) return;
-  if (state.clerkReady) {
-    setElementVisible(elements.authResend, false);
-    return;
-  }
   setElementVisible(elements.authResend, Boolean(isVisible));
 }
 
@@ -3026,14 +3013,13 @@ function getAuthProviderFlag(settings, provider) {
 }
 
 function applyAuthProviderVisibility() {
-  const useClerk = Boolean(state.clerkReady);
-  setElementVisible(elements.clerkPanel, true);
-  setElementVisible(elements.authForm, !useClerk);
-  setElementVisible(elements.authAlt, !useClerk);
-  setElementVisible(elements.authDivider, !useClerk);
-  setElementVisible(elements.authOauthGroup, !useClerk);
-  setElementVisible(elements.authGoogleBtn, !useClerk);
-  setElementVisible(elements.authAppleBtn, !useClerk);
+  const canAuth = Boolean(state.supabase);
+  setElementVisible(elements.authForm, canAuth);
+  setElementVisible(elements.authAlt, canAuth);
+  setElementVisible(elements.authDivider, canAuth);
+  setElementVisible(elements.authOauthGroup, canAuth);
+  setElementVisible(elements.authGoogleBtn, canAuth);
+  setElementVisible(elements.authAppleBtn, canAuth);
 }
 
 function formatProviderStatus(label, flag) {
@@ -3083,13 +3069,13 @@ function updateDiagnosticsUI() {
       : state.configError || "Serveren svarer ikke";
   }
 
-  const authReady = Boolean(state.clerkReady);
+  const authReady = Boolean(state.supabase);
   if (elements.diagAuth) {
     elements.diagAuth.textContent = authReady ? "Klar" : "Mangler";
   }
   if (elements.diagAuthMeta) {
     elements.diagAuthMeta.textContent = authReady
-      ? "Clerk er klar"
+      ? "Supabase auth er klar"
       : state.configError || "Login er ikke klar";
   }
 
@@ -3119,7 +3105,7 @@ function updateDiagnosticsUI() {
 }
 
 function setAuthControlsEnabled(enabled) {
-  const allowSupabaseControls = enabled && !state.clerkReady;
+  const allowSupabaseControls = enabled;
   const controls = [
     elements.authEmailInput,
     elements.authPasswordInput,
@@ -3734,7 +3720,7 @@ function updateAuthUI() {
     return;
   }
 
-  const canAuth = Boolean(state.clerkReady);
+  const canAuth = Boolean(state.supabase);
   const hasUser = Boolean(state.session?.user);
   if (document.body) {
     document.body.dataset.authenticated = hasUser ? "true" : "false";
@@ -4497,13 +4483,6 @@ function isSameOrigin(url) {
 }
 
 async function getSessionToken() {
-  if (state.clerk?.session) {
-    try {
-      return await state.clerk.session.getToken();
-    } catch (error) {
-      return null;
-    }
-  }
   return state.session?.access_token || null;
 }
 
@@ -4561,36 +4540,9 @@ async function apiFetch(url, options = {}) {
   }
 }
 
-function mapClerkUser(clerkUser) {
-  if (!clerkUser) return null;
-  const fullName =
-    clerkUser.fullName ||
-    [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ").trim() ||
-    null;
-  const email = clerkUser.primaryEmailAddress?.emailAddress || null;
-  return {
-    id: clerkUser.id,
-    email,
-    user_metadata: {
-      full_name: fullName,
-      name: fullName,
-    },
-  };
-}
-
-function waitForClerkReady() {
-  if (window.clerk && window.clerk.loaded) {
-    return Promise.resolve(window.clerk);
-  }
-  return new Promise((resolve) => {
-    const handler = (event) => {
-      if (event?.detail?.clerk) {
-        window.removeEventListener("clerk:ready", handler);
-        resolve(event.detail.clerk);
-      }
-    };
-    window.addEventListener("clerk:ready", handler);
-  });
+function applySession(session) {
+  state.session = session || null;
+  state.user = session?.user || null;
 }
 
 async function loadRuntimeConfig() {
@@ -4625,38 +4577,47 @@ async function hydrateAuthProviders() {
 }
 
 function initSupabaseClient() {
-  state.supabase = null;
+  if (state.supabase) return;
+  const supabaseLib = window.supabase;
+  if (!supabaseLib?.createClient || !state.config?.supabaseUrl || !state.config?.supabaseAnonKey) {
+    state.supabase = null;
+    state.configError = state.configError || "Supabase klienten er ikke klar.";
+    return;
+  }
+  state.supabase = supabaseLib.createClient(
+    state.config.supabaseUrl,
+    state.config.supabaseAnonKey,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    }
+  );
 }
 
 async function refreshSession({ updateUi = true } = {}) {
-  let clerk;
-  try {
-    clerk = await waitForClerkReady();
-  } catch (error) {
-    clerk = null;
-  }
-  state.clerk = clerk || null;
-  state.clerkReady = Boolean(clerk?.loaded);
-  const clerkUser = clerk?.user || null;
-  const clerkSession = clerk?.session || null;
-  let accessToken = null;
-  if (clerkSession) {
-    try {
-      accessToken = await clerkSession.getToken();
-    } catch (error) {
-      accessToken = null;
+  if (!state.supabase) {
+    applySession(null);
+    state.authReady = true;
+    if (updateUi) {
+      updateAuthUI();
     }
+    return;
   }
-  if (clerkUser && clerkSession) {
-    state.session = {
-      user: mapClerkUser(clerkUser),
-      access_token: accessToken,
-    };
-    state.user = state.session.user;
-    state.demoMode = false;
-  } else {
-    state.session = null;
-    state.user = null;
+  try {
+    const { data, error } = await state.supabase.auth.getSession();
+    if (error) {
+      applySession(null);
+    } else {
+      applySession(data?.session || null);
+      if (state.session?.user) {
+        state.demoMode = false;
+      }
+    }
+  } catch (error) {
+    applySession(null);
   }
   state.authReady = true;
   if (updateUi) {
@@ -4665,10 +4626,11 @@ async function refreshSession({ updateUi = true } = {}) {
 }
 
 function subscribeToAuthChanges() {
-  if (!state.clerk) return;
-  state.clerk.addListener(async () => {
+  if (!state.supabase) return;
+  state.supabase.auth.onAuthStateChange(async (_event, session) => {
     const hadUser = Boolean(state.session?.user);
-    await refreshSession({ updateUi: false });
+    applySession(session || null);
+    state.authReady = true;
     const hasUser = Boolean(state.session?.user);
     if (hadUser !== hasUser) {
       state.studioResolved = false;
@@ -5779,8 +5741,12 @@ async function handleDeleteAccount() {
 }
 
 async function handleLogout() {
-  if (state.clerk) {
-    await state.clerk.signOut();
+  if (state.supabase) {
+    try {
+      await state.supabase.auth.signOut();
+    } catch (error) {
+      // Ignore sign out errors.
+    }
   }
   state.session = null;
   state.user = null;

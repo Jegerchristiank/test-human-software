@@ -1,7 +1,6 @@
 const { readJson } = require("../_lib/body");
 const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest } = require("../_lib/auth");
-const { getClerkClient } = require("../_lib/clerk");
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { enforceRateLimit } = require("../_lib/rateLimit");
 const { validatePayload } = require("../_lib/validate");
@@ -167,30 +166,35 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    let clerkDeleted = true;
+    let authDeleted = true;
     try {
-      const clerkClient = getClerkClient();
-      await clerkClient.users.deleteUser(user.id);
+      if (!supabase.auth?.admin?.deleteUser) {
+        throw new Error("Supabase admin auth unavailable");
+      }
+      const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
+      if (authError) {
+        throw authError;
+      }
     } catch (error) {
-      clerkDeleted = false;
+      authDeleted = false;
     }
 
-    if (!clerkDeleted) {
+    if (!authDeleted) {
       await logAuditEvent({
         eventType: "account_delete",
         userId: user.id,
         status: "success",
         req,
-        metadata: { clerk_deleted: false, stripe_cleanup: needsStripeCleanup },
+        metadata: { auth_deleted: false, stripe_cleanup: needsStripeCleanup },
       });
-      return sendJson(res, 200, { status: "deleted", warning: "clerk_delete_failed" });
+      return sendJson(res, 200, { status: "deleted", warning: "auth_delete_failed" });
     }
     await logAuditEvent({
       eventType: "account_delete",
       userId: user.id,
       status: "success",
       req,
-      metadata: { clerk_deleted: true, stripe_cleanup: needsStripeCleanup },
+      metadata: { auth_deleted: true, stripe_cleanup: needsStripeCleanup },
     });
     return sendJson(res, 200, { status: "deleted" });
   } catch (err) {

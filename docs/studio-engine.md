@@ -2,7 +2,7 @@
 
 ## Adfaerds-spec (Sygdomslaere Studio)
 - TaskType: Alle sygdomslaere-delsporgsmaal og grupper er `case_structured`.
-- Domæner: Fast domæneliste bruges til struktur (Definition, Forekomst, Patogenese, Ætiologi, Symptomer og fund, Diagnostik, Følgetilstande, Behandling, Forebyggelse, Prognose, Samfundsbyrde, Nøglepunkter).
+- Domæner: Fast domæneliste bruges til struktur (Definition, Forekomst, Patogenese, Ætiologi, Symptomer og fund, Diagnostik, Følgetilstande, Behandling, Forebyggelse, Prognose).
 - Hint-niveauer:
   - 0: Ingen hints vises.
   - 1: Nøgleord udtrækkes fra modelbesvarelsen.
