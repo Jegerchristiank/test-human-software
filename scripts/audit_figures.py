@@ -20,6 +20,7 @@ AUDIT_PATH = ROOT_PATH / "data" / "figure_audit.json"
 DEFAULT_MODEL = "gpt-5.2"
 DEFAULT_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
+PROMPT_VERSION = "v1"
 
 
 def load_env() -> None:
@@ -196,6 +197,8 @@ def main() -> None:
                     "confidence": float(result.get("confidence", 0) or 0),
                     "issues": str(result.get("issues", "")).strip(),
                     "description": description,
+                    "model": model,
+                    "prompt_version": PROMPT_VERSION,
                 }
             )
             processed += 1

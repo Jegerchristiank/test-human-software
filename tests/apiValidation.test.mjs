@@ -40,6 +40,31 @@ function setupMocks() {
   stubModule("../api/_lib/usage.js", {
     logUsageEvent: vi.fn(async () => {}),
   });
+  stubModule("../api/_lib/evaluationLog.js", {
+    logEvaluationEvent: vi.fn(async () => {}),
+  });
+  stubModule("../api/_lib/auth.js", {
+    getUserFromRequest: vi.fn(async () => ({
+      user: { id: "user-1" },
+      error: null,
+    })),
+  });
+  stubModule("../api/_lib/supabase.js", {
+    getSupabaseAdmin: () => ({
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: null, error: null }),
+          }),
+        }),
+        upsert: () => ({
+          select: () => ({
+            single: async () => ({ data: null, error: null }),
+          }),
+        }),
+      }),
+    }),
+  });
 }
 
 afterEach(() => {
@@ -147,5 +172,33 @@ describe("API validation", () => {
     const payload = JSON.parse(res.body);
     expect(res.statusCode).toBe(413);
     expect(payload.error).toBe("Text too long");
+  });
+
+  it("rejects unknown fields in user state", async () => {
+    const handler = await loadHandler("../api/user-state.js");
+    const res = await callHandler(handler, {
+      unexpected: "value",
+    });
+    const payload = JSON.parse(res.body);
+    expect(res.statusCode).toBe(400);
+    expect(payload.error).toBe("Unknown field: unexpected");
+  });
+
+  it("scores rubric deterministically", async () => {
+    const handler = await loadHandler("../api/rubric-score.js");
+    const res = await callHandler(handler, {
+      prompt: "Definition",
+      rubric: "Alpha beta. Gamma delta.",
+      userAnswer: "alpha",
+      maxPoints: 4,
+      language: "da",
+      studio: "sygdomslaere",
+      policyId: "sygdomslaere:v1",
+    });
+    const payload = JSON.parse(res.body);
+    expect(res.statusCode).toBe(200);
+    expect(payload.score).toBe(2);
+    expect(payload.rubric.total).toBe(2);
+    expect(payload.rubric.matched).toBe(1);
   });
 });

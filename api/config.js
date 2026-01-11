@@ -1,10 +1,21 @@
 const { sendJson, sendError } = require("./_lib/response");
 const { optionalEnv } = require("./_lib/env");
+const { enforceRateLimit } = require("./_lib/rateLimit");
 
-module.exports = function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return sendError(res, 405, "Method not allowed");
+  }
+
+  if (
+    !(await enforceRateLimit(req, res, {
+      scope: "config:public",
+      limit: 60,
+      windowSeconds: 300,
+    }))
+  ) {
+    return;
   }
 
   const supabaseUrl = optionalEnv("SUPABASE_URL");

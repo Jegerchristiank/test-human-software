@@ -7,12 +7,16 @@ const { isDataUrl, parseImageDataUrl, loadImageAsDataUrl } = require("./_lib/med
 const { logUsageEvent } = require("./_lib/usage");
 const { enforceRateLimit } = require("./_lib/rateLimit");
 const { LIMITS, isValidLanguage } = require("./_lib/limits");
+const { validatePayload } = require("./_lib/validate");
+const { applyTraceId } = require("./_lib/trace");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return sendError(res, 405, "Method not allowed");
   }
+
+  applyTraceId(req, res);
 
   let payload;
   try {
@@ -36,6 +40,34 @@ module.exports = async function handler(req, res) {
     }))
   ) {
     return;
+  }
+
+  const validation = validatePayload(payload, {
+    fields: {
+      task: { type: "string" },
+      language: {
+        type: "string",
+        pattern: LIMITS.languagePattern,
+        patternMessage: "Invalid language",
+      },
+      imagePath: { type: "string" },
+      imageData: { type: "string" },
+      question: {
+        type: "string",
+        maxLen: LIMITS.maxQuestionChars,
+        maxLenMessage: "Question too long",
+        maxLenStatus: 413,
+      },
+      modelAnswer: {
+        type: "string",
+        maxLen: LIMITS.maxModelAnswerChars,
+        maxLenMessage: "Model answer too long",
+        maxLenStatus: 413,
+      },
+    },
+  });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
   }
 
   const task = String(payload.task || "").trim().toLowerCase();

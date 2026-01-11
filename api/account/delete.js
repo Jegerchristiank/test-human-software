@@ -1,8 +1,11 @@
 const { readJson } = require("../_lib/body");
 const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest } = require("../_lib/auth");
+const { getClerkClient } = require("../_lib/clerk");
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { enforceRateLimit } = require("../_lib/rateLimit");
+const { validatePayload } = require("../_lib/validate");
+const { logAuditEvent } = require("../_lib/audit");
 const Stripe = require("stripe");
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["trialing", "active", "past_due", "unpaid"]);
@@ -36,9 +39,30 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  const validation = validatePayload(payload, {
+    fields: {
+      confirm: {
+        type: "boolean",
+        required: true,
+        requiredMessage: "Confirmation required",
+        typeMessage: "Confirmation required",
+      },
+    },
+  });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
+  }
+
   if (!payload || payload.confirm !== true) {
     return sendError(res, 400, "Confirmation required");
   }
+
+  await logAuditEvent({
+    eventType: "account_delete_requested",
+    userId: user.id,
+    status: "requested",
+    req,
+  });
 
   const supabase = getSupabaseAdmin();
   const { data: profile, error: profileError } = await supabase
@@ -66,6 +90,13 @@ module.exports = async function handler(req, res) {
   if (needsStripeCleanup) {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (!secretKey) {
+      await logAuditEvent({
+        eventType: "account_delete",
+        userId: user.id,
+        status: "failure",
+        req,
+        metadata: { stage: "stripe_cleanup" },
+      });
       return sendError(res, 500, "payment_not_configured");
     }
     const stripe = new Stripe(secretKey, { apiVersion: "2024-06-20" });
@@ -88,23 +119,67 @@ module.exports = async function handler(req, res) {
         );
         const failed = results.find((result) => result.status === "rejected");
         if (failed) {
+          await logAuditEvent({
+            eventType: "account_delete",
+            userId: user.id,
+            status: "failure",
+            req,
+            metadata: { stage: "stripe_cleanup" },
+          });
           return sendError(res, 502, "Could not cancel subscription");
         }
       }
     } catch (error) {
+      await logAuditEvent({
+        eventType: "account_delete",
+        userId: user.id,
+        status: "failure",
+        req,
+        metadata: { stage: "stripe_cleanup" },
+      });
       return sendError(res, 502, "Could not cancel subscription");
     }
   }
 
   try {
+    await supabase.from("evaluation_logs").delete().eq("user_id", user.id);
     await supabase.from("usage_events").delete().eq("user_id", user.id);
     await supabase.from("subscriptions").delete().eq("user_id", user.id);
     await supabase.from("user_state").delete().eq("user_id", user.id);
     await supabase.from("profiles").delete().eq("id", user.id);
-    await supabase.auth.admin.deleteUser(user.id);
+    let clerkDeleted = true;
+    try {
+      const clerkClient = getClerkClient();
+      await clerkClient.users.deleteUser(user.id);
+    } catch (error) {
+      clerkDeleted = false;
+    }
 
+    if (!clerkDeleted) {
+      await logAuditEvent({
+        eventType: "account_delete",
+        userId: user.id,
+        status: "success",
+        req,
+        metadata: { clerk_deleted: false, stripe_cleanup: needsStripeCleanup },
+      });
+      return sendJson(res, 200, { status: "deleted", warning: "clerk_delete_failed" });
+    }
+    await logAuditEvent({
+      eventType: "account_delete",
+      userId: user.id,
+      status: "success",
+      req,
+      metadata: { clerk_deleted: true, stripe_cleanup: needsStripeCleanup },
+    });
     return sendJson(res, 200, { status: "deleted" });
   } catch (err) {
+    await logAuditEvent({
+      eventType: "account_delete",
+      userId: user.id,
+      status: "failure",
+      req,
+    });
     return sendError(res, 500, "Could not delete account");
   }
 };

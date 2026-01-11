@@ -1,14 +1,30 @@
 const Stripe = require("stripe");
+const { readJsonAllowEmpty } = require("../_lib/body");
 const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest, getProfileForUser } = require("../_lib/auth");
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { enforceRateLimit } = require("../_lib/rateLimit");
 const { resolveSetupPaymentMethodTypes } = require("../_lib/stripe");
+const { validatePayload } = require("../_lib/validate");
+const { logAuditEvent } = require("../_lib/audit");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return sendError(res, 405, "Method not allowed");
+  }
+
+  let payload;
+  try {
+    payload = await readJsonAllowEmpty(req, 64 * 1024);
+  } catch (error) {
+    const status = error.message === "Payload too large" ? 413 : 400;
+    return sendError(res, status, error.message || "Invalid JSON");
+  }
+
+  const validation = validatePayload(payload, { fields: {} });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
   }
 
   const { user, error } = await getUserFromRequest(req);
@@ -76,11 +92,26 @@ module.exports = async function handler(req, res) {
       return sendError(res, 500, "Could not create setup intent");
     }
 
+    await logAuditEvent({
+      eventType: "stripe_setup_intent_created",
+      userId: user.id,
+      status: "success",
+      req,
+      targetType: "stripe_setup_intent",
+      targetId: setupIntent.id,
+    });
+
     return sendJson(res, 200, {
       clientSecret: setupIntent.client_secret,
       paymentMethodTypes,
     });
   } catch (err) {
+    await logAuditEvent({
+      eventType: "stripe_setup_intent_created",
+      userId: user.id,
+      status: "failure",
+      req,
+    });
     return sendError(res, 500, "Could not create setup intent");
   }
 };

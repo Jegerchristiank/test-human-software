@@ -2,8 +2,52 @@ const Stripe = require("stripe");
 const { readRawBody } = require("../_lib/body");
 const { sendJson, sendError } = require("../_lib/response");
 const { getSupabaseAdmin } = require("../_lib/supabase");
+const { enforceRateLimit } = require("../_lib/rateLimit");
+const { validatePayload } = require("../_lib/validate");
+const { logAuditEvent } = require("../_lib/audit");
 
 const ACTIVE_STATUSES = new Set(["trialing", "active"]);
+const MAX_ID_LENGTH = 200;
+
+const EVENT_SCHEMA = {
+  allowUnknown: true,
+  fields: {
+    id: { type: "string", required: true, maxLen: MAX_ID_LENGTH },
+    type: { type: "string", required: true, maxLen: MAX_ID_LENGTH },
+    data: {
+      type: "object",
+      required: true,
+      allowUnknown: true,
+      fields: {
+        object: { type: "object", required: true, allowUnknown: true },
+      },
+    },
+  },
+};
+
+function normalizeString(value, maxLen = MAX_ID_LENGTH) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.length > maxLen) return "";
+  return trimmed;
+}
+
+async function rejectWebhook(res, req, { eventId = null, eventType = null, reason = null } = {}) {
+  await logAuditEvent({
+    eventType: "stripe_webhook",
+    actorType: "webhook",
+    status: "denied",
+    req,
+    targetType: eventId ? "stripe_event" : null,
+    targetId: eventId || null,
+    metadata: {
+      stripe_event_type: eventType || null,
+      reason: reason || "invalid_payload",
+    },
+  });
+  return sendError(res, 400, "Invalid webhook payload");
+}
 
 async function upsertSubscription({
   userId,
@@ -60,6 +104,16 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed");
   }
 
+  if (
+    !(await enforceRateLimit(req, res, {
+      scope: "stripe:webhook",
+      limit: 120,
+      windowSeconds: 60,
+    }))
+  ) {
+    return;
+  }
+
   const secretKey = process.env.STRIPE_SECRET_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secretKey || !webhookSecret) {
@@ -81,14 +135,26 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const validation = validatePayload(event, EVENT_SCHEMA);
+    if (!validation.ok) {
+      return rejectWebhook(res, req, { reason: "invalid_payload" });
+    }
+
+    const eventId = normalizeString(event.id);
+    const eventType = normalizeString(event.type);
+    if (!eventId || !eventType) {
+      return rejectWebhook(res, req, { reason: "missing_event_fields" });
+    }
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
-        const userId = session.client_reference_id || session.metadata?.user_id || null;
-        if (userId && session.customer) {
+        const userId = normalizeString(session?.client_reference_id || session?.metadata?.user_id);
+        const customerId = normalizeString(session?.customer);
+        if (userId && customerId) {
           await syncProfileCustomer({
             userId,
-            stripeCustomerId: session.customer,
+            stripeCustomerId: customerId,
           });
         }
         break;
@@ -97,7 +163,10 @@ module.exports = async function handler(req, res) {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const subscription = event.data.object;
-        const stripeCustomerId = subscription.customer;
+        const stripeCustomerId = normalizeString(subscription?.customer);
+        if (!stripeCustomerId) {
+          return rejectWebhook(res, req, { eventId, eventType, reason: "missing_customer" });
+        }
         const userId = await findUserIdByCustomer(stripeCustomerId);
         if (userId) {
           await upsertSubscription({
@@ -112,8 +181,25 @@ module.exports = async function handler(req, res) {
         break;
     }
 
+    await logAuditEvent({
+      eventType: "stripe_webhook",
+      actorType: "webhook",
+      status: "success",
+      req,
+      targetType: "stripe_event",
+      targetId: eventId,
+      metadata: { stripe_event_type: eventType },
+    });
+
     return sendJson(res, 200, { received: true });
   } catch (err) {
+    await logAuditEvent({
+      eventType: "stripe_webhook",
+      actorType: "webhook",
+      status: "failure",
+      req,
+      metadata: { reason: "handler_error" },
+    });
     return sendError(res, 500, "Webhook handler failed");
   }
 };

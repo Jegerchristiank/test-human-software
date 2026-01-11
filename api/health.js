@@ -1,6 +1,7 @@
 const { sendJson, sendError } = require("./_lib/response");
 const { optionalEnv } = require("./_lib/env");
 const { getUserFromRequest, getProfileForUser } = require("./_lib/auth");
+const { enforceRateLimit } = require("./_lib/rateLimit");
 const { resolveAiAccess } = require("./_lib/aiAccess");
 
 module.exports = async function handler(req, res) {
@@ -14,9 +15,27 @@ module.exports = async function handler(req, res) {
   const userKey = req.headers["x-user-openai-key"] || req.headers["x-openai-key"] || "";
 
   let plan = "free";
+  let user = null;
+  let authError = null;
   if (!userKey) {
-    const { user, error } = await getUserFromRequest(req);
-    if (error || !user) {
+    const auth = await getUserFromRequest(req);
+    user = auth.user;
+    authError = auth.error;
+  }
+
+  if (
+    !(await enforceRateLimit(req, res, {
+      scope: "health",
+      limit: 60,
+      windowSeconds: 300,
+      userId: user?.id,
+    }))
+  ) {
+    return;
+  }
+
+  if (!userKey) {
+    if (authError || !user) {
       return sendJson(res, 401, {
         status: "unauthenticated",
         model,

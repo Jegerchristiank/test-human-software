@@ -5,7 +5,8 @@ const { requireAiAccess } = require("./_lib/aiGate");
 const { parseAudioDataUrl, guessAudioFilename } = require("./_lib/media");
 const { logUsageEvent } = require("./_lib/usage");
 const { enforceRateLimit } = require("./_lib/rateLimit");
-const { isValidLanguage } = require("./_lib/limits");
+const { isValidLanguage, LIMITS } = require("./_lib/limits");
+const { validatePayload } = require("./_lib/validate");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -35,6 +36,20 @@ module.exports = async function handler(req, res) {
     }))
   ) {
     return;
+  }
+
+  const validation = validatePayload(payload, {
+    fields: {
+      audioData: { type: "string", required: true, requiredMessage: "Missing audioData" },
+      language: {
+        type: "string",
+        pattern: LIMITS.languagePattern,
+        patternMessage: "Invalid language",
+      },
+    },
+  });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
   }
 
   const audioData = String(payload.audioData || "").trim();

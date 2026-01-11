@@ -95,16 +95,44 @@ async function checkRateLimit({ req, scope, limit, windowSeconds, userId }) {
   });
   if (error) {
     console.warn("rate_limit_error", error.message || error);
-    return { allowed: true, error };
+    return { allowed: false, error };
   }
-  return { allowed: Boolean(data) };
+  return { allowed: Boolean(data), error: null };
 }
 
 async function enforceRateLimit(req, res, options) {
-  const { allowed } = await checkRateLimit({ req, ...options });
-  if (!allowed) {
+  const { userId, limit, windowSeconds, scope, ipLimit, userLimit } = options;
+  const ipCheck = await checkRateLimit({
+    req,
+    scope,
+    limit: ipLimit ?? limit,
+    windowSeconds,
+    userId: null,
+  });
+  if (ipCheck.error) {
+    sendError(res, 503, "rate_limit_unavailable");
+    return false;
+  }
+  if (!ipCheck.allowed) {
     sendError(res, 429, "rate_limited");
     return false;
+  }
+  if (userId) {
+    const userCheck = await checkRateLimit({
+      req,
+      scope,
+      limit: userLimit ?? limit,
+      windowSeconds,
+      userId,
+    });
+    if (userCheck.error) {
+      sendError(res, 503, "rate_limit_unavailable");
+      return false;
+    }
+    if (!userCheck.allowed) {
+      sendError(res, 429, "rate_limited");
+      return false;
+    }
   }
   return true;
 }

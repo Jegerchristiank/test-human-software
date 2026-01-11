@@ -3,6 +3,10 @@ const { sendJson, sendError } = require("./_lib/response");
 const { getUserFromRequest } = require("./_lib/auth");
 const { getSupabaseAdmin } = require("./_lib/supabase");
 const { enforceRateLimit } = require("./_lib/rateLimit");
+const { validatePayload } = require("./_lib/validate");
+const { logAuditEvent } = require("./_lib/audit");
+
+const FULL_NAME_MAX = 200;
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -31,6 +35,23 @@ module.exports = async function handler(req, res) {
     }))
   ) {
     return;
+  }
+
+  const validation = validatePayload(payload, {
+    fields: {
+      fullName: {
+        type: "string",
+        maxLen: FULL_NAME_MAX,
+        maxLenMessage: "Full name too long",
+        maxLenStatus: 413,
+      },
+      ownKeyEnabled: { type: "boolean" },
+      acceptTerms: { type: "boolean" },
+      acceptPrivacy: { type: "boolean" },
+    },
+  });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
   }
 
   const updates = {};
@@ -64,8 +85,22 @@ module.exports = async function handler(req, res) {
       throw updateError;
     }
 
+    await logAuditEvent({
+      eventType: "profile_updated",
+      userId: user.id,
+      status: "success",
+      req,
+      metadata: { field_count: Object.keys(updates).length },
+    });
+
     return sendJson(res, 200, { profile: data });
   } catch (err) {
+    await logAuditEvent({
+      eventType: "profile_updated",
+      userId: user.id,
+      status: "failure",
+      req,
+    });
     return sendError(res, 500, "Could not update profile");
   }
 };

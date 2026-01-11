@@ -3,6 +3,10 @@ const { readJson } = require("../_lib/body");
 const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest, getProfileForUser, getActiveSubscription } = require("../_lib/auth");
 const { enforceRateLimit } = require("../_lib/rateLimit");
+const { validatePayload } = require("../_lib/validate");
+const { logAuditEvent } = require("../_lib/audit");
+
+const PAYMENT_METHOD_MAX = 200;
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -16,6 +20,24 @@ module.exports = async function handler(req, res) {
   } catch (error) {
     const status = error.message === "Payload too large" ? 413 : 400;
     return sendError(res, status, error.message || "Invalid JSON");
+  }
+
+  const validation = validatePayload(payload, {
+    fields: {
+      paymentMethodId: {
+        type: "string",
+        required: true,
+        requiredMessage: "Missing payment method",
+        minLen: 1,
+        minLenMessage: "Missing payment method",
+        maxLen: PAYMENT_METHOD_MAX,
+        maxLenMessage: "Payment method too long",
+        maxLenStatus: 413,
+      },
+    },
+  });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
   }
 
   const paymentMethodId = String(payload.paymentMethodId || "").trim();
@@ -72,8 +94,22 @@ module.exports = async function handler(req, res) {
     }
 
     const updated = await stripe.paymentMethods.retrieve(paymentMethodId);
+    await logAuditEvent({
+      eventType: "stripe_payment_method_set",
+      userId: user.id,
+      status: "success",
+      req,
+      targetType: "stripe_payment_method",
+      targetId: paymentMethodId,
+    });
     return sendJson(res, 200, { paymentMethod: updated });
   } catch (err) {
+    await logAuditEvent({
+      eventType: "stripe_payment_method_set",
+      userId: user.id,
+      status: "failure",
+      req,
+    });
     return sendError(res, 500, "Could not update payment method");
   }
 };

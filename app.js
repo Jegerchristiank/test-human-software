@@ -14,12 +14,25 @@ const STORAGE_KEYS = {
   demoQuizResult: "hbs_demo_quiz_result",
 };
 
+const CURRENT_STUDIO = "human";
+const STUDIO_PARAM = "studio";
+const STUDIO_PATHS = {
+  human: "index.html",
+  sygdomslaere: "sygdomslaere.html",
+};
+const AUTH_ROUTES = {
+  signIn: "sign-in.html",
+  signUp: "sign-up.html",
+};
+
 const DEFAULT_SETTINGS = {
   questionCount: 24,
   shuffleQuestions: true,
   shuffleOptions: true,
   balancedMix: true,
   adaptiveMix: false,
+  priorityMix: false,
+  lastStudio: CURRENT_STUDIO,
   showMeta: true,
   autoAdvance: false,
   autoAdvanceDelay: 1200,
@@ -41,6 +54,18 @@ const DEFAULT_SETTINGS = {
   autoFigureCaptions: true,
   assistantCollapsed: false,
 };
+const COURSE_DEFAULT_SETTINGS = {
+  human: {},
+  sygdomslaere: {
+    questionCount: 12,
+    includeMcq: false,
+    includeShort: true,
+    ratioMcq: 1,
+    ratioShort: 1,
+    shuffleOptions: false,
+    autoFigureCaptions: false,
+  },
+};
 
 const AUTH_PROVIDERS = {
   google: "google",
@@ -60,7 +85,7 @@ const USER_STATE_SYNC_DELAY = 1800;
 const DEMO_DAILY_WINDOW = 24 * 60 * 60 * 1000;
 const DEMO_TOTAL_QUESTIONS = 6;
 const DEMO_SHORT_MATCH_THRESHOLD = 0.5;
-const SHORT_LABEL_ORDER = ["a", "b", "c", "d", "e"];
+const SHORT_LABEL_ORDER = "abcdefghijklmnopqrstuvwxyz".split("");
 const SHORT_LABEL_INDEX = new Map(SHORT_LABEL_ORDER.map((label, index) => [label, index]));
 const CONTEXT_STRONG_CUE = /\b(dis?se|ovenfor|ovenstående|førnævnte|sidstnævnte|førstnævnte)\b/i;
 const CONTEXT_COUNT_WORDS = new Set(["to", "tre", "fire", "fem", "seks"]);
@@ -152,6 +177,47 @@ const CONTEXT_STOPWORDS = new Set([
   "efter",
   "inden",
 ]);
+const RUBRIC_MATCH_RATIO = 0.35;
+const RUBRIC_MIN_MATCH_TOKENS = 2;
+const RUBRIC_SCORE_STEP = 0.5;
+const RUBRIC_MAX_LIST = 12;
+const RUBRIC_TOKEN_REGEX = /[a-z0-9\u00e6\u00f8\u00e5]+/gi;
+const RUBRIC_STOPWORDS = new Set([
+  "og",
+  "eller",
+  "der",
+  "som",
+  "med",
+  "for",
+  "til",
+  "fra",
+  "ved",
+  "hos",
+  "om",
+  "uden",
+  "inden",
+  "efter",
+  "over",
+  "under",
+  "mellem",
+  "samt",
+  "men",
+  "er",
+  "var",
+  "har",
+  "kan",
+  "skal",
+  "ikke",
+  "en",
+  "et",
+  "den",
+  "det",
+  "de",
+  "da",
+  "af",
+  "på",
+  "i",
+]);
 
 const GRADE_SCALE = [
   { min: 92, grade: "12" },
@@ -170,6 +236,136 @@ const FEEDBACK = [
   { min: 0, text: "Fortsæt øvelsen, og brug facit strategisk." },
 ];
 
+const DEFAULT_COURSE = "human";
+const COURSE_LABELS = {
+  human: "Human biologi",
+  sygdomslaere: "Sygdomslære",
+};
+const COURSE_ORDER = [DEFAULT_COURSE, "sygdomslaere"];
+const COURSE_YEAR_LABELS = {
+  sygdomslaere: "Pensum",
+};
+const COURSE_ALIASES = {
+  "human biologi": DEFAULT_COURSE,
+  humanbiologi: DEFAULT_COURSE,
+  sygdomslære: "sygdomslaere",
+  sygdomslaere: "sygdomslaere",
+  sygdom: "sygdomslaere",
+};
+const STUDIO_POLICY = typeof window !== "undefined" ? window.studioPolicy : null;
+const COURSE_UI = {
+  human: {
+    title: "Human Biologi Studio",
+    subtitle: "Sundhed & Informatik",
+    description:
+      "Byg en runde, der passer til din repetition. Vælg årgang og emner, justér blanding og sæt tempoet selv.",
+    filterTitle: "Filtrer spørgsmål",
+    filterDescription:
+      "Vælg årgang og emner, så runden rammer det du læser op på.",
+    yearLabel: "Årgang / sæt",
+    yearTooltip: "Vælg hvilke eksamensår og sæt der skal indgå i puljen.",
+    categoryLabel: "Emner",
+    categoryTooltip: "Vælg præcis hvilke emner der skal trækkes spørgsmål fra.",
+    categoryPlaceholder: "Søg emne",
+    summaryYearLabel: "År",
+    summaryCategoryLabel: "Emner",
+    switchLabel: "Skift til Sygdomslære",
+  },
+  sygdomslaere: {
+    title: "Sygdomslære Studio",
+    subtitle: "Sundhed & Informatik",
+    description:
+      "Byg en runde med sygdomme og sektioner. Vælg prioritet og fokusområder, og tilpas længde og tempo.",
+    filterTitle: "Filtrer sygdomme",
+    filterDescription:
+      "Vælg prioritet og sygdomsgrupper, så runden matcher det du læser op på.",
+    yearLabel: "Prioritet",
+    yearTooltip: "Vælg hvilke prioriteringer der skal indgå i puljen.",
+    categoryLabel: "Sygdomsgrupper",
+    categoryTooltip: "Vælg hvilke sygdomsgrupper der skal trækkes kort fra.",
+    categoryPlaceholder: "Søg sygdomsgruppe",
+    summaryYearLabel: "Prioritet",
+    summaryCategoryLabel: "Sygdomsgrupper",
+    switchLabel: "Skift til Human Biologi",
+  },
+};
+
+const SCORING_POLICY_IDS = {
+  human: "humanbiologi:v1",
+  sygdomslaere: "sygdomslaere:v1",
+};
+
+const SCORING_POLICY_LABELS = {
+  human: "HumanbiologiPolicy",
+  sygdomslaere: "SygdomslaerePolicy",
+};
+
+const SCORING_POLICIES = {
+  human: {
+    id: SCORING_POLICY_IDS.human,
+    label: SCORING_POLICY_LABELS.human,
+    allowTypes: ["mcq", "short"],
+    usesRubric: false,
+    requiresAi: true,
+    usesGrade: true,
+    weight: { mcq: 0.5, short: 0.5 },
+  },
+  sygdomslaere: {
+    id: SCORING_POLICY_IDS.sygdomslaere,
+    label: SCORING_POLICY_LABELS.sygdomslaere,
+    allowTypes: ["short"],
+    usesRubric: true,
+    requiresAi: false,
+    usesGrade: false,
+    weight: { mcq: 0, short: 1 },
+  },
+};
+
+function resolveStudioPolicy(course) {
+  if (STUDIO_POLICY && typeof STUDIO_POLICY.getStudioPolicy === "function") {
+    return STUDIO_POLICY.getStudioPolicy(course);
+  }
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  const isDisease = courseId === "sygdomslaere";
+  const policyMeta = SCORING_POLICIES[courseId] || SCORING_POLICIES[DEFAULT_COURSE];
+  return {
+    studioType: isDisease ? "sygdomslaere" : DEFAULT_COURSE,
+    taskType: isDisease ? "case_structured" : "mixed",
+    domains: isDisease ? getDiseaseDomainOrder() : [],
+    hints: isDisease
+      ? { mode: "structured", defaultLevel: 3 }
+      : { mode: "ai" },
+    progression: isDisease ? { source: "session_history" } : null,
+    scoringPolicy: {
+      id: policyMeta.id,
+      label: policyMeta.label,
+      allowTypes: policyMeta.allowTypes,
+      usesRubric: policyMeta.usesRubric,
+      requiresAi: policyMeta.requiresAi,
+      usesGrade: policyMeta.usesGrade,
+      mcq: { correct: 3, wrong: -1, skip: 0 },
+      weights: policyMeta.weight,
+      shortFailRatio: SHORT_FAIL_RATIO,
+    },
+    capabilities: {
+      allowMcq: !isDisease,
+      allowShort: true,
+      allowSketch: !isDisease,
+      allowShuffleOptions: !isDisease,
+      allowAutoFigureCaptions: !isDisease,
+      hintMode: isDisease ? "structured" : "ai",
+    },
+  };
+}
+
+function getScoringPolicyForCourse(course) {
+  return resolveStudioPolicy(course).scoringPolicy;
+}
+
+function getStudioCapabilitiesForCourse(course) {
+  return resolveStudioPolicy(course).capabilities;
+}
+
 const SUBJECT_LABELS = {
   cell: "Cellebiologi",
   metabolism: "Metabolisme (energiomsætning og temperaturregulering)",
@@ -182,6 +378,56 @@ const SUBJECT_LABELS = {
   repro: "Reproduktion",
   cardio: "Hjerte-kredsløb",
   kidneys: "Nyrer",
+};
+
+const DISEASE_CATEGORY_ORDER = [
+  "Bevægelsesapparatet sygdomme",
+  "Neurologiske sygdomme",
+  "Psykiske sygdomme",
+  "Endokrine sygdomme",
+  "Hjerte-kar-sygdomme",
+  "Blodsygdomme",
+  "Allergiske sygdomme",
+  "Lungesygdomme",
+  "Mave-tarm-sygdomme",
+  "Nyre og urinvejssygdomme",
+  "Gynækologiske sygdomme og obstetrik",
+  "Infektionssygdomme",
+  "Kræftsygdomme",
+];
+
+const DISEASE_SECTION_ORDER = [
+  "Nøglepunkter",
+  "Definition",
+  "Forekomst",
+  "Patogenese",
+  "Ætiologi",
+  "Symptomer og fund",
+  "Diagnostik",
+  "Følgetilstande",
+  "Behandling",
+  "Forebyggelse",
+  "Prognose",
+  "Samfundsbyrde",
+];
+
+const PRIORITY_ORDER = ["high", "medium", "low"];
+const PRIORITY_LABELS = {
+  high: "Høj prioritet",
+  medium: "Mellem prioritet",
+  low: "Lav prioritet",
+  excluded: "Ikke pensum",
+};
+const PRIORITY_FILTER_LABELS = {
+  high: "Høj",
+  medium: "Mellem",
+  low: "Lav",
+  excluded: "Ikke pensum",
+};
+const PRIORITY_WEIGHTS = {
+  high: 1.35,
+  medium: 1.0,
+  low: 0.8,
 };
 
 const CATEGORY_ORDER = [
@@ -197,6 +443,10 @@ const CATEGORY_ORDER = [
   SUBJECT_LABELS.cardio,
   SUBJECT_LABELS.kidneys,
 ];
+
+const CATEGORY_SORT_ORDER = new Map(
+  [...CATEGORY_ORDER, ...DISEASE_CATEGORY_ORDER].map((label, index) => [label, index])
+);
 
 const CATEGORY_ALIASES = {
   "Anatomi": SUBJECT_LABELS.movement,
@@ -278,6 +528,25 @@ const CATEGORY_ALIASES = {
   "Nyrer og urinveje": SUBJECT_LABELS.kidneys,
   "Syre-base": SUBJECT_LABELS.kidneys,
   "Syre-base-regulering": SUBJECT_LABELS.kidneys,
+
+  "bevægelsesapparatet sygdomme": "Bevægelsesapparatet sygdomme",
+  "bevaegelsesapparatet sygdomme": "Bevægelsesapparatet sygdomme",
+  "neurologiske sygdomme": "Neurologiske sygdomme",
+  "psykiske sygdomme": "Psykiske sygdomme",
+  "endokrine sygdomme": "Endokrine sygdomme",
+  "hjertekarsygdomme": "Hjerte-kar-sygdomme",
+  "hjerte-kar-sygdomme": "Hjerte-kar-sygdomme",
+  "blodsygdomme": "Blodsygdomme",
+  "allergiske sygdomme": "Allergiske sygdomme",
+  "lungesygdomme": "Lungesygdomme",
+  "mave-tarm-tarmsygdomme": "Mave-tarm-sygdomme",
+  "mave-tarm-sygdomme": "Mave-tarm-sygdomme",
+  "nyere og urinvejssygdomme": "Nyre og urinvejssygdomme",
+  "nyre og urinvejssygdomme": "Nyre og urinvejssygdomme",
+  "gynækologiske sygdomme og obstetrik": "Gynækologiske sygdomme og obstetrik",
+  "infektionssygdom": "Infektionssygdomme",
+  "infektionssygdomme": "Infektionssygdomme",
+  "kræftsygdomme": "Kræftsygdomme",
 };
 
 const DEPRECATED_CATEGORY = /udgået/i;
@@ -386,6 +655,7 @@ const PRESET_CONFIGS = {
     shuffleQuestions: true,
     balancedMix: true,
     adaptiveMix: false,
+    priorityMix: false,
     focusMistakes: false,
     avoidRepeats: false,
     preferUnseen: true,
@@ -404,6 +674,7 @@ const PRESET_CONFIGS = {
     shuffleQuestions: true,
     balancedMix: true,
     adaptiveMix: true,
+    priorityMix: false,
     focusMistakes: false,
     avoidRepeats: true,
     preferUnseen: true,
@@ -422,6 +693,7 @@ const PRESET_CONFIGS = {
     shuffleQuestions: true,
     balancedMix: false,
     adaptiveMix: true,
+    priorityMix: false,
     focusMistakes: true,
     avoidRepeats: false,
     preferUnseen: true,
@@ -440,6 +712,7 @@ const PRESET_CONFIGS = {
     shuffleQuestions: true,
     balancedMix: false,
     adaptiveMix: false,
+    priorityMix: false,
     focusMistakes: false,
     avoidRepeats: false,
     preferUnseen: true,
@@ -450,6 +723,136 @@ const PRESET_CONFIGS = {
     showMeta: false,
   },
 };
+const DISEASE_PRESET_CONFIGS = {
+  exam: {
+    questionCount: 12,
+    includeMcq: false,
+    includeShort: true,
+    ratioMcq: 1,
+    ratioShort: 1,
+    shuffleQuestions: true,
+    balancedMix: true,
+    adaptiveMix: false,
+    priorityMix: false,
+    focusMistakes: false,
+    avoidRepeats: false,
+    preferUnseen: true,
+    autoAdvance: false,
+    autoAdvanceDelay: 1200,
+    infiniteMode: false,
+    focusMode: false,
+    showMeta: true,
+  },
+  review: {
+    questionCount: 16,
+    includeMcq: false,
+    includeShort: true,
+    ratioMcq: 1,
+    ratioShort: 1,
+    shuffleQuestions: true,
+    balancedMix: true,
+    adaptiveMix: true,
+    priorityMix: false,
+    focusMistakes: false,
+    avoidRepeats: true,
+    preferUnseen: true,
+    autoAdvance: false,
+    autoAdvanceDelay: 1200,
+    infiniteMode: false,
+    focusMode: false,
+    showMeta: true,
+  },
+  weak: {
+    questionCount: 10,
+    includeMcq: false,
+    includeShort: true,
+    ratioMcq: 1,
+    ratioShort: 1,
+    shuffleQuestions: true,
+    balancedMix: false,
+    adaptiveMix: true,
+    priorityMix: false,
+    focusMistakes: true,
+    avoidRepeats: false,
+    preferUnseen: true,
+    autoAdvance: false,
+    autoAdvanceDelay: 1200,
+    infiniteMode: false,
+    focusMode: false,
+    showMeta: true,
+  },
+  tempo: {
+    questionCount: 8,
+    includeMcq: false,
+    includeShort: true,
+    ratioMcq: 1,
+    ratioShort: 1,
+    shuffleQuestions: true,
+    balancedMix: false,
+    adaptiveMix: false,
+    priorityMix: false,
+    focusMistakes: false,
+    avoidRepeats: false,
+    preferUnseen: true,
+    autoAdvance: true,
+    autoAdvanceDelay: 900,
+    infiniteMode: false,
+    focusMode: true,
+    showMeta: false,
+  },
+};
+const PRESET_CONFIGS_BY_COURSE = {
+  human: PRESET_CONFIGS,
+  sygdomslaere: DISEASE_PRESET_CONFIGS,
+};
+const PRESET_UI_BY_COURSE = {
+  human: {
+    exam: {
+      title: "Eksamen",
+      text: "Balanceret blanding med realistisk tempo.",
+      meta: "24 MCQ + 6 kortsvar · Standard",
+    },
+    review: {
+      title: "Repetition",
+      text: "Bred dækning med færre gentagelser.",
+      meta: "30 MCQ + 10 kortsvar · Bredt",
+    },
+    weak: {
+      title: "Svage områder",
+      text: "Fokus på fejl og smart prioritet.",
+      meta: "20 MCQ + 5 kortsvar · Fokus",
+    },
+    tempo: {
+      title: "Tempo",
+      text: "Hurtig rytme med auto-videre.",
+      meta: "18 MCQ + 4 kortsvar · Tid",
+    },
+  },
+  sygdomslaere: {
+    exam: {
+      title: "Eksamen",
+      text: "Sikker dækning af kernesygdomme.",
+      meta: "12 sygdomme · Standard",
+    },
+    review: {
+      title: "Repetition",
+      text: "Flere sygdomme med bredere spredning.",
+      meta: "16 sygdomme · Bredt",
+    },
+    weak: {
+      title: "Svage områder",
+      text: "Fokusér på de sygdomme du har haft svært ved.",
+      meta: "10 sygdomme · Fokus",
+    },
+    tempo: {
+      title: "Tempo",
+      text: "Kortere runder med høj rytme.",
+      meta: "8 sygdomme · Tid",
+    },
+  },
+};
+
+const initialBestScores = loadBestScores();
 
 const state = {
   allQuestions: [],
@@ -479,20 +882,19 @@ const state = {
   sessionNeedsRender: false,
   activeSessionLoaded: false,
   activeSessionDirty: false,
+  studioResolved: false,
   cancelRoundConfirmArmed: false,
   cancelRoundConfirmTimer: null,
   startTime: null,
   locked: false,
   results: [],
-  bestScore: (() => {
-    const saved = Number(localStorage.getItem(STORAGE_KEYS.bestScore) || 0);
-    if (!Number.isFinite(saved)) return 0;
-    if (saved > 100 || saved < 0) return 0;
-    return saved;
-  })(),
+  bestScores: initialBestScores,
+  bestScore: Number(initialBestScores[DEFAULT_COURSE] || 0),
   settings: loadSettings(),
   config: null,
   supabase: null,
+  clerk: null,
+  clerkReady: false,
   session: null,
   user: null,
   profile: null,
@@ -645,16 +1047,26 @@ const state = {
   questionHints: new Map(),
   performance: loadPerformance(),
   filters: {
+    courses: new Set(),
     years: new Set(),
     categories: new Set(),
+    sections: new Set(),
+    priorities: new Set(),
   },
   available: {
+    courses: [],
     years: [],
     categories: [],
+    sections: [],
+    priorities: [],
   },
   counts: {
+    courses: new Map(),
     years: new Map(),
     categories: new Map(),
+    sections: new Map(),
+    priorities: new Map(),
+    types: new Map(),
   },
   countsByType: {
     mcq: 0,
@@ -667,7 +1079,13 @@ const state = {
   autoAdvanceTimer: null,
   questionStartedAt: null,
   sessionSettings: { ...DEFAULT_SETTINGS },
+  sessionProfile: null,
+  courseProfiles: new Map(),
   infiniteState: null,
+  activeCourse: DEFAULT_COURSE,
+  courseSettings: new Map(),
+  courseFilters: new Map(),
+  courseStats: new Map(),
   search: {
     category: "",
   },
@@ -737,11 +1155,15 @@ const elements = {
   authSignupBtn: document.getElementById("auth-signup-btn"),
   authDemoBtn: document.getElementById("auth-demo-btn"),
   authStatus: document.getElementById("auth-status"),
+  authForm: document.getElementById("auth-form"),
+  authAlt: document.getElementById("auth-alt"),
   authResend: document.getElementById("auth-resend"),
   authResendBtn: document.getElementById("auth-resend-btn"),
   authDivider: document.getElementById("auth-divider"),
   authOauthGroup: document.getElementById("auth-oauth"),
   authNote: document.getElementById("auth-note"),
+  clerkPanel: document.getElementById("clerk-panel"),
+  clerkApp: document.getElementById("clerk-app"),
   accountBtn: document.getElementById("account-btn"),
   accountBackBtn: document.getElementById("account-back-btn"),
   billingBackBtn: document.getElementById("billing-back-btn"),
@@ -826,6 +1248,9 @@ const elements = {
   diagAi: document.getElementById("diag-ai"),
   diagAiMeta: document.getElementById("diag-ai-meta"),
   diagRefreshBtn: document.getElementById("diag-refresh-btn"),
+  debugPanel: document.getElementById("debug-panel"),
+  debugStudioType: document.getElementById("debug-studio-type"),
+  debugPolicy: document.getElementById("debug-policy"),
   rulesButton: document.getElementById("rules-btn"),
   closeModal: document.getElementById("close-modal"),
   modalClose: document.getElementById("modal-close-btn"),
@@ -861,11 +1286,26 @@ const elements = {
   questionCountHint: document.getElementById("question-count-hint"),
   questionCountChip: document.getElementById("question-count-chip"),
   poolCountChip: document.getElementById("pool-count-chip"),
+  menuTitle: document.getElementById("menu-title"),
+  menuSubtitle: document.getElementById("menu-subtitle"),
+  menuDescription: document.getElementById("menu-description"),
+  menuLogo: document.getElementById("menu-logo"),
+  quizLogo: document.getElementById("quiz-logo"),
+  resultLogo: document.getElementById("result-logo"),
+  filterPanelTitle: document.getElementById("filter-panel-title"),
+  filterPanelDescription: document.getElementById("filter-panel-description"),
+  yearFilterLabel: document.getElementById("year-filter-label"),
+  yearFilterInfo: document.getElementById("year-filter-info"),
+  categoryFilterLabel: document.getElementById("category-filter-label"),
+  categoryFilterInfo: document.getElementById("category-filter-info"),
   poolCount: document.getElementById("pool-count"),
   roundCount: document.getElementById("round-count"),
   mixSummary: document.getElementById("mix-summary"),
+  courseSummary: document.getElementById("course-summary"),
   yearSummary: document.getElementById("year-summary"),
+  yearSummaryLabel: document.getElementById("year-summary-label"),
   categorySummary: document.getElementById("category-summary"),
+  categorySummaryLabel: document.getElementById("category-summary-label"),
   repeatSummary: document.getElementById("repeat-summary"),
   selectionHint: document.getElementById("selection-hint"),
   pausedSessionPanel: document.getElementById("paused-session-panel"),
@@ -877,6 +1317,8 @@ const elements = {
   cancelRoundBtn: document.getElementById("cancel-round-btn"),
   pausedRoundNote: document.getElementById("paused-round-note"),
   aiStatusPill: document.getElementById("ai-status-pill"),
+  studioHumanBtn: document.getElementById("studio-human-btn"),
+  studioSygdomBtn: document.getElementById("studio-sygdom-btn"),
   presetGrid: document.getElementById("preset-grid"),
   historyLatest: document.getElementById("history-latest"),
   historyLatestMeta: document.getElementById("history-latest-meta"),
@@ -893,9 +1335,15 @@ const elements = {
   heroProgressFill: document.getElementById("hero-progress-fill"),
   heroStreak: document.getElementById("hero-streak"),
   heroStreakMeta: document.getElementById("hero-streak-meta"),
+  courseChips: document.getElementById("course-chips"),
   yearChips: document.getElementById("year-chips"),
   categoryChips: document.getElementById("category-chips"),
   categorySearch: document.getElementById("category-search"),
+  priorityChips: document.getElementById("priority-chips"),
+  sectionChips: document.getElementById("section-chips"),
+  diseaseFilterDrawer: document.getElementById("disease-filter-drawer"),
+  selectAllCourses: document.getElementById("select-all-courses"),
+  clearCourses: document.getElementById("clear-courses"),
   selectAllYears: document.getElementById("select-all-years"),
   clearYears: document.getElementById("clear-years"),
   selectAllCategories: document.getElementById("select-all-categories"),
@@ -904,6 +1352,7 @@ const elements = {
   toggleShuffleOptions: document.getElementById("toggle-shuffle-options"),
   toggleBalanced: document.getElementById("toggle-balanced"),
   toggleAdaptiveMix: document.getElementById("toggle-adaptive-mix"),
+  togglePriorityMix: document.getElementById("toggle-priority-mix"),
   toggleAutoAdvance: document.getElementById("toggle-auto-advance"),
   toggleInfiniteMode: document.getElementById("toggle-infinite-mode"),
   toggleAvoidRepeats: document.getElementById("toggle-avoid-repeats"),
@@ -911,8 +1360,11 @@ const elements = {
   toggleFocusMistakes: document.getElementById("toggle-focus-mistakes"),
   toggleIncludeMcq: document.getElementById("toggle-include-mcq"),
   toggleIncludeShort: document.getElementById("toggle-include-short"),
+  typeToggleGrid: document.getElementById("type-toggle-grid"),
   toggleTts: document.getElementById("toggle-tts"),
   toggleAutoFigure: document.getElementById("toggle-auto-figure"),
+  autoFigureRow: document.getElementById("auto-figure-row"),
+  mcqSettingsDrawer: document.getElementById("mcq-settings-drawer"),
   ratioControlRow: document.getElementById("ratio-control-row"),
   ratioMcqInput: document.getElementById("ratio-mcq"),
   ratioShortInput: document.getElementById("ratio-short"),
@@ -920,6 +1372,7 @@ const elements = {
   autoAdvanceDelay: document.getElementById("auto-advance-delay"),
   autoAdvanceLabel: document.getElementById("auto-advance-label"),
   backToMenu: document.getElementById("back-to-menu"),
+  switchStudioBtn: document.getElementById("switch-studio-btn"),
   endRoundBtn: document.getElementById("end-round-btn"),
   sessionPill: document.getElementById("session-pill"),
   progressText: document.getElementById("progress-text"),
@@ -927,8 +1380,11 @@ const elements = {
   progressFill: document.getElementById("progress-fill"),
   scoreValue: document.getElementById("score-value"),
   mcqScoreValue: document.getElementById("mcq-score-value"),
+  mcqScoreRow: document.getElementById("mcq-score-row"),
   shortScoreValue: document.getElementById("short-score-value"),
+  shortScoreLabel: document.getElementById("short-score-label"),
   bestScoreValue: document.getElementById("best-score-value"),
+  questionCourse: document.getElementById("question-course"),
   questionCategory: document.getElementById("question-category"),
   questionYear: document.getElementById("question-year"),
   questionNumber: document.getElementById("question-number"),
@@ -962,6 +1418,7 @@ const elements = {
   optionsContainer: document.getElementById("options-container"),
   shortAnswerContainer: document.getElementById("short-answer-container"),
   shortPartList: document.getElementById("short-part-list"),
+  shortGroupLabel: document.getElementById("short-group-label"),
   shortGroupStatus: document.getElementById("short-group-status"),
   shortAnswerInputWrap: document.getElementById("short-answer-input-wrap"),
   shortAnswerInput: document.getElementById("short-answer-text"),
@@ -1000,8 +1457,17 @@ const elements = {
   toggleMeta: document.getElementById("toggle-meta"),
   questionMeta: document.getElementById("question-meta"),
   finalScore: document.getElementById("final-score"),
+  finalGradePill: document.getElementById("final-grade-pill"),
   finalGrade: document.getElementById("final-grade"),
   finalPercent: document.getElementById("final-percent"),
+  resultMcqCard: document.getElementById("result-mcq-card"),
+  resultShortCard: document.getElementById("result-short-card"),
+  resultShortLabel: document.getElementById("result-short-label"),
+  resultRubricCard: document.getElementById("result-rubric-card"),
+  resultRubricLabel: document.getElementById("result-rubric-label"),
+  resultRubricValue: document.getElementById("result-rubric-value"),
+  resultRubricPercent: document.getElementById("result-rubric-percent"),
+  resultGradeCard: document.getElementById("result-grade-card"),
   resultMcqPoints: document.getElementById("result-mcq-points"),
   resultMcqPercent: document.getElementById("result-mcq-percent"),
   resultShortPoints: document.getElementById("result-short-points"),
@@ -1009,8 +1475,12 @@ const elements = {
   resultGrade: document.getElementById("result-grade"),
   finalMessage: document.getElementById("final-message"),
   statCorrect: document.getElementById("stat-correct"),
+  statCorrectLabel: document.querySelector('[data-testid="stat-correct-label"]'),
   statWrong: document.getElementById("stat-wrong"),
+  statWrongLabel: document.querySelector('[data-testid="stat-wrong-label"]'),
   statSkipped: document.getElementById("stat-skipped"),
+  statSkippedLabel: document.querySelector('[data-testid="stat-skipped-label"]'),
+  statShortLabel: document.getElementById("stat-short-label"),
   statShortScore: document.getElementById("stat-short-score"),
   statPace: document.getElementById("stat-pace"),
   bestBadge: document.getElementById("best-badge"),
@@ -1026,12 +1496,82 @@ const elements = {
   reviewList: document.getElementById("review-list"),
 };
 
+function normalizeBestScoreValue(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 0;
+  if (numeric < 0 || numeric > 100) return 0;
+  return numeric;
+}
+
+function loadBestScores() {
+  const stored = localStorage.getItem(STORAGE_KEYS.bestScore);
+  const fallback = {};
+  COURSE_ORDER.forEach((course) => {
+    fallback[course] = 0;
+  });
+  if (!stored) return fallback;
+  let parsed = null;
+  try {
+    parsed = JSON.parse(stored);
+  } catch (error) {
+    parsed = null;
+  }
+  if (!parsed || typeof parsed !== "object") {
+    const numeric = normalizeBestScoreValue(stored);
+    return {
+      ...fallback,
+      [DEFAULT_COURSE]: numeric,
+    };
+  }
+  const output = { ...fallback };
+  Object.entries(parsed).forEach(([key, value]) => {
+    if (!COURSE_LABELS[key]) return;
+    output[key] = normalizeBestScoreValue(value);
+  });
+  return output;
+}
+
+function saveBestScores({ sync = true } = {}) {
+  localStorage.setItem(STORAGE_KEYS.bestScore, JSON.stringify(state.bestScores));
+  if (sync) scheduleUserStateSync();
+}
+
+function getBestScoreForCourse(course) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  return normalizeBestScoreValue(state.bestScores?.[courseId]);
+}
+
+function setBestScoreForCourse(course, value, { sync = true } = {}) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  const nextValue = normalizeBestScoreValue(value);
+  state.bestScores = { ...state.bestScores, [courseId]: nextValue };
+  saveBestScores({ sync });
+  if (getActiveCourse() === courseId) {
+    state.bestScore = nextValue;
+    if (elements.bestScoreValue) {
+      elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
+    }
+  }
+}
+
+function syncActiveBestScore(course) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  state.bestScore = getBestScoreForCourse(courseId);
+  if (elements.bestScoreValue) {
+    elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
+  }
+}
+
 function loadSettings() {
   const saved = localStorage.getItem(STORAGE_KEYS.settings);
   if (!saved) return { ...DEFAULT_SETTINGS };
   try {
     const parsed = JSON.parse(saved);
-    return { ...DEFAULT_SETTINGS, ...parsed, assistantCollapsed: false };
+    const next = { ...DEFAULT_SETTINGS, ...parsed, priorityMix: false, assistantCollapsed: false };
+    if (!isKnownCourse(next.lastStudio)) {
+      next.lastStudio = CURRENT_STUDIO;
+    }
+    return next;
   } catch (error) {
     console.warn("Kunne ikke indlæse settings", error);
     return { ...DEFAULT_SETTINGS };
@@ -1041,6 +1581,349 @@ function loadSettings() {
 function saveSettings() {
   localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(state.settings));
   scheduleUserStateSync();
+}
+
+function getStudioParamValue() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get(STUDIO_PARAM);
+}
+
+function clearStudioParam() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete(STUDIO_PARAM);
+  window.history.replaceState({}, "", url.toString());
+}
+
+function normalizeRedirectPath(raw) {
+  if (!raw) return "";
+  try {
+    const url = new URL(raw, window.location.href);
+    if (url.origin !== window.location.origin) return "";
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch (error) {
+    return "";
+  }
+}
+
+function buildAuthUrl(mode = "sign-in", redirectPath) {
+  const target = mode === "sign-up" ? AUTH_ROUTES.signUp : AUTH_ROUTES.signIn;
+  const url = new URL(target, window.location.href);
+  const redirectValue = normalizeRedirectPath(redirectPath);
+  if (redirectValue) {
+    url.searchParams.set("redirect", redirectValue);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+function redirectToAuth({ mode = "sign-in", redirectPath } = {}) {
+  const fallbackPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const target = buildAuthUrl(mode, redirectPath || fallbackPath);
+  window.location.replace(target);
+}
+
+function setLastStudio(studio, { sync = true } = {}) {
+  if (!studio) return;
+  if (state.settings.lastStudio !== studio) {
+    state.settings.lastStudio = studio;
+    localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(state.settings));
+  }
+  if (sync) scheduleUserStateSync();
+}
+
+function isKnownCourse(course) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  return Boolean(COURSE_LABELS[courseId]);
+}
+
+function isDiseaseCourse(course) {
+  return normalizeCourse(course || DEFAULT_COURSE) === "sygdomslaere";
+}
+
+function getActiveCourse() {
+  const current = state.activeCourse || DEFAULT_COURSE;
+  return normalizeCourse(current || DEFAULT_COURSE);
+}
+
+function getCourseUi(course) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  return COURSE_UI[courseId] || COURSE_UI[DEFAULT_COURSE];
+}
+
+function getScoringPolicy(course) {
+  return getScoringPolicyForCourse(course);
+}
+
+function getActiveScoringPolicy() {
+  return getScoringPolicy(getActiveCourse());
+}
+
+function getScoringPolicyForQuestion(question) {
+  const courseId = normalizeCourse(question?.course || DEFAULT_COURSE);
+  return getScoringPolicy(courseId);
+}
+
+function filterQuestionsForPolicy(questions, policy) {
+  if (!Array.isArray(questions) || !policy) return questions || [];
+  const allowed = new Set(policy.allowTypes || []);
+  if (!allowed.size) return questions;
+  return questions.filter((question) => question && allowed.has(question.type));
+}
+
+function stashCourseState(course) {
+  if (!course) return;
+  state.courseSettings.set(course, { ...state.settings });
+  state.courseFilters.set(course, {
+    years: [...state.filters.years],
+    categories: [...state.filters.categories],
+  });
+}
+
+function applyCourseSettings(course) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  const saved = state.courseSettings.get(courseId);
+  const defaults = COURSE_DEFAULT_SETTINGS[courseId] || {};
+  const capabilities = getStudioCapabilitiesForCourse(courseId);
+  Object.assign(state.settings, saved || defaults);
+  if (!capabilities.allowMcq) {
+    state.settings.includeMcq = false;
+  }
+  if (!capabilities.allowShort) {
+    state.settings.includeShort = false;
+  } else if (!capabilities.allowMcq) {
+    state.settings.includeShort = true;
+  }
+  if (!capabilities.allowShuffleOptions) {
+    state.settings.shuffleOptions = false;
+  }
+  if (!capabilities.allowAutoFigureCaptions) {
+    state.settings.autoFigureCaptions = false;
+  }
+  saveSettings();
+  syncSettingsToUI();
+}
+
+function applyCourseFilters(course) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  const saved = state.courseFilters.get(courseId);
+  if (saved) {
+    const nextYears = saved.years.filter((value) => state.available.years.includes(value));
+    const nextCategories = saved.categories.filter((value) =>
+      state.available.categories.includes(value)
+    );
+    state.filters.years = new Set(nextYears.length ? nextYears : state.available.years);
+    state.filters.categories = new Set(
+      nextCategories.length ? nextCategories : state.available.categories
+    );
+  } else {
+    state.filters.years = new Set(state.available.years);
+    state.filters.categories = new Set(state.available.categories);
+    if (isDiseaseCourse(courseId)) {
+      const filtered = state.available.years.filter((value) => value !== "excluded");
+      if (filtered.length) {
+        state.filters.years = new Set(filtered);
+      }
+    }
+  }
+  updateChips();
+  updateSummary();
+}
+
+function updateCourseTabs(course) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  if (elements.studioHumanBtn) {
+    const isActive = courseId === DEFAULT_COURSE;
+    elements.studioHumanBtn.classList.toggle("active", isActive);
+    elements.studioHumanBtn.toggleAttribute("aria-current", isActive);
+  }
+  if (elements.studioSygdomBtn) {
+    const isActive = courseId === "sygdomslaere";
+    elements.studioSygdomBtn.classList.toggle("active", isActive);
+    elements.studioSygdomBtn.toggleAttribute("aria-current", isActive);
+  }
+}
+
+function updateCourseStatsPill(course) {
+  if (!elements.questionCountChip) return;
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  const stats = state.courseStats.get(courseId) || { mcq: 0, short: 0, parts: 0 };
+  if (isDiseaseCourse(courseId)) {
+    elements.questionCountChip.textContent = `${stats.short} sygdomme · ${stats.parts} sektioner`;
+    return;
+  }
+  elements.questionCountChip.textContent = `${stats.mcq} MCQ · ${stats.short} kortsvar`;
+}
+
+function updateCourseVisibility(course) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  const capabilities = getStudioCapabilitiesForCourse(courseId);
+  const scoringPolicy = getScoringPolicyForCourse(courseId);
+  const isDisease = isDiseaseCourse(courseId);
+  const allowMix = capabilities.allowMcq && capabilities.allowShort;
+  document.body.dataset.course = courseId;
+  if (elements.typeToggleGrid) {
+    elements.typeToggleGrid.classList.toggle("hidden", !allowMix);
+  }
+  if (elements.toggleIncludeMcq) {
+    elements.toggleIncludeMcq.disabled = !capabilities.allowMcq;
+  }
+  if (elements.toggleIncludeShort) {
+    elements.toggleIncludeShort.disabled = !capabilities.allowShort;
+  }
+  if (elements.toggleShuffleOptions) {
+    elements.toggleShuffleOptions.disabled = !capabilities.allowShuffleOptions;
+  }
+  if (elements.ratioControlRow) {
+    elements.ratioControlRow.classList.toggle("hidden", !allowMix);
+  }
+  if (elements.mcqSettingsDrawer) {
+    elements.mcqSettingsDrawer.classList.toggle("hidden", !capabilities.allowMcq);
+  }
+  if (elements.autoFigureRow) {
+    elements.autoFigureRow.classList.toggle("hidden", !capabilities.allowAutoFigureCaptions);
+  }
+  if (elements.toggleAutoFigure) {
+    elements.toggleAutoFigure.disabled = !capabilities.allowAutoFigureCaptions;
+  }
+  if (elements.mcqScoreRow) {
+    elements.mcqScoreRow.classList.toggle("hidden", !capabilities.allowMcq);
+  }
+  if (elements.resultMcqCard) {
+    elements.resultMcqCard.classList.toggle("hidden", !capabilities.allowMcq);
+  }
+  if (elements.resultRubricCard) {
+    elements.resultRubricCard.classList.toggle("hidden", !scoringPolicy.usesRubric);
+  }
+  if (elements.finalGradePill) {
+    elements.finalGradePill.classList.toggle("hidden", !scoringPolicy.usesGrade);
+  }
+  if (elements.resultGradeCard) {
+    elements.resultGradeCard.classList.toggle("hidden", !scoringPolicy.usesGrade);
+  }
+  if (elements.shortGroupLabel) {
+    elements.shortGroupLabel.textContent = isDisease ? "Sektioner" : "Delspørgsmål";
+  }
+  if (elements.shortScoreLabel) {
+    elements.shortScoreLabel.textContent = scoringPolicy.usesRubric ? "Rubric" : "Kortsvar";
+  }
+  if (elements.resultShortLabel) {
+    elements.resultShortLabel.textContent = scoringPolicy.usesRubric ? "Rubric point" : "Kortsvar point";
+  }
+  if (elements.statShortLabel) {
+    elements.statShortLabel.textContent = scoringPolicy.usesRubric ? "Rubric point" : "Kortsvar point";
+  }
+  if (elements.statCorrectLabel) {
+    elements.statCorrectLabel.textContent = scoringPolicy.usesRubric ? "Opfyldte kriterier" : "Korrekte";
+  }
+  if (elements.statWrongLabel) {
+    elements.statWrongLabel.textContent = scoringPolicy.usesRubric ? "Manglende kriterier" : "Forkerte";
+  }
+  if (elements.statSkippedLabel) {
+    elements.statSkippedLabel.textContent = isDisease ? "Ubesvarede sygdomme" : "Sprunget over";
+  }
+}
+
+function updateCourseUI(course) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  const ui = getCourseUi(courseId);
+  if (elements.menuTitle) elements.menuTitle.textContent = ui.title;
+  if (elements.menuSubtitle) elements.menuSubtitle.textContent = ui.subtitle;
+  if (elements.menuDescription) elements.menuDescription.textContent = ui.description;
+  if (elements.menuLogo) {
+    elements.menuLogo.alt = `${ui.title} logo`;
+  }
+  if (elements.quizLogo) {
+    elements.quizLogo.alt = `${ui.title} logo`;
+  }
+  if (elements.resultLogo) {
+    elements.resultLogo.alt = `${ui.title} logo`;
+  }
+  if (elements.filterPanelTitle) elements.filterPanelTitle.textContent = ui.filterTitle;
+  if (elements.filterPanelDescription) {
+    elements.filterPanelDescription.textContent = ui.filterDescription;
+  }
+  if (elements.yearFilterLabel) elements.yearFilterLabel.textContent = ui.yearLabel;
+  if (elements.yearFilterInfo) {
+    elements.yearFilterInfo.dataset.tooltip = ui.yearTooltip;
+    elements.yearFilterInfo.setAttribute(
+      "aria-label",
+      `Info om ${ui.yearLabel.toLowerCase()}`
+    );
+  }
+  if (elements.categoryFilterLabel) elements.categoryFilterLabel.textContent = ui.categoryLabel;
+  if (elements.categoryFilterInfo) {
+    elements.categoryFilterInfo.dataset.tooltip = ui.categoryTooltip;
+    elements.categoryFilterInfo.setAttribute(
+      "aria-label",
+      `Info om ${ui.categoryLabel.toLowerCase()}`
+    );
+  }
+  if (elements.categorySearch) {
+    elements.categorySearch.placeholder = ui.categoryPlaceholder;
+  }
+  if (elements.yearSummaryLabel) elements.yearSummaryLabel.textContent = ui.summaryYearLabel;
+  if (elements.categorySummaryLabel) {
+    elements.categorySummaryLabel.textContent = ui.summaryCategoryLabel;
+  }
+  if (elements.switchStudioBtn) {
+    elements.switchStudioBtn.textContent = ui.switchLabel;
+  }
+  updatePresetCards(courseId);
+  updateCourseTabs(courseId);
+  updateCourseVisibility(courseId);
+  updateCourseStatsPill(courseId);
+  updateDebugPanel();
+}
+
+function setActiveCourse(course) {
+  const courseId = isKnownCourse(course) ? normalizeCourse(course) : DEFAULT_COURSE;
+  const previous = getActiveCourse();
+  if (previous === courseId && state.filters.courses.has(courseId)) {
+    updateCourseUI(courseId);
+    syncActiveBestScore(courseId);
+    renderHistory();
+    return;
+  }
+  if (!state.allQuestions.length) {
+    state.activeCourse = courseId;
+    state.filters.courses = new Set([courseId]);
+    updateCourseUI(courseId);
+    syncActiveBestScore(courseId);
+    renderHistory();
+    setLastStudio(courseId, { sync: false });
+    return;
+  }
+  if (state.allQuestions.length) {
+    stashCourseState(previous);
+  }
+  state.activeCourse = courseId;
+  state.filters.courses = new Set([courseId]);
+  refreshAvailableFilters();
+  applyCourseSettings(courseId);
+  applyCourseFilters(courseId);
+  updateCourseUI(courseId);
+  setLastStudio(courseId);
+  clearPresetSelection();
+  syncActiveBestScore(courseId);
+  renderHistory();
+}
+
+function maybeResolveStudioPreference() {
+  if (state.studioResolved) return;
+  if (!state.session?.user) return;
+  const param = getStudioParamValue();
+  const normalizedParam = isKnownCourse(param) ? normalizeCourse(param) : null;
+  const lastStudio = isKnownCourse(state.settings.lastStudio)
+    ? normalizeCourse(state.settings.lastStudio)
+    : DEFAULT_COURSE;
+  const target = normalizedParam || lastStudio || DEFAULT_COURSE;
+  clearStudioParam();
+  state.studioResolved = true;
+  setActiveCourse(target);
+}
+
+async function navigateToStudio(studio) {
+  if (!studio) return;
+  setActiveCourse(studio);
 }
 
 function loadPerformance() {
@@ -1179,6 +2062,7 @@ function buildActiveSessionPayload() {
       feedback: value?.feedback || "",
       missing: Array.isArray(value?.missing) ? value.missing : [],
       matched: Array.isArray(value?.matched) ? value.matched : [],
+      rubric: value?.rubric || null,
     });
   });
 
@@ -1195,6 +2079,8 @@ function buildActiveSessionPayload() {
 
   return {
     version: 1,
+    studio: getActiveCourse(),
+    policyId: getActiveScoringPolicy().id,
     paused: Boolean(state.sessionPaused),
     elapsedMs: getSessionElapsedMs(),
     currentIndex: state.currentIndex,
@@ -1219,39 +2105,37 @@ function buildUserStatePayload() {
   const activeSession = buildActiveSessionPayload();
   const includeActiveSession = state.sessionActive || state.activeSessionDirty;
   return {
-    user_id: state.session.user.id,
     settings: state.settings,
     ...(includeActiveSession ? { active_session: activeSession } : {}),
-    history: getHistoryEntries(),
+    history: getAllHistoryEntries(),
     seen: [...state.seenKeys],
     mistakes: [...state.lastMistakeKeys],
     performance: state.performance,
     figure_captions: state.figureCaptions,
-    best_score: state.bestScore,
+    best_score: getBestScoreForCourse(DEFAULT_COURSE),
+    best_scores: state.bestScores,
     theme: localStorage.getItem(STORAGE_KEYS.theme) || "light",
     show_meta: state.settings.showMeta,
   };
 }
 
 async function syncActiveSessionSnapshot(payload) {
-  if (!state.backendAvailable || !state.supabase || !state.session?.user) return;
+  if (!state.backendAvailable || !state.session?.user) return;
   const snapshot = payload === undefined ? buildActiveSessionPayload() : payload;
-  const { error } = await state.supabase.from("user_state").upsert(
-    {
-      user_id: state.session.user.id,
-      active_session: snapshot,
-    },
-    { onConflict: "user_id" }
-  );
-  if (error) {
-    console.warn("Kunne ikke synkronisere aktiv runde", error);
+  const res = await apiFetch("/api/user-state", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ active_session: snapshot }),
+  });
+  if (!res.ok) {
+    console.warn("Kunne ikke synkronisere aktiv runde");
   }
 }
 
 function scheduleUserStateSync() {
   touchUserStateUpdatedAt();
   if (state.userStateApplying) return;
-  if (!state.backendAvailable || !state.supabase || !state.session?.user) return;
+  if (!state.backendAvailable || !state.session?.user) return;
   if (state.userStateSyncTimer) return;
   state.userStateSyncTimer = setTimeout(() => {
     state.userStateSyncTimer = null;
@@ -1274,7 +2158,7 @@ function flushUserStateSync() {
 
 async function syncUserStateNow() {
   if (state.userStateApplying) return;
-  if (!state.backendAvailable || !state.supabase || !state.session?.user) return;
+  if (!state.backendAvailable || !state.session?.user) return;
   if (state.userStateSyncInFlight) {
     state.userStateSyncQueued = true;
     return;
@@ -1282,11 +2166,13 @@ async function syncUserStateNow() {
   const payload = buildUserStatePayload();
   if (!payload) return;
   state.userStateSyncInFlight = true;
-  const { error } = await state.supabase.from("user_state").upsert(payload, {
-    onConflict: "user_id",
+  const res = await apiFetch("/api/user-state", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
-  if (error) {
-    console.warn("Kunne ikke synkronisere brugerdata", error);
+  if (!res.ok) {
+    console.warn("Kunne ikke synkronisere brugerdata");
   } else {
     state.activeSessionDirty = false;
   }
@@ -1353,6 +2239,13 @@ function restoreShortAnswerAI(entries, partKeySet) {
       feedback: entry.feedback || "",
       missing: Array.isArray(entry.missing) ? entry.missing : [],
       matched: Array.isArray(entry.matched) ? entry.matched : [],
+      rubric: entry.rubric && typeof entry.rubric === "object"
+        ? {
+            matched: Number(entry.rubric.matched) || 0,
+            total: Number(entry.rubric.total) || 0,
+            percent: Number(entry.rubric.percent) || 0,
+          }
+        : null,
     });
   });
   return map;
@@ -1471,6 +2364,13 @@ function normalizeActiveSessionPayload(payload) {
 async function restoreActiveSession(payload) {
   if (!payload || typeof payload !== "object") return;
   if (state.sessionActive) return;
+
+  const payloadStudio = isKnownCourse(payload.studio)
+    ? normalizeCourse(payload.studio)
+    : null;
+  if (payloadStudio && payloadStudio !== getActiveCourse()) {
+    setActiveCourse(payloadStudio);
+  }
 
   await ensureQuestionsLoaded();
 
@@ -1593,9 +2493,19 @@ function applyUserState(remote) {
     state.figureCaptions = remote.figure_captions;
     localStorage.setItem(STORAGE_KEYS.figureCaptions, JSON.stringify(state.figureCaptions));
   }
-  if (typeof remote.best_score === "number") {
-    state.bestScore = Math.max(state.bestScore, remote.best_score);
-    localStorage.setItem(STORAGE_KEYS.bestScore, String(state.bestScore.toFixed(1)));
+  if (remote.best_scores && typeof remote.best_scores === "object") {
+    Object.entries(remote.best_scores).forEach(([key, value]) => {
+      if (!COURSE_LABELS[key]) return;
+      const current = normalizeBestScoreValue(state.bestScores?.[key]);
+      const incoming = normalizeBestScoreValue(value);
+      state.bestScores[key] = Math.max(current, incoming);
+    });
+    saveBestScores({ sync: false });
+  } else if (typeof remote.best_score === "number") {
+    const current = normalizeBestScoreValue(state.bestScores?.[DEFAULT_COURSE]);
+    const incoming = normalizeBestScoreValue(remote.best_score);
+    state.bestScores[DEFAULT_COURSE] = Math.max(current, incoming);
+    saveBestScores({ sync: false });
   }
   if (remote.theme) {
     applyTheme(remote.theme);
@@ -1606,9 +2516,8 @@ function applyUserState(remote) {
   renderHistory();
   updateChips();
   updateTopBar();
-  if (elements.bestScoreValue) {
-    elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
-  }
+  maybeResolveStudioPreference();
+  syncActiveBestScore(getActiveCourse());
   if (!state.sessionActive && activeSession) {
     void restoreActiveSession(activeSession);
   } else {
@@ -1617,34 +2526,36 @@ function applyUserState(remote) {
 }
 
 async function loadUserStateFromSupabase() {
-  if (!state.supabase || !state.session?.user) return null;
+  if (!state.session?.user) return null;
   if (state.userStateLoadPromise) return state.userStateLoadPromise;
 
   state.userStateLoadPromise = (async () => {
-    const result = await guardedStep(
-      state.supabase
-        .from("user_state")
-        .select("settings, active_session, history, seen, mistakes, performance, figure_captions, best_score, theme, show_meta, updated_at")
-        .eq("user_id", state.session.user.id)
-        .maybeSingle(),
-      USER_STATE_TIMEOUT_MS,
-      "Brugerdata indlæsning tog for lang tid"
-    );
-    if (!result) {
-      maybeApplyDemoHistoryEntry();
+    let res;
+    try {
+      res = await guardedStep(
+        apiFetch("/api/user-state", { method: "GET" }),
+        USER_STATE_TIMEOUT_MS,
+        "Brugerdata indlæsning tog for lang tid"
+      );
+    } catch (error) {
+      res = null;
+    }
+    if (!res) {
+      maybeResolveStudioPreference();
       state.activeSessionLoaded = true;
       return null;
     }
-    const { data, error } = result;
-    if (error) {
-      console.warn("Kunne ikke hente brugerdata", error);
-      maybeApplyDemoHistoryEntry();
+    if (!res.ok) {
+      console.warn("Kunne ikke hente brugerdata");
+      maybeResolveStudioPreference();
       state.activeSessionLoaded = true;
       return null;
     }
+    const { userState } = await res.json().catch(() => ({ userState: null }));
+    const data = userState || null;
     if (!data) {
       scheduleUserStateSync();
-      maybeApplyDemoHistoryEntry();
+      maybeResolveStudioPreference();
       state.activeSessionLoaded = true;
       return null;
     }
@@ -1663,7 +2574,7 @@ async function loadUserStateFromSupabase() {
       }
       scheduleUserStateSync();
     }
-    maybeApplyDemoHistoryEntry();
+    maybeResolveStudioPreference();
     state.activeSessionLoaded = true;
     return data;
   })();
@@ -1715,6 +2626,30 @@ function updatePresetButtons() {
   });
 }
 
+function getPresetConfig(presetId) {
+  const courseId = getActiveCourse();
+  const presets = PRESET_CONFIGS_BY_COURSE[courseId] || PRESET_CONFIGS;
+  return presets[presetId];
+}
+
+function updatePresetCards(course) {
+  if (!elements.presetGrid) return;
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  const copy = PRESET_UI_BY_COURSE[courseId] || PRESET_UI_BY_COURSE[DEFAULT_COURSE];
+  const cards = elements.presetGrid.querySelectorAll(".preset-card");
+  cards.forEach((card) => {
+    const presetId = card.dataset.preset;
+    if (!presetId || !copy[presetId]) return;
+    const { title, text, meta } = copy[presetId];
+    const titleEl = card.querySelector(".preset-title");
+    const textEl = card.querySelector(".preset-text");
+    const metaEl = card.querySelector(".preset-meta");
+    if (titleEl) titleEl.textContent = title;
+    if (textEl) textEl.textContent = text;
+    if (metaEl) metaEl.textContent = meta;
+  });
+}
+
 function clearPresetSelection() {
   if (!state.lastPreset) return;
   state.lastPreset = null;
@@ -1729,16 +2664,50 @@ function applySettingsPatch(patch) {
 }
 
 function applyPreset(presetId) {
-  const preset = PRESET_CONFIGS[presetId];
+  const preset = getPresetConfig(presetId);
   if (!preset) return;
   state.isApplyingPreset = true;
-  applySettingsPatch(preset);
+  const settingsPatch = preset.settings || preset;
+  applySettingsPatch(settingsPatch);
+  if (preset.filters?.courses) {
+    setSelection("courses", preset.filters.courses);
+  }
   state.lastPreset = presetId;
   state.isApplyingPreset = false;
   updatePresetButtons();
 }
 
+const AUTH_REQUIRED_SCREENS = new Set([
+  "landing",
+  "menu",
+  "quiz",
+  "result",
+  "account",
+  "billing",
+  "checkout",
+  "consent",
+]);
+const AUTH_REDIRECT_ROUTE = "sign-in.html";
+
+function getAuthReturnPath() {
+  const url = new URL(window.location.href);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+function redirectToAuth() {
+  const returnTo = getAuthReturnPath();
+  const target = new URL(AUTH_REDIRECT_ROUTE, window.location.origin);
+  if (returnTo) {
+    target.searchParams.set("redirect", returnTo);
+  }
+  window.location.replace(target.toString());
+}
+
 function showScreen(target) {
+  if (AUTH_REQUIRED_SCREENS.has(target) && !state.session?.user) {
+    redirectToAuth();
+    return;
+  }
   if (
     target !== "loading" &&
     target !== "auth" &&
@@ -1949,7 +2918,7 @@ function setLoadingState(isLoading) {
     scheduleLoadingFallback();
     return;
   }
-  if (!state.authReady && state.supabase) {
+  if (!state.authReady && state.clerkReady) {
     state.authReady = true;
   }
   state.loadingStartedAt = null;
@@ -1971,6 +2940,10 @@ function setAuthStatus(message, isWarn = false) {
 
 function setAuthResendVisible(isVisible) {
   if (!elements.authResend) return;
+  if (state.clerkReady) {
+    setElementVisible(elements.authResend, false);
+    return;
+  }
   setElementVisible(elements.authResend, Boolean(isVisible));
 }
 
@@ -2053,16 +3026,50 @@ function getAuthProviderFlag(settings, provider) {
 }
 
 function applyAuthProviderVisibility() {
-  setElementVisible(elements.authGoogleBtn, true);
-  setElementVisible(elements.authAppleBtn, true);
-  setElementVisible(elements.authOauthGroup, true);
-  setElementVisible(elements.authDivider, true);
+  const useClerk = Boolean(state.clerkReady);
+  setElementVisible(elements.clerkPanel, true);
+  setElementVisible(elements.authForm, !useClerk);
+  setElementVisible(elements.authAlt, !useClerk);
+  setElementVisible(elements.authDivider, !useClerk);
+  setElementVisible(elements.authOauthGroup, !useClerk);
+  setElementVisible(elements.authGoogleBtn, !useClerk);
+  setElementVisible(elements.authAppleBtn, !useClerk);
 }
 
 function formatProviderStatus(label, flag) {
   if (flag === true) return `${label}: aktiv`;
   if (flag === false) return `${label}: ikke aktiv`;
   return `${label}: ukendt`;
+}
+
+function isDevEnvironment() {
+  if (window.location.protocol === "file:") return true;
+  const hostname = window.location.hostname || "";
+  if (!hostname) return true;
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname.endsWith(".local");
+}
+
+function formatPolicySummary(policy) {
+  if (!policy) return "—";
+  const summary = {
+    scoring: policy.scoringPolicy,
+    capabilities: policy.capabilities,
+  };
+  return JSON.stringify(summary, null, 2);
+}
+
+function updateDebugPanel() {
+  if (!elements.debugPanel) return;
+  const isDev = isDevEnvironment();
+  setElementVisible(elements.debugPanel, isDev);
+  if (!isDev) return;
+  const policy = resolveStudioPolicy(getActiveCourse());
+  if (elements.debugStudioType) {
+    elements.debugStudioType.textContent = policy?.studioType || "—";
+  }
+  if (elements.debugPolicy) {
+    elements.debugPolicy.textContent = formatPolicySummary(policy);
+  }
 }
 
 function updateDiagnosticsUI() {
@@ -2076,17 +3083,14 @@ function updateDiagnosticsUI() {
       : state.configError || "Serveren svarer ikke";
   }
 
-  const authReady = Boolean(state.supabase);
+  const authReady = Boolean(state.clerkReady);
   if (elements.diagAuth) {
     elements.diagAuth.textContent = authReady ? "Klar" : "Mangler";
   }
   if (elements.diagAuthMeta) {
-    const providerSummary = [
-      formatProviderStatus("Google", state.authProviders.google),
-      formatProviderStatus("Apple", state.authProviders.apple),
-    ].join(" · ");
-    const suffix = state.authSettingsStatus ? ` · ${state.authSettingsStatus}` : "";
-    elements.diagAuthMeta.textContent = providerSummary + suffix;
+    elements.diagAuthMeta.textContent = authReady
+      ? "Clerk er klar"
+      : state.configError || "Login er ikke klar";
   }
 
   const stripeReady = Boolean(state.config?.stripeConfigured);
@@ -2111,9 +3115,11 @@ function updateDiagnosticsUI() {
     const fallback = state.session?.user ? "Tjek din adgang" : "Kræver login";
     elements.diagAiMeta.textContent = state.aiStatus?.message || fallback;
   }
+  updateDebugPanel();
 }
 
 function setAuthControlsEnabled(enabled) {
+  const allowSupabaseControls = enabled && !state.clerkReady;
   const controls = [
     elements.authEmailInput,
     elements.authPasswordInput,
@@ -2125,7 +3131,7 @@ function setAuthControlsEnabled(enabled) {
   ];
   controls.forEach((control) => {
     if (control) {
-      control.disabled = !enabled;
+      control.disabled = !allowSupabaseControls;
     }
   });
 }
@@ -2728,8 +3734,11 @@ function updateAuthUI() {
     return;
   }
 
-  const canAuth = Boolean(state.supabase);
+  const canAuth = Boolean(state.clerkReady);
   const hasUser = Boolean(state.session?.user);
+  if (document.body) {
+    document.body.dataset.authenticated = hasUser ? "true" : "false";
+  }
   if (hasUser) {
     state.demoMode = false;
     state.pendingEmailConfirmation = false;
@@ -2750,13 +3759,11 @@ function updateAuthUI() {
       state.consentReturnTo = state.lastAppScreen || "menu";
     }
     showScreen("consent");
-  } else if (!hasUser && state.demoMode) {
-    showScreen(state.lastAppScreen || "menu");
   } else if (!hasUser) {
     showScreen("auth");
     if (!canAuth) {
       const message =
-        state.configError || "Serveren svarer ikke lige nu.";
+        state.configError || "Login er ikke klar endnu.";
       setAuthStatus(message, true);
     } else {
       setAuthStatus("Log ind eller opret konto for at fortsætte.");
@@ -2787,16 +3794,16 @@ function requireAuthGuard(message = "Log ind for at fortsætte", options = {}) {
     }
     return true;
   }
-  if (options.allowDemo && state.demoMode) return true;
   setAuthStatus(message, true);
-  showScreen("auth");
+  redirectToAuth();
   return false;
 }
 
 function enableDemoMode() {
-  state.demoMode = true;
-  setAuthStatus("Demo mode aktiv.");
-  updateAuthUI();
+  const section = document.getElementById("demo-section");
+  if (section) {
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 function getDemoLastRun() {
@@ -2839,6 +3846,9 @@ function buildDemoResult() {
   const questions = Array.isArray(state.demoQuiz.questions) ? state.demoQuiz.questions : [];
   if (!questions.length) return null;
   const answers = Array.isArray(state.demoQuiz.answers) ? state.demoQuiz.answers : [];
+  const scoringPolicy = getScoringPolicyForCourse(getActiveCourse());
+  const mcqCorrectPoints = Number(scoringPolicy.mcq?.correct ?? 3);
+  const mcqWrongPoints = Number(scoringPolicy.mcq?.wrong ?? -1);
   const mcqQuestions = questions.filter((item) => item?.type === "mcq");
   const shortQuestion = questions.find((item) => item?.type === "short");
   if (!mcqQuestions.length || !shortQuestion) return null;
@@ -2847,9 +3857,9 @@ function buildDemoResult() {
   const mcqCorrect = mcqAnswers.filter((answer) => answer.correct).length;
   const mcqWrong = Math.max(0, mcqQuestions.length - mcqCorrect);
   const mcqCount = mcqQuestions.length;
-  const mcqPoints = mcqCorrect * 3 + mcqWrong * -1;
-  const mcqMax = mcqCount * 3;
-  const mcqMin = mcqCount * -1;
+  const mcqPoints = mcqCorrect * mcqCorrectPoints + mcqWrong * mcqWrongPoints;
+  const mcqMax = mcqCount * mcqCorrectPoints;
+  const mcqMin = mcqCount * mcqWrongPoints;
   let mcqPercent = 0;
   if (mcqCount > 0 && mcqMax !== mcqMin) {
     mcqPercent = ((mcqPoints - mcqMin) / (mcqMax - mcqMin)) * 100;
@@ -2877,7 +3887,8 @@ function buildDemoResult() {
 
   let overallPercent = 0;
   if (mcqCount > 0 && shortMax > 0) {
-    overallPercent = 0.5 * mcqPercent + 0.5 * shortPercent;
+    const weights = normalizeScoreWeights(scoringPolicy.weights);
+    overallPercent = weights.mcq * mcqPercent + weights.short * shortPercent;
   } else if (mcqCount > 0) {
     overallPercent = mcqPercent;
   } else if (shortMax > 0) {
@@ -2904,48 +3915,11 @@ function buildDemoResult() {
   };
 }
 
-function buildDemoHistoryEntry(result) {
-  if (!result || typeof result !== "object") return null;
-  if (!Number.isFinite(result.overallPercent)) return null;
-  return {
-    date: result.completedAt || new Date().toISOString(),
-    overallPercent: result.overallPercent,
-    grade: result.grade || getGradeForPercent(result.overallPercent),
-    mcqPercent: Number(result.mcqPercent) || 0,
-    shortPercent: Number(result.shortPercent) || 0,
-    mcqPoints: Number(result.mcqPoints) || 0,
-    shortPoints: Number(result.shortPoints) || 0,
-    mcqMax: Number(result.mcqMax) || 0,
-    shortMax: Number(result.shortMax) || 0,
-    mcqCount: Number(result.mcqCount) || 0,
-    shortCount: Number(result.shortCount) || 0,
-    totalQuestions: Number(result.totalQuestions) || 0,
-  };
-}
-
 function applyBestScore(value) {
   if (!Number.isFinite(value)) return;
-  if (value <= state.bestScore) return;
-  state.bestScore = value;
-  localStorage.setItem(STORAGE_KEYS.bestScore, String(state.bestScore.toFixed(1)));
-  if (elements.bestScoreValue) {
-    elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
-  }
-}
-
-function maybeApplyDemoHistoryEntry() {
-  const demoResult = loadDemoResult();
-  if (!demoResult || demoResult.imported) return;
-  const entries = getHistoryEntries();
-  if (entries.length) return;
-  const entry = buildDemoHistoryEntry(demoResult);
-  if (!entry) return;
-  saveHistoryEntries(entries.concat(entry));
-  applyBestScore(entry.overallPercent);
-  renderHistory();
-  updateTopBar();
-  demoResult.imported = true;
-  saveDemoResult(demoResult);
+  const courseId = getActiveCourse();
+  if (value <= getBestScoreForCourse(courseId)) return;
+  setBestScoreForCourse(courseId, value);
 }
 
 function canRunDemoQuiz() {
@@ -3522,11 +4496,33 @@ function isSameOrigin(url) {
   }
 }
 
+async function getSessionToken() {
+  if (state.clerk?.session) {
+    try {
+      return await state.clerk.session.getToken();
+    } catch (error) {
+      return null;
+    }
+  }
+  return state.session?.access_token || null;
+}
+
+function buildTraceId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `trace-${Math.random().toString(16).slice(2)}-${Date.now().toString(16)}`;
+}
+
 async function apiFetch(url, options = {}) {
-  const { timeoutMs, ai, ...rest } = options;
+  const { timeoutMs, ai, traceId, ...rest } = options;
   const headers = { ...(rest.headers || {}) };
-  if (state.session?.access_token) {
-    headers.Authorization = `Bearer ${state.session.access_token}`;
+  const authToken = await getSessionToken();
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
+  if (ai === true && isSameOrigin(url)) {
+    headers["x-trace-id"] = traceId || buildTraceId();
   }
   if (
     state.useOwnKey &&
@@ -3565,6 +4561,38 @@ async function apiFetch(url, options = {}) {
   }
 }
 
+function mapClerkUser(clerkUser) {
+  if (!clerkUser) return null;
+  const fullName =
+    clerkUser.fullName ||
+    [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ").trim() ||
+    null;
+  const email = clerkUser.primaryEmailAddress?.emailAddress || null;
+  return {
+    id: clerkUser.id,
+    email,
+    user_metadata: {
+      full_name: fullName,
+      name: fullName,
+    },
+  };
+}
+
+function waitForClerkReady() {
+  if (window.clerk && window.clerk.loaded) {
+    return Promise.resolve(window.clerk);
+  }
+  return new Promise((resolve) => {
+    const handler = (event) => {
+      if (event?.detail?.clerk) {
+        window.removeEventListener("clerk:ready", handler);
+        resolve(event.detail.clerk);
+      }
+    };
+    window.addEventListener("clerk:ready", handler);
+  });
+}
+
 async function loadRuntimeConfig() {
   const res = await fetch("/api/config", { cache: "no-store" });
   if (!res.ok) {
@@ -3586,101 +4614,76 @@ async function loadRuntimeConfig() {
 }
 
 async function loadAuthSettings() {
-  if (!state.config?.supabaseUrl || !state.config?.supabaseAnonKey) return null;
-  const url = `${state.config.supabaseUrl}/auth/v1/settings`;
-  try {
-    const res = await fetch(url, {
-      headers: {
-        apikey: state.config.supabaseAnonKey,
-        Authorization: `Bearer ${state.config.supabaseAnonKey}`,
-      },
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      state.authSettingsStatus = "Login-indstillinger kunne ikke læses";
-      return null;
-    }
-    state.authSettingsStatus = "";
-    return await res.json();
-  } catch (error) {
-    state.authSettingsStatus = "Login-indstillinger kunne ikke læses";
-    return null;
-  }
+  state.authSettingsStatus = "";
+  return null;
 }
 
 async function hydrateAuthProviders() {
-  const settings = await loadAuthSettings();
-  if (!settings) {
-    applyAuthProviderVisibility();
-    updateDiagnosticsUI();
-    return;
-  }
-  const googleFlag = getAuthProviderFlag(settings, AUTH_PROVIDERS.google);
-  const appleFlag = getAuthProviderFlag(settings, AUTH_PROVIDERS.apple);
-  if (googleFlag !== null) {
-    state.authProviders.google = googleFlag;
-  }
-  if (appleFlag !== null) {
-    state.authProviders.apple = appleFlag;
-  }
+  await loadAuthSettings();
   applyAuthProviderVisibility();
   updateDiagnosticsUI();
 }
 
 function initSupabaseClient() {
-  if (!state.config || !window.supabase) {
-    state.backendAvailable = false;
-    state.configError = "Login er ikke tilgængeligt endnu.";
-    state.authReady = true;
-    return;
-  }
-  state.supabase = window.supabase.createClient(
-    state.config.supabaseUrl,
-    state.config.supabaseAnonKey
-  );
+  state.supabase = null;
 }
 
-async function refreshSession() {
-  if (!state.supabase) {
-    state.authReady = true;
-    updateAuthUI();
-    return;
-  }
+async function refreshSession({ updateUi = true } = {}) {
+  let clerk;
   try {
-    const { data, error } = await state.supabase.auth.getSession();
-    if (error) {
-      throw error;
-    }
-    state.session = data?.session || null;
-    state.user = data?.session?.user || null;
-    if (state.session?.user) {
-      state.demoMode = false;
-    }
+    clerk = await waitForClerkReady();
   } catch (error) {
-    console.warn("Kunne ikke tjekke session", error);
+    clerk = null;
+  }
+  state.clerk = clerk || null;
+  state.clerkReady = Boolean(clerk?.loaded);
+  const clerkUser = clerk?.user || null;
+  const clerkSession = clerk?.session || null;
+  let accessToken = null;
+  if (clerkSession) {
+    try {
+      accessToken = await clerkSession.getToken();
+    } catch (error) {
+      accessToken = null;
+    }
+  }
+  if (clerkUser && clerkSession) {
+    state.session = {
+      user: mapClerkUser(clerkUser),
+      access_token: accessToken,
+    };
+    state.user = state.session.user;
+    state.demoMode = false;
+  } else {
     state.session = null;
     state.user = null;
-  } finally {
-    state.authReady = true;
+  }
+  state.authReady = true;
+  if (updateUi) {
     updateAuthUI();
   }
 }
 
 function subscribeToAuthChanges() {
-  if (!state.supabase) return;
-  state.supabase.auth.onAuthStateChange(async (event, session) => {
+  if (!state.clerk) return;
+  state.clerk.addListener(async () => {
     const hadUser = Boolean(state.session?.user);
-    state.session = session;
-    state.user = session?.user || null;
-    if (session?.user) {
+    await refreshSession({ updateUi: false });
+    const hasUser = Boolean(state.session?.user);
+    if (hadUser !== hasUser) {
+      state.studioResolved = false;
+    }
+    if (hasUser) {
       state.demoMode = false;
       state.pendingEmailConfirmation = false;
       setAuthResendVisible(false);
     } else {
       resetProfileRetry();
+      state.profile = null;
+      state.subscription = null;
     }
 
-    const shouldShowLoader = event === "SIGNED_IN" && !state.isLoading && !hadUser;
+    const shouldShowLoader = hasUser && !state.isLoading && !hadUser;
     if (shouldShowLoader) {
       setLoadingState(true);
       setLoadingMessage("Logger ind …", "Henter profil og adgang");
@@ -3688,7 +4691,7 @@ function subscribeToAuthChanges() {
     }
 
     try {
-      if (session?.user) {
+      if (hasUser) {
         setLoadingMessage("Henter profil …", "Synkroniserer konto");
         setLoadingProgress(60);
         await guardedStep(refreshProfile(), PROFILE_TIMEOUT_MS, "Profil indlæsning tog for lang tid");
@@ -3701,17 +4704,10 @@ function subscribeToAuthChanges() {
             "Spørgsmål indlæsning tog for lang tid"
           );
         }
-      } else {
-        state.profile = null;
-        state.subscription = null;
       }
       setLoadingMessage("Tjekker hjælpefunktioner …", "Assistent og oplæsning");
       setLoadingProgress(85);
-      await guardedStep(
-        checkAiAvailability(),
-        HEALTH_TIMEOUT_MS,
-        "AI tjek tog for lang tid"
-      );
+      await guardedStep(checkAiAvailability(), HEALTH_TIMEOUT_MS, "AI tjek tog for lang tid");
     } finally {
       if (shouldShowLoader) {
         setLoadingState(false);
@@ -3772,33 +4768,7 @@ async function refreshProfile() {
 }
 
 async function signInWithProvider(provider) {
-  if (!state.supabase) {
-    setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
-    return;
-  }
-  state.pendingEmailConfirmation = false;
-  setAuthResendVisible(false);
-  setAuthStatus("Åbner login …");
-  const { error } = await state.supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo: window.location.origin,
-    },
-  });
-  if (error) {
-    if (error.message?.toLowerCase().includes("provider")) {
-      state.authProviders[provider] = false;
-      updateDiagnosticsUI();
-    }
-    const providerLabel = provider === AUTH_PROVIDERS.google ? "Google" : "Apple";
-    const needsSetup =
-      error.message?.toLowerCase().includes("provider") ||
-      error.message?.toLowerCase().includes("enabled");
-    const message = needsSetup
-      ? `${providerLabel}-login er ikke sat op endnu. Aktivér det i Supabase Auth.`
-      : "Kunne ikke starte login.";
-    setAuthStatus(message, true);
-  }
+  setAuthStatus("Brug login-boksen ovenfor.");
 }
 
 function getAuthEmailValue() {
@@ -3820,128 +4790,19 @@ function getAuthPasswordValue() {
 }
 
 async function signInWithPassword() {
-  if (!state.supabase) {
-    setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
-    return;
-  }
-  state.pendingEmailConfirmation = false;
-  setAuthResendVisible(false);
-  const email = getAuthEmailValue();
-  const password = getAuthPasswordValue();
-  if (!email || !password) return;
-  setAuthStatus("Logger ind …");
-  const { error } = await state.supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    const lower = error.message?.toLowerCase() || "";
-    const message = lower.includes("invalid") || lower.includes("credentials")
-      ? "Forkert email eller adgangskode."
-      : lower.includes("disabled")
-        ? "Email og adgangskode er ikke aktiveret endnu."
-        : "Kunne ikke logge ind.";
-    setAuthStatus(message, true);
-    return;
-  }
-  setAuthStatus("Logget ind.");
+  setAuthStatus("Brug login-boksen ovenfor.");
 }
 
 async function signUpWithPassword() {
-  if (!state.supabase) {
-    setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
-    return;
-  }
-  state.pendingEmailConfirmation = false;
-  setAuthResendVisible(false);
-  const email = getAuthEmailValue();
-  const password = getAuthPasswordValue();
-  if (!email || !password) return;
-  if (password.length < 6) {
-    setAuthStatus("Adgangskoden skal være mindst 6 tegn.", true);
-    return;
-  }
-  setAuthStatus("Opretter konto …");
-  const { data, error } = await state.supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: window.location.origin,
-    },
-  });
-  if (error) {
-    const lower = error.message?.toLowerCase() || "";
-    const message = lower.includes("password")
-      ? "Adgangskoden skal være mindst 6 tegn."
-      : lower.includes("disabled")
-        ? "Oprettelse af konto er ikke aktiveret endnu."
-        : "Kunne ikke oprette konto.";
-    setAuthStatus(message, true);
-    return;
-  }
-  if (data?.session) {
-    setAuthStatus("Konto oprettet. Du er logget ind.");
-    state.pendingEmailConfirmation = false;
-    setAuthResendVisible(false);
-  } else {
-    setAuthStatus("Konto oprettet. Bekræft via email.");
-    state.pendingEmailConfirmation = true;
-    setAuthResendVisible(true);
-  }
+  setAuthStatus("Brug login-boksen ovenfor.");
 }
 
 async function signInWithEmail() {
-  if (!state.supabase) {
-    setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
-    return;
-  }
-  state.pendingEmailConfirmation = false;
-  setAuthResendVisible(false);
-  const email = getAuthEmailValue();
-  if (!email) {
-    return;
-  }
-  setAuthStatus("Sender login-link …");
-  const { error } = await state.supabase.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: window.location.origin,
-    },
-  });
-  if (error) {
-    const message =
-      error.message?.includes("email") || error.message?.includes("disabled")
-        ? "Email-login er ikke klar endnu."
-        : "Kunne ikke sende login-link.";
-    setAuthStatus(message, true);
-    return;
-  }
-  setAuthStatus("Tjek din email for login-link.");
+  setAuthStatus("Brug login-boksen ovenfor.");
 }
 
 async function resendConfirmationEmail() {
-  if (!state.supabase) {
-    setAuthStatus(state.configError || "Login er ikke klar endnu.", true);
-    return;
-  }
-  const email = getAuthEmailValue();
-  if (!email) return;
-  setAuthStatus("Sender bekræftelsesmail …");
-  try {
-    const { error } = await state.supabase.auth.resend({
-      type: "signup",
-      email,
-      options: { emailRedirectTo: window.location.origin },
-    });
-    if (error) {
-      const lower = error.message?.toLowerCase() || "";
-      const message = lower.includes("rate")
-        ? "Du har allerede bedt om en mail. Prøv igen om lidt."
-        : "Kunne ikke sende bekræftelsesmail.";
-      setAuthStatus(message, true);
-      return;
-    }
-    setAuthStatus("Bekræftelsesmail sendt. Tjek også spam.");
-  } catch (error) {
-    setAuthStatus("Kunne ikke sende bekræftelsesmail.", true);
-  }
+  setAuthStatus("Brug login-boksen ovenfor.");
 }
 
 async function handleProfileSave() {
@@ -4918,8 +5779,9 @@ async function handleDeleteAccount() {
 }
 
 async function handleLogout() {
-  if (!state.supabase) return;
-  await state.supabase.auth.signOut();
+  if (state.clerk) {
+    await state.clerk.signOut();
+  }
   state.session = null;
   state.user = null;
   state.profile = null;
@@ -4970,7 +5832,9 @@ function getQuestionKey(question) {
   const sessionKey = question.session ? formatSessionLabel(question.session) : "standard";
   const typeKey = question.type || "mcq";
   const labelKey = question.label ? `-${question.label}` : "";
-  return `${question.year}-${sessionKey}-${typeKey}-${question.number}-${question.category}${labelKey}`;
+  const course = normalizeCourse(question.course || DEFAULT_COURSE);
+  const courseKey = course && course !== DEFAULT_COURSE ? `${course}-` : "";
+  return `${courseKey}${question.year}-${sessionKey}-${typeKey}-${question.number}-${question.category}${labelKey}`;
 }
 
 function normalizeShortLabel(label) {
@@ -4990,6 +5854,73 @@ function extractContentTokens(text) {
     (token) => token.length >= 3 && !CONTEXT_STOPWORDS.has(token)
   );
   return new Set(filtered);
+}
+
+function normalizeRubricText(value) {
+  return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function tokenizeRubricText(value) {
+  const normalized = normalizeRubricText(value);
+  const tokens = normalized.match(RUBRIC_TOKEN_REGEX) || [];
+  return tokens.filter((token) => {
+    if (!token) return false;
+    if (RUBRIC_STOPWORDS.has(token)) return false;
+    if (token.length >= 3) return true;
+    return /\d/.test(token);
+  });
+}
+
+function splitRubricCriteria(text) {
+  const normalized = String(text || "")
+    .replace(/\r/g, "\n")
+    .replace(/[.;:]+/g, "\n");
+  return normalized
+    .split("\n")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function scoreRubricAnswer({ rubricText, userAnswer, maxPoints }) {
+  const criteria = splitRubricCriteria(rubricText);
+  const answerTokens = new Set(tokenizeRubricText(userAnswer));
+  let matchedCount = 0;
+  const matched = [];
+  const missing = [];
+
+  criteria.forEach((criterion, index) => {
+    const tokens = tokenizeRubricText(criterion);
+    if (!tokens.length) return;
+    const overlap = tokens.filter((token) => answerTokens.has(token));
+    const ratio = overlap.length / tokens.length;
+    const isMatch =
+      overlap.length >= RUBRIC_MIN_MATCH_TOKENS || ratio >= RUBRIC_MATCH_RATIO;
+    const label = `c${index + 1}`;
+    if (isMatch) {
+      matchedCount += 1;
+      if (matched.length < RUBRIC_MAX_LIST) matched.push(label);
+    } else if (missing.length < RUBRIC_MAX_LIST) {
+      missing.push(label);
+    }
+  });
+
+  const total = criteria.length;
+  const ratio = total ? matchedCount / total : 0;
+  const rawScore = ratio * maxPoints;
+  const roundedScore =
+    Math.round(rawScore / RUBRIC_SCORE_STEP) * RUBRIC_SCORE_STEP;
+  const score = Math.min(maxPoints, Math.max(0, roundedScore));
+
+  return {
+    score,
+    matched,
+    missing,
+    rubric: {
+      matched: matchedCount,
+      total,
+      percent: total ? ratio * 100 : 0,
+    },
+  };
 }
 
 function extractCountCueNoun(prompt) {
@@ -5013,7 +5944,12 @@ function extractCountCueNoun(prompt) {
 function getShortGroupKey(question) {
   if (!question || question.type !== "short") return null;
   const sessionKey = question.session ? formatSessionLabel(question.session) : "standard";
-  return `${question.year}-${sessionKey}-${question.opgave}`;
+  const course = normalizeCourse(question.course || DEFAULT_COURSE);
+  const courseKey = course && course !== DEFAULT_COURSE ? `${course}-` : "";
+  if (question.groupId) {
+    return `${courseKey}${question.groupId}`;
+  }
+  return `${courseKey}${question.year}-${sessionKey}-${question.opgave}`;
 }
 
 function getShortGroupForQuestion(question) {
@@ -5085,12 +6021,17 @@ function buildShortGroups(questions) {
       type: "short",
       key: `short-group-${groupKey}`,
       groupKey,
+      course: primary.course || DEFAULT_COURSE,
+      taskType: primary.taskType,
       year: primary.year,
       session: primary.session,
       yearLabel: primary.yearLabel,
       yearDisplay: primary.yearDisplay,
       category: primary.category,
       rawCategory: primary.rawCategory,
+      disease: primary.disease,
+      diseaseId: primary.diseaseId,
+      priority: primary.priority,
       opgave: primary.opgave,
       number: primary.opgave,
       opgaveTitle: primary.opgaveTitle,
@@ -5107,7 +6048,42 @@ function normalizeCategory(category) {
   const trimmed = category.trim();
   if (!trimmed) return null;
   if (DEPRECATED_CATEGORY.test(trimmed)) return null;
-  return CATEGORY_ALIASES[trimmed] || trimmed;
+  const alias = CATEGORY_ALIASES[trimmed] || CATEGORY_ALIASES[trimmed.toLowerCase()];
+  return alias || trimmed;
+}
+
+function normalizeCourse(course) {
+  if (typeof course !== "string") return DEFAULT_COURSE;
+  const trimmed = course.trim().toLowerCase();
+  if (!trimmed) return DEFAULT_COURSE;
+  return COURSE_ALIASES[trimmed] || trimmed;
+}
+
+function getStudioContract(course) {
+  if (typeof window === "undefined") return null;
+  if (window.StudioEngine?.getContract) {
+    return window.StudioEngine.getContract(course);
+  }
+  return null;
+}
+
+function getDiseaseDomainOrder() {
+  const contract = getStudioContract("sygdomslaere");
+  const order = contract?.domains?.map((domain) => domain.label).filter(Boolean);
+  if (order && order.length) return order;
+  return DISEASE_SECTION_ORDER;
+}
+
+function normalizePriorityValue(priority) {
+  const value = String(priority || "").trim().toLowerCase();
+  if (!value) return "";
+  if (PRIORITY_LABELS[value]) return value;
+  return "";
+}
+
+function formatCourseLabel(course) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  return COURSE_LABELS[courseId] || courseId;
 }
 
 function formatSessionLabel(session) {
@@ -5123,6 +6099,19 @@ function formatSessionTitle(session) {
   return session.charAt(0).toUpperCase() + session.slice(1);
 }
 
+function resolveYearMeta({ year, session, course }) {
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  if (courseId !== DEFAULT_COURSE) {
+    const label = COURSE_YEAR_LABELS[courseId] || COURSE_LABELS[courseId] || "Pensum";
+    return { yearLabel: label, yearDisplay: label, sessionLabel: null };
+  }
+  const sessionLabel = formatSessionLabel(session || "");
+  const sessionTitle = sessionLabel ? formatSessionTitle(sessionLabel) : "";
+  const yearLabel = sessionTitle ? `${year} ${sessionTitle}` : String(year);
+  const yearDisplay = sessionTitle ? `${year} · ${sessionTitle}` : String(year);
+  return { yearLabel, yearDisplay, sessionLabel: sessionLabel || null };
+}
+
 function parseYearLabel(label) {
   const parts = String(label).trim().split(" ");
   const year = Number(parts[0]);
@@ -5131,15 +6120,42 @@ function parseYearLabel(label) {
 }
 
 function buildCounts(questions) {
+  const courses = new Map();
   const years = new Map();
   const categories = new Map();
+  const sections = new Map();
+  const priorities = new Map();
   const types = new Map();
   questions.forEach((question) => {
+    const course = normalizeCourse(question.course || DEFAULT_COURSE);
+    courses.set(course, (courses.get(course) || 0) + 1);
     years.set(question.yearLabel, (years.get(question.yearLabel) || 0) + 1);
     categories.set(question.category, (categories.get(question.category) || 0) + 1);
+    if (question.section) {
+      sections.set(question.section, (sections.get(question.section) || 0) + 1);
+    }
+    if (question.priority) {
+      priorities.set(question.priority, (priorities.get(question.priority) || 0) + 1);
+    }
     types.set(question.type, (types.get(question.type) || 0) + 1);
   });
-  return { years, categories, types };
+  return { courses, years, categories, sections, priorities, types };
+}
+
+function buildCourseStats(questions) {
+  const stats = new Map();
+  questions.forEach((question) => {
+    const course = normalizeCourse(question.course || DEFAULT_COURSE);
+    const entry = stats.get(course) || { mcq: 0, short: 0, parts: 0 };
+    if (question.type === "mcq") {
+      entry.mcq += 1;
+    } else if (question.type === "short") {
+      entry.short += 1;
+      entry.parts += getShortParts(question).length;
+    }
+    stats.set(course, entry);
+  });
+  return stats;
 }
 
 function formatTempoValue() {
@@ -5163,6 +6179,33 @@ function getGradeForPercent(percent) {
   return GRADE_SCALE[GRADE_SCALE.length - 1].grade;
 }
 
+function normalizeScoreWeights(weights) {
+  const mcq = Number(weights?.mcq ?? 0);
+  const short = Number(weights?.short ?? 0);
+  const total = mcq + short;
+  if (!Number.isFinite(total) || total <= 0) {
+    return { mcq: 0.5, short: 0.5 };
+  }
+  return { mcq: mcq / total, short: short / total };
+}
+
+function getRubricCoverageSummary(results) {
+  if (!Array.isArray(results)) return { matched: 0, total: 0, percent: 0 };
+  let matched = 0;
+  let total = 0;
+  results.forEach((entry) => {
+    if (entry?.type !== "short") return;
+    const key = entry.question?.key;
+    if (!key) return;
+    const rubric = state.shortAnswerAI.get(key)?.rubric;
+    if (!rubric || !Number.isFinite(rubric.total)) return;
+    matched += Number(rubric.matched) || 0;
+    total += Number(rubric.total) || 0;
+  });
+  const percent = total ? (matched / total) * 100 : 0;
+  return { matched, total, percent };
+}
+
 function calculateScoreSummary() {
   const meta = state.sessionScoreMeta;
   const mcqMax = meta.mcqMax || 0;
@@ -5170,6 +6213,7 @@ function calculateScoreSummary() {
   const shortMax = meta.shortMax || 0;
   const mcqCount = meta.mcqCount || 0;
   const shortCount = meta.shortCount || 0;
+  const scoringPolicy = getScoringPolicyForCourse(getActiveCourse());
 
   let mcqPercent = 0;
   if (mcqCount > 0 && mcqMax !== mcqMin) {
@@ -5185,21 +6229,37 @@ function calculateScoreSummary() {
   shortPercent = clamp(shortPercent, 0, 100);
 
   let overallPercent = 0;
-  if (mcqCount > 0 && shortCount > 0) {
-    overallPercent = 0.5 * mcqPercent + 0.5 * shortPercent;
-  } else if (mcqCount > 0) {
+  const supportsMcq = Array.isArray(scoringPolicy.allowTypes)
+    ? scoringPolicy.allowTypes.includes("mcq")
+    : mcqCount > 0;
+  const supportsShort = Array.isArray(scoringPolicy.allowTypes)
+    ? scoringPolicy.allowTypes.includes("short")
+    : shortCount > 0;
+  const hasMcq = supportsMcq && mcqCount > 0;
+  const hasShort = supportsShort && shortCount > 0;
+  if (hasMcq && hasShort) {
+    const weights = normalizeScoreWeights(scoringPolicy.weights);
+    overallPercent = weights.mcq * mcqPercent + weights.short * shortPercent;
+  } else if (hasMcq) {
     overallPercent = mcqPercent;
-  } else if (shortCount > 0) {
+  } else if (hasShort) {
     overallPercent = shortPercent;
   }
 
-  const grade = getGradeForPercent(overallPercent);
+  const grade = scoringPolicy.usesGrade ? getGradeForPercent(overallPercent) : "-";
+  const rubric = scoringPolicy.usesRubric
+    ? getRubricCoverageSummary(state.results)
+    : { matched: 0, total: 0, percent: 0 };
 
   return {
     mcqPercent,
     shortPercent,
     overallPercent,
     grade,
+    rubricMatched: rubric.matched,
+    rubricTotal: rubric.total,
+    rubricPercent: rubric.percent,
+    policyId: scoringPolicy.id,
   };
 }
 
@@ -5230,6 +6290,9 @@ function requiresSketch(question) {
       question = activePart;
     }
   }
+  const course = normalizeCourse(question.course || DEFAULT_COURSE);
+  const capabilities = getStudioCapabilitiesForCourse(course);
+  if (!capabilities.allowSketch) return false;
   return (
     SKETCH_CUE.test(question.text || "") ||
     SKETCH_CUE.test(question.prompt || "") ||
@@ -5536,6 +6599,13 @@ function applyShortAnswerGradeResult(question, data, { fallbackFeedback } = {}) 
     feedback: feedback || "",
     missing: data.missing || [],
     matched: data.matched || [],
+    rubric: data.rubric && typeof data.rubric === "object"
+      ? {
+          matched: Number(data.rubric.matched) || 0,
+          total: Number(data.rubric.total) || 0,
+          percent: Number(data.rubric.percent) || 0,
+        }
+      : null,
   });
   updateShortPartStatus(question);
   updateShortGroupStatus(state.activeQuestions[state.currentIndex]);
@@ -5890,8 +6960,23 @@ function setFeedback(message, tone) {
   }
 }
 
+function formatQuestionYearDisplay(question) {
+  if (!question) return "";
+  const yearDisplay = String(question.yearDisplay || "").trim();
+  if (!yearDisplay) return "";
+  const course = normalizeCourse(question.course || DEFAULT_COURSE);
+  if (course !== DEFAULT_COURSE) {
+    return yearDisplay;
+  }
+  return `År ${yearDisplay}`;
+}
+
 function getQuestionNumberDisplay(question) {
   if (question.type === "short") {
+    const course = normalizeCourse(question.course || DEFAULT_COURSE);
+    if (course !== DEFAULT_COURSE) {
+      return question.opgave ? `Sygdom ${question.opgave}` : "Sygdom";
+    }
     if (isShortGroup(question)) {
       return `Opg. ${question.opgave}`;
     }
@@ -6215,6 +7300,11 @@ function updateSketchPanel(part) {
   if (!part) return;
   const nodes = getSketchNodes(part);
   if (!nodes) return;
+  const capabilities = getStudioCapabilitiesForCourse(part.course || DEFAULT_COURSE);
+  if (!capabilities.allowSketch) {
+    nodes.sketchPanel.classList.add("hidden");
+    return;
+  }
   nodes.sketchPanel.classList.remove("hidden");
   if (nodes.sketchPanelTitle) {
     nodes.sketchPanelTitle.textContent = requiresSketch(part)
@@ -6680,6 +7770,8 @@ function saveSketchDataUrl(dataUrl, label, { part = null, autoAnalyze = false } 
   if (!question || question.type !== "short") return;
   const targetPart = part || getActiveShortPart(question);
   if (!targetPart) return;
+  const capabilities = getStudioCapabilitiesForCourse(targetPart.course || DEFAULT_COURSE);
+  if (!capabilities.allowSketch) return;
   if (state.activeShortPartKey !== targetPart.key) {
     setActiveShortPart(targetPart);
   }
@@ -6874,10 +7966,11 @@ function updateShortReviewStatus(question) {
   const draft = getShortDraft(question.key);
   const hasText = Boolean(draft.text?.trim());
   let status = "Klar til vurdering";
+  const policy = getScoringPolicyForQuestion(question);
   if (hasText && !draft.scored) {
     status = "Svar gemt · mangler vurdering";
   } else if (aiState?.feedback) {
-    status = "Auto-vurdering klar";
+    status = policy.usesRubric ? "Rubric vurdering klar" : "Auto-vurdering klar";
   }
   if (draft.scored && typeof draft.points === "number" && question.maxPoints) {
     status = `Senest: ${draft.points.toFixed(1)} / ${Number(question.maxPoints).toFixed(1)}`;
@@ -7357,11 +8450,17 @@ function syncShortPartReview(part) {
     nodes.aiFeedback.textContent = aiState?.feedback || "";
   }
   if (nodes.aiStatus) {
-    const label = state.aiStatus.available
-      ? "Hjælp klar"
-      : state.aiStatus.message || "Hjælp er ikke klar";
-    nodes.aiStatus.textContent = label;
-    nodes.aiStatus.classList.toggle("warn", !state.aiStatus.available);
+    const policy = getScoringPolicyForQuestion(part);
+    if (policy.usesRubric) {
+      nodes.aiStatus.textContent = "Rubric klar";
+      nodes.aiStatus.classList.remove("warn");
+    } else {
+      const label = state.aiStatus.available
+        ? "Hjælp klar"
+        : state.aiStatus.message || "Hjælp er ikke klar";
+      nodes.aiStatus.textContent = label;
+      nodes.aiStatus.classList.toggle("warn", !state.aiStatus.available);
+    }
   }
   if (nodes.modelWrap && nodes.showAnswerBtn) {
     const isHidden = nodes.modelWrap.classList.contains("hidden");
@@ -7446,6 +8545,8 @@ function clearShortPartSelection() {
 }
 
 function buildSketchPanelNodes(part) {
+  const capabilities = getStudioCapabilitiesForCourse(part?.course || DEFAULT_COURSE);
+  if (!capabilities.allowSketch) return null;
   const sketchPanel = document.createElement("div");
   sketchPanel.className = "sketch-panel hidden";
 
@@ -7731,8 +8832,10 @@ function buildShortPartList(question) {
 
     const textarea = document.createElement("textarea");
     textarea.rows = 5;
+    const promptLabel = String(part.text || part.prompt || "").trim();
+    const promptSuffix = promptLabel ? ` (${promptLabel})` : "";
     textarea.placeholder =
-      `Skriv dit svar til delspørgsmål ${labelText}. Brug gerne punktform og nøglebegreber.`;
+      `Skriv dit svar til delspørgsmål ${labelText}${promptSuffix}. Brug gerne punktform og nøglebegreber.`;
     textarea.setAttribute("aria-label", `Svar til delspørgsmål ${labelText}`);
 
     const indicator = document.createElement("div");
@@ -7765,44 +8868,48 @@ function buildShortPartList(question) {
     figureWrap.appendChild(figureMedia);
     figureWrap.appendChild(figureCaption);
     card.appendChild(figureWrap);
-    card.appendChild(sketchNodes.sketchPanel);
+    if (sketchNodes) {
+      card.appendChild(sketchNodes.sketchPanel);
+    }
     card.appendChild(reviewNodes.review);
     card.appendChild(reviewNodes.hintWrap);
 
     elements.shortPartList.appendChild(card);
 
-    sketchNodes.sketchDrawBtn.addEventListener("click", () => {
-      openSketchModal(part);
-    });
-    sketchNodes.sketchUpload.addEventListener("change", (event) => {
-      const file = event.target.files && event.target.files[0];
-      void handleSketchUpload(file, { autoAnalyze: true, part });
-    });
-    const dropzone = sketchNodes.sketchDropzone;
-    const highlight = () => dropzone.classList.add("is-dragover");
-    const unhighlight = () => dropzone.classList.remove("is-dragover");
-    ["dragenter", "dragover"].forEach((eventName) => {
-      dropzone.addEventListener(eventName, (event) => {
+    if (sketchNodes) {
+      sketchNodes.sketchDrawBtn.addEventListener("click", () => {
+        openSketchModal(part);
+      });
+      sketchNodes.sketchUpload.addEventListener("change", (event) => {
+        const file = event.target.files && event.target.files[0];
+        void handleSketchUpload(file, { autoAnalyze: true, part });
+      });
+      const dropzone = sketchNodes.sketchDropzone;
+      const highlight = () => dropzone.classList.add("is-dragover");
+      const unhighlight = () => dropzone.classList.remove("is-dragover");
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dropzone.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          highlight();
+        });
+      });
+      ["dragleave", "dragend"].forEach((eventName) => {
+        dropzone.addEventListener(eventName, () => {
+          unhighlight();
+        });
+      });
+      dropzone.addEventListener("drop", (event) => {
         event.preventDefault();
-        highlight();
-      });
-    });
-    ["dragleave", "dragend"].forEach((eventName) => {
-      dropzone.addEventListener(eventName, () => {
         unhighlight();
+        const file = event.dataTransfer?.files && event.dataTransfer.files[0];
+        void handleSketchUpload(file, { autoAnalyze: true, part });
       });
-    });
-    dropzone.addEventListener("drop", (event) => {
-      event.preventDefault();
-      unhighlight();
-      const file = event.dataTransfer?.files && event.dataTransfer.files[0];
-      void handleSketchUpload(file, { autoAnalyze: true, part });
-    });
-    sketchNodes.sketchRetryBtn.addEventListener("click", async () => {
-      setSketchRetryVisible(false, part);
-      await checkAiAvailability();
-      await analyzeSketch(part);
-    });
+      sketchNodes.sketchRetryBtn.addEventListener("click", async () => {
+        setSketchRetryVisible(false, part);
+        await checkAiAvailability();
+        await analyzeSketch(part);
+      });
+    }
     reviewNodes.scoreRange.addEventListener("input", (event) => {
       if (state.activeShortPartKey !== part.key) {
         setActiveShortPart(part);
@@ -7899,16 +9006,16 @@ function buildShortPartList(question) {
       figureWrap,
       figureMedia,
       figureCaption,
-      sketchPanel: sketchNodes.sketchPanel,
-      sketchPanelTitle: sketchNodes.sketchPanelTitle,
-      sketchPanelBody: sketchNodes.sketchPanelBody,
-      sketchDrawBtn: sketchNodes.sketchDrawBtn,
-      sketchUpload: sketchNodes.sketchUpload,
-      sketchStatus: sketchNodes.sketchStatus,
-      sketchRetryBtn: sketchNodes.sketchRetryBtn,
-      sketchFeedback: sketchNodes.sketchFeedback,
-      sketchPreview: sketchNodes.sketchPreview,
-      sketchDropzone: sketchNodes.sketchDropzone,
+      sketchPanel: sketchNodes?.sketchPanel || null,
+      sketchPanelTitle: sketchNodes?.sketchPanelTitle || null,
+      sketchPanelBody: sketchNodes?.sketchPanelBody || null,
+      sketchDrawBtn: sketchNodes?.sketchDrawBtn || null,
+      sketchUpload: sketchNodes?.sketchUpload || null,
+      sketchStatus: sketchNodes?.sketchStatus || null,
+      sketchRetryBtn: sketchNodes?.sketchRetryBtn || null,
+      sketchFeedback: sketchNodes?.sketchFeedback || null,
+      sketchPreview: sketchNodes?.sketchPreview || null,
+      sketchDropzone: sketchNodes?.sketchDropzone || null,
       collapsed: false,
     });
     setShortPartCollapsed(part, index > 0);
@@ -7958,8 +9065,11 @@ function renderShortQuestion(question) {
   }
   const parts = getShortParts(question);
   if (elements.questionSubtitle) {
+    const isDiseaseCourse = normalizeCourse(question.course || DEFAULT_COURSE) !== DEFAULT_COURSE;
     const subtitle = parts.length > 1
-      ? "Besvar alle delspørgsmålene herunder."
+      ? isDiseaseCourse
+        ? "Besvar sektionerne herunder."
+        : "Besvar alle delspørgsmålene herunder."
       : "Besvar spørgsmålet herunder.";
     elements.questionSubtitle.textContent = subtitle;
     elements.questionSubtitle.classList.remove("hidden");
@@ -8039,7 +9149,12 @@ function renderQuestion() {
   if (!currentQuestion) return;
 
   elements.questionCategory.textContent = currentQuestion.category;
-  elements.questionYear.textContent = `År ${currentQuestion.yearDisplay}`;
+  if (elements.questionCourse) {
+    elements.questionCourse.textContent = formatCourseLabel(currentQuestion.course);
+    elements.questionCourse.classList.toggle("hidden", !elements.questionCourse.textContent);
+  }
+  elements.questionYear.textContent = formatQuestionYearDisplay(currentQuestion);
+  elements.questionYear.classList.toggle("hidden", !elements.questionYear.textContent);
   elements.questionNumber.textContent = getQuestionNumberDisplay(currentQuestion);
   if (elements.questionType) {
     elements.questionType.textContent = currentQuestion.type === "short" ? "Kortsvar" : "MCQ";
@@ -8667,6 +9782,11 @@ function highlightOptions(selectedLabel, correctLabel) {
   });
 }
 
+function formatScoreDelta(delta) {
+  const numeric = Number(delta) || 0;
+  return numeric > 0 ? `+${numeric}` : `${numeric}`;
+}
+
 function handleMcqAnswer(label) {
   if (state.locked) return;
   stopTts();
@@ -8675,7 +9795,10 @@ function handleMcqAnswer(label) {
   const mapping = getOptionMapping(question);
   const correctLabel = mapping?.correctLabel || "";
   const isCorrect = correctLabel === label;
-  const delta = isCorrect ? 3 : -1;
+  const scoringPolicy = getScoringPolicyForCourse(getActiveCourse());
+  const correctDelta = Number(scoringPolicy.mcq?.correct ?? 3);
+  const wrongDelta = Number(scoringPolicy.mcq?.wrong ?? -1);
+  const delta = isCorrect ? correctDelta : wrongDelta;
   state.score += delta;
   state.scoreBreakdown.mcq += delta;
   state.results.push({
@@ -8690,7 +9813,9 @@ function handleMcqAnswer(label) {
 
   state.locked = true;
   setFeedback(
-    isCorrect ? "Korrekt! +3 point" : `Forkert. Rigtigt svar: ${correctLabel} (-1)`,
+    isCorrect
+      ? `Korrekt! ${formatScoreDelta(correctDelta)} point`
+      : `Forkert. Rigtigt svar: ${correctLabel} (${formatScoreDelta(wrongDelta)})`,
     isCorrect ? "success" : "error"
   );
   highlightOptions(label, correctLabel);
@@ -8797,17 +9922,24 @@ function recordPerformance(question, score, timeMs) {
   savePerformance();
 }
 
+function getPriorityWeight(question) {
+  if (!state.sessionSettings.priorityMix) return 1;
+  const priority = question?.priority;
+  return priority ? PRIORITY_WEIGHTS[priority] || 1 : 1;
+}
+
 function getQuestionWeight(question) {
   if (!question?.key) return 1;
   const stats = state.performance[question.key];
-  if (!stats || !stats.seen) return 1.15;
+  if (!stats || !stats.seen) return 1.15 * getPriorityWeight(question);
   const avgScore = stats.totalScore / stats.seen;
   const errorBoost = 1 + (1 - avgScore) * 2;
   const avgTimeMs = stats.totalTimeMs / stats.seen;
   const timeBoost = 1 + Math.min(avgTimeMs / 45000, 0.7);
   const ageDays = stats.lastSeen ? (Date.now() - stats.lastSeen) / 86400000 : 7;
   const recencyBoost = 1 + Math.min(ageDays / 7, 0.6);
-  const weight = errorBoost * timeBoost * recencyBoost;
+  const priorityBoost = getPriorityWeight(question);
+  const weight = errorBoost * timeBoost * recencyBoost * priorityBoost;
   return Number.isFinite(weight) && weight > 0 ? weight : 1;
 }
 
@@ -8857,8 +9989,40 @@ function getMcqCorrectOptionText(question) {
   return correctOption?.text || "";
 }
 
+function getHintPolicy(question) {
+  if (!question) return { mode: "ai", level: null };
+  const courseId = normalizeCourse(question.course || DEFAULT_COURSE);
+  const policy = resolveStudioPolicy(courseId);
+  const hintMode = policy?.hints?.mode || policy?.capabilities?.hintMode || "ai";
+  if (hintMode !== "structured") {
+    return { mode: "ai", level: null };
+  }
+  const profile = getCourseProfile(courseId);
+  const hintLevel = Number.isFinite(profile?.hintLevel)
+    ? profile.hintLevel
+    : Number(policy?.hints?.defaultLevel) || 0;
+  return { mode: "structured", level: hintLevel };
+}
+
+function buildStructuredHintForQuestion(question, level) {
+  if (!question) return "";
+  if (!window.StudioEngine?.buildStructuredHint) return "";
+  const domainLabel = String(question.domain || question.text || question.prompt || "").trim();
+  const modelAnswer = String(question.answer || "").trim();
+  return window.StudioEngine.buildStructuredHint({
+    level,
+    domainLabel,
+    modelAnswer,
+  });
+}
+
 function canGenerateHint(question) {
   if (!question) return false;
+  const hintPolicy = getHintPolicy(question);
+  if (hintPolicy.mode === "structured") {
+    if (hintPolicy.level <= 0) return false;
+    return Boolean(String(question.answer || "").trim());
+  }
   if (question.type === "short" && isShortGroup(question)) {
     const activePart = getActiveShortPart(question);
     if (!activePart) return false;
@@ -8921,8 +10085,11 @@ function updateQuestionHintUI(question = state.activeQuestions[state.currentInde
   const hasHint = Boolean(hintEntry?.text);
   const isVisible = Boolean(hintEntry?.visible);
   const isLoading = Boolean(hintEntry?.loading);
+  const hintPolicy = getHintPolicy(question);
+  const isStructured = hintPolicy.mode === "structured";
+  const hintLevel = hintPolicy.level ?? 0;
   const canHint = canGenerateHint(question);
-  const available = state.aiStatus.available;
+  const available = isStructured ? true : state.aiStatus.available;
 
   if (!isVisible) {
     hintWrap.classList.add("hidden");
@@ -8932,7 +10099,7 @@ function updateQuestionHintUI(question = state.activeQuestions[state.currentInde
     setShortcutActive("hint", false);
     setShortcutBusy("hint", false);
     setShortcutStatus("hint", "");
-    setShortcutDisabled("hint", false);
+    setShortcutDisabled("hint", isStructured && hintLevel <= 0);
     return;
   }
 
@@ -8941,26 +10108,33 @@ function updateQuestionHintUI(question = state.activeQuestions[state.currentInde
   if (!available) {
     hintStatusEl.textContent = state.aiStatus.message || "Hjælp er ikke klar";
   } else if (!canHint) {
-    hintStatusEl.textContent = "Ingen facit til hint.";
+    hintStatusEl.textContent = isStructured
+      ? "Hints deaktiveret."
+      : "Ingen facit til hint.";
   } else if (isLoading) {
     hintStatusEl.textContent = "Henter hint …";
   } else if (hasHint) {
-    hintStatusEl.textContent = "Hint klar";
+    hintStatusEl.textContent = isStructured ? `Hint niveau ${hintLevel}` : "Hint klar";
   } else {
-    hintStatusEl.textContent = "Klar til hint";
+    hintStatusEl.textContent = isStructured ? `Hint niveau ${hintLevel} klar` : "Klar til hint";
   }
 
   setShortcutActive("hint", isVisible);
   setShortcutBusy("hint", isLoading);
-  const hintStatus = isLoading
-    ? "Henter …"
-    : hasHint
-    ? "Hint klar"
-    : !available
-    ? "Offline"
-    : "Åben";
+  let hintStatus = "";
+  if (isLoading) {
+    hintStatus = "Henter …";
+  } else if (!available) {
+    hintStatus = "Offline";
+  } else if (!canHint) {
+    hintStatus = isStructured ? "Ingen" : "";
+  } else if (hasHint) {
+    hintStatus = isStructured ? `N${hintLevel}` : "Hint klar";
+  } else {
+    hintStatus = isStructured ? `N${hintLevel}` : "Åben";
+  }
   setShortcutStatus("hint", hintStatus);
-  setShortcutDisabled("hint", false);
+  setShortcutDisabled("hint", isStructured && hintLevel <= 0);
 
   if (hasHint) {
     hintText.textContent = hintEntry.text;
@@ -9028,7 +10202,33 @@ async function toggleQuestionHint() {
     return;
   }
 
+  const hintPolicy = getHintPolicy(target);
   const canHint = canGenerateHint(target);
+  if (hintPolicy.mode === "structured") {
+    const hintLevel = hintPolicy.level ?? 0;
+    if (hintLevel <= 0 || !canHint) {
+      hintEntry.visible = true;
+      hintEntry.loading = false;
+      hintEntry.text = "";
+      setHintEntry(target, hintEntry);
+      updateQuestionHintUI(target);
+      return;
+    }
+    if (hintEntry.text) {
+      hintEntry.visible = true;
+      setHintEntry(target, hintEntry);
+      updateQuestionHintUI(target);
+      return;
+    }
+    hintEntry.visible = true;
+    hintEntry.loading = false;
+    hintEntry.text =
+      buildStructuredHintForQuestion(target, hintLevel) || "Ingen facit til hint.";
+    setHintEntry(target, hintEntry);
+    updateQuestionHintUI(target);
+    return;
+  }
+
   if (!state.aiStatus.available || !canHint) {
     hintEntry.visible = true;
     hintEntry.loading = false;
@@ -9947,13 +11147,95 @@ function maybeAutoReadQuestion() {
   }, 200);
 }
 
-function getHistoryEntries() {
+function parseHistoryTimestamp(entry) {
+  const raw = entry?.date;
+  const parsed = raw ? Date.parse(raw) : NaN;
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeHistoryEntry(entry) {
+  if (!entry || typeof entry !== "object") return null;
+  const overallPercent = Number(entry.overallPercent);
+  if (!Number.isFinite(overallPercent)) return null;
+  const studio = normalizeCourse(entry.studio || DEFAULT_COURSE);
+  return {
+    ...entry,
+    studio,
+    policyId: entry.policyId || SCORING_POLICY_IDS[studio] || SCORING_POLICY_IDS[DEFAULT_COURSE],
+    overallPercent,
+  };
+}
+
+function getAllHistoryEntries() {
   const entries = Array.isArray(state.history) ? state.history : [];
-  return entries.filter((entry) => entry && typeof entry.overallPercent === "number");
+  return entries.map(normalizeHistoryEntry).filter(Boolean);
+}
+
+function getHistoryEntries({ course } = {}) {
+  const courseId = normalizeCourse(course || getActiveCourse());
+  return getAllHistoryEntries().filter(
+    (entry) => normalizeCourse(entry.studio || DEFAULT_COURSE) === courseId
+  );
+}
+
+function refreshCourseProfile(courseId) {
+  const normalized = normalizeCourse(courseId || getActiveCourse());
+  const policy = resolveStudioPolicy(normalized);
+  const fallbackDomains = Array.isArray(policy?.domains) ? policy.domains : [];
+  const fallbackLevel = Number(policy?.hints?.defaultLevel) || 0;
+
+  let profile = null;
+  if (window.StudioEngine?.deriveProgressionProfile) {
+    profile = window.StudioEngine.deriveProgressionProfile(
+      normalized,
+      getHistoryEntries({ course: normalized })
+    );
+  }
+  if (!profile) {
+    profile = {
+      courseId: normalized,
+      hintLevel: fallbackLevel,
+      domainSetKey: "full",
+      domainLabels: fallbackDomains,
+      tier: "",
+      average: null,
+    };
+  }
+  state.courseProfiles.set(normalized, profile);
+  return profile;
+}
+
+function getCourseProfile(courseId) {
+  const normalized = normalizeCourse(courseId || getActiveCourse());
+  if (state.sessionProfile?.courseId === normalized) {
+    return state.sessionProfile;
+  }
+  if (state.courseProfiles.has(normalized)) {
+    return state.courseProfiles.get(normalized);
+  }
+  return refreshCourseProfile(normalized);
 }
 
 function saveHistoryEntries(entries) {
-  state.history = entries.slice(-HISTORY_LIMIT);
+  const normalized = Array.isArray(entries)
+    ? entries.map(normalizeHistoryEntry).filter(Boolean)
+    : [];
+  const grouped = new Map();
+  normalized.forEach((entry) => {
+    const course = normalizeCourse(entry.studio || DEFAULT_COURSE);
+    const bucket = grouped.get(course) || [];
+    bucket.push(entry);
+    grouped.set(course, bucket);
+  });
+
+  const trimmed = [];
+  grouped.forEach((bucket) => {
+    bucket.sort((a, b) => parseHistoryTimestamp(a) - parseHistoryTimestamp(b));
+    trimmed.push(...bucket.slice(-HISTORY_LIMIT));
+  });
+  trimmed.sort((a, b) => parseHistoryTimestamp(a) - parseHistoryTimestamp(b));
+
+  state.history = trimmed;
   localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(state.history));
   scheduleUserStateSync();
 }
@@ -9978,6 +11260,55 @@ function getImprovementStreak(entries) {
   return streak;
 }
 
+function getHistoryDisplayPercent(entry, scoringPolicy) {
+  if (!entry) return 0;
+  const overall = Number(entry.overallPercent);
+  if (!scoringPolicy?.usesRubric) {
+    return Number.isFinite(overall) ? overall : 0;
+  }
+  const rubricTotal = Number(entry.rubricTotal);
+  const rubricPercent = Number(entry.rubricPercent);
+  if (Number.isFinite(rubricTotal) && rubricTotal > 0 && Number.isFinite(rubricPercent)) {
+    return rubricPercent;
+  }
+  return Number.isFinite(overall) ? overall : 0;
+}
+
+function formatHistoryTitle(entry, scoringPolicy) {
+  if (!entry) return "—";
+  const percent = formatPercent(getHistoryDisplayPercent(entry, scoringPolicy));
+  if (scoringPolicy?.usesGrade) {
+    return `${entry.grade || "-"} · ${percent}`;
+  }
+  if (scoringPolicy?.usesRubric) {
+    return `Rubric · ${percent}`;
+  }
+  return percent;
+}
+
+function formatHistoryMcqMeta(entry, options = {}) {
+  const { suffix = false } = options;
+  const mcqPoints = Number(entry.mcqPoints) || 0;
+  const mcqMax = Number(entry.mcqMax) || 0;
+  if (!mcqMax) return "MCQ —";
+  return suffix ? `${mcqPoints}/${mcqMax} MCQ` : `MCQ ${mcqPoints}/${mcqMax}`;
+}
+
+function formatHistoryShortMeta(entry, options = {}) {
+  const { label = "Kortsvar", suffix = false } = options;
+  const shortPoints = Number(entry.shortPoints) || 0;
+  const shortMax = Number(entry.shortMax) || 0;
+  if (shortMax <= 0) return `${label} —`;
+  const value = `${shortPoints.toFixed(1)}/${shortMax.toFixed(1)}`;
+  return suffix ? `${value} ${label}` : `${label} ${value}`;
+}
+
+function formatHistoryRubricMeta(entry) {
+  const rubricMatched = Number(entry.rubricMatched) || 0;
+  const rubricTotal = Number(entry.rubricTotal) || 0;
+  return rubricTotal ? `Rubric ${rubricMatched}/${rubricTotal}` : "Rubric —";
+}
+
 function renderHistoryList(container, entries) {
   if (!container) return;
   container.innerHTML = "";
@@ -9989,6 +11320,7 @@ function renderHistoryList(container, entries) {
     return;
   }
 
+  const scoringPolicy = getScoringPolicyForCourse(getActiveCourse());
   const visible = entries.slice(-6).reverse();
   visible.forEach((entry, index) => {
     const row = document.createElement("div");
@@ -9997,21 +11329,17 @@ function renderHistoryList(container, entries) {
 
     const title = document.createElement("div");
     title.className = "history-title";
-    title.textContent = `${entry.grade || "-"} · ${formatPercent(entry.overallPercent)}`;
+    title.textContent = formatHistoryTitle(entry, scoringPolicy);
 
     const meta = document.createElement("div");
     meta.className = "history-meta";
-    const mcqPoints = Number(entry.mcqPoints) || 0;
-    const mcqMax = Number(entry.mcqMax) || 0;
-    const shortPoints = Number(entry.shortPoints) || 0;
-    const shortMax = Number(entry.shortMax) || 0;
-    const mcqMeta = mcqMax
-      ? `MCQ ${mcqPoints}/${mcqMax}`
-      : "MCQ —";
-    const shortMeta = shortMax
-      ? `Kortsvar ${shortPoints.toFixed(1)}/${shortMax.toFixed(1)}`
-      : "Kortsvar —";
-    meta.textContent = `${formatHistoryDate(entry.date)} · ${mcqMeta} · ${shortMeta}`;
+    if (scoringPolicy.usesRubric) {
+      meta.textContent =
+        `${formatHistoryDate(entry.date)} · ${formatHistoryRubricMeta(entry)} · ${formatHistoryShortMeta(entry, { label: "Point" })}`;
+    } else {
+      meta.textContent =
+        `${formatHistoryDate(entry.date)} · ${formatHistoryMcqMeta(entry)} · ${formatHistoryShortMeta(entry)}`;
+    }
 
     row.appendChild(title);
     row.appendChild(meta);
@@ -10021,43 +11349,57 @@ function renderHistoryList(container, entries) {
 
 function renderHistory() {
   const entries = getHistoryEntries();
+  const scoringPolicy = getScoringPolicyForCourse(getActiveCourse());
   const latest = entries[entries.length - 1] || null;
   const prev = entries[entries.length - 2] || null;
   const fallbackBest = !entries.length && state.bestScore > 0
-    ? { overallPercent: state.bestScore, grade: getGradeForPercent(state.bestScore) }
+    ? {
+        overallPercent: state.bestScore,
+        rubricPercent: scoringPolicy.usesRubric ? state.bestScore : null,
+        grade: scoringPolicy.usesGrade ? getGradeForPercent(state.bestScore) : null,
+      }
     : null;
   const best = getBestHistoryEntry(entries) || fallbackBest;
 
   if (elements.historyLatest) {
     elements.historyLatest.textContent = latest
-      ? `${latest.grade || "-"} · ${formatPercent(latest.overallPercent)}`
+      ? formatHistoryTitle(latest, scoringPolicy)
       : "—";
   }
   if (elements.historyLatestMeta) {
     if (latest) {
-      const mcqPoints = Number(latest.mcqPoints) || 0;
-      const mcqMax = Number(latest.mcqMax) || 0;
-      const shortPoints = Number(latest.shortPoints) || 0;
-      const shortMax = Number(latest.shortMax) || 0;
-      const mcqMeta = mcqMax ? `${mcqPoints}/${mcqMax} MCQ` : "MCQ —";
-      const shortMeta = shortMax ? `${shortPoints.toFixed(1)}/${shortMax.toFixed(1)} kortsvar` : "Kortsvar —";
-      elements.historyLatestMeta.textContent = `${mcqMeta} · ${shortMeta}`;
+      if (scoringPolicy.usesRubric) {
+        elements.historyLatestMeta.textContent =
+          `${formatHistoryRubricMeta(latest)} · ${formatHistoryShortMeta(latest, { label: "Point" })}`;
+      } else {
+        const mcqMeta = formatHistoryMcqMeta(latest, { suffix: true });
+        const shortMeta = formatHistoryShortMeta(latest, { label: "kortsvar", suffix: true });
+        elements.historyLatestMeta.textContent = `${mcqMeta} · ${shortMeta}`;
+      }
     } else {
       elements.historyLatestMeta.textContent = "Ingen runder endnu";
     }
   }
   if (elements.historyBest) {
     elements.historyBest.textContent = best
-      ? `${best.grade || "-"} · ${formatPercent(best.overallPercent)}`
+      ? formatHistoryTitle(best, scoringPolicy)
       : "—";
   }
   if (elements.historyBestMeta) {
-    elements.historyBestMeta.textContent = `Mål: 12 (${TARGET_GRADE_PERCENT}%)`;
+    if (scoringPolicy.usesGrade) {
+      elements.historyBestMeta.textContent = `Mål: 12 (${TARGET_GRADE_PERCENT}%)`;
+    } else if (scoringPolicy.usesRubric) {
+      elements.historyBestMeta.textContent = "Mål: 100% rubric";
+    } else {
+      elements.historyBestMeta.textContent = "Mål: 100%";
+    }
   }
 
   if (elements.historyTrend) {
     if (latest && prev) {
-      const delta = latest.overallPercent - prev.overallPercent;
+      const currentValue = getHistoryDisplayPercent(latest, scoringPolicy);
+      const prevValue = getHistoryDisplayPercent(prev, scoringPolicy);
+      const delta = currentValue - prevValue;
       const prefix = delta > 0 ? "+" : "";
       elements.historyTrend.textContent = `${prefix}${delta.toFixed(1)}%`;
       elements.historyTrend.classList.toggle("positive", delta > 0);
@@ -10073,28 +11415,53 @@ function renderHistory() {
 
   if (elements.heroRank) {
     const rankSource = best || latest;
-    elements.heroRank.textContent = rankSource ? `${rankSource.grade || "-"}` : "—";
+    if (rankSource) {
+      elements.heroRank.textContent = scoringPolicy.usesGrade
+        ? `${rankSource.grade || "-"}`
+        : formatPercent(getHistoryDisplayPercent(rankSource, scoringPolicy));
+    } else {
+      elements.heroRank.textContent = "—";
+    }
   }
   if (elements.heroRankMeta) {
-    elements.heroRankMeta.textContent = best
-      ? `Personlig rekord: ${formatPercent(best.overallPercent)}`
-      : "Ingen rekord endnu";
+    if (best) {
+      const percent = formatPercent(getHistoryDisplayPercent(best, scoringPolicy));
+      elements.heroRankMeta.textContent = scoringPolicy.usesRubric
+        ? `Personlig rekord: ${percent} rubric`
+        : `Personlig rekord: ${percent}`;
+    } else {
+      elements.heroRankMeta.textContent = "Ingen rekord endnu";
+    }
   }
   if (elements.heroTarget) {
-    elements.heroTarget.textContent = "12";
+    elements.heroTarget.textContent = scoringPolicy.usesGrade ? "12" : "100%";
   }
   if (elements.heroTargetMeta) {
     if (latest) {
-      const missing = Math.max(0, TARGET_GRADE_PERCENT - latest.overallPercent);
-      elements.heroTargetMeta.textContent = missing > 0
-        ? `${missing.toFixed(1)}% fra topkarakter`
-        : "Du er i målzonen!";
-    } else {
+      const targetPercent = scoringPolicy.usesGrade ? TARGET_GRADE_PERCENT : 100;
+      const currentPercent = getHistoryDisplayPercent(latest, scoringPolicy);
+      const missing = Math.max(0, targetPercent - currentPercent);
+      if (scoringPolicy.usesGrade) {
+        elements.heroTargetMeta.textContent = missing > 0
+          ? `${missing.toFixed(1)}% fra topkarakter`
+          : "Du er i målzonen!";
+      } else {
+        elements.heroTargetMeta.textContent = missing > 0
+          ? `${missing.toFixed(1)}% til fuld dækning`
+          : "Fuld rubricdækning opnået!";
+      }
+    } else if (scoringPolicy.usesGrade) {
       elements.heroTargetMeta.textContent = `${TARGET_GRADE_PERCENT}% for topkarakter`;
+    } else {
+      elements.heroTargetMeta.textContent = "100% rubricdækning som mål";
     }
   }
   if (elements.heroProgressFill) {
-    const progressValue = latest ? Math.min((latest.overallPercent / TARGET_GRADE_PERCENT) * 100, 100) : 0;
+    const targetPercent = scoringPolicy.usesGrade ? TARGET_GRADE_PERCENT : 100;
+    const currentPercent = latest ? getHistoryDisplayPercent(latest, scoringPolicy) : 0;
+    const progressValue = targetPercent
+      ? Math.min((currentPercent / targetPercent) * 100, 100)
+      : 0;
     elements.heroProgressFill.style.width = `${progressValue.toFixed(1)}%`;
   }
   if (elements.heroStreak) {
@@ -10111,12 +11478,22 @@ function renderHistory() {
 }
 
 function recordHistoryEntry() {
+  const policy = resolveStudioPolicy(getActiveCourse());
   const entry = {
     date: new Date().toISOString(),
+    studio: getActiveCourse(),
+    policyId: state.scoreSummary.policyId || getActiveScoringPolicy().id,
+    taskType: policy?.taskType || "",
+    hintLevel: Number.isFinite(state.sessionProfile?.hintLevel)
+      ? state.sessionProfile.hintLevel
+      : null,
     overallPercent: state.scoreSummary.overallPercent,
     grade: state.scoreSummary.grade,
     mcqPercent: state.scoreSummary.mcqPercent,
     shortPercent: state.scoreSummary.shortPercent,
+    rubricPercent: state.scoreSummary.rubricPercent,
+    rubricMatched: state.scoreSummary.rubricMatched,
+    rubricTotal: state.scoreSummary.rubricTotal,
     mcqPoints: state.scoreBreakdown.mcq,
     shortPoints: state.scoreBreakdown.short,
     mcqMax: state.sessionScoreMeta.mcqMax,
@@ -10125,8 +11502,9 @@ function recordHistoryEntry() {
     shortCount: state.sessionScoreMeta.shortCount,
     totalQuestions: state.activeQuestions.length,
   };
-  const entries = getHistoryEntries().concat(entry);
+  const entries = getAllHistoryEntries().concat(entry);
   saveHistoryEntries(entries);
+  refreshCourseProfile(getActiveCourse());
   renderHistory();
 }
 
@@ -10268,7 +11646,8 @@ async function gradeShortGroupAnswers(question, { auto = false } = {}) {
   }
 
   setShortReviewOpen(true);
-  if (!state.aiStatus.available) {
+  const policy = getScoringPolicyForQuestion(question);
+  if (policy.requiresAi && !state.aiStatus.available) {
     const activePart = getActiveShortPart(question);
     const nodes = activePart ? resolveShortReviewElements(activePart) : null;
     if (nodes?.aiFeedback) {
@@ -10313,7 +11692,8 @@ async function gradeShortAnswer(options = {}) {
   if (!part) return;
   const nodes = resolveShortReviewElements(part);
   setShortRetryVisible(false, part);
-  if (!state.aiStatus.available) {
+  const policy = getScoringPolicyForQuestion(part);
+  if (policy.requiresAi && !state.aiStatus.available) {
     if (nodes.aiFeedback) {
       nodes.aiFeedback.textContent =
         state.aiStatus.message || "Auto-bedømmelse er ikke sat op endnu.";
@@ -10335,18 +11715,85 @@ async function gradeShortAnswer(options = {}) {
   }
 
   setShortAnswerPending(true);
-  const feedbackPrefix = hasSketch ? "Vurderer skitse + tekst …" : "Vurderer dit svar …";
+  const feedbackPrefix = policy.usesRubric
+    ? "Vurderer mod rubric …"
+    : hasSketch
+      ? "Vurderer skitse + tekst …"
+      : "Vurderer dit svar …";
   if (nodes.aiFeedback) {
     nodes.aiFeedback.textContent = auto
-      ? hasSketch
-        ? "Auto-bedømmer skitse + tekst …"
-        : "Auto-bedømmer dit svar …"
+      ? policy.usesRubric
+        ? "Auto-vurderer rubric …"
+        : hasSketch
+          ? "Auto-bedømmer skitse + tekst …"
+          : "Auto-bedømmer dit svar …"
       : feedbackPrefix;
   }
 
   const modelAnswer = await resolveShortModelAnswer(part, { useSketch: hasSketch });
 
   try {
+    if (policy.usesRubric) {
+      const payload = {
+        prompt: buildShortPrompt(part),
+        rubric: modelAnswer,
+        userAnswer: combinedAnswer,
+        maxPoints: part.maxPoints || 0,
+        language: "da",
+        studio: getActiveCourse(),
+        policyId: policy.id,
+        questionKey: part.key,
+        groupKey: part.groupKey || "",
+      };
+      let data = null;
+      let usedLocal = false;
+      if (state.session?.user && state.backendAvailable) {
+        try {
+          const res = await apiFetch("/api/rubric-score", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) {
+            let detail = `Rubric response ${res.status}`;
+            try {
+              const errorPayload = await res.json();
+              if (errorPayload.error) detail = errorPayload.error;
+            } catch (error) {
+              detail = `Rubric response ${res.status}`;
+            }
+            throw new Error(detail);
+          }
+          data = await res.json();
+        } catch (error) {
+          usedLocal = true;
+          if (nodes.aiFeedback) {
+            nodes.aiFeedback.textContent =
+              `Kunne ikke hente rubric-vurdering. ${error.message || "Bruger lokal vurdering."}`;
+          }
+        }
+      } else {
+        usedLocal = true;
+      }
+      if (usedLocal) {
+        const local = scoreRubricAnswer({
+          rubricText: modelAnswer,
+          userAnswer: combinedAnswer,
+          maxPoints: part.maxPoints || 0,
+        });
+        const feedback = local.rubric.total > 0
+          ? `Rubric dækning: ${local.rubric.matched}/${local.rubric.total} kriterier.`
+          : "Rubric dækning: ingen kriterier.";
+        data = { ...local, feedback };
+      }
+      const fallbackFeedback = usedLocal
+        ? "Rubric vurderet lokalt. Justér point efter behov."
+        : "Rubric vurdering klar. Justér point efter behov.";
+      applyShortAnswerGradeResult(part, data, { fallbackFeedback });
+      setShortRetryVisible(false, part);
+      return;
+    }
+
     const res = await apiFetch("/api/grade", {
       method: "POST",
       ai: true,
@@ -10359,6 +11806,10 @@ async function gradeShortAnswer(options = {}) {
         sources: part.sources || [],
         language: "da",
         ignoreSketch: requiresSketch(part) && !hasSketch,
+        studio: getActiveCourse(),
+        policyId: policy.id,
+        questionKey: part.key,
+        groupKey: part.groupKey || "",
       }),
     });
     if (!res.ok) {
@@ -10736,6 +12187,11 @@ function toggleHintDisplay(entry, textEl, button, expandButton) {
 }
 
 async function handleExpandHintClick(entry, textEl, button, hintButton) {
+  const hintPolicy = getHintPolicy(entry?.question);
+  if (hintPolicy.mode === "structured") {
+    updateExpandHintButton(entry, button);
+    return;
+  }
   if (!entry.aiHint) {
     updateExpandHintButton(entry, button);
     return;
@@ -10825,6 +12281,39 @@ async function handleExpandHintClick(entry, textEl, button, hintButton) {
 }
 
 async function fetchReviewHint(entry, textEl, button, expandButton, { auto = false } = {}) {
+  const hintPolicy = getHintPolicy(entry?.question);
+  if (hintPolicy.mode === "structured") {
+    if (entry.hintLoading) return;
+    entry.hintLoading = true;
+    textEl.textContent = auto ? "Henter hint …" : "Henter hint …";
+    textEl.classList.add("loading");
+    textEl.classList.remove("hidden");
+    button.textContent = "Henter …";
+    button.disabled = true;
+    updateExpandHintButton(entry, expandButton);
+
+    const hintLevel = hintPolicy.level ?? 0;
+    if (hintLevel <= 0) {
+      entry.hintLoading = false;
+      textEl.textContent = "Hints er slået fra for dette niveau.";
+      textEl.classList.remove("loading");
+      button.textContent = "Vis hint";
+      button.disabled = true;
+      updateExpandHintButton(entry, expandButton);
+      return;
+    }
+
+    const hint = buildStructuredHintForQuestion(entry.question, hintLevel);
+    entry.aiHint = hint || "Ingen facit til hint.";
+    textEl.textContent = getHintText(entry);
+    textEl.classList.remove("loading");
+    button.textContent = "Skjul hint";
+    entry.hintLoading = false;
+    button.disabled = false;
+    updateExpandHintButton(entry, expandButton);
+    return;
+  }
+
   if (!state.aiStatus.available || entry.hintLoading) return;
   entry.hintLoading = true;
   textEl.textContent = auto ? "Henter hint …" : "Henter hint …";
@@ -10929,8 +12418,15 @@ function buildReviewQueue(results) {
   }
 
   elements.reviewQueue.classList.remove("hidden");
+  const usesAiHints = queueEntries.some(
+    (entry) => getHintPolicy(entry.question).mode !== "structured"
+  );
   updateReviewQueueStatus(
-    state.aiStatus.available ? "Henter hints …" : "Hjælp er ikke klar"
+    usesAiHints
+      ? state.aiStatus.available
+        ? "Henter hints …"
+        : "Hjælp er ikke klar"
+      : "Hints klar"
   );
 
   queueEntries.forEach((entry, index) => {
@@ -10945,7 +12441,8 @@ function buildReviewQueue(results) {
     meta.className = "meta";
     const labelTag = entry.question.label ? entry.question.label.toUpperCase() : "";
     const numberTag = `Opg. ${entry.question.opgave}${labelTag}`;
-    meta.textContent = `${entry.question.category} • ${entry.question.yearLabel} • ${numberTag}`;
+    const courseLabel = formatCourseLabel(entry.question.course);
+    meta.textContent = `${courseLabel} • ${entry.question.category} • ${entry.question.yearLabel} • ${numberTag}`;
 
     const sketchUpload = getSketchUpload(entry);
 
@@ -10977,11 +12474,30 @@ function buildReviewQueue(results) {
     const expandHintBtn = document.createElement("button");
     expandHintBtn.type = "button";
     expandHintBtn.className = "btn ghost small";
-    updateExpandHintButton(entry, expandHintBtn);
+    const hintPolicy = getHintPolicy(entry.question);
+    const isStructured = hintPolicy.mode === "structured";
+    if (!isStructured) {
+      updateExpandHintButton(entry, expandHintBtn);
+    } else {
+      expandHintBtn.classList.add("hidden");
+      expandHintBtn.disabled = true;
+    }
     const modelAnswer = getEffectiveModelAnswer(entry.question);
-    const canHint = Boolean(modelAnswer);
-    hintBtn.disabled = !state.aiStatus.available || !canHint;
-    if (!state.aiStatus.available) {
+    const hintLevel = hintPolicy.level ?? 0;
+    const canHint = isStructured
+      ? hintLevel > 0 && Boolean(modelAnswer)
+      : Boolean(modelAnswer);
+    hintBtn.disabled = isStructured
+      ? !canHint
+      : !state.aiStatus.available || !canHint;
+    if (isStructured) {
+      if (!canHint) {
+        hintBtn.title =
+          hintLevel <= 0
+            ? "Hints er slået fra for dette niveau."
+            : "Ingen facit til hint.";
+      }
+    } else if (!state.aiStatus.available) {
       hintBtn.title = state.aiStatus.message || "Hjælp er ikke klar lige nu.";
     } else if (!canHint) {
       hintBtn.title = "Ingen facit til hint.";
@@ -11016,7 +12532,15 @@ function buildReviewQueue(results) {
     card.appendChild(hintText);
     elements.reviewQueueList.appendChild(card);
 
-    if (state.aiStatus.available && canHint) {
+    if (isStructured) {
+      if (!canHint) {
+        hintText.classList.remove("hidden");
+        hintText.textContent =
+          hintLevel <= 0
+            ? "Hints er slået fra for dette niveau."
+            : "Ingen facit til hint.";
+      }
+    } else if (state.aiStatus.available && canHint) {
       hintText.classList.remove("hidden");
       hintText.classList.add("loading");
       hintText.textContent = "Henter hint …";
@@ -11027,7 +12551,7 @@ function buildReviewQueue(results) {
     }
   });
 
-  if (state.aiStatus.available) {
+  if (usesAiHints && state.aiStatus.available) {
     void processReviewHintQueue();
   }
 }
@@ -11218,6 +12742,8 @@ function buildReviewFigure(entry) {
 }
 
 function buildReviewSketch(entry) {
+  const capabilities = getStudioCapabilitiesForCourse(entry?.question?.course || DEFAULT_COURSE);
+  if (!capabilities.allowSketch) return null;
   const upload = getSketchUpload(entry);
   if (!upload?.dataUrl) return null;
 
@@ -11406,7 +12932,8 @@ function buildReviewList(results) {
     const labelTag = entry.question.label ? entry.question.label.toUpperCase() : "";
     const numberTag = isShort ? `Opg. ${entry.question.opgave}${labelTag}` : `#${entry.question.number}`;
     const typeLabel = isShort ? "Kortsvar" : "MCQ";
-    meta.textContent = `${entry.question.category} • ${entry.question.yearLabel} • ${numberTag} • ${typeLabel}`;
+    const courseLabel = formatCourseLabel(entry.question.course);
+    meta.textContent = `${courseLabel} • ${entry.question.category} • ${entry.question.yearLabel} • ${numberTag} • ${typeLabel}`;
 
     const lines = [];
     const sketchUpload = getSketchUpload(entry);
@@ -11589,8 +13116,10 @@ function showResults() {
   resetCancelRoundConfirm();
   updatePausedSessionUI();
   state.scoreSummary = calculateScoreSummary();
-  const correct = state.results.filter((r) => r.type === "mcq" && r.isCorrect).length;
-  const wrong = state.results.filter((r) => r.type === "mcq" && !r.isCorrect && !r.skipped).length;
+  const scoringPolicy = getScoringPolicyForCourse(getActiveCourse());
+  const usesRubric = scoringPolicy.usesRubric;
+  const mcqCorrect = state.results.filter((r) => r.type === "mcq" && r.isCorrect).length;
+  const mcqWrong = state.results.filter((r) => r.type === "mcq" && !r.isCorrect && !r.skipped).length;
   const mcqSkipped = state.results.filter((r) => r.type === "mcq" && r.skipped).length;
   const shortSkipMap = new Map();
   const shortMistakes = new Set();
@@ -11609,7 +13138,16 @@ function showResults() {
   const skippedShortGroups = [...shortSkipMap.values()].filter(
     (entry) => entry.total && entry.skipped === entry.total
   ).length;
-  const skipped = mcqSkipped + skippedShortGroups;
+  let correct = mcqCorrect;
+  let wrong = mcqWrong;
+  let skipped = mcqSkipped + skippedShortGroups;
+  if (usesRubric) {
+    const rubricMatched = Number(state.scoreSummary.rubricMatched) || 0;
+    const rubricTotal = Number(state.scoreSummary.rubricTotal) || 0;
+    correct = rubricMatched;
+    wrong = Math.max(0, rubricTotal - rubricMatched);
+    skipped = skippedShortGroups;
+  }
   const timePerQuestion = formatTempo();
   elements.progressFill.style.width = "100%";
 
@@ -11656,15 +13194,32 @@ function showResults() {
       ? `${state.scoreSummary.shortPercent.toFixed(1)}%`
       : "—";
   }
+  if (elements.resultRubricValue) {
+    if (usesRubric) {
+      const rubricMatched = Number(state.scoreSummary.rubricMatched) || 0;
+      const rubricTotal = Number(state.scoreSummary.rubricTotal) || 0;
+      elements.resultRubricValue.textContent = rubricTotal > 0
+        ? `${rubricMatched} / ${rubricTotal}`
+        : "—";
+    } else {
+      elements.resultRubricValue.textContent = "—";
+    }
+  }
+  if (elements.resultRubricPercent) {
+    elements.resultRubricPercent.textContent = usesRubric && state.scoreSummary.rubricTotal > 0
+      ? `${state.scoreSummary.rubricPercent.toFixed(1)}%`
+      : "—";
+  }
   elements.statPace.textContent = timePerQuestion;
 
-  const isNewBest = state.scoreSummary.overallPercent > state.bestScore;
+  const courseId = getActiveCourse();
+  const currentBest = getBestScoreForCourse(courseId);
+  const isNewBest = state.scoreSummary.overallPercent > currentBest;
   if (isNewBest) {
-    state.bestScore = state.scoreSummary.overallPercent;
-    localStorage.setItem(STORAGE_KEYS.bestScore, String(state.bestScore.toFixed(1)));
+    setBestScoreForCourse(courseId, state.scoreSummary.overallPercent);
   }
   elements.bestBadge.style.display = isNewBest ? "inline-flex" : "none";
-  elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
+  syncActiveBestScore(courseId);
 
   if (state.shouldRecordHistory) {
     recordHistoryEntry();
@@ -11751,6 +13306,10 @@ function pickWeightedQuestions(pool, count) {
   return selected;
 }
 
+function shouldUseWeightedMix() {
+  return state.sessionSettings.adaptiveMix;
+}
+
 function pickBalancedQuestions(pool, count) {
   const groups = new Map();
   pool.forEach((question) => {
@@ -11760,9 +13319,9 @@ function pickBalancedQuestions(pool, count) {
     groups.get(question.category).push(question);
   });
 
-  const useAdaptive = state.sessionSettings.adaptiveMix;
+  const useWeighted = shouldUseWeightedMix();
   const groupList = shuffle(
-    [...groups.values()].map((group) => (useAdaptive ? [...group] : shuffle(group)))
+    [...groups.values()].map((group) => (useWeighted ? [...group] : shuffle(group)))
   );
 
   const selected = [];
@@ -11770,7 +13329,7 @@ function pickBalancedQuestions(pool, count) {
     for (let i = 0; i < groupList.length && selected.length < count; i += 1) {
       const group = groupList[i];
       if (group.length) {
-        const picked = useAdaptive ? pickWeightedOne(group) : group.pop();
+        const picked = useWeighted ? pickWeightedOne(group) : group.pop();
         if (picked) {
           selected.push(picked);
         }
@@ -11788,10 +13347,11 @@ function pickBalancedQuestions(pool, count) {
 
 function pickFromPoolCore(pool, count) {
   if (count <= 0) return [];
-  if (state.sessionSettings.adaptiveMix && state.sessionSettings.balancedMix) {
+  const useWeighted = shouldUseWeightedMix();
+  if (useWeighted && state.sessionSettings.balancedMix) {
     return pickBalancedQuestions(pool, count);
   }
-  if (state.sessionSettings.adaptiveMix) {
+  if (useWeighted) {
     const selection = pickWeightedQuestions(pool, count);
     return state.sessionSettings.shuffleQuestions ? shuffle(selection) : selection;
   }
@@ -12013,10 +13573,13 @@ function updateSessionScoreMeta(questions) {
   const shortGroups = questions.filter((q) => q.type === "short");
   const shortCount = shortGroups.length;
   const shortMax = shortGroups.reduce((sum, q) => sum + (q.maxPoints || 0), 0);
+  const scoringPolicy = getScoringPolicyForCourse(getActiveCourse());
+  const mcqCorrectPoints = Number(scoringPolicy.mcq?.correct ?? 3);
+  const mcqWrongPoints = Number(scoringPolicy.mcq?.wrong ?? -1);
   state.sessionScoreMeta = {
     mcqCount,
-    mcqMax: mcqCount * 3,
-    mcqMin: mcqCount * -1,
+    mcqMax: mcqCount * mcqCorrectPoints,
+    mcqMin: mcqCount * mcqWrongPoints,
     shortCount,
     shortMax,
   };
@@ -12097,15 +13660,19 @@ function markQuestionsSeen(questions, { updateSummary: refreshSummary = false } 
 
 function resolvePool(options = {}) {
   const { forceMistakes = false, ignoreFocusMistakes = false } = options;
+  const capabilities = getStudioCapabilitiesForCourse(getActiveCourse());
   const allowedTypes = [];
-  if (state.settings.includeMcq) allowedTypes.push("mcq");
-  if (state.settings.includeShort) allowedTypes.push("short");
+  if (state.settings.includeMcq && capabilities.allowMcq) allowedTypes.push("mcq");
+  if (state.settings.includeShort && capabilities.allowShort) allowedTypes.push("short");
 
   const basePool = state.allQuestions.filter(
     (question) =>
       allowedTypes.includes(question.type) &&
+      state.filters.courses.has(normalizeCourse(question.course || DEFAULT_COURSE)) &&
       state.filters.years.has(question.yearLabel) &&
-      state.filters.categories.has(question.category)
+      state.filters.categories.has(question.category) &&
+      (!question.priority || state.filters.priorities.has(question.priority)) &&
+      (!question.section || state.filters.sections.has(question.section))
   );
 
   let pool = basePool;
@@ -12165,17 +13732,23 @@ function describeSelection(selected, all, label) {
 
 function updateSummary() {
   const { pool, basePool, focusMistakesActive, repeatFiltered } = resolvePool();
-  const selectedYears = [...state.filters.years].sort((a, b) => {
-    const aParsed = parseYearLabel(a);
-    const bParsed = parseYearLabel(b);
-    if (aParsed.year !== bParsed.year) return aParsed.year - bParsed.year;
-    return (SESSION_ORDER[aParsed.session] ?? 99) - (SESSION_ORDER[bParsed.session] ?? 99);
-  });
-  const selectedCategories = [...state.filters.categories].sort((a, b) =>
-    a.localeCompare(b, "da")
+  const activeCourse = getActiveCourse();
+  const isDisease = isDiseaseCourse(activeCourse);
+  const yearLabelMap = isDisease ? PRIORITY_FILTER_LABELS : null;
+  const selectedCourses = sortCourseIds([...state.filters.courses]);
+  const selectedYears = sortYearLabels([...state.filters.years]);
+  const selectedCategories = sortCategoryLabels([...state.filters.categories]);
+  const selectedYearLabels = selectedYears.map((value) => resolveChipLabel(value, yearLabelMap));
+  const availableYearLabels = state.available.years.map((value) =>
+    resolveChipLabel(value, yearLabelMap)
   );
   const mcqPoolCount = pool.filter((q) => q.type === "mcq").length;
-  const shortPoolCount = pool.filter((q) => q.type === "short").length;
+  const shortPoolQuestions = pool.filter((q) => q.type === "short");
+  const shortPoolCount = shortPoolQuestions.length;
+  const shortPoolParts = shortPoolQuestions.reduce(
+    (sum, question) => sum + getShortParts(question).length,
+    0
+  );
   let roundSize = Math.min(state.settings.questionCount, pool.length);
   let mcqTarget = 0;
   let shortTarget = 0;
@@ -12196,16 +13769,26 @@ function updateSummary() {
     state.settings.preferUnseen && !state.settings.avoidRepeats && !focusMistakesActive;
 
   elements.poolCount.textContent = pool.length;
-  elements.poolCountChip.textContent = `${pool.length} i puljen · ${poolMcq} MCQ · ${poolShort} kortsvar`;
+  if (isDisease) {
+    elements.poolCountChip.textContent =
+      `${pool.length} i puljen · ${poolShort} sygdomme · ${shortPoolParts} sektioner`;
+  } else {
+    elements.poolCountChip.textContent =
+      `${pool.length} i puljen · ${poolMcq} MCQ · ${poolShort} kortsvar`;
+  }
   const isInfinite = state.settings.infiniteMode;
   let roundLabel = String(roundSize);
+  if (isDisease && state.settings.includeShort && !state.settings.includeMcq) {
+    roundLabel = roundSize > 0 ? `${roundSize} sygdomme` : "0 sygdomme";
+  }
   if (state.settings.includeMcq && state.settings.includeShort && roundSize > 0) {
     roundLabel = `${roundSize} (${mcqTarget} MCQ / ${shortTarget} kortsvar)`;
     if (isInfinite) {
       roundLabel = `Uendelig · batch ${roundLabel}`;
     }
   } else if (isInfinite) {
-    roundLabel = roundSize > 0 ? `Uendelig · batch ${roundSize}` : "Uendelig";
+    const unit = isDisease ? " sygdomme" : "";
+    roundLabel = roundSize > 0 ? `Uendelig · batch ${roundSize}${unit}` : "Uendelig";
   }
   elements.roundCount.textContent = roundLabel;
 
@@ -12221,15 +13804,24 @@ function updateSummary() {
   if (!mixParts.length) mixParts.push("Fast rækkefølge");
   elements.mixSummary.textContent = mixParts.join(" · ");
 
+  if (elements.courseSummary) {
+    const selectedCourseLabels = selectedCourses.map((course) => formatCourseLabel(course));
+    const availableCourseLabels = state.available.courses.map((course) => formatCourseLabel(course));
+    elements.courseSummary.textContent = describeSelection(
+      selectedCourseLabels,
+      availableCourseLabels,
+      "kurser"
+    );
+  }
   elements.yearSummary.textContent = describeSelection(
-    selectedYears,
-    state.available.years,
-    "sæt"
+    selectedYearLabels,
+    availableYearLabels,
+    isDisease ? "prioriteter" : "sæt"
   );
   elements.categorySummary.textContent = describeSelection(
     selectedCategories,
     state.available.categories,
-    "emner"
+    isDisease ? "sygdomsgrupper" : "emner"
   );
 
   let hint = "Klar til start.";
@@ -12250,8 +13842,10 @@ function updateSummary() {
   if (!state.settings.includeMcq && !state.settings.includeShort) {
     hint = "Vælg mindst én opgavetype (MCQ eller kortsvar).";
     canStart = false;
-  } else if (!selectedYears.length || !selectedCategories.length) {
-    hint = "Vælg mindst ét emne og ét sæt for at starte.";
+  } else if (!selectedCourses.length || !selectedYears.length || !selectedCategories.length) {
+    hint = isDisease
+      ? "Vælg mindst én prioritet og én sygdomsgruppe for at starte."
+      : "Vælg mindst ét emne og ét sæt for at starte.";
     canStart = false;
   } else if (state.settings.focusMistakes && !focusMistakesActive) {
     hint = hasMistakes
@@ -12299,7 +13893,10 @@ function updateSessionPill() {
   const totalLabel = state.sessionSettings.infiniteMode
     ? "∞ spørgsmål"
     : `${state.activeQuestions.length} spørgsmål`;
-  const label = `${totalLabel} · ${mcqCount} MCQ · ${shortCount} kortsvar · ${yearCount} sæt · ${categoryCount} emner`;
+  const isDisease = isDiseaseCourse(getActiveCourse());
+  const label = isDisease
+    ? `${totalLabel} · ${shortCount} sygdomme · ${yearCount} prioriteter · ${categoryCount} sygdomsgrupper`
+    : `${totalLabel} · ${mcqCount} MCQ · ${shortCount} kortsvar · ${yearCount} sæt · ${categoryCount} emner`;
   elements.sessionPill.textContent = label;
 }
 
@@ -12327,6 +13924,7 @@ function initInfiniteState(pool, activeQuestions) {
 function extendInfiniteQuestionSet() {
   if (!state.infiniteState) return false;
   let batch = buildQuestionSet(state.infiniteState.remaining);
+  batch = filterQuestionsForPolicy(batch, getActiveScoringPolicy());
   if (!batch.length) {
     if (!state.infiniteState.pool.length) return false;
     state.infiniteState.cycle += 1;
@@ -12358,7 +13956,7 @@ function finishSession() {
 }
 
 function startGame(options = {}) {
-  if (!requireAuthGuard("Log ind for at starte en runde.", { allowDemo: true })) return;
+  if (!requireAuthGuard("Log ind for at starte en runde.")) return;
   const {
     forceMistakes = false,
     ignoreFocusMistakes = false,
@@ -12377,7 +13975,12 @@ function startGame(options = {}) {
   resetCancelRoundConfirm();
   updatePausedSessionUI();
   state.sessionSettings = { ...state.settings, focusMistakes: focusMistakesActive };
+  state.sessionProfile = refreshCourseProfile(getActiveCourse());
+  if (Number.isFinite(state.sessionProfile?.hintLevel)) {
+    state.sessionSettings.hintLevel = state.sessionProfile.hintLevel;
+  }
   state.activeQuestions = buildQuestionSet(pool);
+  state.activeQuestions = filterQuestionsForPolicy(state.activeQuestions, getActiveScoringPolicy());
   assignShortPoints(state.activeQuestions);
   updateSessionScoreMeta(state.activeQuestions);
   state.currentIndex = 0;
@@ -12654,17 +14257,27 @@ function goToMenu() {
   flushUserStateSync();
 }
 
-function renderChips(container, values, selectedSet, counts, type) {
+function resolveChipLabel(value, labelMap) {
+  if (!labelMap) return String(value);
+  if (labelMap instanceof Map) {
+    return labelMap.get(value) || String(value);
+  }
+  return labelMap[value] || String(value);
+}
+
+function renderChips(container, values, selectedSet, counts, type, labelMap = null) {
+  if (!container) return;
   container.innerHTML = "";
   values.forEach((value) => {
+    const labelText = resolveChipLabel(value, labelMap);
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "chip-btn";
     btn.dataset.type = type;
     btn.dataset.value = String(value);
-    btn.dataset.label = String(value).toLowerCase();
+    btn.dataset.label = labelText.toLowerCase();
     const label = document.createElement("span");
-    label.textContent = String(value);
+    label.textContent = labelText;
     const count = document.createElement("span");
     count.className = "chip-count";
     count.textContent = String(counts.get(value) || 0);
@@ -12695,13 +14308,151 @@ function applyCategorySearch() {
   updateChips();
 }
 
+function getCourseScopeQuestions() {
+  if (!state.filters.courses || !state.filters.courses.size) {
+    return state.allQuestions;
+  }
+  const allowed = state.filters.courses;
+  return state.allQuestions.filter((question) =>
+    allowed.has(normalizeCourse(question.course || DEFAULT_COURSE))
+  );
+}
+
+function sortCourseIds(courses) {
+  const order = new Map(COURSE_ORDER.map((course, index) => [course, index]));
+  return [...courses].sort((a, b) => {
+    const aIndex = order.get(a);
+    const bIndex = order.get(b);
+    if (aIndex !== undefined || bIndex !== undefined) {
+      return (aIndex ?? 99) - (bIndex ?? 99);
+    }
+    return String(a).localeCompare(String(b), "da");
+  });
+}
+
+function sortYearLabels(labels) {
+  const entries = [...labels];
+  const isPrioritySet = entries.length
+    && entries.every((label) => PRIORITY_LABELS[label] || PRIORITY_FILTER_LABELS[label]);
+  if (isPrioritySet) {
+    return sortPriorityValues(entries);
+  }
+  return entries.sort((a, b) => {
+    const aParsed = parseYearLabel(a);
+    const bParsed = parseYearLabel(b);
+    const aYear = Number.isFinite(aParsed.year) ? aParsed.year : 9999;
+    const bYear = Number.isFinite(bParsed.year) ? bParsed.year : 9999;
+    if (aYear !== bYear) return aYear - bYear;
+    return (SESSION_ORDER[aParsed.session] ?? 99) - (SESSION_ORDER[bParsed.session] ?? 99);
+  });
+}
+
+function sortCategoryLabels(categories) {
+  return [...categories].sort((a, b) => {
+    const aIndex = CATEGORY_SORT_ORDER.get(a);
+    const bIndex = CATEGORY_SORT_ORDER.get(b);
+    if (aIndex !== undefined || bIndex !== undefined) {
+      return (aIndex ?? 999) - (bIndex ?? 999);
+    }
+    return a.localeCompare(b, "da");
+  });
+}
+
+function sortSectionLabels(sections) {
+  const order = new Map(getDiseaseDomainOrder().map((label, index) => [label, index]));
+  return [...sections].sort((a, b) => {
+    const aIndex = order.get(a);
+    const bIndex = order.get(b);
+    if (aIndex !== undefined || bIndex !== undefined) {
+      return (aIndex ?? 999) - (bIndex ?? 999);
+    }
+    return a.localeCompare(b, "da");
+  });
+}
+
+function sortPriorityValues(priorities) {
+  const order = new Map(PRIORITY_ORDER.map((value, index) => [value, index]));
+  return [...priorities].sort((a, b) => {
+    const aIndex = order.get(a);
+    const bIndex = order.get(b);
+    if (aIndex !== undefined || bIndex !== undefined) {
+      return (aIndex ?? 999) - (bIndex ?? 999);
+    }
+    return String(a).localeCompare(String(b), "da");
+  });
+}
+
+function reconcileFilter(type, available, { preserveEmpty = false } = {}) {
+  const current = state.filters[type] || new Set();
+  const next = new Set([...current].filter((value) => available.includes(value)));
+  if (!next.size && available.length && !preserveEmpty) {
+    state.filters[type] = new Set(available);
+    return;
+  }
+  state.filters[type] = next;
+}
+
+function updateDiseaseFilterVisibility() {
+  if (!elements.diseaseFilterDrawer) return;
+  const hasDisease = state.filters.courses.has("sygdomslaere");
+  const hasFilters = state.available.sections.length || state.available.priorities.length;
+  const show = hasDisease && hasFilters;
+  elements.diseaseFilterDrawer.classList.toggle("hidden", !show);
+  if (!show) {
+    elements.diseaseFilterDrawer.removeAttribute("open");
+  }
+}
+
+function refreshAvailableFilters() {
+  const allCounts = buildCounts(state.allQuestions);
+  const scopedCounts = buildCounts(getCourseScopeQuestions());
+
+  state.available.courses = sortCourseIds([...allCounts.courses.keys()]);
+  state.counts.courses = allCounts.courses;
+
+  state.available.years = sortYearLabels([...scopedCounts.years.keys()]);
+  state.available.categories = sortCategoryLabels([...scopedCounts.categories.keys()]);
+  state.available.sections = sortSectionLabels([...scopedCounts.sections.keys()]);
+  state.available.priorities = sortPriorityValues([...scopedCounts.priorities.keys()]);
+
+  state.counts.years = scopedCounts.years;
+  state.counts.categories = scopedCounts.categories;
+  state.counts.sections = scopedCounts.sections;
+  state.counts.priorities = scopedCounts.priorities;
+  state.counts.types = scopedCounts.types;
+
+  reconcileFilter("years", state.available.years);
+  reconcileFilter("categories", state.available.categories);
+  reconcileFilter("sections", state.available.sections);
+  reconcileFilter("priorities", state.available.priorities);
+
+  if (elements.categorySearch) {
+    elements.categorySearch.value = "";
+    state.search.category = "";
+  }
+
+  updateDiseaseFilterVisibility();
+  updateChips();
+  updateSummary();
+}
+
 function updateChips() {
+  renderChips(
+    elements.courseChips,
+    state.available.courses,
+    state.filters.courses,
+    state.counts.courses,
+    "courses",
+    COURSE_LABELS
+  );
+  const yearLabelMap = isDiseaseCourse(getActiveCourse()) ? PRIORITY_FILTER_LABELS : null;
   renderChips(
     elements.yearChips,
     state.available.years,
     state.filters.years,
     state.counts.years,
-    "years"
+    "years",
+    yearLabelMap
   );
   const filteredCategories = getFilteredCategories();
   renderChips(
@@ -12710,6 +14461,21 @@ function updateChips() {
     state.filters.categories,
     state.counts.categories,
     "categories"
+  );
+  renderChips(
+    elements.priorityChips,
+    state.available.priorities,
+    state.filters.priorities,
+    state.counts.priorities,
+    "priorities",
+    PRIORITY_LABELS
+  );
+  renderChips(
+    elements.sectionChips,
+    state.available.sections,
+    state.filters.sections,
+    state.counts.sections,
+    "sections"
   );
 }
 
@@ -12720,12 +14486,20 @@ function toggleSelection(type, value) {
   } else {
     set.add(value);
   }
+  if (type === "courses") {
+    refreshAvailableFilters();
+    return;
+  }
   updateChips();
   updateSummary();
 }
 
 function setSelection(type, values) {
   state.filters[type] = new Set(values);
+  if (type === "courses") {
+    refreshAvailableFilters();
+    return;
+  }
   updateChips();
   updateSummary();
 }
@@ -12747,6 +14521,7 @@ function updateQuestionCountCopy({ mcqTarget, shortTarget } = {}) {
   if (!elements.questionCountLabel && !elements.questionCountInfo && !elements.questionCountHint) return;
   const includeMcq = state.settings.includeMcq;
   const includeShort = state.settings.includeShort;
+  const isDisease = isDiseaseCourse(getActiveCourse());
   const isInfinite = state.settings.infiniteMode;
   const batchNote = isInfinite ? " I uendelig træning er tallet størrelsen pr. batch." : "";
 
@@ -12780,10 +14555,17 @@ function updateQuestionCountCopy({ mcqTarget, shortTarget } = {}) {
     hint = `Tallet angiver hvor mange flervalg der bruges i runden. Aktuelt: ${mcqCount} MCQ.${batchNote}`;
   } else if (includeShort) {
     const shortCount = state.settings.questionCount;
-    label = "Antal kortsvar";
-    tooltip =
-      "Vælg hvor mange kortsvar runden skal have. Hvis puljen er mindre, forkortes runden automatisk.";
-    hint = `Tallet angiver hvor mange kortsvar der bruges i runden. Aktuelt: ${shortCount} kortsvar.${batchNote}`;
+    if (isDisease) {
+      label = "Antal sygdomme";
+      tooltip =
+        "Vælg hvor mange sygdomme runden skal have. Hvis puljen er mindre, forkortes runden automatisk.";
+      hint = `Tallet angiver hvor mange sygdomme der bruges i runden. Aktuelt: ${shortCount} sygdomme.${batchNote}`;
+    } else {
+      label = "Antal kortsvar";
+      tooltip =
+        "Vælg hvor mange kortsvar runden skal have. Hvis puljen er mindre, forkortes runden automatisk.";
+      hint = `Tallet angiver hvor mange kortsvar der bruges i runden. Aktuelt: ${shortCount} kortsvar.${batchNote}`;
+    }
   }
 
   if (elements.questionCountLabel) {
@@ -13113,7 +14895,7 @@ function handleKeyDown(event) {
 function attachEvents() {
   if (elements.landingStartBtn) {
     elements.landingStartBtn.addEventListener("click", () => {
-      if (!requireAuthGuard("Log ind for at fortsætte.", { allowDemo: true })) return;
+      if (!requireAuthGuard("Log ind for at fortsætte.")) return;
       showScreen("menu");
     });
   }
@@ -13196,6 +14978,16 @@ function attachEvents() {
     elements.accountBtn.addEventListener("click", () => {
       if (!requireAuthGuard()) return;
       showScreen("account");
+    });
+  }
+  if (elements.studioHumanBtn) {
+    elements.studioHumanBtn.addEventListener("click", () => {
+      void navigateToStudio(DEFAULT_COURSE);
+    });
+  }
+  if (elements.studioSygdomBtn) {
+    elements.studioSygdomBtn.addEventListener("click", () => {
+      void navigateToStudio("sygdomslaere");
     });
   }
   if (elements.accountBackBtn) {
@@ -13334,6 +15126,13 @@ function attachEvents() {
     });
   }
   elements.backToMenu.addEventListener("click", pauseSession);
+  if (elements.switchStudioBtn) {
+    elements.switchStudioBtn.addEventListener("click", () => {
+      const target =
+        getActiveCourse() === "sygdomslaere" ? DEFAULT_COURSE : "sygdomslaere";
+      void navigateToStudio(target);
+    });
+  }
   elements.returnMenuBtn.addEventListener("click", goToMenu);
   if (elements.resumeRoundBtn) {
     elements.resumeRoundBtn.addEventListener("click", resumeSession);
@@ -13638,6 +15437,11 @@ function attachEvents() {
       handleSettingToggle("adaptiveMix", event.target.checked);
     });
   }
+  if (elements.togglePriorityMix) {
+    elements.togglePriorityMix.addEventListener("change", (event) => {
+      handleSettingToggle("priorityMix", event.target.checked);
+    });
+  }
   elements.toggleAutoAdvance.addEventListener("change", (event) => {
     handleSettingToggle("autoAdvance", event.target.checked);
   });
@@ -13683,6 +15487,16 @@ function attachEvents() {
     });
   }
 
+  if (elements.selectAllCourses) {
+    elements.selectAllCourses.addEventListener("click", () => {
+      setSelection("courses", state.available.courses);
+    });
+  }
+  if (elements.clearCourses) {
+    elements.clearCourses.addEventListener("click", () => {
+      setSelection("courses", []);
+    });
+  }
   elements.selectAllYears.addEventListener("click", () => {
     setSelection("years", state.available.years);
   });
@@ -13730,6 +15544,9 @@ function syncSettingsToUI() {
   elements.toggleBalanced.checked = state.settings.balancedMix;
   if (elements.toggleAdaptiveMix) {
     elements.toggleAdaptiveMix.checked = state.settings.adaptiveMix;
+  }
+  if (elements.togglePriorityMix) {
+    elements.togglePriorityMix.checked = state.settings.priorityMix;
   }
   elements.toggleAutoAdvance.checked = state.settings.autoAdvance;
   if (elements.toggleInfiniteMode) {
@@ -13805,18 +15622,20 @@ async function ensureQuestionsLoaded() {
 
 async function loadQuestions() {
   const fetchOptions = { cache: "no-store" };
-  const [mcqRes, shortRes, captionsRes, bookRes, auditRes] = await Promise.all([
+  const [mcqRes, shortRes, captionsRes, bookRes, auditRes, diseaseRes] = await Promise.all([
     fetch("data/questions.json", fetchOptions),
     fetch("data/kortsvar.json", fetchOptions),
     fetch("data/figure_captions.json", fetchOptions),
     fetch("data/book_captions.json", fetchOptions),
     fetch("data/figure_audit.json", fetchOptions),
+    fetch("data/sygdomslaere.json", fetchOptions),
   ]);
   const mcqData = await mcqRes.json();
   const shortData = shortRes.ok ? await shortRes.json() : [];
   const captionData = captionsRes.ok ? await captionsRes.json() : {};
   const bookData = bookRes.ok ? await bookRes.json() : {};
   const auditData = auditRes.ok ? await auditRes.json() : [];
+  const diseaseData = diseaseRes.ok ? await diseaseRes.json() : {};
   state.figureCaptionLibrary =
     captionData && typeof captionData === "object" ? captionData : {};
   state.figureAuditIndex = buildFigureAuditIndex(auditData);
@@ -13829,15 +15648,18 @@ async function loadQuestions() {
       const normalizedCategory = normalizeCategory(question.category);
       if (!normalizedCategory) return null;
       const rawCategory = question.category;
-      const sessionLabel = formatSessionLabel(question.session || "");
-      const sessionTitle = sessionLabel ? formatSessionTitle(sessionLabel) : "";
-      const yearLabel = sessionTitle ? `${question.year} ${sessionTitle}` : String(question.year);
-      const yearDisplay = sessionTitle ? `${question.year} · ${sessionTitle}` : String(question.year);
+      const course = normalizeCourse(question.course || DEFAULT_COURSE);
+      const { yearLabel, yearDisplay, sessionLabel } = resolveYearMeta({
+        year: question.year,
+        session: question.session,
+        course,
+      });
       const payload = {
         ...question,
         type: "mcq",
         rawCategory,
         category: normalizedCategory,
+        course,
         session: sessionLabel || null,
         yearLabel,
         yearDisplay,
@@ -13855,16 +15677,19 @@ async function loadQuestions() {
       const normalizedCategory = normalizeCategory(question.category);
       if (!normalizedCategory) return null;
       const rawCategory = question.category;
-      const sessionLabel = formatSessionLabel(question.session || "");
-      const sessionTitle = sessionLabel ? formatSessionTitle(sessionLabel) : "";
-      const yearLabel = sessionTitle ? `${question.year} ${sessionTitle}` : String(question.year);
-      const yearDisplay = sessionTitle ? `${question.year} · ${sessionTitle}` : String(question.year);
+      const course = normalizeCourse(question.course || DEFAULT_COURSE);
+      const { yearLabel, yearDisplay, sessionLabel } = resolveYearMeta({
+        year: question.year,
+        session: question.session,
+        course,
+      });
       const payload = {
         ...question,
         type: "short",
         text: question.prompt,
         rawCategory,
         category: normalizedCategory,
+        course,
         session: sessionLabel || null,
         yearLabel,
         yearDisplay,
@@ -13879,10 +15704,66 @@ async function loadQuestions() {
     })
     .filter(Boolean);
 
-  state.shortQuestionGroups = buildShortQuestionGroups(shortParts);
-  const shortGroups = buildShortGroups(shortParts);
+  const diseaseParts = Array.isArray(diseaseData?.diseases)
+    ? diseaseData.diseases.flatMap((disease, index) => {
+        const normalizedCategory = normalizeCategory(disease.category);
+        if (!normalizedCategory) return [];
+        const rawCategory = disease.category;
+        const course = "sygdomslaere";
+        const priority = normalizePriorityValue(disease.priority) || "medium";
+        const yearLabel = priority;
+        const yearDisplay = PRIORITY_LABELS[priority] || String(priority);
+        const diseaseId = String(disease.id || index + 1);
+        const base = {
+          type: "short",
+          course,
+          rawCategory,
+          category: normalizedCategory,
+          priority,
+          taskType: getStudioContract(course)?.taskType || "case_structured",
+          year: yearLabel,
+          yearLabel,
+          yearDisplay,
+          number: diseaseId,
+          opgave: index + 1,
+          opgaveTitle: String(disease.name || "").trim(),
+          opgaveIntro: "",
+          groupId: `disease-${diseaseId}`,
+          disease: String(disease.name || "").trim(),
+          diseaseId,
+        };
+        const sections = Array.isArray(disease.sections) ? disease.sections : [];
+        return sections
+          .map((section, sectionIndex) => {
+            const prompt = String(section.title || "").trim();
+            const answer = String(section.content || "").trim();
+            if (!prompt || !answer) return null;
+            const payload = {
+              ...base,
+              label: String.fromCharCode(65 + sectionIndex),
+              prompt,
+              text: prompt,
+              domain: prompt,
+              section: prompt,
+              answer,
+            };
+            const groupKey = getShortGroupKey(payload);
+            return {
+              ...payload,
+              groupKey,
+              key: getQuestionKey(payload),
+            };
+          })
+          .filter(Boolean);
+      })
+    : [];
+
+  const allShortParts = [...shortParts, ...diseaseParts];
+  state.shortQuestionGroups = buildShortQuestionGroups(allShortParts);
+  const shortGroups = buildShortGroups(allShortParts);
   state.shortGroupsByKey = new Map(shortGroups.map((group) => [group.key, group]));
   state.allQuestions = [...mcqQuestions, ...shortGroups];
+  state.courseStats = buildCourseStats(state.allQuestions);
   const availableImages = new Set();
   state.allQuestions.forEach((question) => {
     if (question.type === "short") {
@@ -13922,32 +15803,23 @@ async function loadQuestions() {
   localStorage.setItem(STORAGE_KEYS.mistakes, JSON.stringify([...state.lastMistakeKeys]));
   refreshSeenGroups();
   scheduleUserStateSync();
-  state.counts = buildCounts(state.allQuestions);
+  const allCounts = buildCounts(state.allQuestions);
   state.countsByType = {
-    mcq: state.counts.types.get("mcq") || 0,
-    short: state.counts.types.get("short") || 0,
+    mcq: allCounts.types.get("mcq") || 0,
+    short: allCounts.types.get("short") || 0,
   };
-  state.available.years = [...state.counts.years.keys()].sort((a, b) => {
-    const aParsed = parseYearLabel(a);
-    const bParsed = parseYearLabel(b);
-    if (aParsed.year !== bParsed.year) return aParsed.year - bParsed.year;
-    return (SESSION_ORDER[aParsed.session] ?? 99) - (SESSION_ORDER[bParsed.session] ?? 99);
-  });
-  const defaultYears = state.available.years;
-  const categoryOrder = new Map(CATEGORY_ORDER.map((label, index) => [label, index]));
-  state.available.categories = [...state.counts.categories.keys()].sort((a, b) => {
-    const aIndex = categoryOrder.get(a);
-    const bIndex = categoryOrder.get(b);
-    if (aIndex !== undefined || bIndex !== undefined) {
-      return (aIndex ?? 999) - (bIndex ?? 999);
-    }
-    return a.localeCompare(b, "da");
-  });
-  state.filters.years = new Set(defaultYears);
-  state.filters.categories = new Set(state.available.categories);
-  elements.questionCountChip.textContent = `${mcqQuestions.length} MCQ · ${shortGroups.length} kortsvar`;
-  updateChips();
-  updateSummary();
+  state.available.courses = sortCourseIds([...allCounts.courses.keys()]);
+  const preferredCourse = isKnownCourse(state.settings.lastStudio)
+    ? normalizeCourse(state.settings.lastStudio)
+    : DEFAULT_COURSE;
+  state.activeCourse = preferredCourse;
+  state.filters.courses = new Set([preferredCourse]);
+  state.counts.courses = allCounts.courses;
+  refreshAvailableFilters();
+  applyCourseSettings(preferredCourse);
+  applyCourseFilters(preferredCourse);
+  updateCourseUI(preferredCourse);
+  syncActiveBestScore(preferredCourse);
 }
 
 async function init() {
@@ -13958,7 +15830,7 @@ async function init() {
   setBillingStatus("");
   setBillingUpdateStatus("");
   updateTopBar();
-  elements.bestScoreValue.textContent = `${state.bestScore.toFixed(1)}%`;
+  syncActiveBestScore(getActiveCourse());
   applyTheme(getInitialTheme());
   syncSettingsToUI();
   setAiStatus(state.aiStatus);
@@ -13972,24 +15844,16 @@ async function init() {
       setLoadingProgress(20);
       await withTimeout(loadRuntimeConfig(), CONFIG_TIMEOUT_MS, "Konfiguration tager for lang tid");
       initSupabaseClient();
-      await guardedStep(
-        hydrateAuthProviders(),
-        CONFIG_TIMEOUT_MS,
-        "Login-indstillinger tog for lang tid"
-      );
+      await guardedStep(hydrateAuthProviders(), CONFIG_TIMEOUT_MS, "Login-indstillinger tog for lang tid");
       setLoadingMessage("Tjekker login …", "Finder din session");
       setLoadingProgress(35);
-      subscribeToAuthChanges();
       try {
-        await withTimeout(
-          refreshSession(),
-          LOGIN_TIMEOUT_MS,
-          "Login tager for lang tid at svare"
-        );
+        await withTimeout(refreshSession(), LOGIN_TIMEOUT_MS, "Login tager for lang tid at svare");
       } catch (error) {
         console.warn("Login tjek timeout", error);
         state.authReady = true;
       }
+      subscribeToAuthChanges();
       if (state.session?.user) {
         setLoadingMessage("Henter profil …", "Synkroniserer konto");
         setLoadingProgress(50);
@@ -13997,6 +15861,10 @@ async function init() {
       }
       await handleReturnParams();
       if (!state.session?.user) {
+        if (getStudioParamValue()) {
+          redirectToAuth();
+          return;
+        }
         setLoadingProgress(100);
         setLoadingState(false);
         return;

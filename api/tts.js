@@ -1,10 +1,11 @@
 const { readJson } = require("./_lib/body");
-const { sendError } = require("./_lib/response");
+const { sendError, setSecurityHeaders } = require("./_lib/response");
 const { callOpenAiTts } = require("./_lib/openai");
 const { requireAiAccess } = require("./_lib/aiGate");
 const { logUsageEvent } = require("./_lib/usage");
 const { enforceRateLimit } = require("./_lib/rateLimit");
 const { LIMITS, isValidLanguage } = require("./_lib/limits");
+const { validatePayload } = require("./_lib/validate");
 
 const TTS_VOICES = new Set(["alloy", "echo", "fable", "onyx", "nova", "shimmer"]);
 
@@ -51,6 +52,27 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  const validation = validatePayload(payload, {
+    fields: {
+      text: {
+        type: "string",
+        maxLen: LIMITS.maxTtsChars,
+        maxLenMessage: "Text too long",
+        maxLenStatus: 413,
+      },
+      voice: { type: "string" },
+      speed: { type: "number", coerce: true, typeMessage: "Invalid speed" },
+      language: {
+        type: "string",
+        pattern: LIMITS.languagePattern,
+        patternMessage: "Invalid language",
+      },
+    },
+  });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
+  }
+
   const text = cleanTtsText(payload.text || "");
   const voice = String(payload.voice || "alloy").trim().toLowerCase() || "alloy";
   const speed = clampTtsSpeed(payload.speed || 1.0);
@@ -86,6 +108,7 @@ module.exports = async function handler(req, res) {
     });
 
     res.statusCode = 200;
+    setSecurityHeaders(res);
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Cache-Control", "no-store");
     res.end(audioBytes);

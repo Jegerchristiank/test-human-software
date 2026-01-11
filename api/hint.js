@@ -6,12 +6,16 @@ const { requireAiAccess } = require("./_lib/aiGate");
 const { logUsageEvent } = require("./_lib/usage");
 const { enforceRateLimit } = require("./_lib/rateLimit");
 const { LIMITS, clampNumber, isValidLanguage } = require("./_lib/limits");
+const { validatePayload } = require("./_lib/validate");
+const { applyTraceId } = require("./_lib/trace");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return sendError(res, 405, "Method not allowed");
   }
+
+  applyTraceId(req, res);
 
   let payload;
   try {
@@ -35,6 +39,62 @@ module.exports = async function handler(req, res) {
     }))
   ) {
     return;
+  }
+
+  const validation = validatePayload(payload, {
+    fields: {
+      question: {
+        type: "string",
+        maxLen: LIMITS.maxQuestionChars,
+        maxLenMessage: "Question too long",
+        maxLenStatus: 413,
+      },
+      modelAnswer: {
+        type: "string",
+        maxLen: LIMITS.maxModelAnswerChars,
+        maxLenMessage: "Model answer too long",
+        maxLenStatus: 413,
+      },
+      userAnswer: {
+        type: "string",
+        maxLen: LIMITS.maxUserAnswerChars,
+        maxLenMessage: "User answer too long",
+        maxLenStatus: 413,
+      },
+      maxPoints: {
+        type: "number",
+        coerce: true,
+        min: 0,
+        max: LIMITS.maxPoints,
+        typeMessage: "Invalid maxPoints",
+        rangeMessage: "Invalid maxPoints",
+      },
+      awardedPoints: {
+        type: "number",
+        coerce: true,
+        min: 0,
+        max: LIMITS.maxPoints,
+        typeMessage: "Invalid awardedPoints",
+        rangeMessage: "Invalid awardedPoints",
+      },
+      ignoreSketch: { type: "boolean" },
+      language: {
+        type: "string",
+        pattern: LIMITS.languagePattern,
+        patternMessage: "Invalid language",
+      },
+      previousHint: {
+        type: "string",
+        maxLen: LIMITS.maxPreviousChars,
+        maxLenMessage: "Previous hint too long",
+        maxLenStatus: 413,
+      },
+      expand: { type: "boolean" },
+      skipped: { type: "boolean" },
+    },
+  });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
   }
 
   const question = String(payload.question || "").trim();

@@ -6,6 +6,8 @@ const { requireAiAccess } = require("./_lib/aiGate");
 const { logUsageEvent } = require("./_lib/usage");
 const { enforceRateLimit } = require("./_lib/rateLimit");
 const { LIMITS, clampNumber, isValidLanguage } = require("./_lib/limits");
+const { validatePayload } = require("./_lib/validate");
+const { applyTraceId } = require("./_lib/trace");
 
 function formatMcqOptions(options) {
   if (!Array.isArray(options)) return [];
@@ -34,6 +36,8 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed");
   }
 
+  applyTraceId(req, res);
+
   let payload;
   try {
     payload = await readJson(req);
@@ -56,6 +60,109 @@ module.exports = async function handler(req, res) {
     }))
   ) {
     return;
+  }
+
+  const validation = validatePayload(payload, {
+    fields: {
+      type: { type: "string" },
+      question: {
+        type: "string",
+        maxLen: LIMITS.maxQuestionChars,
+        maxLenMessage: "Question too long",
+        maxLenStatus: 413,
+      },
+      language: {
+        type: "string",
+        pattern: LIMITS.languagePattern,
+        patternMessage: "Invalid language",
+      },
+      previousExplanation: {
+        type: "string",
+        maxLen: LIMITS.maxPreviousChars,
+        maxLenMessage: "Previous explanation too long",
+        maxLenStatus: 413,
+      },
+      expand: { type: "boolean" },
+      options: {
+        type: "array",
+        maxItems: LIMITS.maxOptions,
+        maxItemsMessage: "Too many options",
+        maxItemsStatus: 413,
+        item: {
+          type: "object",
+          allowUnknown: true,
+          fields: {
+            label: {
+              type: "string",
+              required: true,
+              requiredMessage: "Invalid options",
+              minLen: 1,
+              minLenMessage: "Invalid options",
+              typeMessage: "Invalid options",
+              maxLen: LIMITS.maxOptionLabelChars,
+              maxLenMessage: "Option label too long",
+              maxLenStatus: 413,
+            },
+            text: {
+              type: "string",
+              required: true,
+              requiredMessage: "Invalid options",
+              minLen: 1,
+              minLenMessage: "Invalid options",
+              typeMessage: "Invalid options",
+              maxLen: LIMITS.maxOptionTextChars,
+              maxLenMessage: "Option text too long",
+              maxLenStatus: 413,
+            },
+          },
+        },
+      },
+      correctLabel: {
+        type: "string",
+        maxLen: LIMITS.maxOptionLabelChars,
+        maxLenMessage: "Correct label too long",
+        maxLenStatus: 413,
+      },
+      userLabel: {
+        type: "string",
+        maxLen: LIMITS.maxOptionLabelChars,
+        maxLenMessage: "User label too long",
+        maxLenStatus: 413,
+      },
+      skipped: { type: "boolean" },
+      modelAnswer: {
+        type: "string",
+        maxLen: LIMITS.maxModelAnswerChars,
+        maxLenMessage: "Model answer too long",
+        maxLenStatus: 413,
+      },
+      userAnswer: {
+        type: "string",
+        maxLen: LIMITS.maxUserAnswerChars,
+        maxLenMessage: "User answer too long",
+        maxLenStatus: 413,
+      },
+      maxPoints: {
+        type: "number",
+        coerce: true,
+        min: 0,
+        max: LIMITS.maxPoints,
+        typeMessage: "Invalid maxPoints",
+        rangeMessage: "Invalid maxPoints",
+      },
+      awardedPoints: {
+        type: "number",
+        coerce: true,
+        min: 0,
+        max: LIMITS.maxPoints,
+        typeMessage: "Invalid awardedPoints",
+        rangeMessage: "Invalid awardedPoints",
+      },
+      ignoreSketch: { type: "boolean" },
+    },
+  });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
   }
 
   const questionType = String(payload.type || "").trim().toLowerCase();

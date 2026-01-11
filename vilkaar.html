@@ -13,20 +13,20 @@
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="mode-auth legal-page">
+  <body class="mode-auth legal-page" data-testid="legal-page-vilkaar">
     <div class="ambient ambient-one"></div>
     <div class="ambient ambient-two"></div>
     <div class="ambient ambient-three"></div>
     <div class="noise-layer"></div>
-    <main class="legal-shell">
-      <header class="legal-header">
+    <main class="legal-shell" data-testid="legal-shell">
+      <header class="legal-header" data-testid="legal-header">
         <div class="brand-block">
           <div class="brand-mark">
             <img class="brand-logo small" src="Logo.png" alt="Human Biologi Studio logo" />
           </div>
           <div>
             <div class="legal-eyebrow">Juridiske vilkår</div>
-            <h1>Vilkår</h1>
+            <h1 data-testid="legal-title">Vilkår</h1>
             <p>
               Disse vilkår beskriver rammerne for brug af Human Biologi Studio. Ved at bruge tjenesten accepterer du
               vilkårene.
@@ -36,21 +36,30 @@
         <a
           class="btn ghost"
           href="index.html"
+          data-testid="legal-back-btn"
           onclick="if (history.length > 1) { history.back(); return false; }"
         >
           Tilbage
         </a>
       </header>
 
-      <nav class="legal-nav" aria-label="Juridiske sider">
-        <a class="legal-chip" href="vilkaar.html" aria-current="page">Vilkår</a>
-        <a class="legal-chip" href="privatlivspolitik.html">Privatlivspolitik</a>
-        <a class="legal-chip" href="persondatapolitik.html">Persondatapolitik</a>
-        <a class="legal-chip" href="handelsbetingelser.html">Handelsbetingelser</a>
+      <nav class="legal-nav" aria-label="Juridiske sider" data-testid="legal-nav">
+        <a class="legal-chip" href="vilkaar.html" aria-current="page" data-testid="legal-link-vilkaar">
+          Vilkår
+        </a>
+        <a class="legal-chip" href="privatlivspolitik.html" data-testid="legal-link-privatliv">
+          Privatlivspolitik
+        </a>
+        <a class="legal-chip" href="persondatapolitik.html" data-testid="legal-link-persondata">
+          Persondatapolitik
+        </a>
+        <a class="legal-chip" href="handelsbetingelser.html" data-testid="legal-link-handelsbetingelser">
+          Handelsbetingelser
+        </a>
       </nav>
 
-      <div class="legal-grid">
-        <section class="legal-card">
+      <div class="legal-grid" data-testid="legal-grid">
+        <section class="legal-card" data-testid="legal-card-om-tjenesten">
           <h2>1. Om tjenesten</h2>
           <p>
             Human Biologi Studio er en digital studieplatform til træning af multiple choice og kortsvar baseret på
@@ -58,7 +67,7 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-konto-og-adgang">
           <h2>2. Konto og adgang</h2>
           <ul>
             <li>Adgang er personlig og må ikke deles med andre.</li>
@@ -67,7 +76,7 @@
           </ul>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-brug-og-adfaerd">
           <h2>3. Brug og adfærd</h2>
           <ul>
             <li>Automatiseret scraping, reverse engineering eller omgåelse af begrænsninger er ikke tilladt.</li>
@@ -76,7 +85,7 @@
           </ul>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-indhold-og-ai">
           <h2>4. Indhold og AI-funktioner</h2>
           <p>
             Indhold, hints og AI-genererede forklaringer er vejledende og kan indeholde fejl. De er ikke faglig
@@ -84,7 +93,7 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-abonnement-og-pris">
           <h2>5. Abonnement og pris</h2>
           <p>
             Tjenesten tilbyder en gratis plan samt Pro-abonnement til 179 kr/md. Betaling og fornyelse håndteres via
@@ -92,7 +101,7 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-drift-og-aendringer">
           <h2>6. Drift, ændringer og tilgængelighed</h2>
           <p>
             Vi kan opdatere funktioner, indhold og priser for at forbedre tjenesten. Planlagte ændringer varsles, når
@@ -100,7 +109,7 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-opsigelse-og-lukning">
           <h2>7. Opsigelse og lukning</h2>
           <ul>
             <li>Du kan opsige abonnement når som helst; adgang fortsætter til periodens udløb.</li>
@@ -108,7 +117,7 @@
           </ul>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-rettigheder">
           <h2>8. Rettigheder</h2>
           <p>
             Alt indhold, design og software tilhører Human Biologi Studio og må ikke kopieres eller distribueres uden
@@ -116,7 +125,7 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-ansvarsbegraensning">
           <h2>9. Ansvarsbegrænsning</h2>
           <p>
             Tjenesten leveres "som den er". Vi fraskriver os ansvar for indirekte tab, følgeskader eller tab af data,
@@ -124,7 +133,7 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-kontakt">
           <h2>10. Kontakt</h2>
           <p>
             Ved spørgsmål til vilkår eller brug af tjenesten kan du kontakte os via kristenson.dk eller via din

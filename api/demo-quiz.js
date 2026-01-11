@@ -3,13 +3,14 @@ const path = require("path");
 const { readJson } = require("./_lib/body");
 const { sendJson, sendError } = require("./_lib/response");
 const { enforceRateLimit } = require("./_lib/rateLimit");
+const { validatePayload } = require("./_lib/validate");
 
 const MCQ_COUNT = 5;
 const OPTIONS_COUNT = 4;
 const DAILY_WINDOW_SECONDS = 24 * 60 * 60;
 const SHORT_MIN_PARTS = 2;
 const SHORT_MAX_PARTS = 3;
-const SHORT_LABEL_ORDER = ["a", "b", "c", "d", "e", "f"];
+const SHORT_LABEL_ORDER = "abcdefghijklmnopqrstuvwxyz".split("");
 const SHORT_LABEL_INDEX = new Map(SHORT_LABEL_ORDER.map((label, index) => [label, index]));
 
 function cleanText(value) {
@@ -187,8 +188,9 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed");
   }
 
+  let payload;
   try {
-    await readJson(req);
+    payload = await readJson(req);
   } catch (error) {
     const status = error.message === "Payload too large" ? 413 : 400;
     return sendError(res, status, error.message || "Invalid JSON");
@@ -202,6 +204,11 @@ module.exports = async function handler(req, res) {
     }))
   ) {
     return;
+  }
+
+  const validation = validatePayload(payload, { fields: {} });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
   }
 
   let mcqData = [];

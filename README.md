@@ -13,24 +13,29 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 - Uendelig mode: fortsæt med nye spørgsmål indtil du afslutter.
 - Øjeblikkelig feedback, gennemgang af dine svar og gemt bedste score lokalt.
 
+## Sygdomslære Studio
+- Kør `sygdomslaere.html` for den separate sygdomslære-oplevelse.
+- Byg kortsvars-sessioner ud fra pensum, prioritet, sektioner og tyngde.
+
 ## Kom i gang (lokalt)
 1. Installer afhængigheder: `npm install`
-2. Start appen:
+2. Generer Clerk-init-scriptet: `npm run build:clerk`
+   - Rerun, hvis `VITE_CLERK_PUBLISHABLE_KEY` ændrer sig in `.env` or Vercel metadata.
+3. Start appen:
    - Kun frontend: `python3 -m http.server 8000`
    - Frontend + API: `vercel dev` (kræver Vercel CLI)
-3. Åbn:
+4. Åbn:
    - http://localhost:8000 for statisk frontend
    - http://localhost:3000 for Vercel dev
-4. Demo: Hvis backend ikke kører, kan du fortsætte i demo mode uden login (AI og betaling er deaktiveret).
+5. Demo: Hvis backend ikke kører, kan du fortsætte i demo mode uden login (AI og betaling er deaktiveret).
 
 ## Login
-- Standard login er email magic-link via Supabase Auth.
-- Google/Apple OAuth er valgfrit og kan aktiveres senere i Supabase.
+- Auth håndteres via Clerk (prebuilt sign-in/user-button widgets i `clerk-init.js`).
+- Konfigurér providers i Clerk Dashboard.
 
 ## Online setup (Supabase + Stripe + Vercel)
 1. Supabase:
    - Kør SQL fra `supabase/schema.sql` i Supabase SQL Editor.
-   - Aktivér Auth providers (email, evt. Google + Apple) i Supabase Auth.
    - Hvis du allerede har kørt SQL, så kør det igen for at oprette `user_state` og `rate_limits`.
 2. Stripe:
    - Opret et produkt og en price (subscription).
@@ -54,6 +59,7 @@ Minimum for online drift:
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_ID`
 - `OPENAI_API_KEY`
+- `CLERK_SECRET_KEY`
 - `STRIPE_BASE_URL` (påkrævet hvis Stripe er aktiveret)
 - `STRIPE_PORTAL_CONFIGURATION_ID` (valgfri)
 - `TRUST_PROXY` (valgfri, brug `true` hvis din platform sætter sikre forwarded headers)
@@ -64,6 +70,7 @@ Stripe nøgler:
 - `STRIPE_WEBHOOK_SECRET` findes i Stripe Dashboard → Developers → Webhooks (starter med `whsec_`).
 - `STRIPE_BASE_URL` er påkrævet og skal være din app-URL (bruges til success/cancel).
 - `STRIPE_PORTAL_CONFIGURATION_ID` er valgfri og bruges til Stripe Customer Portal.
+- `VITE_CLERK_PUBLISHABLE_KEY` (bruges af `npm run build:clerk` til at stykke `clerk-init.js` sammen).
 
 ## Sync af settings + historik
 - Appen synkroniserer settings, historik, fejl og performance til `user_state` tabellen i Supabase.
@@ -82,6 +89,8 @@ Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 - Kortsvar rådata ligger i `rawdata-kortsvar`.
 - Kør `python3 scripts/convert_rawdata.py` for at regenerere `data/questions.json`.
 - Kør `python3 scripts/convert_kortsvar.py` for at regenerere `data/kortsvar.json`.
+- Sygdomslære pensum ligger i `rawdata-sygdomslaere.txt` (bruges af Sygdomslære Studio).
+- Kør `python3 scripts/convert_sygdomslaere.py` for at regenerere `data/sygdomslaere.json`.
 - `data/figure_captions.json` er en valgfri cache af AI-figurbeskrivelser.
 - Billeder til kortsvar ligger i `billeder/opgaver` og navngives som `YYYY[-syg]-OO-L[variant].*` (fx `2025-06-a.jpg`).
 

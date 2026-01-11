@@ -4,6 +4,8 @@ const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest, getProfileForUser, getActiveSubscription } = require("../_lib/auth");
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { enforceRateLimit } = require("../_lib/rateLimit");
+const { validatePayload } = require("../_lib/validate");
+const { logAuditEvent } = require("../_lib/audit");
 
 const ACTIVE_STATUSES = new Set(["trialing", "active"]);
 
@@ -44,6 +46,20 @@ module.exports = async function handler(req, res) {
   } catch (error) {
     const status = error.message === "Payload too large" ? 413 : 400;
     return sendError(res, status, error.message || "Invalid JSON");
+  }
+
+  const validation = validatePayload(payload, {
+    fields: {
+      cancelAtPeriodEnd: {
+        type: "boolean",
+        required: true,
+        requiredMessage: "Missing cancel flag",
+        typeMessage: "Missing cancel flag",
+      },
+    },
+  });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
   }
 
   if (typeof payload.cancelAtPeriodEnd !== "boolean") {
@@ -93,6 +109,15 @@ module.exports = async function handler(req, res) {
       ? new Date(updated.current_period_end * 1000).toISOString()
       : null;
 
+    await logAuditEvent({
+      eventType: "stripe_subscription_updated",
+      userId: user.id,
+      status: "success",
+      req,
+      targetType: "stripe_subscription",
+      targetId: updated.id,
+    });
+
     return sendJson(res, 200, {
       subscription: {
         id: updated.id,
@@ -104,6 +129,12 @@ module.exports = async function handler(req, res) {
       },
     });
   } catch (err) {
+    await logAuditEvent({
+      eventType: "stripe_subscription_updated",
+      userId: user.id,
+      status: "failure",
+      req,
+    });
     return sendError(res, 500, "Could not update subscription");
   }
 };

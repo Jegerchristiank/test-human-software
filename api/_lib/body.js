@@ -36,8 +36,23 @@ async function readJson(req, limitBytes) {
   }
 }
 
+async function readJsonAllowEmpty(req, limitBytes) {
+  const raw = await readRawBody(req, limitBytes);
+  if (!raw || raw.length === 0) return {};
+  const text = raw.toString("utf-8").trim();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    const err = new Error("Invalid JSON");
+    err.cause = error;
+    throw err;
+  }
+}
+
 module.exports = {
   readRawBody,
   readJson,
+  readJsonAllowEmpty,
   DEFAULT_LIMIT_BYTES,
 };

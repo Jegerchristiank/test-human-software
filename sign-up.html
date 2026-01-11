@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Opret konto · Human Biologi Studio</title>
+    <link rel="icon" href="Logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="mode-auth" data-testid="page-sign-up">
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <div class="ambient ambient-three"></div>
+    <div class="noise-layer"></div>
+    <div class="theme-switch" role="group" aria-label="Tema" data-testid="theme-switch">
+      <span class="theme-label">Lys</span>
+      <label class="theme-toggle">
+        <input type="checkbox" id="theme-toggle" data-testid="theme-toggle" aria-label="Skift til mørk tilstand" />
+      </label>
+      <span class="theme-label">Mørk</span>
+    </div>
+
+    <main class="auth-shell auth-page" data-testid="auth-page">
+      <header class="global-header" data-testid="global-header">
+        <div class="brand-block">
+          <div class="brand-mark">
+            <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
+          </div>
+          <div>
+            <div class="brand-subtitle">Sundhed &amp; Informatik</div>
+            <div class="brand-title">Human Biologi Studio</div>
+          </div>
+        </div>
+        <nav class="global-header-links" aria-label="Login links" data-testid="global-header-links">
+          <a class="btn ghost small" href="sign-in.html" data-testid="nav-sign-in" data-preserve-redirect="true">Log ind</a>
+          <a
+            class="btn primary small active"
+            href="sign-up.html"
+            aria-current="page"
+            data-testid="nav-sign-up"
+          >Opret konto</a>
+        </nav>
+      </header>
+
+      <section class="panel auth-panel" data-testid="auth-panel">
+        <div class="panel-header">
+          <h1>Opret konto</h1>
+          <p>Opret en konto for at starte din første session.</p>
+        </div>
+        <div class="clerk-panel" id="clerk-panel" data-testid="clerk-panel">
+          <div
+            id="clerk-app"
+            data-testid="clerk-app"
+            class="clerk-app-container"
+            data-clerk-view="sign-up"
+            data-clerk-redirect="index.html"
+          ></div>
+        </div>
+        <div class="auth-switch" data-testid="auth-switch">
+          <span>Har du allerede en konto?</span>
+          <a href="sign-in.html" data-testid="auth-switch-link" data-preserve-redirect="true">Log ind</a>
+        </div>
+        <a class="btn ghost small" href="index.html" data-testid="auth-back-link">Til forsiden</a>
+      </section>
+    </main>
+
+    <script src="auth.js"></script>
+    <script src="clerk-init.js"></script>
+  </body>
+</html>

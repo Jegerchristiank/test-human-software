@@ -13,20 +13,20 @@
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="mode-auth legal-page">
+  <body class="mode-auth legal-page" data-testid="legal-page-privatlivspolitik">
     <div class="ambient ambient-one"></div>
     <div class="ambient ambient-two"></div>
     <div class="ambient ambient-three"></div>
     <div class="noise-layer"></div>
-    <main class="legal-shell">
-      <header class="legal-header">
+    <main class="legal-shell" data-testid="legal-shell">
+      <header class="legal-header" data-testid="legal-header">
         <div class="brand-block">
           <div class="brand-mark">
             <img class="brand-logo small" src="Logo.png" alt="Human Biologi Studio logo" />
           </div>
           <div>
             <div class="legal-eyebrow">Privatliv</div>
-            <h1>Privatlivspolitik</h1>
+            <h1 data-testid="legal-title">Privatlivspolitik</h1>
             <p>
               Vi passer på dine data og bruger kun det, der er nødvendigt for at levere Human Biologi Studio.
             </p>
@@ -35,21 +35,33 @@
         <a
           class="btn ghost"
           href="index.html"
+          data-testid="legal-back-btn"
           onclick="if (history.length > 1) { history.back(); return false; }"
         >
           Tilbage
         </a>
       </header>
 
-      <nav class="legal-nav" aria-label="Juridiske sider">
-        <a class="legal-chip" href="vilkaar.html">Vilkår</a>
-        <a class="legal-chip" href="privatlivspolitik.html" aria-current="page">Privatlivspolitik</a>
-        <a class="legal-chip" href="persondatapolitik.html">Persondatapolitik</a>
-        <a class="legal-chip" href="handelsbetingelser.html">Handelsbetingelser</a>
+      <nav class="legal-nav" aria-label="Juridiske sider" data-testid="legal-nav">
+        <a class="legal-chip" href="vilkaar.html" data-testid="legal-link-vilkaar">Vilkår</a>
+        <a
+          class="legal-chip"
+          href="privatlivspolitik.html"
+          aria-current="page"
+          data-testid="legal-link-privatliv"
+        >
+          Privatlivspolitik
+        </a>
+        <a class="legal-chip" href="persondatapolitik.html" data-testid="legal-link-persondata">
+          Persondatapolitik
+        </a>
+        <a class="legal-chip" href="handelsbetingelser.html" data-testid="legal-link-handelsbetingelser">
+          Handelsbetingelser
+        </a>
       </nav>
 
-      <div class="legal-grid">
-        <section class="legal-card">
+      <div class="legal-grid" data-testid="legal-grid">
+        <section class="legal-card" data-testid="legal-card-data-vi-indsamler">
           <h2>1. Hvilke data vi indsamler</h2>
           <ul>
             <li>Kontodata: e-mailadresse, navn og logininformation.</li>
@@ -60,7 +72,7 @@
           </ul>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-formaal">
           <h2>2. Formål</h2>
           <ul>
             <li>Levere og forbedre tjenesten, herunder indlæsning af spørgsmål og historik.</li>
@@ -69,7 +81,7 @@
           </ul>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-retsgrundlag">
           <h2>3. Retsgrundlag</h2>
           <p>
             Vi behandler dine data, fordi det er nødvendigt for at levere tjenesten (aftale), for at sikre stabil drift
@@ -77,7 +89,7 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-deling-tredjeparter">
           <h2>4. Deling med tredjeparter</h2>
           <p>
             Vi deler data med betroede leverandører, der driver hosting, login, betaling og AI-funktioner. Vi sælger
@@ -85,7 +97,7 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-opbevaring">
           <h2>5. Opbevaring</h2>
           <p>
             Data opbevares, så længe din konto er aktiv, eller indtil du beder om sletning. Visse logdata kan gemmes
@@ -93,7 +105,7 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-rettigheder">
           <h2>6. Dine rettigheder</h2>
           <ul>
             <li>Få indsigt i dine data.</li>
@@ -103,14 +115,14 @@
           <p>Du kan håndtere disse rettigheder via din konto i appen.</p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-sikkerhed">
           <h2>7. Sikkerhed</h2>
           <p>
             Vi bruger adgangskontrol, krypteret kommunikation og overvågning for at beskytte dine data.
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-kontakt">
           <h2>8. Kontakt</h2>
           <p>
             Ved spørgsmål til privatliv kan du kontakte os via kristenson.dk eller via din konto-side i appen.

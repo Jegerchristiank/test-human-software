@@ -1,15 +1,31 @@
 const Stripe = require("stripe");
+const { readJsonAllowEmpty } = require("../_lib/body");
 const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest, getProfileForUser, getActiveSubscription } = require("../_lib/auth");
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { getBaseUrl } = require("../_lib/url");
 const { enforceRateLimit } = require("../_lib/rateLimit");
 const { resolveSubscriptionPaymentMethodTypes } = require("../_lib/stripe");
+const { validatePayload } = require("../_lib/validate");
+const { logAuditEvent } = require("../_lib/audit");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return sendError(res, 405, "Method not allowed");
+  }
+
+  let payload;
+  try {
+    payload = await readJsonAllowEmpty(req, 64 * 1024);
+  } catch (error) {
+    const status = error.message === "Payload too large" ? 413 : 400;
+    return sendError(res, status, error.message || "Invalid JSON");
+  }
+
+  const validation = validatePayload(payload, { fields: {} });
+  if (!validation.ok) {
+    return sendError(res, validation.status, validation.error);
   }
 
   const { user, error } = await getUserFromRequest(req);
@@ -83,6 +99,15 @@ module.exports = async function handler(req, res) {
       return sendError(res, 500, "Could not create payment intent");
     }
 
+    await logAuditEvent({
+      eventType: "stripe_subscription_created",
+      userId: user.id,
+      status: "success",
+      req,
+      targetType: "stripe_subscription",
+      targetId: subscription.id,
+    });
+
     return sendJson(res, 200, {
       clientSecret: paymentIntent.client_secret,
       subscriptionId: subscription.id,
@@ -111,6 +136,12 @@ module.exports = async function handler(req, res) {
     console.error("stripe_subscription_error", {
       message,
       code,
+    });
+    await logAuditEvent({
+      eventType: "stripe_subscription_created",
+      userId: user.id,
+      status: "failure",
+      req,
     });
     return sendError(res, 500, "stripe_error", {
       message: message || null,

@@ -12,7 +12,7 @@ const elements = {
   logoutBtn: document.getElementById("gate-logout-btn"),
 };
 
-let supabaseClient = null;
+let clerk = null;
 let activeSession = null;
 
 function setStatus(message, isWarn = false) {
@@ -66,6 +66,13 @@ function setControlsEnabled(enabled) {
   }
 }
 
+function redirectToSignIn() {
+  const redirectPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const url = new URL("sign-in.html", window.location.href);
+  url.searchParams.set("redirect", redirectPath);
+  window.location.replace(`${url.pathname}${url.search}${url.hash}`);
+}
+
 async function loadConfig() {
   const res = await fetch("/api/config", { cache: "no-store" });
   if (!res.ok) {
@@ -84,16 +91,19 @@ async function loadConfig() {
 }
 
 async function loadProfile() {
+  const token = await getClerkSessionToken();
+  if (!token) {
+    throw new Error("Login er ikke klar endnu.");
+  }
   const res = await fetch("/api/me", {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${activeSession.access_token}`,
+      Authorization: `Bearer ${token}`,
     },
     cache: "no-store",
   });
   if (res.status === 401) {
-    await supabaseClient.auth.signOut();
-    window.location.replace("index.html");
+    await handleLogout();
     return null;
   }
   if (!res.ok) {
@@ -106,22 +116,15 @@ async function loadProfile() {
 async function hydrateConsent() {
   setStatus("Henter din konto …");
   setControlsEnabled(false);
-  const config = await loadConfig();
-  if (!window.supabase) {
-    throw new Error("Login er ikke tilgængeligt endnu.");
-  }
-  supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
-  const { data, error } = await supabaseClient.auth.getSession();
-  if (error) {
-    throw error;
-  }
-  activeSession = data?.session || null;
-  if (!activeSession) {
-    window.location.replace("index.html");
+  await loadConfig();
+  clerk = await waitForClerkReady();
+  activeSession = clerk?.session || null;
+  if (!activeSession || !clerk?.user) {
+    redirectToSignIn();
     return;
   }
   if (elements.email) {
-    elements.email.textContent = activeSession.user?.email || "—";
+    elements.email.textContent = clerk.user.primaryEmailAddress?.emailAddress || "—";
   }
 
   const profile = await loadProfile();
@@ -159,11 +162,15 @@ async function submitConsent() {
   setStatus("Gemmer samtykke …");
   setControlsEnabled(false);
   try {
+    const token = await getClerkSessionToken();
+    if (!token) {
+      throw new Error("Login er ikke klar endnu.");
+    }
     const res = await fetch("/api/profile", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${activeSession.access_token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ acceptTerms, acceptPrivacy }),
     });
@@ -179,13 +186,35 @@ async function submitConsent() {
 }
 
 async function handleLogout() {
-  if (!supabaseClient) {
-    window.location.replace("index.html");
-    return;
-  }
   setControlsEnabled(false);
-  await supabaseClient.auth.signOut();
+  if (clerk) {
+    await clerk.signOut();
+  }
   window.location.replace("index.html");
+}
+
+function waitForClerkReady() {
+  if (window.clerk && window.clerk.loaded) {
+    return Promise.resolve(window.clerk);
+  }
+  return new Promise((resolve) => {
+    const handler = (event) => {
+      if (event?.detail?.clerk) {
+        window.removeEventListener("clerk:ready", handler);
+        resolve(event.detail.clerk);
+      }
+    };
+    window.addEventListener("clerk:ready", handler);
+  });
+}
+
+async function getClerkSessionToken() {
+  if (!clerk?.session) return null;
+  try {
+    return await clerk.session.getToken();
+  } catch (error) {
+    return null;
+  }
 }
 
 function init() {

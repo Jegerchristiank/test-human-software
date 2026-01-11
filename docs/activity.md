@@ -1,0 +1,178 @@
+# Activity Log
+
+## 2025-02-14
+- Purpose: align API security/validation with agent rules and add stable UI selectors (data-testid) while keeping Supabase auth.
+- Files: api/_lib/response.js, api/_lib/rateLimit.js, api/config.js, api/health.js, api/me.js, api/grade.js, api/explain.js, api/hint.js, api/tts.js, api/transcribe.js, api/vision.js, api/demo-quiz.js, api/profile.js, api/account/delete.js, api/stripe/set-default-payment-method.js, api/stripe/update-subscription.js, api/stripe/webhook.js, index.html, sygdomslaere.html, consent.html, docs/activity.md.
+- Commands: rg -n "id=\"" *.html; rg -n "readJson" api; python3 - <<'PY' ...; npm test.
+- Security: added CSP + security headers to API responses, enforced dual-dimension rate limiting, and added schema validation with unknown-field rejection.
+- Follow-ups: consider adding an explicit CORS allowlist if cross-origin API calls are needed.
+
+## 2026-01-10
+- Purpose: bundle ClerkJS initialization through esbuild so the publishable key flows from `VITE_CLERK_PUBLISHABLE_KEY` into `clerk-init.js`.
+- Files: src/clerk-init.js, scripts/build-clerk.mjs, package.json, README.md, index.html, clerk-init.js, docs/activity.md.
+- Commands: `npm run build:clerk`.
+- Security: the public key is injected at build time and stored only in the generated asset; runtime code logs errors instead of crashing when the key is absent.
+- Follow-ups: rerun `npm run build:clerk` whenever the Clerk publishable key changes (CI/deploy pipelines should run the script as well).
+## 2026-01-10
+- Purpose: mount Clerk SignIn/UserButton components inside the auth panel so Clerk login is visible alongside the existing UI.
+- Files: src/clerk-init.js, clerk-init.js, index.html, styles.css, package.json, package-lock.json, docs/activity.md.
+- Commands: `npm install @clerk/clerk-js`, `npm run build:clerk`.
+- Security: the new component toggles on Clerk session events, keeps the publishable key on the server side, logs missing credentials, and does not leak secrets to the UI.
+- Follow-ups: ensure CI runs `npm run build:clerk` and consider routing consent/auth screens through Clerk when the component is active.
+## 2026-01-10
+- Formål: Verificere klikflow for auto-session, filterændringer, session-slut og “Mere” panels i Sygdomslære Studio.
+- Berørte filer: sygdomslaere.html, sygdomslaere.js, docs/activity.md
+- Kommandoer: sed -n '1,260p' sygdomslaere.html; sed -n '260,520p' sygdomslaere.html; rg -n "startSession\(|refreshSessionFromFilters|sessionComplete|newSessionBtn" sygdomslaere.js; date +%Y-%m-%d
+- Sikkerhedsimplikationer: Ingen; kun gennemgang af UI-flow.
+- Opfølgning: Test i browser via lokal server (se instruktioner).
+
+## 2026-01-10
+- Purpose: remove redundant root activity log so docs/activity.md is the single source of record.
+- Files: activity.md, docs/activity.md.
+- Commands: date +%F.
+- Security: none.
+- Follow-ups: none.
+
+## 2026-01-10
+- Purpose: add stable data-testid hooks to legal/static pages for automation.
+- Files: handelsbetingelser.html, vilkaar.html, privatlivspolitik.html, persondatapolitik.html, docs/activity.md.
+- Commands: date +%F.
+- Security: none.
+- Follow-ups: none.
+
+## 2026-01-10
+- Purpose: switch frontend auth UX to Clerk, add Clerk-backed request verification, and move user_state sync to authenticated API endpoints.
+- Files: api/_lib/clerk.js, api/_lib/auth.js, api/user-state.js, app.js, consent.js, sygdomslaere.js, index.html, consent.html, sygdomslaere.html, src/clerk-init.js, clerk-init.js, tests/apiValidation.test.mjs, package.json, package-lock.json, README.md, docs/activity.md.
+- Commands: `npm install @clerk/backend`, `npm run build:clerk`, `npm test`.
+- Security: Clerk session tokens are now verified server-side; user_state updates are validated, rate-limited, and scoped to the authenticated user.
+- Follow-ups: ensure `CLERK_SECRET_KEY` is set in runtime env and run `npm run build:clerk` in CI/deploy.
+
+## 2026-01-10
+- Purpose: add per-section data-testid hooks to legal cards for automation.
+- Files: handelsbetingelser.html, vilkaar.html, privatlivspolitik.html, persondatapolitik.html, docs/activity.md.
+- Commands: date +%F.
+- Security: none.
+- Follow-ups: none.
+
+## 2026-01-10
+- Purpose: extend data-testid coverage to all HTML pages (page-level wrappers and static link groups).
+- Files: index.html, consent.html, sygdomslaere.html, docs/activity.md.
+- Commands: date +%F.
+- Security: none.
+- Follow-ups: none.
+## 2026-01-10
+- Formål: Ombygge Sygdomslære Studio layout til Human Biologi Studio-look med blødt rødt tema.
+- Berørte filer: sygdomslaere.html, sygdomslaere.css, docs/activity.md
+- Kommandoer: sed -n '1,200p' docs/activity.md; sed -n '1,220p' index.html; rg -n "builder|workspace|session|kortsvar|studie|oversigt|overblik|Træning|Spørgsmål" index.html; sed -n '440,680p' index.html; sed -n '1,200p' styles.css; rg -n "menu-shell|menu-header|menu-grid|panel builder|builder-section|preset" styles.css; sed -n '1120,1400p' styles.css; rg -n "more-drawer|settings-drawer|details" styles.css; sed -n '1500,1615p' styles.css; rg -n "\\.btn" -n styles.css | head; sed -n '1950,2025p' styles.css; rg -n "summary-card" index.html; sed -n '780,860p' index.html; rg -n "\\.chip|\\.priority-pill|\\.toggle" styles.css | head -n 40; sed -n '1800,1885p' styles.css; rg -n "progress-bar" styles.css; sed -n '2120,2165p' styles.css; rg -n "\\.tabs|\\.tab" styles.css | head -n 40; rg -n "\\.footer" styles.css; rg -n "\\.pill" styles.css | head -n 40; sed -n '3230,3265p' styles.css; rg -n "\\.field" styles.css | head -n 40; sed -n '4800,4875p' styles.css; rg -n "type=\\\"range\\\"|range-control" styles.css; sed -n '1420,1475p' styles.css; rg -n "textarea" styles.css; sed -n '320,420p' styles.css; sed -n '3920,3985p' styles.css; cat <<'EOF' > sygdomslaere.html; rg -n "id=\\\"(stat-diseases|stat-sections|stat-categories|search-input|category-chips|priority-chips|weight-chips|section-chips|toggle-include-excluded|deck-size|toggle-priority-weight|toggle-focus-weak|toggle-shuffle|reset-filters-btn|pool-count|disease-count|reveal-btn|skip-btn|new-session-btn|card-answer|rating-row|overview-list|expand-all-btn|reset-progress-btn)\\\"" sygdomslaere.html; cat <<'EOF' > sygdomslaere.css; date +%Y-%m-%d
+- Sikkerhedsimplikationer: Kun UI/layout og styling; ingen ændring i dataadgang eller endpoints.
+- Opfølgning: Visuel verifikation i browser samt tjek af session/filtre/overblik efter layoutændring.
+## 2026-01-10
+- Formål: Løfte Sygdomslære-shell over baggrundslag for stabil visuel layering.
+- Berørte filer: sygdomslaere.css, docs/activity.md
+- Kommandoer: apply_patch (sygdomslaere.css); date +%Y-%m-%d
+- Sikkerhedsimplikationer: Ingen.
+- Opfølgning: Ingen.
+## 2026-01-10
+- Formål: Gøre studioskift hurtigere ved at tidsbegrænse sync før navigation.
+- Berørte filer: app.js, sygdomslaere.js, docs/activity.md
+- Kommandoer: apply_patch (app.js); apply_patch (sygdomslaere.js); date +%Y-%m-%d
+- Sikkerhedsimplikationer: Begrænset ventetid kan udsætte server-synk af brugerdata; lokal state bevares og næste sync forsøges senere.
+- Opfølgning: Verificér at studioskift føles direkte, og at seneste user state stadig synkroniseres ved fortsat brug.
+
+## 2026-01-10
+- Purpose: add finer-grained data-testid hooks across all screens in index.html plus consent and sygdomslaere panels; run automation checks.
+- Files: index.html, consent.html, sygdomslaere.html, docs/activity.md.
+- Commands: rg --files -g "*.html"; rg -n "<section" index.html; sed -n '120,220p' index.html; sed -n '220,340p' index.html; sed -n '380,460p' index.html; sed -n '430,520p' index.html; sed -n '980,1080p' index.html; sed -n '1168,1255p' index.html; sed -n '1280,1405p' index.html; sed -n '1405,1505p' index.html; sed -n '1505,1635p' index.html; npm test; python3 - <<'PY' ...
+- Security: none.
+- Follow-ups: none.
+
+## 2026-01-10
+- Formål: Integrere Sygdomslære som kursus-tab i hovedappen uden reload, mappe sygdomsdata ind i kortsvar-flowet og tilpasse UI/tema til blødt rødt udtryk.
+- Berørte filer: app.js, index.html, styles.css, sygdomslaere.html, docs/activity.md.
+- Kommandoer: sed -n '430,760p' index.html; sed -n '14140,14380p' app.js; rg -n "studio-|sygdom|human" index.html; rg -n "navigateToStudio|course|sygdom" app.js; python3 - <<'PY' ...; apply_patch (app.js, index.html, styles.css, sygdomslaere.html); date +%F.
+- Sikkerhedsimplikationer: Ingen nye endpoints eller credential-ændringer; kun client-side UI og routing-tilpasning.
+- Opfølgning: Verificér i browser at studioskift sker uden fuld reload, at sygdomsflowet kun viser kortsvar/sektioner, og at rødt tema aktiveres.
+
+## 2026-01-11
+- Purpose: prevent repeated Clerk sign-in mounts to reduce rate-limit errors and rebuild the Clerk bundle.
+- Files: src/clerk-init.js, clerk-init.js, docs/activity.md.
+- Commands: `date +%F`, `npm run build:clerk`.
+- Security: reduces repeated authentication attempts; no secrets added or logged.
+- Follow-ups: verify login flow in browser; if 429 persists, review Clerk dashboard sign-in/passkey settings and rate limits.
+
+## 2026-01-11
+- Purpose: allow Clerk image assets and Cloudflare Turnstile to load by widening CSP for the login flow.
+- Files: vercel.json, docs/activity.md.
+- Commands: `date +%F`.
+- Security: CSP remains restrictive but now permits Clerk image hosts and Turnstile scripts/frames required for auth.
+- Follow-ups: verify login icons load and sign-up captcha completes; re-capture HAR if failures persist.
+
+## 2026-01-11
+- Purpose: map Humanbiologi vs Sygdomslære studio surfaces and define an explicit Studio Engine contract spec to prevent MCQ/drawing/50-50 scoring leakage.
+- Files: docs/activity.md.
+- Commands: rg --files; cat docs/activity.md; sed -n '1,260p' app.js; rg -n "studio|sygdom|human" app.js; rg -n "isDisease|sygdom|disease" app.js; sed -n '1360,1700p' app.js; sed -n '14640,14880p' app.js; rg -n "rules|modal" app.js; sed -n '13070,13130p' app.js; rg -n "maybeResolveStudioPreference" app.js; sed -n '2160,2305p' app.js; rg -n "\\+3|\\-1" app.js; sed -n '3440,3520p' app.js; rg -n "MCQ|kortsvar|drawing|skitse|canvas|score" index.html; sed -n '440,560p' index.html; sed -n '1580,1665p' index.html; sed -n '1,260p' sygdomslaere.html; sed -n '1,240p' sygdomslaere.js; sed -n '100,220p' styles.css; sed -n '1,80p' data/questions.json; sed -n '1,80p' data/kortsvar.json; sed -n '1,80p' data/sygdomslaere.json; rg -n "Studio Engine|studio engine|engine contract|kontrakt" -S .; date +%F.
+- Security: no runtime changes; contract spec only.
+- Follow-ups: implement the contract at the canonical location and wire app.js/index.html gating to enforce studio-specific capabilities.
+
+## 2026-01-11
+- Purpose: add a deterministic, versioned studio data pipeline and Supabase schema for studies, item bank, disease domains, rubrics, model answers, sessions, and attempts; version LLM audit outputs.
+- Files: supabase/schema.sql, scripts/build_studio_pipeline.py, scripts/audit_figures.py, docs/activity.md.
+- Commands: cat docs/activity.md; sed -n '1,260p' scripts/convert_rawdata.py; sed -n '1,260p' scripts/convert_kortsvar.py; sed -n '260,520p' scripts/convert_kortsvar.py; sed -n '1,260p' scripts/convert_sygdomslaere.py; sed -n '1,260p' scripts/audit_figures.py; rg -n "openai|LLM|model|prompt" scripts api data; python3 - <<'PY' ...; date +%F.
+- Security: added RLS policies for user-scoped tables, locked ingest_runs to service role only, and enforced schema validation via check constraints.
+- Follow-ups: generate SQL via scripts/build_studio_pipeline.py and apply migrations; verify RLS with manual queries before exposing data reads.
+
+## 2026-01-11
+- Purpose: enforce single-file database setup by embedding studio pipeline SQL into supabase/schema.sql and deprecating external SQL output.
+- Files: supabase/schema.sql, scripts/build_studio_pipeline.py, scripts/studio_pipeline.sql, docs/activity.md.
+- Commands: cat docs/activity.md; sed -n '1,20p' scripts/studio_pipeline.sql; python3 scripts/build_studio_pipeline.py; rg -n "BEGIN STUDIO_PIPELINE_DATA|END STUDIO_PIPELINE_DATA" supabase/schema.sql; date +%F.
+- Security: no change; pipeline SQL now lives inside schema.sql under explicit markers.
+- Follow-ups: apply supabase/schema.sql via CLI or chunked execution if SQL editor limits persist.
+
+## 2026-01-11
+- Purpose: document security contracts, add audit logging, and tighten validation for Stripe endpoints and webhooks.
+- Files: api/_lib/body.js, api/_lib/audit.js, api/profile.js, api/user-state.js, api/account/delete.js, api/account/export.js, api/stripe/create-checkout-session.js, api/stripe/create-portal-session.js, api/stripe/create-setup-intent.js, api/stripe/create-subscription.js, api/stripe/set-default-payment-method.js, api/stripe/update-subscription.js, api/stripe/webhook.js, supabase/schema.sql, docs/security-contracts.md, tests/body.test.mjs, docs/activity.md.
+- Commands: cat docs/activity.md; rg --files api; rg -n "readJson\\(" api; rg -n "STRIPE_SECRET_KEY|CLERK_SECRET_KEY|SUPABASE_SERVICE_ROLE_KEY|OPENAI_API_KEY" -S .; sed -n '1,260p' api/*.js; sed -n '1,220p' supabase/schema.sql; apply_patch (multiple files); date +%F.
+- Security: added audit_events table with RLS deny policies, sanitized audit logging for account/Stripe actions, validated Stripe webhook fields, and enforced empty-body validation for bodyless POST endpoints.
+- Follow-ups: apply supabase/schema.sql in Supabase; run `npm test`; verify audit_events RLS in Supabase.
+
+## 2026-01-11
+- Purpose: centralize studio scoring/capabilities policy, add a dev-only debug panel, and add trace-id instrumentation for AI evaluation endpoints with minimal tests.
+- Files: studio-policy.js, app.js, index.html, styles.css, api/_lib/trace.js, api/_lib/response.js, api/grade.js, api/hint.js, api/explain.js, api/vision.js, tests/studioPolicy.test.mjs, tests/routingAuth.integration.test.mjs, docs/activity.md.
+- Commands: `npm test -- tests/studioPolicy.test.mjs tests/routingAuth.integration.test.mjs`, `date +%F`.
+- Security: added trace-id propagation for AI evaluation endpoints (header + response field) without logging PII; debug panel is dev-only.
+- Follow-ups: none.
+
+## 2026-01-11
+- Purpose: split auth flow into sign-in/sign-up routes, keep the landing page marketing-only, and enforce auth gating while isolating demo history.
+- Files: app.js, auth.js, sign-in.html, sign-up.html, index.html, docs/activity.md.
+- Commands: cat docs/activity.md; sed -n '3460,3615p' app.js; rg -n "allowDemo" app.js; rg -n "sign-up.html|sign-in.html" *.html; apply_patch (app.js, sign-in.html); cat <<'EOF' > auth.js; cat <<'EOF' > sign-up.html; date +%F.
+- Security: unauthenticated users now redirect to sign-in before protected screens; demo quiz results no longer merge into real history; redirect targets remain same-origin via existing Clerk sanitization.
+- Follow-ups: verify auth redirect flow and demo-only behavior in the browser.
+
+## 2026-01-11
+- Purpose: implement Studio Engine contracts for Sygdomslære (case_structured), structured hint levels with history-based progression, and capability gating to disable MCQ/drawing.
+- Files: app.js, studio-engine.js, index.html, docs/studio-engine.md, tests/studioEngine.test.mjs, docs/activity.md.
+- Commands: rg -n "StudioEngine|hint|buildReviewQueue|toggleQuestionHint" app.js; sed -n '9880,10110p' app.js; apply_patch (app.js, studio-engine.js, index.html); apply_patch (docs/studio-engine.md, tests/studioEngine.test.mjs); npm test; date +%F.
+- Security: disabled sketch/drawing for Sygdomslære, switched hints to local structured generation (no AI calls), and kept existing auth/rate limits unchanged.
+- Follow-ups: verify Sygdomslære sessions show structured hints and no MCQ/sketch UI.
+
+## 2026-01-11
+- Purpose: route studio policy through Studio Engine contracts and document wrapper dependencies.
+- Files: studio-policy.js, tests/studioPolicy.test.mjs, docs/studio-engine.md, docs/activity.md.
+- Commands: sed -n '1,200p' docs/activity.md; rg -n "studio-policy|studio-engine|app.js" index.html; sed -n '1,240p' studio-policy.js; sed -n '1,260p' studio-engine.js; rg -n "getScoringPolicy|getStudioPolicy|scoringPolicy" app.js; sed -n '280,420p' app.js; rg -n "STUDIO_POLICY" app.js; rg -n "policy\\.domains|contract\\.domains|domains\\]" app.js; sed -n '11140,11220p' app.js; sed -n '1,240p' docs/studio-engine.md; rg -n "studio-policy" -S .; cat package.json; rg -n "STUDIO_TYPES" -S .; rg -n "function getHintPolicy|const hintPolicy|hintPolicy" app.js; sed -n '9960,10080p' app.js; rg -n "return \\{" studio-engine.js; sed -n '300,380p' studio-engine.js; sed -n '6180,6245p' app.js; `npm test`; `date +%F`.
+- Security: none.
+- Follow-ups: verify Sygdomslaere uses structured hints and hides MCQ/sketch UI in the browser.
+
+## 2026-01-11
+- Formaal: Tilpasse resultat- og historikvisning til studio-specifik scoring (rubric vs grade) og dokumentere scoring contracts/policies.
+- Berorte filer: app.js, docs/scoring-contracts.md, docs/activity.md.
+- Kommandoer: sed -n '1,200p' docs/activity.md; rg -n "showResults|renderHistory|scoreSummary" app.js; sed -n '12980,13240p' app.js; sed -n '11240,11480p' app.js; rg -n "result-rubric" index.html; apply_patch (app.js); cat <<'EOF' > docs/scoring-contracts.md; date +%F.
+- Sikkerhedsimplikationer: Ingen nye endpoints; rubric/grade-visning og kontrakt-log er dokumenteret uden at logge rae answers.
+- Opfoelgning: Verificer i UI at Humanbiologi viser grade + MCQ/kortsvar og Sygdomslaere viser rubricdaekning uden grade.
+
+## 2026-01-11
+- Formaal: Uddybe scoring contracts med result-UI mapping for rubric vs grade.
+- Berorte filer: docs/scoring-contracts.md, docs/activity.md.
+- Kommandoer: apply_patch (docs/scoring-contracts.md); date +%F.
+- Sikkerhedsimplikationer: Ingen; dokumentationsopdatering.
+- Opfoelgning: Ingen.

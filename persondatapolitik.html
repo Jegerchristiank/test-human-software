@@ -13,20 +13,20 @@
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="mode-auth legal-page">
+  <body class="mode-auth legal-page" data-testid="legal-page-persondatapolitik">
     <div class="ambient ambient-one"></div>
     <div class="ambient ambient-two"></div>
     <div class="ambient ambient-three"></div>
     <div class="noise-layer"></div>
-    <main class="legal-shell">
-      <header class="legal-header">
+    <main class="legal-shell" data-testid="legal-shell">
+      <header class="legal-header" data-testid="legal-header">
         <div class="brand-block">
           <div class="brand-mark">
             <img class="brand-logo small" src="Logo.png" alt="Human Biologi Studio logo" />
           </div>
           <div>
             <div class="legal-eyebrow">Persondata</div>
-            <h1>Persondatapolitik</h1>
+            <h1 data-testid="legal-title">Persondatapolitik</h1>
             <p>
               Her beskriver vi, hvordan persondata behandles i Human Biologi Studio i overensstemmelse med GDPR.
             </p>
@@ -35,26 +35,38 @@
         <a
           class="btn ghost"
           href="index.html"
+          data-testid="legal-back-btn"
           onclick="if (history.length > 1) { history.back(); return false; }"
         >
           Tilbage
         </a>
       </header>
 
-      <nav class="legal-nav" aria-label="Juridiske sider">
-        <a class="legal-chip" href="vilkaar.html">Vilkår</a>
-        <a class="legal-chip" href="privatlivspolitik.html">Privatlivspolitik</a>
-        <a class="legal-chip" href="persondatapolitik.html" aria-current="page">Persondatapolitik</a>
-        <a class="legal-chip" href="handelsbetingelser.html">Handelsbetingelser</a>
+      <nav class="legal-nav" aria-label="Juridiske sider" data-testid="legal-nav">
+        <a class="legal-chip" href="vilkaar.html" data-testid="legal-link-vilkaar">Vilkår</a>
+        <a class="legal-chip" href="privatlivspolitik.html" data-testid="legal-link-privatliv">
+          Privatlivspolitik
+        </a>
+        <a
+          class="legal-chip"
+          href="persondatapolitik.html"
+          aria-current="page"
+          data-testid="legal-link-persondata"
+        >
+          Persondatapolitik
+        </a>
+        <a class="legal-chip" href="handelsbetingelser.html" data-testid="legal-link-handelsbetingelser">
+          Handelsbetingelser
+        </a>
       </nav>
 
-      <div class="legal-grid">
-        <section class="legal-card">
+      <div class="legal-grid" data-testid="legal-grid">
+        <section class="legal-card" data-testid="legal-card-dataansvarlig">
           <h2>1. Dataansvarlig</h2>
           <p>Christian Kristensen (kristenson.dk) er dataansvarlig for behandlingen af personoplysninger.</p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-behandlingsaktiviteter">
           <h2>2. Behandlingsaktiviteter</h2>
           <ul>
             <li>Oprettelse og vedligehold af brugerkonti.</li>
@@ -64,7 +76,7 @@
           </ul>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-databehandlere">
           <h2>3. Databehandlere</h2>
           <p>
             Vi anvender betroede leverandører til hosting, login, betaling og AI-behandling. De må kun behandle data
@@ -72,14 +84,14 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-overfoersel-tredjelande">
           <h2>4. Overførsel til tredjelande</h2>
           <p>
             Hvis data behandles uden for EU/EØS, sker det på et lovligt overførselsgrundlag, f.eks. standardkontrakter.
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-opbevaringsperiode">
           <h2>5. Opbevaringsperiode</h2>
           <p>
             Persondata opbevares så længe din konto er aktiv. Ved sletning af konto fjernes data, medmindre vi er
@@ -87,7 +99,7 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-sikkerhed">
           <h2>6. Sikkerhed</h2>
           <p>
             Vi benytter tekniske og organisatoriske sikkerhedsforanstaltninger, herunder adgangsstyring, backup og
@@ -95,7 +107,7 @@
           </p>
         </section>
 
-        <section class="legal-card">
+        <section class="legal-card" data-testid="legal-card-rettigheder-klage">
           <h2>7. Rettigheder og klage</h2>
           <p>
             Du har ret til indsigt, berigtigelse, sletning, begrænsning og dataportabilitet. Du kan kontakte os via

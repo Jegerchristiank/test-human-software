@@ -2,6 +2,7 @@ const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest } = require("../_lib/auth");
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { enforceRateLimit } = require("../_lib/rateLimit");
+const { logAuditEvent } = require("../_lib/audit");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -45,22 +46,45 @@ module.exports = async function handler(req, res) {
       .order("created_at", { ascending: false })
       .limit(1000);
 
+    const { data: evaluationLogs } = await supabase
+      .from("evaluation_logs")
+      .select(
+        "studio, policy_id, evaluation_type, question_key, group_key, input_hash, output_hash, input_version, output_version, meta, created_at"
+      )
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(2000);
+
     const { data: userState } = await supabase
       .from("user_state")
       .select(
-        "settings, history, seen, mistakes, performance, figure_captions, best_score, theme, show_meta, created_at, updated_at"
+        "settings, history, seen, mistakes, performance, figure_captions, best_score, best_scores, theme, show_meta, created_at, updated_at"
       )
       .eq("user_id", user.id)
       .maybeSingle();
+
+    await logAuditEvent({
+      eventType: "account_exported",
+      userId: user.id,
+      status: "success",
+      req,
+    });
 
     return sendJson(res, 200, {
       exported_at: new Date().toISOString(),
       profile: profile || null,
       subscriptions: subscriptions || [],
       usage_events: usageEvents || [],
+      evaluation_logs: evaluationLogs || [],
       user_state: userState || null,
     });
   } catch (err) {
+    await logAuditEvent({
+      eventType: "account_exported",
+      userId: user.id,
+      status: "failure",
+      req,
+    });
     return sendError(res, 500, "Could not export data");
   }
 };
