@@ -142,11 +142,31 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    await supabase.from("evaluation_logs").delete().eq("user_id", user.id);
-    await supabase.from("usage_events").delete().eq("user_id", user.id);
-    await supabase.from("subscriptions").delete().eq("user_id", user.id);
-    await supabase.from("user_state").delete().eq("user_id", user.id);
-    await supabase.from("profiles").delete().eq("id", user.id);
+    const deletionSteps = [
+      { table: "evaluation_logs", column: "user_id" },
+      { table: "usage_events", column: "user_id" },
+      { table: "subscriptions", column: "user_id" },
+      { table: "user_state", column: "user_id" },
+      { table: "profiles", column: "id" },
+    ];
+
+    for (const step of deletionSteps) {
+      const { error: deleteError } = await supabase
+        .from(step.table)
+        .delete()
+        .eq(step.column, user.id);
+      if (deleteError) {
+        await logAuditEvent({
+          eventType: "account_delete",
+          userId: user.id,
+          status: "failure",
+          req,
+          metadata: { stage: "supabase_delete", table: step.table },
+        });
+        return sendError(res, 500, "Could not delete account");
+      }
+    }
+
     let clerkDeleted = true;
     try {
       const clerkClient = getClerkClient();
