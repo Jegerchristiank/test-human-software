@@ -190,3 +190,10 @@
 - Commands: rg -n "Clerk|clerk" -S .; npm install; npm test -- tests/authSupabase.test.mjs tests/accountDelete.test.mjs; date +%F.
 - Security: server auth now verifies Supabase JWTs; account deletion uses Supabase admin auth delete; CSP removed Clerk/Turnstile domains.
 - Follow-ups: configure Supabase OAuth providers + redirect URLs; note that existing Clerk user IDs are not migrated (fresh login required).
+
+## 2026-01-11
+- Purpose: gather Vercel 404 context and verify local configuration surfaces (Vercel linking, headers, auth routes).
+- Files: docs/activity.md, README.md, vercel.json, .vercel/project.json, scripts/.vercel/README.txt, scripts/.vercel/project.json, app.js, index.html, sign-in.html, sign-up.html.
+- Commands: cat docs/activity.md; rg --files -g ".vercel/**"; rg --files --hidden -g ".vercel/**"; ls -la; ls -la scripts/.vercel; cat scripts/.vercel/README.txt; cat scripts/.vercel/project.json; ls -la .vercel; cat .vercel/project.json; cat vercel.json; cat README.md; rg -n "sign-in" app.js *.html; date +%F.
+- Security: none (read-only inspection).
+- Follow-ups: confirm exact Vercel command, working directory, and failing URL to pinpoint the 404 source.
