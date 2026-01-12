@@ -31,6 +31,16 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 - Auth håndteres via Supabase Auth (email/password + Google/Apple OAuth).
 - Konfigurér OAuth providers og redirect URLs i Supabase Dashboard.
 
+## Auth Setup
+- Miljøvariabler (server): `SUPABASE_URL` + `SUPABASE_ANON_KEY` (eller `SUPABASE_PUBLISHABLE_KEY`).
+- Supabase Dashboard → Auth → URL Configuration:
+  - Site URL: produktionens origin (fx `https://app.example`).
+  - Additional Redirect URLs (lokal dev/preview):
+    - `http://localhost:8000/index.html`
+    - `http://localhost:3000/index.html`
+    - tilføj øvrige index-paths som bruges via `redirect`-parametre.
+- OAuth providers (Google/Apple): aktivér i Supabase Auth og brug callback/redirect URL fra Supabase.
+
 ## Online setup (Supabase + Stripe + Vercel)
 1. Supabase:
    - Run SQL from `supabase/schema.sql` in the Supabase SQL Editor (schema + policies).

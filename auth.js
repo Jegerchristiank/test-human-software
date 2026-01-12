@@ -3,45 +3,81 @@ const STORAGE_KEYS = {
 };
 
 const DEFAULT_REDIRECT = "index.html";
+const DEFAULT_BASE_URL = "http://localhost/";
+const MIN_PASSWORD_LENGTH = 6;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const AUTH_REDIRECT_BLOCKLIST = new Set(["/sign-in.html", "/sign-up.html", "/consent.html"]);
+const canUseDOM = typeof window !== "undefined" && typeof document !== "undefined";
 
-const elements = {
-  themeToggle: document.getElementById("theme-toggle"),
-  status: document.getElementById("auth-status"),
-  nameInput: document.getElementById("auth-name-input"),
-  emailInput: document.getElementById("auth-email-input"),
-  passwordInput: document.getElementById("auth-password-input"),
-  loginBtn: document.getElementById("auth-login-btn"),
-  signupBtn: document.getElementById("auth-signup-btn"),
-  googleBtn: document.getElementById("auth-google-btn"),
-  appleBtn: document.getElementById("auth-apple-btn"),
-  form: document.getElementById("auth-form"),
-};
+const elements = canUseDOM
+  ? {
+      themeToggle: document.getElementById("theme-toggle"),
+      status: document.getElementById("auth-status"),
+      nameInput: document.getElementById("auth-name-input"),
+      emailInput: document.getElementById("auth-email-input"),
+      passwordInput: document.getElementById("auth-password-input"),
+      loginBtn: document.getElementById("auth-login-btn"),
+      signupBtn: document.getElementById("auth-signup-btn"),
+      googleBtn: document.getElementById("auth-google-btn"),
+      appleBtn: document.getElementById("auth-apple-btn"),
+      form: document.getElementById("auth-form"),
+    }
+  : {};
 
 let supabase = null;
 
-function normalizeRedirectPath(raw) {
+function getBaseUrl() {
+  if (canUseDOM && window.location && window.location.href) {
+    return window.location.href;
+  }
+  return DEFAULT_BASE_URL;
+}
+
+function normalizeRedirectPath(raw, baseUrl = getBaseUrl()) {
   if (!raw) return "";
   try {
-    const url = new URL(raw, window.location.href);
-    if (url.origin !== window.location.origin) return "";
+    const base = new URL(baseUrl, DEFAULT_BASE_URL);
+    const url = new URL(raw, base);
+    if (url.origin !== base.origin) return "";
     return `${url.pathname}${url.search}${url.hash}`;
   } catch (error) {
     return "";
   }
 }
 
+function isBlockedRedirect(path, baseUrl = getBaseUrl()) {
+  if (!path) return false;
+  try {
+    const base = new URL(baseUrl, DEFAULT_BASE_URL);
+    const url = new URL(path, base);
+    return AUTH_REDIRECT_BLOCKLIST.has(url.pathname.toLowerCase());
+  } catch (error) {
+    return false;
+  }
+}
+
+function sanitizeRedirectPath(raw, baseUrl = getBaseUrl()) {
+  const normalized = normalizeRedirectPath(raw, baseUrl);
+  if (!normalized || isBlockedRedirect(normalized, baseUrl)) return "";
+  return normalized;
+}
+
 function getRedirectPath() {
-  const params = new URLSearchParams(window.location.search);
+  const baseUrl = getBaseUrl();
+  const params = new URLSearchParams(canUseDOM ? window.location.search : "");
   const redirect = params.get("redirect");
-  return normalizeRedirectPath(redirect) || DEFAULT_REDIRECT;
+  const sanitized = sanitizeRedirectPath(redirect, baseUrl);
+  if (sanitized) return sanitized;
+  return normalizeRedirectPath(DEFAULT_REDIRECT, baseUrl) || DEFAULT_REDIRECT;
 }
 
 function getRedirectUrl() {
-  return new URL(getRedirectPath(), window.location.origin).toString();
+  return new URL(getRedirectPath(), getBaseUrl()).toString();
 }
 
 function applyRedirectParams() {
-  const redirect = normalizeRedirectPath(new URLSearchParams(window.location.search).get("redirect"));
+  if (!canUseDOM) return;
+  const redirect = sanitizeRedirectPath(new URLSearchParams(window.location.search).get("redirect"));
   if (!redirect) return;
   const links = document.querySelectorAll("[data-preserve-redirect='true']");
   links.forEach((link) => {
@@ -59,6 +95,7 @@ function applyRedirectParams() {
 }
 
 function getInitialTheme() {
+  if (!canUseDOM) return "light";
   const stored = localStorage.getItem(STORAGE_KEYS.theme);
   if (stored) return stored;
   if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
@@ -68,6 +105,7 @@ function getInitialTheme() {
 }
 
 function applyTheme(theme) {
+  if (!canUseDOM) return;
   const nextTheme = theme === "dark" ? "dark" : "light";
   document.body.dataset.theme = nextTheme;
   if (elements.themeToggle) {
@@ -120,7 +158,7 @@ async function loadConfig() {
 
 function initSupabaseClient(config) {
   if (supabase) return;
-  const supabaseLib = window.supabase;
+  const supabaseLib = canUseDOM ? window.supabase : null;
   if (!supabaseLib?.createClient || !config?.supabaseUrl || !config?.supabaseAnonKey) {
     throw new Error("Supabase klienten er ikke klar.");
   }
@@ -134,40 +172,162 @@ function initSupabaseClient(config) {
 }
 
 function getAuthMode() {
-  return document.body?.dataset?.authMode === "sign-up" ? "sign-up" : "sign-in";
+  if (!canUseDOM || !document.body) return "sign-in";
+  return document.body.dataset?.authMode === "sign-up" ? "sign-up" : "sign-in";
 }
 
-function getEmailValue() {
-  const email = elements.emailInput ? elements.emailInput.value.trim() : "";
+function isValidEmail(value) {
+  return EMAIL_PATTERN.test(value);
+}
+
+function collectCredentials() {
+  return {
+    fullName: elements.nameInput ? elements.nameInput.value.trim() : "",
+    email: elements.emailInput ? elements.emailInput.value.trim() : "",
+    password: elements.passwordInput ? elements.passwordInput.value : "",
+  };
+}
+
+function validateCredentials({ email, password }, mode) {
   if (!email) {
-    setStatus("Skriv din email først.", true);
+    return { ok: false, message: "Skriv din email først." };
   }
-  return email;
+  if (!isValidEmail(email)) {
+    return { ok: false, message: "Skriv en gyldig email." };
+  }
+  if (!password) {
+    return { ok: false, message: "Skriv din adgangskode først." };
+  }
+  if (mode === "sign-up" && password.length < MIN_PASSWORD_LENGTH) {
+    return {
+      ok: false,
+      message: `Adgangskoden skal være mindst ${MIN_PASSWORD_LENGTH} tegn.`,
+    };
+  }
+  return { ok: true, message: "" };
 }
 
-function getPasswordValue() {
-  const password = elements.passwordInput ? elements.passwordInput.value : "";
-  if (!password) {
-    setStatus("Skriv din adgangskode først.", true);
+function normalizeAuthError(error) {
+  if (!error) return { message: "", code: "", status: null };
+  if (typeof error === "string") {
+    return { message: error, code: "", status: null };
   }
-  return password;
+  return {
+    message: typeof error.message === "string" ? error.message : "",
+    code: typeof error.code === "string" ? error.code : "",
+    status: Number.isFinite(error.status) ? error.status : null,
+  };
+}
+
+function logAuthError(context, error) {
+  const { message, code, status } = normalizeAuthError(error);
+  if (!message && !code && !status) return;
+  console.warn("[auth]", context, { code, status, message });
+}
+
+function mapAuthError(error, { mode } = {}) {
+  const { message, code, status } = normalizeAuthError(error);
+  const normalizedMessage = message.toLowerCase();
+  const normalizedCode = code.toLowerCase();
+
+  if (
+    normalizedCode === "invalid_credentials" ||
+    normalizedMessage.includes("invalid login credentials")
+  ) {
+    return "Forkert email eller adgangskode.";
+  }
+  if (
+    normalizedCode === "user_already_exists" ||
+    normalizedMessage.includes("user already registered")
+  ) {
+    return "Der findes allerede en konto med den email.";
+  }
+  if (
+    normalizedCode === "email_not_confirmed" ||
+    normalizedMessage.includes("email not confirmed")
+  ) {
+    return "Bekræft din email før du logger ind.";
+  }
+  if (
+    normalizedCode === "invalid_email" ||
+    normalizedMessage.includes("invalid email") ||
+    normalizedMessage.includes("invalid email format")
+  ) {
+    return "Skriv en gyldig email.";
+  }
+  if (
+    normalizedCode === "weak_password" ||
+    normalizedMessage.includes("password should be at least")
+  ) {
+    const lengthMatch = message.match(/\d+/);
+    const minLength = lengthMatch ? Number(lengthMatch[0]) : MIN_PASSWORD_LENGTH;
+    return `Adgangskoden skal være mindst ${minLength} tegn.`;
+  }
+  if (
+    normalizedCode === "over_email_send_rate_limit" ||
+    normalizedCode === "too_many_requests" ||
+    normalizedMessage.includes("rate limit") ||
+    status === 429
+  ) {
+    return "For mange forsøg. Vent lidt og prøv igen.";
+  }
+  if (
+    normalizedCode === "signup_disabled" ||
+    normalizedMessage.includes("signups not allowed")
+  ) {
+    return "Oprettelse er slået fra lige nu.";
+  }
+  if (
+    normalizedMessage.includes("network") ||
+    normalizedMessage.includes("failed to fetch")
+  ) {
+    return "Netværksfejl. Prøv igen om lidt.";
+  }
+
+  if (mode === "sign-up") return "Kunne ikke oprette konto.";
+  if (mode === "oauth") return "OAuth-login fejlede.";
+  return "Kunne ikke logge ind.";
+}
+
+async function getExistingSession() {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) return null;
+    return data?.session || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function redirectIfAuthenticated(session) {
+  if (!session?.user || !canUseDOM) return false;
+  window.location.replace(getRedirectPath());
+  return true;
 }
 
 async function handleEmailAuth(event) {
   event?.preventDefault?.();
-  if (!supabase) return;
-  const email = getEmailValue();
-  const password = getPasswordValue();
-  if (!email || !password) return;
+  if (!supabase) {
+    setStatus("Login er ikke klar endnu.", true);
+    return;
+  }
+  const mode = getAuthMode();
+  const credentials = collectCredentials();
+  const validation = validateCredentials(credentials, mode);
+  if (!validation.ok) {
+    setStatus(validation.message, true);
+    return;
+  }
   setStatus("");
   setControlsEnabled(false);
 
   try {
-    if (getAuthMode() === "sign-up") {
-      const fullName = elements.nameInput ? elements.nameInput.value.trim() : "";
+    if (mode === "sign-up") {
+      const fullName = credentials.fullName;
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: credentials.email,
+        password: credentials.password,
         options: {
           data: fullName ? { full_name: fullName, name: fullName } : undefined,
           emailRedirectTo: getRedirectUrl(),
@@ -182,7 +342,10 @@ async function handleEmailAuth(event) {
       return;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: credentials.email,
+      password: credentials.password,
+    });
     if (error) throw error;
     if (data?.session) {
       window.location.replace(getRedirectPath());
@@ -190,8 +353,8 @@ async function handleEmailAuth(event) {
     }
     setStatus("Kunne ikke logge ind endnu.", true);
   } catch (error) {
-    const message = error?.message || "Kunne ikke logge ind.";
-    setStatus(message, true);
+    logAuthError("email", error);
+    setStatus(mapAuthError(error, { mode }), true);
   } finally {
     setControlsEnabled(true);
   }
@@ -210,10 +373,19 @@ async function handleOAuth(provider) {
     });
     if (error) throw error;
   } catch (error) {
-    const message = error?.message || "OAuth-login fejlede.";
-    setStatus(message, true);
+    logAuthError("oauth", error);
+    setStatus(mapAuthError(error, { mode: "oauth" }), true);
     setControlsEnabled(true);
   }
+}
+
+function subscribeToAuthChanges() {
+  if (!supabase) return;
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      redirectIfAuthenticated(session);
+    }
+  });
 }
 
 async function initAuth() {
@@ -221,6 +393,9 @@ async function initAuth() {
   try {
     const config = await loadConfig();
     initSupabaseClient(config);
+    const session = await getExistingSession();
+    if (redirectIfAuthenticated(session)) return;
+    subscribeToAuthChanges();
     setControlsEnabled(true);
   } catch (error) {
     setStatus(error.message || "Login er ikke klar endnu.", true);
@@ -250,6 +425,17 @@ function initEvents() {
   }
 }
 
-initTheme();
-initEvents();
-initAuth();
+if (canUseDOM) {
+  initTheme();
+  initEvents();
+  initAuth();
+}
+
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    normalizeRedirectPath,
+    sanitizeRedirectPath,
+    validateCredentials,
+    mapAuthError,
+  };
+}

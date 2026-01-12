@@ -199,8 +199,29 @@
 - Follow-ups: confirm exact Vercel command, working directory, and failing URL to pinpoint the 404 source.
 
 ## 2026-01-11
+- Purpose: reproduce Vercel dev behavior from repo root and verify local routing for /, /index.html, and /api/config.
+- Files: docs/activity.md, vercel.json, package.json.
+- Commands: sed -n '1,60p' docs/activity.md; vercel dev --debug --listen 3000; curl -D - http://localhost:3000/; curl -D - http://localhost:3000/index.html; curl -D - http://localhost:3000/api/config; rg -n "package.json|vercel.json|Locating files|Ready!" <vercel log>.
+- Security: none (local dev server only).
+- Follow-ups: run vercel dev from repo root (not scripts/) and retest if 404 persists.
+
+## 2026-01-11
 - Purpose: split studio pipeline data out of supabase/schema.sql and add a generation/chunking flow to avoid SQL editor size limits.
 - Files: supabase/schema.sql, supabase/studio_pipeline.sql, scripts/build_studio_pipeline.py, README.md, .gitignore, docs/activity.md.
 - Commands: rg --files; sed -n '1,160p' docs/activity.md; sed -n '1,260p' supabase/schema.sql; rg -n "STUDIO_PIPELINE|BEGIN|DATA" supabase/schema.sql; rg -n "schema.sql|studio_pipeline|build_studio_pipeline" -S .; ls -la scripts; wc -l supabase/schema.sql; python3 - <<'PY' ...; sed -n '920,1015p' supabase/schema.sql; sed -n '1,40p' supabase/studio_pipeline.sql; wc -l supabase/schema.sql supabase/studio_pipeline.sql; tail -n 40 docs/activity.md; apply_patch (scripts/build_studio_pipeline.py); apply_patch (README.md); apply_patch (.gitignore); date +%F.
 - Security: no runtime changes; database setup now requires applying schema.sql plus studio_pipeline.sql.
 - Follow-ups: run python3 scripts/build_studio_pipeline.py --chunk-size 200 before pasting into SQL Editor if needed; verify pipeline load in Supabase.
+
+## 2026-01-12
+- Purpose: harden Supabase auth UX on sign-in/up pages (safe redirects, session auto-redirect, error mapping, minimal validation) and document auth setup/checklist.
+- Files: auth.js, tests/authClient.test.mjs, docs/auth-flow-checklist.md, README.md, docs/activity.md.
+- Commands: apply_patch (auth.js, README.md); cat <<'EOF' > tests/authClient.test.mjs; cat <<'EOF' > docs/auth-flow-checklist.md; npm test -- tests/authClient.test.mjs; date +%F.
+- Security: blocks auth-page redirect loops, limits unsafe redirects to same-origin, adds friendlier error mapping without leaking secrets.
+- Follow-ups: run the auth flow checklist manually with real Supabase credentials.
+
+## 2026-01-12
+- Purpose: diagnose TLS/HSTS error for biologistudio.dk by inspecting DNS resolution and certificate chain from multiple resolvers.
+- Files: docs/activity.md.
+- Commands: dig +short biologistudio.dk A biologistudio.dk AAAA; openssl s_client -connect biologistudio.dk:443 -servername biologistudio.dk -brief </dev/null; getent hosts biologistudio.dk || nslookup biologistudio.dk; curl -I https://biologistudio.dk; dig @1.1.1.1 +short biologistudio.dk A; dig @8.8.8.8 +short biologistudio.dk A; for ip in 64.29.17.1 64.29.17.65 216.198.79.1 216.198.79.65 142.132.143.218; do ...; done.
+- Security: found a self-signed certificate on one A record, which triggers HSTS blocking.
+- Follow-ups: update DNS to remove the self-signed host and point apex to the correct provider (e.g., Vercel).
