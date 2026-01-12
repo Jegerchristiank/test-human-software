@@ -1,3 +1,4 @@
+(() => {
 const STORAGE_KEYS = {
   theme: "ku_mcq_theme",
 };
@@ -514,9 +515,13 @@ function initEvents() {
 }
 
 if (canUseDOM) {
-  initTheme();
-  initEvents();
-  initAuth();
+  const initKey = "__hbsAuthInit";
+  if (!window[initKey]) {
+    window[initKey] = true;
+    initTheme();
+    initEvents();
+    initAuth();
+  }
 }
 
 if (typeof module !== "undefined" && module.exports) {
@@ -528,3 +533,4 @@ if (typeof module !== "undefined" && module.exports) {
     buildOAuthAuthorizeUrl,
   };
 }
+})();

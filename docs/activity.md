@@ -269,6 +269,13 @@
 - Follow-ups: deploy and verify Google OAuth on production; capture console errors if the click still does nothing.
 
 ## 2026-01-12
+- Purpose: prevent auth script redeclare errors by isolating globals and guarding init re-entry.
+- Files: auth.js, docs/activity.md.
+- Commands: apply_patch (auth.js); npm test -- tests/authClient.test.mjs; date +%F.
+- Security: no change in auth semantics; reduces risk of duplicate handlers on repeated script loads.
+- Follow-ups: deploy and confirm the console no longer reports "supabase already declared" and OAuth redirect starts.
+
+## 2026-01-12
 - Purpose: verify Supabase pipeline import row counts via service role read-only queries.
 - Files: docs/activity.md.
 - Commands: node - <<'NODE' ...; date +%F.
