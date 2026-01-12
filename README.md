@@ -14,7 +14,7 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 - Øjeblikkelig feedback, gennemgang af dine svar og gemt bedste score lokalt.
 
 ## Sygdomslære Studio
-- Kør `sygdomslaere.html` for den separate sygdomslære-oplevelse.
+- Kør `sygdomslaere.html` (redirecter til `index.html?studio=sygdomslaere`) for sygdomslære-oplevelsen.
 - Byg kortsvars-sessioner ud fra pensum, prioritet, sektioner og tyngde.
 
 ## Kom i gang (lokalt)
@@ -95,7 +95,7 @@ Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 - Kør `npm test` for unit tests.
 
 ## Data
-- MCQ rådata ligger i `rawdata`.
+- MCQ rådata ligger i `rawdata-mc` (legacy fallback: `rawdata`).
 - Kortsvar rådata ligger i `rawdata-kortsvar`.
 - Kør `python3 scripts/convert_rawdata.py` for at regenerere `data/questions.json`.
 - Kør `python3 scripts/convert_kortsvar.py` for at regenerere `data/kortsvar.json`.

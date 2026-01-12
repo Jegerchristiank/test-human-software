@@ -14,10 +14,10 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body data-testid="page-index">
-    <div class="ambient ambient-one"></div>
-    <div class="ambient ambient-two"></div>
-    <div class="ambient ambient-three"></div>
-    <div class="noise-layer"></div>
+    <div class="ambient ambient-one" data-testid="index__page-index__ambient-one"></div>
+    <div class="ambient ambient-two" data-testid="index__page-index__ambient-two"></div>
+    <div class="ambient ambient-three" data-testid="index__page-index__ambient-three"></div>
+    <div class="noise-layer" data-testid="index__page-index__noise-layer"></div>
     <div class="theme-switch" role="group" aria-label="Tema" data-testid="theme-switch">
       <span class="theme-label">Lys</span>
       <label class="theme-toggle">
@@ -29,7 +29,7 @@
     <div class="app" data-testid="app-root">
       <section id="loading-screen" data-testid="loading-screen" class="screen active">
         <div class="loading-shell" data-testid="loading-shell">
-          <div class="loading-orbit" role="status" aria-live="polite" aria-label="Indlæser">
+          <div class="loading-orbit" role="status" aria-live="polite" aria-label="Indlæser" data-testid="index__loading-screen--loading-shell__indlaeser">
             <img class="loading-logo" src="Logo.png" alt="Human Biologi Studio logo" />
           </div>
           <div class="loading-text" id="loading-status" data-testid="loading-status">Indlæser …</div>
@@ -43,7 +43,7 @@
             aria-valuemax="100"
             aria-valuenow="0"
           >
-            <div class="loading-progress-track">
+            <div class="loading-progress-track" data-testid="index__loading-shell--loading-progress__loading-progress-track">
               <div class="loading-progress-fill" id="loading-progress-fill" data-testid="loading-progress-fill"></div>
             </div>
             <div class="loading-progress-value" id="loading-progress-value" data-testid="loading-progress-value">0%</div>
@@ -57,13 +57,13 @@
       <section id="auth-screen" data-testid="auth-screen" class="screen hidden">
         <div class="landing-shell auth-shell" data-testid="auth-shell">
           <header class="global-header" data-testid="global-header">
-            <div class="brand-block">
-              <div class="brand-mark">
+            <div class="brand-block" data-testid="index__auth-shell--global-header__brand-block">
+              <div class="brand-mark" data-testid="index__global-header--brand-block__brand-mark">
                 <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
               </div>
-              <div>
-                <div class="brand-subtitle">Sundhed &amp; Informatik</div>
-                <div class="brand-title">Human Biologi Studio</div>
+              <div data-testid="index__global-header--brand-block__div">
+                <div class="brand-subtitle" data-testid="index__global-header--brand-block__brand-subtitle">Sundhed &amp; Informatik</div>
+                <div class="brand-title" data-testid="index__global-header--brand-block__brand-title">Human Biologi Studio</div>
               </div>
             </div>
             <nav class="global-header-links" aria-label="Login links" data-testid="global-header-links">
@@ -73,13 +73,13 @@
           </header>
           <header class="sales-hero" data-testid="auth-hero">
             <div class="sales-copy reveal" data-testid="auth-hero-copy" style="--delay: 0s">
-              <div class="brand-block">
-                <div class="brand-mark">
+              <div class="brand-block" data-testid="index__auth-hero--auth-hero-copy__brand-block">
+                <div class="brand-mark" data-testid="index__auth-hero-copy--brand-block__brand-mark">
                   <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
                 </div>
-                <div>
-                  <div class="brand-subtitle">Sundhed &amp; Informatik</div>
-                  <div class="hero-eyebrow">Eksamensro, bygget til fokus</div>
+                <div data-testid="index__auth-hero-copy--brand-block__div">
+                  <div class="brand-subtitle" data-testid="index__auth-hero-copy--brand-block__brand-subtitle">Sundhed &amp; Informatik</div>
+                  <div class="hero-eyebrow" data-testid="index__auth-hero-copy--brand-block__hero-eyebrow">Eksamensro, bygget til fokus</div>
                   <h1>Human Biologi Studio</h1>
                   <p>
                     Byg en runde på få sekunder, træn MCQ og kortsvar i samme flow, og følg dit niveau uden støj.
@@ -94,8 +94,8 @@
                 Demo gemmer kun lokalt og giver ikke adgang til abonnement.
               </div>
               <div class="sales-price" data-testid="auth-hero-price">
-                <div class="price-pill">Pro 179 kr/md</div>
-                <div class="price-note">Gratis plan med egen nøgle</div>
+                <div class="price-pill" data-testid="index__auth-hero-copy--auth-hero-price__price-pill">Pro 179 kr/md</div>
+                <div class="price-note" data-testid="index__auth-hero-copy--auth-hero-price__price-note">Gratis plan med egen nøgle</div>
               </div>
               <div class="trust-row" data-testid="auth-hero-trust">
                 <span>MCQ + kortsvar</span>
@@ -106,43 +106,43 @@
             <div class="sales-visual reveal" data-testid="auth-hero-visual" style="--delay: 0.05s">
               <div class="device-stack" data-testid="auth-device-stack" aria-hidden="true">
                 <div class="device-card primary" data-testid="auth-device-primary">
-                  <div class="device-top">
+                  <div class="device-top" data-testid="index__auth-device-stack--auth-device-primary__device-top">
                     <span class="device-title">Runde · 24 spørgsmål</span>
                     <span class="device-badge">Pro</span>
                   </div>
-                  <div class="device-metric">
-                    <div class="device-label">Score nu</div>
-                    <div class="device-value">78%</div>
-                    <div class="device-sub">Mål: 12</div>
+                  <div class="device-metric" data-testid="index__auth-device-stack--auth-device-primary__device-metric">
+                    <div class="device-label" data-testid="index__auth-device-primary--device-metric__device-label">Score nu</div>
+                    <div class="device-value" data-testid="index__auth-device-primary--device-metric__device-value">78%</div>
+                    <div class="device-sub" data-testid="index__auth-device-primary--device-metric__device-sub">Mål: 12</div>
                   </div>
-                  <div class="device-row">
+                  <div class="device-row" data-testid="index__auth-device-stack--auth-device-primary__device-row">
                     <span class="device-pill">MCQ</span>
                     <span class="device-pill">Kortsvar</span>
                     <span class="device-pill">Oplæsning</span>
                   </div>
-                  <div class="device-progress">
+                  <div class="device-progress" data-testid="index__auth-device-stack--auth-device-primary__device-progress">
                     <span>Tempo 1:12</span>
-                    <div class="device-bar"><span></span></div>
+                    <div class="device-bar" data-testid="index__auth-device-primary--device-progress__device-bar"><span></span></div>
                   </div>
                 </div>
                 <div class="device-card secondary" data-testid="auth-device-secondary">
-                  <div class="device-top">
+                  <div class="device-top" data-testid="index__auth-device-stack--auth-device-secondary__device-top">
                     <span class="device-title">Facit og hints</span>
                     <span class="device-dot"></span>
                   </div>
-                  <div class="device-line"></div>
-                  <div class="device-line short"></div>
-                  <div class="device-line"></div>
-                  <div class="device-line short"></div>
+                  <div class="device-line" data-testid="index__auth-device-stack--auth-device-secondary__device-line"></div>
+                  <div class="device-line short" data-testid="index__auth-device-stack--auth-device-secondary__short"></div>
+                  <div class="device-line" data-testid="index__auth-device-stack--auth-device-secondary__device-line--2"></div>
+                  <div class="device-line short" data-testid="index__auth-device-stack--auth-device-secondary__short--2"></div>
                 </div>
                 <div class="device-card tertiary" data-testid="auth-device-tertiary">
-                  <div class="device-top">
+                  <div class="device-top" data-testid="index__auth-device-stack--auth-device-tertiary__device-top">
                     <span class="device-title">Historik</span>
                   </div>
-                  <div class="device-chart">
+                  <div class="device-chart" data-testid="index__auth-device-stack--auth-device-tertiary__device-chart">
                     <span></span><span></span><span></span><span></span>
                   </div>
-                  <div class="device-foot">Streak: 3 runder</div>
+                  <div class="device-foot" data-testid="index__auth-device-stack--auth-device-tertiary__device-foot">Streak: 3 runder</div>
                 </div>
               </div>
             </div>
@@ -194,10 +194,10 @@
             </div>
             <div class="demo-grid" data-testid="demo-grid">
               <div class="demo-copy" data-testid="demo-copy">
-                <div class="demo-pill">Prøvespil</div>
+                <div class="demo-pill" data-testid="index__demo-grid--demo-copy__demo-pill">Prøvespil</div>
                 <h3>Se hvordan runden føles</h3>
                 <p>Få et realistisk indtryk af tempo, feedback og scoring — helt uden login.</p>
-                <div class="demo-meta">
+                <div class="demo-meta" data-testid="index__demo-grid--demo-copy__demo-meta">
                   <span>6 spørgsmål</span>
                   <span>4-5 min</span>
                   <span>Én gang pr. dag</span>
@@ -205,20 +205,20 @@
                 <div class="demo-status" id="demo-status" data-testid="demo-status">Klar til at starte.</div>
               </div>
               <div class="panel demo-card" id="demo-card" data-testid="demo-card">
-                <div class="demo-card-header">
-                  <div>
-                    <div class="demo-card-label">Prøvespil</div>
+                <div class="demo-card-header" data-testid="index__demo-grid--demo-card__demo-card-header">
+                  <div data-testid="index__demo-card--demo-card-header__div">
+                    <div class="demo-card-label" data-testid="index__demo-card--demo-card-header__demo-card-label">Prøvespil</div>
                     <div class="demo-card-title" id="demo-card-title" data-testid="demo-card-title">Træk dagens mini-runde</div>
                   </div>
-                  <div class="demo-card-meta">
+                  <div class="demo-card-meta" data-testid="index__demo-card--demo-card-header__demo-card-meta">
                     <span class="demo-progress" id="demo-progress" data-testid="demo-progress">0/6</span>
                     <span class="demo-score" id="demo-score" data-testid="demo-score">0/6</span>
                   </div>
                 </div>
-                <div class="demo-body">
+                <div class="demo-body" data-testid="index__demo-grid--demo-card__demo-body">
                   <div class="demo-loading hidden" id="demo-loading" data-testid="demo-loading" aria-live="polite">
-                    <div class="demo-loading-spinner" aria-hidden="true"></div>
-                    <div class="demo-loading-text">Trækker dagens prøvespil …</div>
+                    <div class="demo-loading-spinner" aria-hidden="true" data-testid="index__demo-body--demo-loading__demo-loading-spinner"></div>
+                    <div class="demo-loading-text" data-testid="index__demo-body--demo-loading__demo-loading-text">Trækker dagens prøvespil …</div>
                   </div>
                   <div class="demo-empty" id="demo-empty" data-testid="demo-empty">
                     <p>Du får 5 MCQ og 1 kortsvar fra de rigtige opgaver med det samme.</p>
@@ -226,8 +226,8 @@
                     <div class="demo-limit" id="demo-limit" data-testid="demo-limit">Én gang pr. dag</div>
                   </div>
                   <div class="demo-question hidden" id="demo-question" data-testid="demo-question">
-                    <div class="demo-question-card">
-                      <div class="question-meta demo-question-meta">
+                    <div class="demo-question-card" data-testid="index__demo-body--demo-question__demo-question-card">
+                      <div class="question-meta demo-question-meta" data-testid="index__demo-question--demo-question-card__demo-question-meta">
                         <span class="chip soft" id="demo-question-type" data-testid="demo-question-type">MCQ</span>
                         <span class="chip soft" id="demo-question-category" data-testid="demo-question-category">—</span>
                         <span class="chip" id="demo-question-year" data-testid="demo-question-year">—</span>
@@ -236,7 +236,7 @@
                       <h3 class="demo-question-text" id="demo-question-text" data-testid="demo-question-text">—</h3>
                       <div class="options-grid demo-options" id="demo-options" data-testid="demo-options"></div>
                       <div class="short-answer demo-short hidden" id="demo-short" data-testid="demo-short">
-                        <div class="short-group-meta">
+                        <div class="short-group-meta" data-testid="index__demo-question-card--demo-short__short-group-meta">
                           <span class="field-label">Delspørgsmål</span>
                           <span class="short-group-status" id="demo-short-status" data-testid="demo-short-status"></span>
                         </div>
@@ -249,7 +249,7 @@
                         </div>
                       </div>
                       <div class="demo-feedback" id="demo-feedback" data-testid="demo-feedback"></div>
-                      <div class="demo-controls">
+                      <div class="demo-controls" data-testid="index__demo-question--demo-question-card__demo-controls">
                         <button id="demo-next-btn" data-testid="demo-next-btn" class="btn primary" type="button" disabled>Næste</button>
                         <button id="demo-exit-btn" data-testid="demo-exit-btn" class="btn ghost small" type="button">Luk</button>
                       </div>
@@ -275,30 +275,30 @@
             </div>
             <div class="pricing-grid" data-testid="pricing-grid">
               <div class="pricing-card" data-testid="pricing-card-free">
-                <div class="pricing-title">Gratis</div>
-                <div class="pricing-price">0 kr</div>
+                <div class="pricing-title" data-testid="index__pricing-grid--pricing-card-free__pricing-title">Gratis</div>
+                <div class="pricing-price" data-testid="index__pricing-grid--pricing-card-free__pricing-price">0 kr</div>
                 <ul>
                   <li>MCQ + kortsvar i samme runde</li>
                   <li>Manuel vurdering og facit</li>
                   <li>Historik gemt lokalt</li>
                 </ul>
-                <div class="pricing-note">Brug din egen nøgle for AI-hjælp.</div>
+                <div class="pricing-note" data-testid="index__pricing-grid--pricing-card-free__pricing-note">Brug din egen nøgle for AI-hjælp.</div>
               </div>
               <div class="pricing-card highlight" data-testid="pricing-card-pro">
-                <div class="pricing-title">Pro</div>
-                <div class="pricing-price">179 kr/md</div>
+                <div class="pricing-title" data-testid="index__pricing-grid--pricing-card-pro__pricing-title">Pro</div>
+                <div class="pricing-price" data-testid="index__pricing-grid--pricing-card-pro__pricing-price">179 kr/md</div>
                 <ul>
                   <li>AI-hints og auto-bedømmelse</li>
                   <li>Oplæsning og figurbeskrivelser</li>
                   <li>Prioritering af svage områder</li>
                 </ul>
-                <div class="pricing-note">Skift eller opsig når som helst.</div>
+                <div class="pricing-note" data-testid="index__pricing-grid--pricing-card-pro__pricing-note">Skift eller opsig når som helst.</div>
               </div>
             </div>
           </section>
 
           <section class="panel auth-panel reveal" id="auth-start" data-testid="auth-start" style="--delay: 0.2s">
-            <div class="panel-header">
+            <div class="panel-header" data-testid="index__auth-shell--auth-start__panel-header">
               <h2>Klar til at komme i gang?</h2>
               <p>Log ind eller opret konto for at åbne dit studio.</p>
             </div>
@@ -314,8 +314,8 @@
       <section id="consent-screen" data-testid="consent-screen" class="screen hidden">
         <div class="consent-shell" data-testid="consent-shell">
           <header class="consent-header">
-            <div>
-              <div class="eyebrow">Før du går i gang</div>
+            <div data-testid="index__consent-shell--consent-header__div">
+              <div class="eyebrow" data-testid="index__consent-shell--consent-header__eyebrow">Før du går i gang</div>
               <h1>Acceptér vilkår og politikker</h1>
               <p>
                 For at bruge Human Biologi Studio skal du acceptere vilkår, handelsbetingelser og privatlivs-
@@ -327,7 +327,7 @@
           <div class="consent-status hidden" id="consent-status" data-testid="consent-status"></div>
           <div class="consent-grid" data-testid="consent-grid">
             <section class="panel consent-panel" data-testid="consent-panel-terms">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__consent-grid--consent-panel-terms__panel-header">
                 <h2>Samtykke</h2>
                 <p>Du er logget ind som <span id="consent-email" data-testid="consent-email">—</span>.</p>
               </div>
@@ -341,15 +341,15 @@
                 <span>Jeg accepterer privatlivs- og persondatapolitik</span>
                 <small>Påkrævet for adgang</small>
               </label>
-              <div class="account-actions">
+              <div class="account-actions" data-testid="index__consent-grid--consent-panel-terms__account-actions">
                 <button id="consent-accept-btn" data-testid="consent-accept-btn" class="btn primary" type="button">
                   Accepter og fortsæt
                 </button>
               </div>
-              <div class="field-hint">Du kan altid se dokumenterne igen i din profil.</div>
+              <div class="field-hint" data-testid="index__consent-grid--consent-panel-terms__field-hint">Du kan altid se dokumenterne igen i din profil.</div>
             </section>
             <section class="panel consent-panel" data-testid="consent-panel-links">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__consent-grid--consent-panel-links__panel-header">
                 <h2>Læs dokumenterne</h2>
                 <p>Få hele teksten, før du accepterer.</p>
               </div>
@@ -374,7 +374,7 @@
         <div class="landing-shell dashboard-shell" data-testid="landing-shell">
           <header class="dashboard-hero reveal" data-testid="landing-hero" style="--delay: 0s">
             <div class="dashboard-copy" data-testid="landing-hero-copy">
-              <div class="eyebrow">Velkommen tilbage</div>
+              <div class="eyebrow" data-testid="index__landing-hero--landing-hero-copy__eyebrow">Velkommen tilbage</div>
               <h1>Din næste runde starter her</h1>
               <p>
                 Byg en ny runde på få sekunder og følg, hvordan du ligger i forhold til 12-målet.
@@ -384,26 +384,26 @@
               </div>
             </div>
             <div class="dashboard-highlight" data-testid="landing-highlight">
-              <div class="highlight-card">
-                <div class="highlight-top">
-                  <div class="highlight-block">
-                    <div class="highlight-label">Niveau</div>
+              <div class="highlight-card" data-testid="index__landing-hero--landing-highlight__highlight-card">
+                <div class="highlight-top" data-testid="index__landing-highlight--highlight-card__highlight-top">
+                  <div class="highlight-block" data-testid="index__highlight-card--highlight-top__highlight-block">
+                    <div class="highlight-label" data-testid="index__highlight-top--highlight-block__highlight-label">Niveau</div>
                     <div class="highlight-value" id="hero-rank" data-testid="hero-rank">—</div>
                     <div class="highlight-meta" id="hero-rank-meta" data-testid="hero-rank-meta">Ingen rekord endnu</div>
                   </div>
-                  <div class="highlight-block">
-                    <div class="highlight-label">Mål</div>
+                  <div class="highlight-block" data-testid="index__highlight-card--highlight-top__highlight-block--2">
+                    <div class="highlight-label" data-testid="index__highlight-top--highlight-block__highlight-label--2">Mål</div>
                     <div class="highlight-goal" id="hero-target" data-testid="hero-target">12</div>
                     <div class="highlight-meta" id="hero-target-meta" data-testid="hero-target-meta">92% for topkarakter</div>
                   </div>
                 </div>
-                <div class="highlight-progress">
-                  <div class="highlight-progress-bar">
+                <div class="highlight-progress" data-testid="index__landing-highlight--highlight-card__highlight-progress">
+                  <div class="highlight-progress-bar" data-testid="index__highlight-card--highlight-progress__highlight-progress-bar">
                     <div class="highlight-progress-fill" id="hero-progress-fill" data-testid="hero-progress-fill"></div>
                   </div>
                 </div>
-                <div class="highlight-streak">
-                  <div class="highlight-label">Streak</div>
+                <div class="highlight-streak" data-testid="index__landing-highlight--highlight-card__highlight-streak">
+                  <div class="highlight-label" data-testid="index__highlight-card--highlight-streak__highlight-label">Streak</div>
                   <div class="highlight-streak-value" id="hero-streak" data-testid="hero-streak">0</div>
                   <div class="highlight-meta" id="hero-streak-meta" data-testid="hero-streak-meta">Ingen streak endnu</div>
                 </div>
@@ -412,7 +412,7 @@
           </header>
 
           <section class="panel history-panel dashboard-history reveal" data-testid="landing-history-panel" style="--delay: 0.05s">
-            <div class="panel-header">
+            <div class="panel-header" data-testid="index__landing-shell--landing-history-panel__panel-header">
               <h2>Seneste aktivitet</h2>
               <p>Hold øje med progressionen på tværs af runder.</p>
             </div>
@@ -424,11 +424,11 @@
       <section id="menu-screen" data-testid="menu-screen" class="screen hidden">
         <div class="menu-shell" data-testid="menu-shell">
           <header class="menu-header reveal" data-testid="menu-header" style="--delay: 0s">
-            <div class="brand-block">
-              <div class="brand-mark">
+            <div class="brand-block" data-testid="index__menu-shell--menu-header__brand-block">
+              <div class="brand-mark" data-testid="index__menu-header--brand-block__brand-mark">
                 <img class="brand-logo" id="menu-logo" data-testid="menu-logo" src="Logo.png" alt="Human Biologi Studio logo" />
               </div>
-                <div>
+                <div data-testid="index__menu-header--brand-block__div">
                   <div class="brand-subtitle" id="menu-subtitle" data-testid="menu-subtitle">Sundhed &amp; Informatik</div>
                   <h1 id="menu-title" data-testid="menu-title">Human Biologi Studio</h1>
                   <p id="menu-description" data-testid="menu-description">
@@ -437,13 +437,13 @@
                   </p>
                 </div>
               </div>
-            <div class="menu-right">
-              <div class="menu-stats">
+            <div class="menu-right" data-testid="index__menu-shell--menu-header__menu-right">
+              <div class="menu-stats" data-testid="index__menu-header--menu-right__menu-stats">
                 <div class="stat-pill" id="question-count-chip" data-testid="question-count-chip">Indlæser …</div>
                 <div class="stat-pill" id="pool-count-chip" data-testid="pool-count-chip">0 i puljen</div>
                 <div class="stat-pill" id="ai-status-pill" data-testid="ai-status-pill">Assistent: Tjekker …</div>
               </div>
-              <div class="studio-switch" role="group" aria-label="Skift studio">
+              <div class="studio-switch" role="group" aria-label="Skift studio" data-testid="index__menu-header--menu-right__skift-studio">
                 <button class="btn ghost small active" id="studio-human-btn" data-testid="studio-human-btn" type="button" aria-current="page">
                   Human Biologi
                 </button>
@@ -451,7 +451,7 @@
                   Sygdomslære
                 </button>
               </div>
-              <div class="menu-account">
+              <div class="menu-account" data-testid="index__menu-header--menu-right__menu-account">
                 <div class="user-chip" id="user-chip" data-testid="user-chip">Ikke logget ind</div>
                 <button id="account-btn" data-testid="account-btn" class="btn ghost" type="button">Konto</button>
               </div>
@@ -459,49 +459,49 @@
           </header>
 
           <div class="menu-grid" data-testid="menu-grid">
-            <div class="menu-column">
+            <div class="menu-column" data-testid="index__menu-shell--menu-grid__menu-column">
               <section class="panel builder reveal" data-testid="menu-builder-panel" style="--delay: 0.05s">
-                <div class="panel-header">
+                <div class="panel-header" data-testid="index__menu-column--menu-builder-panel__panel-header">
                   <h2>Byg din runde</h2>
                   <p>Vælg en retning og tilpas længde, blanding og tempo ét sted.</p>
                 </div>
 
-                <div class="builder-stack">
-                  <div class="builder-section">
-                    <div class="section-title">
+                <div class="builder-stack" data-testid="index__menu-column--menu-builder-panel__builder-stack">
+                  <div class="builder-section" data-testid="index__menu-builder-panel--builder-stack__builder-section">
+                    <div class="section-title" data-testid="index__builder-stack--builder-section__section-title">
                       <h3>Hvad vil du træne?</h3>
                       <p>Start med en skabelon og justér bagefter.</p>
                     </div>
                     <div class="preset-grid" id="preset-grid" data-testid="preset-grid">
                       <button class="preset-card" type="button" data-preset="exam" aria-pressed="false">
-                        <div class="preset-title">Eksamen</div>
-                        <div class="preset-text">Balanceret blanding med realistisk tempo.</div>
-                        <div class="preset-meta">24 MCQ + 6 kortsvar · Standard</div>
+                        <div class="preset-title" data-testid="index__preset-grid--preset-card__preset-title">Eksamen</div>
+                        <div class="preset-text" data-testid="index__preset-grid--preset-card__preset-text">Balanceret blanding med realistisk tempo.</div>
+                        <div class="preset-meta" data-testid="index__preset-grid--preset-card__preset-meta">24 MCQ + 6 kortsvar · Standard</div>
                       </button>
                       <button class="preset-card" type="button" data-preset="review" aria-pressed="false">
-                        <div class="preset-title">Repetition</div>
-                        <div class="preset-text">Bred dækning med færre gentagelser.</div>
-                        <div class="preset-meta">30 MCQ + 10 kortsvar · Bredt</div>
+                        <div class="preset-title" data-testid="index__preset-grid--preset-card__preset-title--2">Repetition</div>
+                        <div class="preset-text" data-testid="index__preset-grid--preset-card__preset-text--2">Bred dækning med færre gentagelser.</div>
+                        <div class="preset-meta" data-testid="index__preset-grid--preset-card__preset-meta--2">30 MCQ + 10 kortsvar · Bredt</div>
                       </button>
                       <button class="preset-card" type="button" data-preset="weak" aria-pressed="false">
-                        <div class="preset-title">Svage områder</div>
-                        <div class="preset-text">Fokus på fejl og smart prioritet.</div>
-                        <div class="preset-meta">20 MCQ + 5 kortsvar · Fokus</div>
+                        <div class="preset-title" data-testid="index__preset-grid--preset-card__preset-title--3">Svage områder</div>
+                        <div class="preset-text" data-testid="index__preset-grid--preset-card__preset-text--3">Fokus på fejl og smart prioritet.</div>
+                        <div class="preset-meta" data-testid="index__preset-grid--preset-card__preset-meta--3">20 MCQ + 5 kortsvar · Fokus</div>
                       </button>
                       <button class="preset-card" type="button" data-preset="tempo" aria-pressed="false">
-                        <div class="preset-title">Tempo</div>
-                        <div class="preset-text">Hurtig rytme med auto-videre.</div>
-                        <div class="preset-meta">18 MCQ + 4 kortsvar · Tid</div>
+                        <div class="preset-title" data-testid="index__preset-grid--preset-card__preset-title--4">Tempo</div>
+                        <div class="preset-text" data-testid="index__preset-grid--preset-card__preset-text--4">Hurtig rytme med auto-videre.</div>
+                        <div class="preset-meta" data-testid="index__preset-grid--preset-card__preset-meta--4">18 MCQ + 4 kortsvar · Tid</div>
                       </button>
                     </div>
                   </div>
 
-                  <div class="builder-section">
-                    <div class="section-title">
+                  <div class="builder-section" data-testid="index__menu-builder-panel--builder-stack__builder-section--2">
+                    <div class="section-title" data-testid="index__builder-stack--builder-section__section-title--2">
                       <h3>Din runde</h3>
                       <p>Juster længde og fordeling mellem opgavetyper.</p>
                     </div>
-                    <div class="control-row">
+                    <div class="control-row" data-testid="index__builder-stack--builder-section__control-row">
                       <label class="control-label" for="question-count">
                         <span id="question-count-label" data-testid="question-count-label">Antal spørgsmål</span>
                         <span
@@ -513,7 +513,7 @@
                           >i</span
                         >
                       </label>
-                      <div class="range-control">
+                      <div class="range-control" data-testid="index__builder-section--control-row__range-control">
                         <input type="range" id="question-count" data-testid="question-count" min="5" max="40" step="1" value="24" />
                       </div>
                       <div class="control-hint" id="question-count-hint" data-testid="question-count-hint">
@@ -526,7 +526,7 @@
                         <span>Avanceret</span>
                         <small>Opgavetyper, blanding og tempo</small>
                       </summary>
-                      <div class="more-body">
+                      <div class="more-body" data-testid="index__builder-section--more-drawer__more-body">
                         <div class="toggle-grid compact" id="type-toggle-grid" data-testid="type-toggle-grid">
                           <label class="toggle">
                             <input type="checkbox" id="toggle-include-mcq" data-testid="toggle-include-mcq" checked />
@@ -568,12 +568,12 @@
                               >i</span
                             >
                           </label>
-                          <div class="ratio-control">
+                          <div class="ratio-control" data-testid="index__more-body--ratio-control-row__ratio-control">
                             <input type="number" id="ratio-mcq" data-testid="ratio-mcq" min="1" max="12" step="1" value="4" />
                             <span class="ratio-divider">:</span>
                             <input type="number" id="ratio-short" data-testid="ratio-short" min="1" max="12" step="1" value="1" />
                           </div>
-                          <div class="control-hint">Antal flervalg styrer længden; kortsvar følger forholdet.</div>
+                          <div class="control-hint" data-testid="index__more-body--ratio-control-row__control-hint">Antal flervalg styrer længden; kortsvar følger forholdet.</div>
                         </div>
 
                         <details class="settings-drawer" id="mcq-settings-drawer" data-testid="mcq-settings-drawer">
@@ -581,8 +581,8 @@
                             <span>Indhold &amp; visning</span>
                             <small>Detaljer og svarlayout</small>
                           </summary>
-                          <div class="settings-body">
-                            <div class="toggle-grid compact">
+                          <div class="settings-body" data-testid="index__more-body--mcq-settings-drawer__settings-body">
+                            <div class="toggle-grid compact" data-testid="index__mcq-settings-drawer--settings-body__toggle-grid">
                               <label class="toggle">
                                 <input type="checkbox" id="toggle-shuffle-options" data-testid="toggle-shuffle-options" checked />
                                 <span>
@@ -606,8 +606,8 @@
                             <span>Blanding &amp; gentagelser</span>
                             <small>Smart læring og fejl</small>
                           </summary>
-                          <div class="settings-body">
-                            <div class="toggle-grid compact">
+                          <div class="settings-body" data-testid="index__more-body--settings-drawer__settings-body">
+                            <div class="toggle-grid compact" data-testid="index__settings-drawer--settings-body__toggle-grid">
                               <label class="toggle">
                                 <input type="checkbox" id="toggle-shuffle-questions" data-testid="toggle-shuffle-questions" checked />
                                 <span>
@@ -701,8 +701,8 @@
                             <span>Flow &amp; hjælp</span>
                             <small>Tempo og hjælp</small>
                           </summary>
-                          <div class="settings-body">
-                            <div class="toggle-grid compact">
+                          <div class="settings-body" data-testid="index__more-body--settings-drawer__settings-body--2">
+                            <div class="toggle-grid compact" data-testid="index__settings-drawer--settings-body__toggle-grid--2">
                               <label class="toggle" id="auto-figure-row" data-testid="auto-figure-row">
                                 <input type="checkbox" id="toggle-auto-figure" data-testid="toggle-auto-figure" />
                                 <span>
@@ -758,7 +758,7 @@
                                   >i</span
                                 >
                               </label>
-                              <div class="range-control">
+                              <div class="range-control" data-testid="index__settings-body--auto-advance-row__range-control">
                                 <input
                                   type="range"
                                   id="auto-advance-delay" data-testid="auto-advance-delay"
@@ -769,7 +769,7 @@
                                 />
                                 <div class="range-pill" id="auto-advance-label" data-testid="auto-advance-label">1.2s</div>
                               </div>
-                              <div class="control-hint">Aktiver auto-videre for at bruge tempoet.</div>
+                              <div class="control-hint" data-testid="index__settings-body--auto-advance-row__control-hint">Aktiver auto-videre for at bruge tempoet.</div>
                             </div>
                           </div>
                         </details>
@@ -780,18 +780,18 @@
               </section>
 
               <section class="panel paused-panel hidden reveal" id="paused-session-panel" data-testid="paused-session-panel" style="--delay: 0.12s">
-                <div class="panel-header">
+                <div class="panel-header" data-testid="index__menu-column--paused-session-panel__panel-header">
                   <h2>Pauset runde</h2>
                   <p id="paused-session-hint" data-testid="paused-session-hint">
                     Du har en runde i gang. Du kan vende tilbage præcis hvor du slap.
                   </p>
                 </div>
-                <div class="summary-card paused-card">
-                  <div class="summary-item">Fremdrift: <strong id="paused-progress" data-testid="paused-progress">—</strong></div>
-                  <div class="summary-item">Besvaret: <strong id="paused-answered" data-testid="paused-answered">—</strong></div>
-                  <div class="summary-item">Score lige nu: <strong id="paused-score" data-testid="paused-score">—</strong></div>
+                <div class="summary-card paused-card" data-testid="index__menu-column--paused-session-panel__paused-card">
+                  <div class="summary-item" data-testid="index__paused-session-panel--paused-card__summary-item">Fremdrift: <strong id="paused-progress" data-testid="paused-progress">—</strong></div>
+                  <div class="summary-item" data-testid="index__paused-session-panel--paused-card__summary-item--2">Besvaret: <strong id="paused-answered" data-testid="paused-answered">—</strong></div>
+                  <div class="summary-item" data-testid="index__paused-session-panel--paused-card__summary-item--3">Score lige nu: <strong id="paused-score" data-testid="paused-score">—</strong></div>
                 </div>
-                <div class="cta-stack paused-actions">
+                <div class="cta-stack paused-actions" data-testid="index__menu-column--paused-session-panel__paused-actions">
                   <button id="resume-round-btn" data-testid="resume-round-btn" class="btn primary" type="button">Fortsæt runde</button>
                   <button id="finish-round-btn" data-testid="finish-round-btn" class="btn secondary" type="button">
                     Afslut runde og få resultat
@@ -802,20 +802,20 @@
               </section>
 
               <section class="panel summary reveal" data-testid="menu-summary-panel" style="--delay: 0.15s">
-                <div class="panel-header">
+                <div class="panel-header" data-testid="index__menu-column--menu-summary-panel__panel-header">
                   <h2>Din runde</h2>
                   <p>Opsummering af din nuværende opsætning.</p>
                 </div>
-                <div class="summary-card">
-                  <div class="summary-item">Pulje: <strong id="pool-count" data-testid="pool-count">0</strong> spørgsmål</div>
-                  <div class="summary-item">Runde: <strong id="round-count" data-testid="round-count">0</strong> spørgsmål</div>
-                  <div class="summary-item">Blanding: <span id="mix-summary" data-testid="mix-summary">—</span></div>
-                  <div class="summary-item"><span id="year-summary-label" data-testid="year-summary-label">År</span>: <span id="year-summary" data-testid="year-summary">—</span></div>
-                  <div class="summary-item"><span id="category-summary-label" data-testid="category-summary-label">Emner</span>: <span id="category-summary" data-testid="category-summary">—</span></div>
-                  <div class="summary-item">Genbrug: <span id="repeat-summary" data-testid="repeat-summary">—</span></div>
+                <div class="summary-card" data-testid="index__menu-column--menu-summary-panel__summary-card">
+                  <div class="summary-item" data-testid="index__menu-summary-panel--summary-card__summary-item">Pulje: <strong id="pool-count" data-testid="pool-count">0</strong> spørgsmål</div>
+                  <div class="summary-item" data-testid="index__menu-summary-panel--summary-card__summary-item--2">Runde: <strong id="round-count" data-testid="round-count">0</strong> spørgsmål</div>
+                  <div class="summary-item" data-testid="index__menu-summary-panel--summary-card__summary-item--3">Blanding: <span id="mix-summary" data-testid="mix-summary">—</span></div>
+                  <div class="summary-item" data-testid="index__menu-summary-panel--summary-card__summary-item--4"><span id="year-summary-label" data-testid="year-summary-label">År</span>: <span id="year-summary" data-testid="year-summary">—</span></div>
+                  <div class="summary-item" data-testid="index__menu-summary-panel--summary-card__summary-item--5"><span id="category-summary-label" data-testid="category-summary-label">Emner</span>: <span id="category-summary" data-testid="category-summary">—</span></div>
+                  <div class="summary-item" data-testid="index__menu-summary-panel--summary-card__summary-item--6">Genbrug: <span id="repeat-summary" data-testid="repeat-summary">—</span></div>
                 </div>
 
-                <div class="cta-stack">
+                <div class="cta-stack" data-testid="index__menu-column--menu-summary-panel__cta-stack">
                   <button id="start-btn" data-testid="start-btn" class="btn primary" type="button">Start spil</button>
                 </div>
                 <details class="more-drawer">
@@ -823,7 +823,7 @@
                     <span>Mere</span>
                     <small>Hjælp og genveje</small>
                   </summary>
-                  <div class="more-body">
+                  <div class="more-body" data-testid="index__menu-summary-panel--more-drawer__more-body">
                     <button id="rules-btn" data-testid="rules-btn" class="btn ghost" type="button">Spilguide</button>
                   </div>
                 </details>
@@ -831,9 +831,9 @@
               </section>
             </div>
 
-            <div class="menu-column">
+            <div class="menu-column" data-testid="index__menu-shell--menu-grid__menu-column--2">
               <section class="panel filters reveal" data-testid="menu-filters-panel" style="--delay: 0.1s">
-                <div class="panel-header">
+                <div class="panel-header" data-testid="index__menu-column--menu-filters-panel__panel-header">
                   <h2 id="filter-panel-title" data-testid="filter-panel-title">Filtrer spørgsmål</h2>
                   <p id="filter-panel-description" data-testid="filter-panel-description">
                     Vælg årgang og emner, så runden rammer det du læser op på.
@@ -845,8 +845,8 @@
                     <span>Mere</span>
                     <small>Hurtigvalg til filtre</small>
                   </summary>
-                  <div class="more-body">
-                    <div class="more-actions">
+                  <div class="more-body" data-testid="index__menu-filters-panel--more-drawer__more-body">
+                    <div class="more-actions" data-testid="index__more-drawer--more-body__more-actions">
                       <button class="btn ghost small" id="select-all-years" data-testid="select-all-years" type="button">Alle årgange</button>
                       <button class="btn ghost small" id="clear-years" data-testid="clear-years" type="button">Ingen årgange</button>
                       <button class="btn ghost small" id="select-all-categories" data-testid="select-all-categories" type="button">Alle emner</button>
@@ -855,8 +855,8 @@
                   </div>
                 </details>
 
-                <div class="filter-group">
-                  <div class="filter-header">
+                <div class="filter-group" data-testid="index__menu-column--menu-filters-panel__filter-group">
+                  <div class="filter-header" data-testid="index__menu-filters-panel--filter-group__filter-header">
                     <h3>
                       <span id="year-filter-label" data-testid="year-filter-label">Årgang / sæt</span>
                       <span
@@ -872,8 +872,8 @@
                   <div class="chip-group" id="year-chips" data-testid="year-chips"></div>
                 </div>
 
-                <div class="filter-group">
-                  <div class="filter-header">
+                <div class="filter-group" data-testid="index__menu-column--menu-filters-panel__filter-group--2">
+                  <div class="filter-header" data-testid="index__menu-filters-panel--filter-group__filter-header--2">
                     <h3>
                       <span id="category-filter-label" data-testid="category-filter-label">Emner</span>
                       <span
@@ -892,23 +892,23 @@
               </section>
 
               <section class="panel history-panel reveal" data-testid="menu-history-panel" style="--delay: 0.2s">
-                <div class="panel-header">
+                <div class="panel-header" data-testid="index__menu-column--menu-history-panel__panel-header">
                   <h2>Din udvikling</h2>
                   <p>Se dine seneste runder og om du går frem mod 12.</p>
                 </div>
-                <div class="history-grid">
-                  <div class="history-card">
-                    <div class="history-label">Seneste</div>
+                <div class="history-grid" data-testid="index__menu-column--menu-history-panel__history-grid">
+                  <div class="history-card" data-testid="index__menu-history-panel--history-grid__history-card">
+                    <div class="history-label" data-testid="index__history-grid--history-card__history-label">Seneste</div>
                     <div class="history-value" id="history-latest" data-testid="history-latest">—</div>
                     <div class="history-meta" id="history-latest-meta" data-testid="history-latest-meta">Ingen runder endnu</div>
                   </div>
-                  <div class="history-card">
-                    <div class="history-label">Trend</div>
+                  <div class="history-card" data-testid="index__menu-history-panel--history-grid__history-card--2">
+                    <div class="history-label" data-testid="index__history-grid--history-card__history-label--2">Trend</div>
                     <div class="history-value" id="history-trend" data-testid="history-trend">—</div>
                     <div class="history-meta" id="history-trend-meta" data-testid="history-trend-meta">Afventer 2 runder</div>
                   </div>
-                  <div class="history-card highlight">
-                    <div class="history-label">Bedste</div>
+                  <div class="history-card highlight" data-testid="index__menu-history-panel--history-grid__history-card--3">
+                    <div class="history-label" data-testid="index__history-grid--history-card__history-label--3">Bedste</div>
                     <div class="history-value" id="history-best" data-testid="history-best">—</div>
                     <div class="history-meta" id="history-best-meta" data-testid="history-best-meta">Mål: 12 (92%)</div>
                   </div>
@@ -923,26 +923,26 @@
       <section id="quiz-screen" data-testid="quiz-screen" class="screen hidden">
         <div class="game-shell" data-testid="quiz-shell">
           <header class="game-header reveal" data-testid="quiz-header" style="--delay: 0s">
-            <div class="game-left">
+            <div class="game-left" data-testid="index__quiz-shell--quiz-header__game-left">
               <img class="brand-logo small" id="quiz-logo" data-testid="quiz-logo" src="Logo.png" alt="Human Biologi Studio logo" />
               <div class="session-pill" id="session-pill" data-testid="session-pill">Runde</div>
             </div>
-            <div class="scoreboard">
+            <div class="scoreboard" data-testid="index__quiz-shell--quiz-header__scoreboard">
               <div class="score" id="mcq-score-row" data-testid="mcq-score-row">Flervalg <span id="mcq-score-value" data-testid="mcq-score-value">0</span></div>
-              <div class="score"><span id="short-score-label" data-testid="short-score-label">Kortsvar</span> <span id="short-score-value" data-testid="short-score-value">0</span></div>
-              <div class="score">Total <span id="score-value" data-testid="score-value">0%</span></div>
-              <div class="best">Bedste <span id="best-score-value" data-testid="best-score-value">0%</span></div>
+              <div class="score" data-testid="index__quiz-header--scoreboard__score"><span id="short-score-label" data-testid="short-score-label">Kortsvar</span> <span id="short-score-value" data-testid="short-score-value">0</span></div>
+              <div class="score" data-testid="index__quiz-header--scoreboard__score--2">Total <span id="score-value" data-testid="score-value">0%</span></div>
+              <div class="best" data-testid="index__quiz-header--scoreboard__best">Bedste <span id="best-score-value" data-testid="best-score-value">0%</span></div>
             </div>
           </header>
 
           <div class="game-grid" data-testid="quiz-grid">
             <aside class="game-aside reveal" data-testid="quiz-aside" style="--delay: 0.05s">
-              <div class="panel compact">
-                <div class="progress-label">
+              <div class="panel compact" data-testid="index__quiz-grid--quiz-aside__compact">
+                <div class="progress-label" data-testid="index__quiz-aside--compact__progress-label">
                   <span id="progress-text" data-testid="progress-text">0 / 0</span>
                   <span class="tempo" id="tempo-text" data-testid="tempo-text">Tempo: —</span>
                 </div>
-                <div class="progress-bar">
+                <div class="progress-bar" data-testid="index__quiz-aside--compact__progress-bar">
                   <div class="progress-fill" id="progress-fill" data-testid="progress-fill"></div>
                 </div>
               </div>
@@ -952,8 +952,8 @@
                   <span>Mere</span>
                   <small>Værktøjer</small>
                 </summary>
-                <div class="more-body">
-                  <div class="more-actions">
+                <div class="more-body" data-testid="index__quiz-aside--more-panel__more-body">
+                  <div class="more-actions" data-testid="index__more-panel--more-body__more-actions">
                     <button class="btn ghost small" id="skip-btn" data-testid="skip-btn" type="button">Spring over (0 point)</button>
                     <button class="btn ghost small" id="back-to-menu" data-testid="back-to-menu" type="button">Til menu</button>
                     <button class="btn ghost small" id="switch-studio-btn" data-testid="switch-studio-btn" type="button">
@@ -963,7 +963,7 @@
                     <button class="btn ghost small" id="toggle-meta" data-testid="toggle-meta" type="button">Skjul detaljer</button>
                     <button class="btn ghost small hidden" id="end-round-btn" data-testid="end-round-btn" type="button">Afslut runde</button>
                   </div>
-                  <div class="toggle-grid compact">
+                  <div class="toggle-grid compact" data-testid="index__more-panel--more-body__toggle-grid">
                     <label class="toggle">
                       <input type="checkbox" id="toggle-tts" data-testid="toggle-tts" checked />
                       <span>
@@ -980,15 +980,15 @@
                     </label>
                   </div>
                   <div class="tts-toolbar hidden" id="tts-toolbar" data-testid="tts-toolbar" aria-label="Oplæsning" data-collapsed="false">
-                    <div class="tts-header">
-                      <div class="tts-title">
+                    <div class="tts-header" data-testid="index__more-body--tts-toolbar__tts-header">
+                      <div class="tts-title" data-testid="index__tts-toolbar--tts-header__tts-title">
                         <span class="tts-title-text">Oplæsning</span>
                         <span class="tts-status" id="tts-status" data-testid="tts-status" role="status" aria-live="polite">
                           Oplæsning tjekkes …
                         </span>
                       </div>
-                      <div class="tts-header-actions">
-                        <div class="tts-controls">
+                      <div class="tts-header-actions" data-testid="index__tts-toolbar--tts-header__tts-header-actions">
+                        <div class="tts-controls" data-testid="index__tts-header--tts-header-actions__tts-controls">
                           <button class="btn ghost small" id="tts-preview-btn" data-testid="tts-preview-btn" type="button">
                             Test stemme
                           </button>
@@ -1004,7 +1004,7 @@
                       </div>
                     </div>
                     <div class="tts-body" id="tts-body" data-testid="tts-body">
-                      <div class="tts-settings">
+                      <div class="tts-settings" data-testid="index__tts-toolbar--tts-body__tts-settings">
                         <label class="tts-toggle">
                           <input type="checkbox" id="tts-auto-toggle" data-testid="tts-auto-toggle" />
                           <span>Auto-oplæsning</span>
@@ -1026,7 +1026,7 @@
                         </label>
                         <label class="tts-field" for="tts-speed">
                           <span class="tts-label">Hastighed</span>
-                          <div class="tts-speed">
+                          <div class="tts-speed" data-testid="index__tts-settings--tts-field__tts-speed">
                             <input type="range" id="tts-speed" data-testid="tts-speed" min="0.7" max="1.3" step="0.05" value="1" />
                             <span id="tts-speed-label" data-testid="tts-speed-label">1.0x</span>
                           </div>
@@ -1059,7 +1059,7 @@
                 </figure>
                 <div id="options-container" data-testid="options-container" class="options-grid"></div>
                 <div id="short-answer-container" data-testid="short-answer-container" class="short-answer hidden">
-                  <div class="short-group-meta">
+                  <div class="short-group-meta" data-testid="index__question-card--short-answer-container__short-group-meta">
                     <span class="field-label" id="short-group-label" data-testid="short-group-label">Delspørgsmål</span>
                     <span class="short-group-status" id="short-group-status" data-testid="short-group-status"></span>
                   </div>
@@ -1071,7 +1071,7 @@
                       role="img"
                       aria-label="Gennemsnitlig score"
                     >
-                      <div class="short-average-value">
+                      <div class="short-average-value" data-testid="index__short-average-summary--short-average-circle__short-average-value">
                         <div class="short-average-score" id="short-average-value" data-testid="short-average-value">0.0</div>
                         <div class="short-average-max" id="short-average-max" data-testid="short-average-max">/ 0.0</div>
                       </div>
@@ -1082,17 +1082,17 @@
                   </div>
                   <div class="short-sketch-hint hidden" id="short-sketch-hint" data-testid="short-sketch-hint"></div>
                   <div class="review-drawer hidden" id="short-review-drawer" data-testid="short-review-drawer" data-open="false">
-                    <div class="short-toolbar">
-                      <div class="score-control">
-                        <div class="score-label">
+                    <div class="short-toolbar" data-testid="index__short-answer-container--short-review-drawer__short-toolbar">
+                      <div class="score-control" data-testid="index__short-review-drawer--short-toolbar__score-control">
+                        <div class="score-label" data-testid="index__short-toolbar--score-control__score-label">
                           Point <span class="score-max">/ <span id="short-max-points" data-testid="short-max-points">0</span></span>
                         </div>
-                        <div class="score-inputs">
+                        <div class="score-inputs" data-testid="index__short-toolbar--score-control__score-inputs">
                           <input type="range" id="short-score-range" data-testid="short-score-range" min="0" max="10" step="0.5" value="0" />
                         </div>
                         <div class="score-hint" id="short-score-hint" data-testid="short-score-hint"></div>
                       </div>
-                      <div class="short-buttons">
+                      <div class="short-buttons" data-testid="index__short-review-drawer--short-toolbar__short-buttons">
                         <button class="btn ghost small" id="short-show-answer-btn" data-testid="short-show-answer-btn" type="button">
                           Vis facit
                         </button>
@@ -1100,19 +1100,19 @@
                     </div>
                     <div class="ai-status" id="ai-status-inline" data-testid="ai-status-inline"></div>
                     <div class="short-ai-feedback" id="short-ai-feedback" data-testid="short-ai-feedback"></div>
-                    <div class="short-ai-actions">
+                    <div class="short-ai-actions" data-testid="index__short-answer-container--short-review-drawer__short-ai-actions">
                       <button class="btn ghost small hidden" id="short-ai-retry-btn" data-testid="short-ai-retry-btn" type="button">
                         Prøv igen
                       </button>
                     </div>
                     <div class="short-model hidden" id="short-model-answer" data-testid="short-model-answer">
-                      <div class="short-model-head">
+                      <div class="short-model-head" data-testid="index__short-review-drawer--short-model-answer__short-model-head">
                         <h4 id="short-model-title" data-testid="short-model-title">Modelbesvarelse</h4>
                         <span class="short-model-tag hidden" id="short-model-tag" data-testid="short-model-tag">Figurbeskrivelse</span>
                       </div>
                       <p id="short-model-text" data-testid="short-model-text"></p>
                       <div class="short-figure hidden" id="short-figure-answer" data-testid="short-figure-answer">
-                        <div class="short-figure-head">
+                        <div class="short-figure-head" data-testid="index__short-model-answer--short-figure-answer__short-figure-head">
                           <h5>Figurbeskrivelse</h5>
                           <button class="btn ghost small" id="short-figure-generate-btn" data-testid="short-figure-generate-btn" type="button">Generér</button>
                         </div>
@@ -1124,13 +1124,13 @@
                   </div>
                 </div>
                 <div class="question-hint hidden" id="question-hint" data-testid="question-hint">
-                  <div class="question-hint-head">
+                  <div class="question-hint-head" data-testid="index__question-card--question-hint__question-hint-head">
                     <span>Hint</span>
                     <span class="question-hint-status" id="question-hint-status" data-testid="question-hint-status"></span>
                   </div>
                   <div class="question-hint-text hidden" id="question-hint-text" data-testid="question-hint-text"></div>
                 </div>
-                <div class="actions question-actions">
+                <div class="actions question-actions" data-testid="index__question-wrap--question-card__question-actions">
                   <button
                     class="btn ghost mic-btn hidden"
                     id="mic-btn" data-testid="mic-btn"
@@ -1155,18 +1155,18 @@
       <section id="result-screen" data-testid="result-screen" class="screen hidden">
         <div class="result-shell reveal" data-testid="result-shell" style="--delay: 0s">
           <div class="result-header" data-testid="result-header">
-            <div>
-              <div class="eyebrow">Resultat</div>
+            <div data-testid="index__result-shell--result-header__div">
+              <div class="eyebrow" data-testid="index__result-shell--result-header__eyebrow">Resultat</div>
               <h2>Din score <span id="final-score" data-testid="final-score">0%</span></h2>
-              <div class="result-metrics">
+              <div class="result-metrics" data-testid="index__result-shell--result-header__result-metrics">
                 <div class="grade-pill" id="final-grade-pill" data-testid="final-grade-pill">
                   Karakter <span id="final-grade" data-testid="final-grade">-</span>
                 </div>
-                <div class="grade-pill">Samlet <span id="final-percent" data-testid="final-percent">0%</span></div>
+                <div class="grade-pill" data-testid="index__result-header--result-metrics__grade-pill">Samlet <span id="final-percent" data-testid="final-percent">0%</span></div>
               </div>
               <p id="final-message" data-testid="final-message"></p>
             </div>
-            <div class="result-badge">
+            <div class="result-badge" data-testid="index__result-shell--result-header__result-badge">
               <img class="brand-logo small" id="result-logo" data-testid="result-logo" src="Logo.png" alt="Human Biologi Studio logo" />
               <div class="pill highlight" id="best-badge" data-testid="best-badge">Ny personlig rekord!</div>
             </div>
@@ -1174,7 +1174,7 @@
 
           <div class="result-breakdown" data-testid="result-breakdown">
             <div class="result-card" id="result-mcq-card" data-testid="result-mcq-card">
-              <div class="label">Flervalg point</div>
+              <div class="label" data-testid="index__result-breakdown--result-mcq-card__label">Flervalg point</div>
               <div class="value" id="result-mcq-points" data-testid="result-mcq-points">0</div>
               <div class="meta" id="result-mcq-percent" data-testid="result-mcq-percent">0%</div>
             </div>
@@ -1189,31 +1189,31 @@
               <div class="meta" id="result-rubric-percent" data-testid="result-rubric-percent">0%</div>
             </div>
             <div class="result-card highlight" id="result-grade-card" data-testid="result-grade-card">
-              <div class="label">Karakter</div>
+              <div class="label" data-testid="index__result-breakdown--result-grade-card__label">Karakter</div>
               <div class="value" id="result-grade" data-testid="result-grade">-</div>
-              <div class="meta">7-trinsskala</div>
+              <div class="meta" data-testid="index__result-breakdown--result-grade-card__meta">7-trinsskala</div>
             </div>
           </div>
 
           <div class="stat-grid" data-testid="result-stat-grid">
-            <div class="stat">
+            <div class="stat" data-testid="index__result-shell--result-stat-grid__stat">
               <div class="label" data-testid="stat-correct-label">Korrekte</div>
               <div class="value" id="stat-correct" data-testid="stat-correct">0</div>
             </div>
-            <div class="stat">
+            <div class="stat" data-testid="index__result-shell--result-stat-grid__stat--2">
               <div class="label" data-testid="stat-wrong-label">Forkerte</div>
               <div class="value" id="stat-wrong" data-testid="stat-wrong">0</div>
             </div>
-            <div class="stat">
+            <div class="stat" data-testid="index__result-shell--result-stat-grid__stat--3">
               <div class="label" data-testid="stat-skipped-label">Sprunget over</div>
               <div class="value" id="stat-skipped" data-testid="stat-skipped">0</div>
             </div>
-            <div class="stat">
+            <div class="stat" data-testid="index__result-shell--result-stat-grid__stat--4">
               <div class="label" id="stat-short-label" data-testid="stat-short-label">Kortsvar point</div>
               <div class="value" id="stat-short-score" data-testid="stat-short-score">0 / 72</div>
             </div>
-            <div class="stat">
-              <div class="label">Tempo</div>
+            <div class="stat" data-testid="index__result-shell--result-stat-grid__stat--5">
+              <div class="label" data-testid="index__result-stat-grid--stat__label">Tempo</div>
               <div class="value" id="stat-pace" data-testid="stat-pace">—</div>
             </div>
           </div>
@@ -1226,7 +1226,7 @@
               <span>Mere</span>
               <small>Runde og navigation</small>
             </summary>
-            <div class="more-body">
+            <div class="more-body" data-testid="index__result-shell--result-more-drawer__more-body">
               <button class="btn ghost" id="restart-round-btn" data-testid="restart-round-btn" type="button">Start igen</button>
               <button class="btn ghost" id="return-menu-btn" data-testid="return-menu-btn" type="button">Til menu</button>
             </div>
@@ -1234,7 +1234,7 @@
 
           <div class="review-queue hidden" id="review-queue" data-testid="review-queue">
             <div class="review-queue-header" data-testid="review-queue-header">
-              <div>
+              <div data-testid="index__review-queue--review-queue-header__div">
                 <h3>Smart gennemgang</h3>
                 <p>Gennemgå kortsvar du missede med korte hints.</p>
               </div>
@@ -1243,8 +1243,8 @@
             <div id="review-queue-list" data-testid="review-queue-list" class="review-queue-list"></div>
           </div>
 
-          <div class="review">
-            <div class="review-header">
+          <div class="review" data-testid="index__result-screen--result-shell__review">
+            <div class="review-header" data-testid="index__result-shell--review__review-header">
               <h3>Din runde</h3>
             </div>
             <details class="more-drawer review-filter-drawer">
@@ -1252,8 +1252,8 @@
                 <span>Filtre</span>
                 <small>Vis rigtige, forkerte og sprunget over</small>
               </summary>
-              <div class="more-body">
-                <div class="review-filters" role="group" aria-label="Filtrer din runde">
+              <div class="more-body" data-testid="index__review--review-filter-drawer__more-body">
+                <div class="review-filters" role="group" aria-label="Filtrer din runde" data-testid="index__review-filter-drawer--more-body__filtrer-din-runde">
                   <button class="review-filter" id="review-filter-correct" data-testid="review-filter-correct" type="button" aria-pressed="false">
                     Rigtige
                   </button>
@@ -1273,49 +1273,49 @@
       <section id="account-screen" data-testid="account-screen" class="screen hidden">
         <div class="account-shell" data-testid="account-shell">
           <header class="account-hero reveal" data-testid="account-hero" style="--delay: 0s">
-            <div class="account-hero-head">
-              <div>
-                <div class="eyebrow">Konto</div>
+            <div class="account-hero-head" data-testid="index__account-shell--account-hero__account-hero-head">
+              <div data-testid="index__account-hero--account-hero-head__div">
+                <div class="eyebrow" data-testid="index__account-hero--account-hero-head__eyebrow">Konto</div>
                 <h1>Din konto</h1>
                 <p>Plan, profil og data samlet ét sted.</p>
               </div>
               <button id="account-back-btn" data-testid="account-back-btn" class="btn ghost" type="button">Tilbage til app</button>
             </div>
-            <div class="account-hero-card">
-              <div class="plan-row">
+            <div class="account-hero-card" data-testid="index__account-shell--account-hero__account-hero-card">
+              <div class="plan-row" data-testid="index__account-hero--account-hero-card__plan-row">
                 <div class="plan-chip" id="plan-status" data-testid="plan-status">Plan: —</div>
                 <div class="plan-meta" id="subscription-status" data-testid="subscription-status">Ingen aktiv betaling endnu.</div>
               </div>
-              <div class="account-actions">
+              <div class="account-actions" data-testid="index__account-hero--account-hero-card__account-actions">
                 <button id="upgrade-btn" data-testid="upgrade-btn" class="btn primary" type="button">Aktivér Pro</button>
                 <button id="portal-btn" data-testid="portal-btn" class="btn ghost" type="button">Administrer abonnement</button>
               </div>
-              <div class="field-hint">Du kan altid ændre eller opsige dit abonnement.</div>
+              <div class="field-hint" data-testid="index__account-hero--account-hero-card__field-hint">Du kan altid ændre eller opsige dit abonnement.</div>
             </div>
           </header>
           <div class="account-status" id="account-status" data-testid="account-status"></div>
 
           <div class="account-grid" data-testid="account-grid">
             <section class="panel account-panel reveal" data-testid="account-panel-profile" style="--delay: 0.05s">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__account-grid--account-panel-profile__panel-header">
                 <h2>Profil</h2>
                 <p>Hold dit navn opdateret og bekræft e-mailen fra login.</p>
               </div>
-              <div class="field">
+              <div class="field" data-testid="index__account-grid--account-panel-profile__field">
                 <label for="profile-name-input">Navn</label>
                 <input id="profile-name-input" data-testid="profile-name-input" type="text" placeholder="Dit navn" />
               </div>
-              <div class="field">
+              <div class="field" data-testid="index__account-grid--account-panel-profile__field--2">
                 <label>Email</label>
                 <div class="field-static" id="profile-email" data-testid="profile-email">—</div>
               </div>
-              <div class="account-actions">
+              <div class="account-actions" data-testid="index__account-grid--account-panel-profile__account-actions">
                 <button id="profile-save-btn" data-testid="profile-save-btn" class="btn primary" type="button">Gem profil</button>
               </div>
             </section>
 
             <section class="panel account-panel reveal" data-testid="account-panel-key" style="--delay: 0.15s">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__account-grid--account-panel-key__panel-header">
                 <h2>Din nøgle</h2>
                 <p>Brug din egen nøgle for gratis adgang til hjælpen.</p>
               </div>
@@ -1324,19 +1324,19 @@
                 <span>Brug min egen nøgle</span>
                 <small>Gemmes ikke mellem sessioner</small>
               </label>
-              <div class="field">
+              <div class="field" data-testid="index__account-grid--account-panel-key__field">
                 <label for="own-key-input">Din nøgle</label>
                 <input id="own-key-input" data-testid="own-key-input" type="password" placeholder="sk-..." autocomplete="off" />
-                <div class="field-hint">Nøglen bruges kun når du beder om hjælp og gemmes ikke.</div>
+                <div class="field-hint" data-testid="index__account-panel-key--field__field-hint">Nøglen bruges kun når du beder om hjælp og gemmes ikke.</div>
               </div>
-              <div class="account-actions">
+              <div class="account-actions" data-testid="index__account-grid--account-panel-key__account-actions">
                 <button id="own-key-save-btn" data-testid="own-key-save-btn" class="btn primary" type="button">Gem nøgle</button>
                 <button id="own-key-clear-btn" data-testid="own-key-clear-btn" class="btn ghost" type="button">Ryd nøgle</button>
               </div>
             </section>
 
             <section class="panel account-panel reveal" data-testid="account-panel-consent" style="--delay: 0.2s">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__account-grid--account-panel-consent__panel-header">
                 <h2>Jura &amp; samtykke</h2>
                 <p>For at bruge appen skal du acceptere vilkår, handelsbetingelser og privatlivs- og persondatapolitik.</p>
               </div>
@@ -1350,7 +1350,7 @@
                 <span>Jeg accepterer privatlivs- og persondatapolitik</span>
                 <small>Påkrævet</small>
               </label>
-              <div class="account-actions">
+              <div class="account-actions" data-testid="index__account-grid--account-panel-consent__account-actions">
                 <button id="consent-save-btn" data-testid="consent-save-btn" class="btn ghost" type="button">Gem samtykke</button>
               </div>
               <div class="legal-links" data-testid="account-legal-links">
@@ -1365,68 +1365,68 @@
                   Handelsbetingelser
                 </a>
               </div>
-              <div class="field-hint">Læs de fulde dokumenter før eller efter du giver samtykke.</div>
+              <div class="field-hint" data-testid="index__account-grid--account-panel-consent__field-hint">Læs de fulde dokumenter før eller efter du giver samtykke.</div>
             </section>
 
             <section class="panel account-panel reveal" data-testid="account-panel-data" style="--delay: 0.25s">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__account-grid--account-panel-data__panel-header">
                 <h2>Data &amp; sikkerhed</h2>
                 <p>Hent eller slet dine data, når du vil.</p>
               </div>
-              <div class="account-actions">
+              <div class="account-actions" data-testid="index__account-grid--account-panel-data__account-actions">
                 <button id="export-data-btn" data-testid="export-data-btn" class="btn ghost" type="button">Download data</button>
                 <button id="logout-btn" data-testid="logout-btn" class="btn ghost" type="button">Log ud</button>
                 <button id="delete-account-btn" data-testid="delete-account-btn" class="btn danger" type="button">Slet konto</button>
               </div>
-              <div class="field-hint">Sletning er permanent og kan ikke fortrydes.</div>
+              <div class="field-hint" data-testid="index__account-grid--account-panel-data__field-hint">Sletning er permanent og kan ikke fortrydes.</div>
             </section>
 
             <section class="panel account-panel diagnostics-panel reveal" data-testid="account-panel-diagnostics" style="--delay: 0.3s">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__account-grid--account-panel-diagnostics__panel-header">
                 <h2>Status &amp; overblik</h2>
                 <p>Hurtigt overblik over login og betaling.</p>
               </div>
-              <div class="diagnostics-grid">
-                <div class="diagnostic-card">
-                <div class="diagnostic-label">Server</div>
+              <div class="diagnostics-grid" data-testid="index__account-grid--account-panel-diagnostics__diagnostics-grid">
+                <div class="diagnostic-card" data-testid="index__account-panel-diagnostics--diagnostics-grid__diagnostic-card">
+                <div class="diagnostic-label" data-testid="index__diagnostics-grid--diagnostic-card__diagnostic-label">Server</div>
                   <div class="diagnostic-value" id="diag-backend" data-testid="diag-backend">—</div>
                   <div class="diagnostic-meta" id="diag-backend-meta" data-testid="diag-backend-meta">—</div>
                 </div>
-                <div class="diagnostic-card">
-                  <div class="diagnostic-label">Login</div>
+                <div class="diagnostic-card" data-testid="index__account-panel-diagnostics--diagnostics-grid__diagnostic-card--2">
+                  <div class="diagnostic-label" data-testid="index__diagnostics-grid--diagnostic-card__diagnostic-label--2">Login</div>
                   <div class="diagnostic-value" id="diag-auth" data-testid="diag-auth">—</div>
                   <div class="diagnostic-meta" id="diag-auth-meta" data-testid="diag-auth-meta">—</div>
                 </div>
-                <div class="diagnostic-card">
-                  <div class="diagnostic-label">Betaling</div>
+                <div class="diagnostic-card" data-testid="index__account-panel-diagnostics--diagnostics-grid__diagnostic-card--3">
+                  <div class="diagnostic-label" data-testid="index__diagnostics-grid--diagnostic-card__diagnostic-label--3">Betaling</div>
                   <div class="diagnostic-value" id="diag-stripe" data-testid="diag-stripe">—</div>
                   <div class="diagnostic-meta" id="diag-stripe-meta" data-testid="diag-stripe-meta">—</div>
                 </div>
-                <div class="diagnostic-card">
-                <div class="diagnostic-label">Hjælp</div>
+                <div class="diagnostic-card" data-testid="index__account-panel-diagnostics--diagnostics-grid__diagnostic-card--4">
+                <div class="diagnostic-label" data-testid="index__diagnostics-grid--diagnostic-card__diagnostic-label--4">Hjælp</div>
                   <div class="diagnostic-value" id="diag-ai" data-testid="diag-ai">—</div>
                   <div class="diagnostic-meta" id="diag-ai-meta" data-testid="diag-ai-meta">—</div>
                 </div>
               </div>
-              <div class="account-actions">
+              <div class="account-actions" data-testid="index__account-grid--account-panel-diagnostics__account-actions">
                 <button id="diag-refresh-btn" data-testid="diag-refresh-btn" class="btn ghost" type="button">Opdatér status</button>
               </div>
-              <div class="field-hint">Nogle checks kræver login for at vise fuld status.</div>
+              <div class="field-hint" data-testid="index__account-grid--account-panel-diagnostics__field-hint">Nogle checks kræver login for at vise fuld status.</div>
             </section>
 
             <section class="panel account-panel debug-panel hidden" id="debug-panel" data-testid="debug-panel" style="--delay: 0.35s">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__account-grid--debug-panel__panel-header">
                 <h2>Dev debug</h2>
                 <p>Kun synlig i udviklingsmiljø.</p>
               </div>
-              <div class="diagnostics-grid">
-                <div class="diagnostic-card">
-                  <div class="diagnostic-label">Studio</div>
+              <div class="diagnostics-grid" data-testid="index__account-grid--debug-panel__diagnostics-grid">
+                <div class="diagnostic-card" data-testid="index__debug-panel--diagnostics-grid__diagnostic-card">
+                  <div class="diagnostic-label" data-testid="index__diagnostics-grid--diagnostic-card__diagnostic-label--5">Studio</div>
                   <div class="diagnostic-value" id="debug-studio-type" data-testid="debug-studio-type">—</div>
-                  <div class="diagnostic-meta">Aktiv studioType</div>
+                  <div class="diagnostic-meta" data-testid="index__diagnostics-grid--diagnostic-card__diagnostic-meta">Aktiv studioType</div>
                 </div>
-                <div class="diagnostic-card">
-                  <div class="diagnostic-label">Policy</div>
+                <div class="diagnostic-card" data-testid="index__debug-panel--diagnostics-grid__diagnostic-card--2">
+                  <div class="diagnostic-label" data-testid="index__diagnostics-grid--diagnostic-card__diagnostic-label--6">Policy</div>
                   <pre class="diagnostic-meta debug-policy" id="debug-policy" data-testid="debug-policy">—</pre>
                 </div>
               </div>
@@ -1437,38 +1437,38 @@
       <section id="billing-screen" data-testid="billing-screen" class="screen hidden">
         <div class="billing-shell" data-testid="billing-shell">
           <header class="billing-hero reveal" data-testid="billing-hero" style="--delay: 0s">
-            <div class="billing-hero-head">
-              <div>
-                <div class="eyebrow">Abonnement</div>
+            <div class="billing-hero-head" data-testid="index__billing-shell--billing-hero__billing-hero-head">
+              <div data-testid="index__billing-hero--billing-hero-head__div">
+                <div class="eyebrow" data-testid="index__billing-hero--billing-hero-head__eyebrow">Abonnement</div>
                 <h1>Administrer Pro</h1>
                 <p>Følg betalinger, metode og fakturaer direkte i appen.</p>
               </div>
               <button id="billing-back-btn" data-testid="billing-back-btn" class="btn ghost" type="button">Tilbage til konto</button>
             </div>
-            <div class="billing-hero-card">
-              <div class="billing-hero-grid">
-                <div class="billing-metric">
-                  <div class="billing-metric-label">Plan</div>
+            <div class="billing-hero-card" data-testid="index__billing-shell--billing-hero__billing-hero-card">
+              <div class="billing-hero-grid" data-testid="index__billing-hero--billing-hero-card__billing-hero-grid">
+                <div class="billing-metric" data-testid="index__billing-hero-card--billing-hero-grid__billing-metric">
+                  <div class="billing-metric-label" data-testid="index__billing-hero-grid--billing-metric__billing-metric-label">Plan</div>
                   <div class="billing-metric-value" id="billing-plan" data-testid="billing-plan">—</div>
                   <div class="billing-metric-meta" id="billing-plan-meta" data-testid="billing-plan-meta">—</div>
                 </div>
-                <div class="billing-metric">
-                  <div class="billing-metric-label">Status</div>
+                <div class="billing-metric" data-testid="index__billing-hero-card--billing-hero-grid__billing-metric--2">
+                  <div class="billing-metric-label" data-testid="index__billing-hero-grid--billing-metric__billing-metric-label--2">Status</div>
                   <div class="billing-metric-value" id="billing-status-badge" data-testid="billing-status-badge">—</div>
                   <div class="billing-metric-meta" id="billing-status-meta" data-testid="billing-status-meta">—</div>
                 </div>
-                <div class="billing-metric">
+                <div class="billing-metric" data-testid="index__billing-hero-card--billing-hero-grid__billing-metric--3">
                   <div class="billing-metric-label" id="billing-next-label" data-testid="billing-next-label">Næste betaling</div>
                   <div class="billing-metric-value" id="billing-next-amount" data-testid="billing-next-amount">—</div>
                   <div class="billing-metric-meta" id="billing-next-date" data-testid="billing-next-date">—</div>
                 </div>
-                <div class="billing-metric">
-                  <div class="billing-metric-label">Betalingsmetode</div>
+                <div class="billing-metric" data-testid="index__billing-hero-card--billing-hero-grid__billing-metric--4">
+                  <div class="billing-metric-label" data-testid="index__billing-hero-grid--billing-metric__billing-metric-label--3">Betalingsmetode</div>
                   <div class="billing-metric-value" id="billing-payment-label" data-testid="billing-payment-label">—</div>
                   <div class="billing-metric-meta" id="billing-payment-meta" data-testid="billing-payment-meta">—</div>
                 </div>
               </div>
-              <div class="billing-hero-actions">
+              <div class="billing-hero-actions" data-testid="index__billing-hero--billing-hero-card__billing-hero-actions">
                 <button id="billing-update-method-btn" data-testid="billing-update-method-btn" class="btn primary" type="button">
                   Opdatér betalingsmetode
                 </button>
@@ -1487,20 +1487,20 @@
 
           <div class="billing-grid" data-testid="billing-grid">
             <section class="panel billing-panel wide reveal" data-testid="billing-panel-method" style="--delay: 0.05s">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__billing-grid--billing-panel-method__panel-header">
                 <h2>Betalingsmetode</h2>
                 <p>Skift kort eller wallet uden at forlade appen.</p>
               </div>
               <div class="billing-method-card" id="billing-method-card" data-testid="billing-method-card">
-                <div>
+                <div data-testid="index__billing-panel-method--billing-method-card__div">
                   <div class="billing-method-title" id="billing-method-title" data-testid="billing-method-title">—</div>
                   <div class="billing-method-meta" id="billing-method-meta" data-testid="billing-method-meta">—</div>
                 </div>
                 <button id="billing-change-method-btn" data-testid="billing-change-method-btn" class="btn ghost small" type="button">Skift metode</button>
               </div>
               <div class="billing-update hidden" id="billing-update-panel" data-testid="billing-update-panel">
-                <div class="billing-update-head">
-                  <div>
+                <div class="billing-update-head" data-testid="index__billing-panel-method--billing-update-panel__billing-update-head">
+                  <div data-testid="index__billing-update-panel--billing-update-head__div">
                     <h3>Ny betalingsmetode</h3>
                     <p>Gem en ny metode, så Pro aldrig stopper midt i flowet.</p>
                   </div>
@@ -1509,24 +1509,24 @@
                 <div class="billing-update-status" id="billing-update-status" data-testid="billing-update-status"></div>
                 <form id="billing-update-form" data-testid="billing-update-form">
                   <div id="billing-payment-element" data-testid="billing-payment-element" class="billing-payment-element"></div>
-                  <div class="billing-update-actions">
+                  <div class="billing-update-actions" data-testid="index__billing-update-panel--billing-update-form__billing-update-actions">
                     <button id="billing-update-submit-btn" data-testid="billing-update-submit-btn" class="btn primary" type="submit">
                       Gem betalingsmetode
                     </button>
                     <button id="billing-update-cancel-btn" data-testid="billing-update-cancel-btn" class="btn ghost" type="button">Annuller</button>
                   </div>
                 </form>
-                <div class="field-hint">Du kan altid ændre eller fjerne metoden igen.</div>
+                <div class="field-hint" data-testid="index__billing-panel-method--billing-update-panel__field-hint">Du kan altid ændre eller fjerne metoden igen.</div>
               </div>
             </section>
 
             <section class="panel billing-panel reveal" data-testid="billing-panel-plan" style="--delay: 0.1s">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__billing-grid--billing-panel-plan__panel-header">
                 <h2>Plan &amp; fornyelse</h2>
                 <p>Overblik over plan, cyklus og næste skridt.</p>
               </div>
-              <div class="billing-plan-card">
-                <div>
+              <div class="billing-plan-card" data-testid="index__billing-grid--billing-panel-plan__billing-plan-card">
+                <div data-testid="index__billing-panel-plan--billing-plan-card__div">
                   <div class="billing-plan-name" id="billing-plan-name" data-testid="billing-plan-name">—</div>
                   <div class="billing-plan-note" id="billing-plan-note" data-testid="billing-plan-note">—</div>
                 </div>
@@ -1537,7 +1537,7 @@
             </section>
 
             <section class="panel billing-panel wide reveal" data-testid="billing-panel-invoices" style="--delay: 0.15s">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__billing-grid--billing-panel-invoices__panel-header">
                 <h2>Fakturaer &amp; kvitteringer</h2>
                 <p>Hent seneste kvitteringer eller fuld faktura.</p>
               </div>
@@ -1545,15 +1545,15 @@
             </section>
 
             <section class="panel billing-panel reveal" data-testid="billing-panel-methods" style="--delay: 0.2s">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__billing-grid--billing-panel-methods__panel-header">
                 <h2>Betalingsformer</h2>
                 <p>Tilgængelige metoder i checkout (Stripe).</p>
               </div>
               <div class="billing-method-tags" id="billing-method-tags" data-testid="billing-method-tags"></div>
-              <div class="billing-security">
-                <div class="billing-security-item">PCI-sikret håndtering</div>
-                <div class="billing-security-item">Kvitteringer sendes til din e-mail</div>
-                <div class="billing-security-item">Opsig når du vil</div>
+              <div class="billing-security" data-testid="index__billing-grid--billing-panel-methods__billing-security">
+                <div class="billing-security-item" data-testid="index__billing-panel-methods--billing-security__billing-security-item">PCI-sikret håndtering</div>
+                <div class="billing-security-item" data-testid="index__billing-panel-methods--billing-security__billing-security-item--2">Kvitteringer sendes til din e-mail</div>
+                <div class="billing-security-item" data-testid="index__billing-panel-methods--billing-security__billing-security-item--3">Opsig når du vil</div>
               </div>
             </section>
           </div>
@@ -1562,8 +1562,8 @@
       <section id="checkout-screen" data-testid="checkout-screen" class="screen hidden">
         <div class="checkout-shell" data-testid="checkout-shell">
           <header class="checkout-hero" data-testid="checkout-hero">
-            <div class="checkout-hero-head">
-              <div class="eyebrow">Pro</div>
+            <div class="checkout-hero-head" data-testid="index__checkout-shell--checkout-hero__checkout-hero-head">
+              <div class="eyebrow" data-testid="index__checkout-hero--checkout-hero-head__eyebrow">Pro</div>
               <h1>Gør din træning skarpere</h1>
               <p>Gennemfør betalingen sikkert med Stripe og få adgang med det samme.</p>
             </div>
@@ -1572,35 +1572,35 @@
           <div class="checkout-status hidden" id="checkout-status" data-testid="checkout-status"></div>
           <div class="checkout-grid" data-testid="checkout-grid">
             <section class="panel checkout-panel" data-testid="checkout-payment-panel">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__checkout-grid--checkout-payment-panel__panel-header">
                 <h2>Betaling</h2>
                 <p>Sikker betaling håndteres af Stripe.</p>
               </div>
               <form id="checkout-form" data-testid="checkout-form">
                 <div class="checkout-express hidden" id="checkout-express" data-testid="checkout-express">
-                  <div class="checkout-express-title">Hurtig betaling</div>
+                  <div class="checkout-express-title" data-testid="index__checkout-form--checkout-express__checkout-express-title">Hurtig betaling</div>
                   <div id="checkout-wallets" data-testid="checkout-wallets" class="checkout-wallets"></div>
-                  <div class="checkout-divider"><span>eller betal med kort</span></div>
+                  <div class="checkout-divider" data-testid="index__checkout-form--checkout-express__checkout-divider"><span>eller betal med kort</span></div>
                 </div>
                 <div id="checkout-element" data-testid="checkout-element" class="checkout-element"></div>
-                <div class="checkout-actions">
+                <div class="checkout-actions" data-testid="index__checkout-payment-panel--checkout-form__checkout-actions">
                   <button id="checkout-submit-btn" data-testid="checkout-submit-btn" class="btn primary" type="submit">Betal</button>
                   <button id="checkout-cancel-btn" data-testid="checkout-cancel-btn" class="btn ghost" type="button">Annuller</button>
                   <button id="checkout-hosted-btn" data-testid="checkout-hosted-btn" class="btn ghost" type="button">Åbn Stripe Checkout</button>
                 </div>
               </form>
-              <div class="field-hint">Du kan altid opsige eller ændre abonnementet bagefter.</div>
+              <div class="field-hint" data-testid="index__checkout-grid--checkout-payment-panel__field-hint">Du kan altid opsige eller ændre abonnementet bagefter.</div>
             </section>
             <section class="panel checkout-summary" data-testid="checkout-summary-panel">
-              <div class="panel-header">
+              <div class="panel-header" data-testid="index__checkout-grid--checkout-summary-panel__panel-header">
                 <h2>Det får du med Pro</h2>
                 <p>Designet til fokus og højere score.</p>
               </div>
-              <div class="checkout-plan">
+              <div class="checkout-plan" data-testid="index__checkout-grid--checkout-summary-panel__checkout-plan">
                 <div class="checkout-plan-name" id="checkout-plan-name" data-testid="checkout-plan-name">Pro</div>
                 <div class="checkout-plan-note hidden" id="checkout-plan-note" data-testid="checkout-plan-note"></div>
               </div>
-              <div class="checkout-price">
+              <div class="checkout-price" data-testid="index__checkout-grid--checkout-summary-panel__checkout-price">
                 <div class="checkout-price-amount" id="checkout-price" data-testid="checkout-price">—</div>
                 <div class="checkout-price-interval" id="checkout-interval" data-testid="checkout-interval">Pr. måned</div>
               </div>
@@ -1611,11 +1611,11 @@
                 <li>Historik og performance, der følger din udvikling.</li>
                 <li>Prioriteret adgang, når AI-ressourcer er travle.</li>
               </ul>
-              <div class="checkout-total">
+              <div class="checkout-total" data-testid="index__checkout-grid--checkout-summary-panel__checkout-total">
                 <span>Beløb i dag</span>
                 <strong id="checkout-total" data-testid="checkout-total">—</strong>
               </div>
-              <div class="checkout-trust">Betal med kort, Apple Pay eller Google Pay (hvis tilgængeligt).</div>
+              <div class="checkout-trust" data-testid="index__checkout-grid--checkout-summary-panel__checkout-trust">Betal med kort, Apple Pay eller Google Pay (hvis tilgængeligt).</div>
             </section>
           </div>
         </div>
@@ -1624,13 +1624,13 @@
     </div>
 
     <div class="modal hidden" id="rules-modal" data-testid="rules-modal">
-      <div class="modal-content">
-        <div class="modal-header">
+      <div class="modal-content" data-testid="index__page-index--rules-modal__modal-content">
+        <div class="modal-header" data-testid="index__rules-modal--modal-content__modal-header">
           <h3>Spilguide</h3>
           <button class="icon-btn" id="close-modal" data-testid="close-modal" type="button">Luk</button>
         </div>
-        <div class="modal-grid">
-          <div>
+        <div class="modal-grid" data-testid="index__rules-modal--modal-content__modal-grid">
+          <div data-testid="index__modal-content--modal-grid__div">
             <h4>Point &amp; flow</h4>
             <ul class="rules-list">
               <li>+3 point for korrekt, -1 for forkert, 0 for at springe over.</li>
@@ -1643,7 +1643,7 @@
               <li>Spillet gemmer din bedste score og dine seneste fejl lokalt.</li>
             </ul>
           </div>
-          <div>
+          <div data-testid="index__modal-content--modal-grid__div--2">
             <h4>Shortcuts</h4>
             <ul class="rules-list">
               <li>
@@ -1685,23 +1685,23 @@
             </ul>
           </div>
         </div>
-        <div class="modal-actions">
+        <div class="modal-actions" data-testid="index__rules-modal--modal-content__modal-actions">
           <button class="btn ghost" id="modal-close-btn" data-testid="modal-close-btn" type="button">Tilbage</button>
         </div>
       </div>
     </div>
 
     <div class="modal hidden sketch-modal" id="sketch-modal" data-testid="sketch-modal">
-      <div class="modal-content sketch-modal-content">
-        <div class="modal-header">
-          <div>
+      <div class="modal-content sketch-modal-content" data-testid="index__page-index--sketch-modal__sketch-modal-content">
+        <div class="modal-header" data-testid="index__sketch-modal--sketch-modal-content__modal-header">
+          <div data-testid="index__sketch-modal-content--modal-header__div">
             <h3>Skitse</h3>
             <p class="sketch-modal-subtitle" id="sketch-modal-title" data-testid="sketch-modal-title">Delspørgsmål</p>
           </div>
           <button class="icon-btn" id="sketch-modal-close" data-testid="sketch-modal-close" type="button">Luk</button>
         </div>
-        <div class="sketch-toolbar">
-          <div class="sketch-tool-group">
+        <div class="sketch-toolbar" data-testid="index__sketch-modal--sketch-modal-content__sketch-toolbar">
+          <div class="sketch-tool-group" data-testid="index__sketch-modal-content--sketch-toolbar__sketch-tool-group">
             <button class="btn ghost small sketch-tool-btn active" id="sketch-tool-draw" data-testid="sketch-tool-draw" type="button">
               Tegn
             </button>
@@ -1712,7 +1712,7 @@
               Tekst
             </button>
           </div>
-          <div class="sketch-color-group" aria-label="Farver">
+          <div class="sketch-color-group" aria-label="Farver" data-testid="index__sketch-modal-content--sketch-toolbar__farver">
             <button class="sketch-color-btn is-active" type="button" data-color="#111827" style="background: #111827" aria-label="Sort"></button>
             <button class="sketch-color-btn" type="button" data-color="#ef4444" style="background: #ef4444" aria-label="Rød"></button>
             <button class="sketch-color-btn" type="button" data-color="#2563eb" style="background: #2563eb" aria-label="Blå"></button>
@@ -1735,9 +1735,9 @@
           <canvas id="sketch-canvas" data-testid="sketch-canvas"></canvas>
           <div class="sketch-text-layer" id="sketch-text-layer" data-testid="sketch-text-layer"></div>
         </div>
-        <div class="sketch-modal-footer">
+        <div class="sketch-modal-footer" data-testid="index__sketch-modal--sketch-modal-content__sketch-modal-footer">
           <div class="sketch-modal-hint" id="sketch-modal-hint" data-testid="sketch-modal-hint">Luk gemmer skitsen uden analyse.</div>
-          <div class="sketch-modal-actions">
+          <div class="sketch-modal-actions" data-testid="index__sketch-modal-content--sketch-modal-footer__sketch-modal-actions">
             <button class="btn ghost" id="sketch-modal-dismiss" data-testid="sketch-modal-dismiss" type="button">Luk</button>
             <button class="btn primary" id="sketch-modal-analyze" data-testid="sketch-modal-analyze" type="button">Analyser</button>
           </div>
@@ -1746,12 +1746,12 @@
     </div>
 
     <div class="modal hidden figure-modal" id="figure-modal" data-testid="figure-modal">
-      <div class="modal-content figure-modal-content">
-        <div class="modal-header">
+      <div class="modal-content figure-modal-content" data-testid="index__page-index--figure-modal__figure-modal-content">
+        <div class="modal-header" data-testid="index__figure-modal--figure-modal-content__modal-header">
           <h3 id="figure-modal-title" data-testid="figure-modal-title">Figur</h3>
           <button class="icon-btn" id="figure-modal-close" data-testid="figure-modal-close" type="button">Luk</button>
         </div>
-        <div class="figure-modal-body">
+        <div class="figure-modal-body" data-testid="index__figure-modal--figure-modal-content__figure-modal-body">
           <img id="figure-modal-img" data-testid="figure-modal-img" alt="" />
           <div class="figure-modal-caption" id="figure-modal-caption" data-testid="figure-modal-caption"></div>
         </div>
@@ -1760,6 +1760,7 @@
 
     <script src="https://js.stripe.com/v3/"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="access-policy.js"></script>
     <script src="studio-policy.js"></script>
     <script src="studio-engine.js"></script>
     <script src="app.js"></script>

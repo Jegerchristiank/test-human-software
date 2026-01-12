@@ -1102,6 +1102,9 @@ const screens = {
   checkout: document.getElementById("checkout-screen"),
 };
 
+const accessPolicy =
+  typeof window !== "undefined" && window.accessPolicy ? window.accessPolicy : null;
+
 const shortcutStatusTimers = new Map();
 
 const elements = {
@@ -5594,9 +5597,54 @@ function sleep(ms) {
 }
 
 function hasPaidAccess() {
+  if (accessPolicy?.hasPaidAccess) {
+    return accessPolicy.hasPaidAccess({
+      plan: state.profile?.plan,
+      subscriptionStatus: state.subscription?.status,
+    });
+  }
   if (state.profile?.plan && state.profile.plan !== "free") return true;
   const status = String(state.subscription?.status || "").toLowerCase();
   return ["trialing", "active", "past_due", "unpaid"].includes(status);
+}
+
+function resolveRoundAccess() {
+  if (accessPolicy?.resolveRoundAccess) {
+    return accessPolicy.resolveRoundAccess({
+      plan: state.profile?.plan,
+      subscriptionStatus: state.subscription?.status,
+      useOwnKey: state.useOwnKey,
+      userKey: state.userOpenAiKey,
+    });
+  }
+  const hasKey = Boolean(state.useOwnKey && String(state.userOpenAiKey || "").trim());
+  if (hasPaidAccess() || hasKey) return { allowed: true, reason: null };
+  return {
+    allowed: false,
+    reason: state.useOwnKey ? "missing_key" : "payment_required",
+  };
+}
+
+function getRoundAccessMessage(reason) {
+  if (reason === "missing_key") {
+    return "Indtast din nøgle for at starte en runde.";
+  }
+  if (reason === "payment_required") {
+    return "Aktivér Pro eller indtast din nøgle for at starte en runde.";
+  }
+  return "Adgang mangler for at starte en runde.";
+}
+
+function handleRoundAccessDenied(reason) {
+  const message = getRoundAccessMessage(reason);
+  setAccountStatus(message, true);
+  updateSummary();
+  if (
+    !screens.menu?.classList.contains("active") &&
+    !screens.account?.classList.contains("active")
+  ) {
+    showScreen("account");
+  }
 }
 
 async function refreshAccessStatus({ attempts = 4, delayMs = 1600 } = {}) {
@@ -13840,6 +13888,12 @@ function updateSummary() {
     canStart = false;
   }
 
+  const access = resolveRoundAccess();
+  if (!access.allowed && !(state.sessionActive && state.sessionPaused)) {
+    hint = getRoundAccessMessage(access.reason);
+    canStart = false;
+  }
+
   elements.selectionHint.textContent = hint;
   elements.startButtons.forEach((btn) => {
     btn.disabled = !canStart;
@@ -13923,6 +13977,11 @@ function finishSession() {
 
 function startGame(options = {}) {
   if (!requireAuthGuard("Log ind for at starte en runde.")) return;
+  const access = resolveRoundAccess();
+  if (!access.allowed) {
+    handleRoundAccessDenied(access.reason);
+    return;
+  }
   const {
     forceMistakes = false,
     ignoreFocusMistakes = false,

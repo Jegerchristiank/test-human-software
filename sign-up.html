@@ -14,10 +14,10 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="mode-auth" data-auth-mode="sign-up" data-testid="page-sign-up">
-    <div class="ambient ambient-one"></div>
-    <div class="ambient ambient-two"></div>
-    <div class="ambient ambient-three"></div>
-    <div class="noise-layer"></div>
+    <div class="ambient ambient-one" data-testid="sign-up__page-sign-up__ambient-one"></div>
+    <div class="ambient ambient-two" data-testid="sign-up__page-sign-up__ambient-two"></div>
+    <div class="ambient ambient-three" data-testid="sign-up__page-sign-up__ambient-three"></div>
+    <div class="noise-layer" data-testid="sign-up__page-sign-up__noise-layer"></div>
     <div class="theme-switch" role="group" aria-label="Tema" data-testid="theme-switch">
       <span class="theme-label">Lys</span>
       <label class="theme-toggle">
@@ -28,13 +28,13 @@
 
     <main class="auth-shell auth-page" data-testid="auth-page">
       <header class="global-header" data-testid="global-header">
-        <div class="brand-block">
-          <div class="brand-mark">
+        <div class="brand-block" data-testid="sign-up__auth-page--global-header__brand-block">
+          <div class="brand-mark" data-testid="sign-up__global-header--brand-block__brand-mark">
             <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
           </div>
-          <div>
-            <div class="brand-subtitle">Sundhed &amp; Informatik</div>
-            <div class="brand-title">Human Biologi Studio</div>
+          <div data-testid="sign-up__global-header--brand-block__div">
+            <div class="brand-subtitle" data-testid="sign-up__global-header--brand-block__brand-subtitle">Sundhed &amp; Informatik</div>
+            <div class="brand-title" data-testid="sign-up__global-header--brand-block__brand-title">Human Biologi Studio</div>
           </div>
         </div>
         <nav class="global-header-links" aria-label="Login links" data-testid="global-header-links">
@@ -49,12 +49,12 @@
       </header>
 
       <section class="panel auth-panel" data-testid="auth-panel">
-        <div class="panel-header">
+        <div class="panel-header" data-testid="sign-up__auth-page--auth-panel__panel-header">
           <h1>Opret konto</h1>
           <p>Opret en konto for at starte din første session.</p>
         </div>
         <form class="auth-form" id="auth-form" data-testid="auth-form">
-          <div class="field">
+          <div class="field" data-testid="sign-up__auth-panel--auth-form__field">
             <label for="auth-name-input">Fulde navn</label>
             <input
               type="text"
@@ -63,7 +63,7 @@
               autocomplete="name"
             />
           </div>
-          <div class="field">
+          <div class="field" data-testid="sign-up__auth-panel--auth-form__field--2">
             <label for="auth-email-input">Email</label>
             <input
               type="email"
@@ -73,7 +73,7 @@
               required
             />
           </div>
-          <div class="field">
+          <div class="field" data-testid="sign-up__auth-panel--auth-form__field--3">
             <label for="auth-password-input">Adgangskode</label>
             <input
               type="password"

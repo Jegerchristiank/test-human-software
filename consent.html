@@ -14,10 +14,10 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="mode-auth" data-testid="page-consent">
-    <div class="ambient ambient-one"></div>
-    <div class="ambient ambient-two"></div>
-    <div class="ambient ambient-three"></div>
-    <div class="noise-layer"></div>
+    <div class="ambient ambient-one" data-testid="consent__page-consent__ambient-one"></div>
+    <div class="ambient ambient-two" data-testid="consent__page-consent__ambient-two"></div>
+    <div class="ambient ambient-three" data-testid="consent__page-consent__ambient-three"></div>
+    <div class="noise-layer" data-testid="consent__page-consent__noise-layer"></div>
     <div class="theme-switch" role="group" aria-label="Tema" data-testid="theme-switch">
       <span class="theme-label">Lys</span>
       <label class="theme-toggle">
@@ -28,8 +28,8 @@
 
     <main class="gate-shell" data-testid="consent-shell">
       <header class="gate-header" data-testid="consent-header">
-        <div>
-          <div class="eyebrow">Før du går i gang</div>
+        <div data-testid="consent__consent-shell--consent-header__div">
+          <div class="eyebrow" data-testid="consent__consent-shell--consent-header__eyebrow">Før du går i gang</div>
           <h1>Acceptér vilkår og politikker</h1>
           <p>
             For at bruge Human Biologi Studio skal du acceptere vilkår,
@@ -40,14 +40,14 @@
       </header>
 
       <div class="gate-status hidden" id="gate-status" data-testid="gate-status"></div>
-      <div class="gate-note field-hint">
+      <div class="gate-note field-hint" data-testid="consent__page-consent--consent-shell__gate-note">
         Hvis felterne ikke vises, kan en browserudvidelse (fx cookie- eller privacy-blokker)
         skjule dem. Prøv at slå udvidelsen fra for denne side.
       </div>
 
       <div class="gate-grid" data-testid="consent-grid">
         <section class="panel gate-panel" data-testid="consent-panel-terms">
-          <div class="panel-header">
+          <div class="panel-header" data-testid="consent__consent-grid--consent-panel-terms__panel-header">
             <h2>Samtykke</h2>
             <p>Du er logget ind som <span id="gate-email" data-testid="gate-email">—</span>.</p>
           </div>
@@ -61,15 +61,15 @@
             <span>Jeg accepterer privatlivs- og persondatapolitik</span>
             <small>Påkrævet for adgang</small>
           </label>
-          <div class="account-actions">
+          <div class="account-actions" data-testid="consent__consent-grid--consent-panel-terms__account-actions">
             <button id="gate-accept-btn" data-testid="gate-accept-btn" class="btn primary" type="button">
               Accepter og fortsæt
             </button>
           </div>
-          <div class="field-hint">Du kan altid se dokumenterne igen i din profil.</div>
+          <div class="field-hint" data-testid="consent__consent-grid--consent-panel-terms__field-hint">Du kan altid se dokumenterne igen i din profil.</div>
         </section>
         <section class="panel gate-panel" data-testid="consent-panel-links">
-          <div class="panel-header">
+          <div class="panel-header" data-testid="consent__consent-grid--consent-panel-links__panel-header">
             <h2>Læs dokumenterne</h2>
             <p>Få hele teksten, før du accepterer.</p>
           </div>

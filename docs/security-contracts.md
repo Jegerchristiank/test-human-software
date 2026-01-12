@@ -17,6 +17,7 @@
 - `GET /api/user-state` (auth): fetch synced user state.
 - `POST /api/user-state` (auth): update synced user state.
 - `POST /api/grade` (auth + AI access): evaluate free-text answers.
+- `POST /api/rubric-score` (auth): deterministic rubric scoring.
 - `POST /api/explain` (auth + AI access): generate explanations.
 - `POST /api/hint` (auth + AI access): generate hints.
 - `POST /api/vision` (auth + AI access): vision tasks (figure/sketch).
@@ -37,8 +38,8 @@
 
 ## Rate Limiting
 - Dual-dimension rate limiting (IP + user) on authenticated endpoints.
-- Eval endpoints (`/api/grade`, `/api/explain`, `/api/hint`, `/api/vision`,
-  `/api/transcribe`, `/api/tts`) are rate limited per user and IP.
+- Eval endpoints (`/api/grade`, `/api/rubric-score`, `/api/explain`, `/api/hint`,
+  `/api/vision`, `/api/transcribe`, `/api/tts`) are rate limited per user and IP.
 - Import/ingest endpoints (`/api/user-state`, `/api/stripe/webhook`,
   media upload endpoints) are rate limited to reduce abuse.
 

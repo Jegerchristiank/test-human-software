@@ -288,3 +288,38 @@
 - Commands: tail -n 80 docs/activity.md; sed -n '1,260p' consent.js; sed -n '1,220p' consent.html; rg -n "auth-oauth|oauth" styles.css; sed -n '2050,2115p' styles.css; rg -n "auth-google-btn|auth-apple-btn" -n sign-in.html sign-up.html; apply_patch (consent.js, sign-in.html, sign-up.html, styles.css); cat <<'EOF' > tests/consentScript.test.mjs; npm test -- tests/authClient.test.mjs tests/consentScript.test.mjs; date +%F.
 - Security: consent script now isolates globals and guards init to avoid redeclare errors; OAuth icons are inline SVG with no external dependencies.
 - Follow-ups: deploy and verify consent accept flow and OAuth button visuals on production.
+
+## 2026-01-12
+- Purpose: align docs with current runtime and remove unused artifacts (book exam relevance data, local dev server stub, empty src dir).
+- Files: README.md, docs/security-contracts.md, data/book_exam_relevance.json (deleted), scripts/dev_server.py (deleted), src/ (removed), docs/activity.md.
+- Commands: rg --files; sed -n '1,240p' README.md; sed -n '1,240p' index.html; rg -n "<script" index.html; rg -n "/api/" -S .; sed -n '1,260p' auth.js; sed -n '1,260p' consent.js; sed -n '1,240p' docs/studio-engine.md; sed -n '1,240p' docs/security-contracts.md; sed -n '1,240p' docs/scoring-contracts.md; sed -n '1,240p' docs/auth-flow-checklist.md; sed -n '1,200p' scripts/convert_rawdata.py; head -n 40 data/book_exam_relevance.json; head -n 40 data/book_captions.json; rg -n "sygdomslaere.html" -S .; rm data/book_exam_relevance.json; rm scripts/dev_server.py; rmdir src; date +%F.
+- Security: documented /api/rubric-score in security contracts; removed unused dev server script (no runtime change).
+- Follow-ups: confirm whether to prune unreferenced image assets under `billeder/` or keep for future imports.
+
+## 2026-01-12
+- Purpose: remove unused top-level dependencies after confirming they are not referenced in code/scripts.
+- Files: package.json, package-lock.json, docs/activity.md.
+- Commands: rg -n "dotenv" -S .; rg -n "esbuild" -S .; npm remove @vercel/speed-insights esbuild; cat package.json; rg -n "speed-insights|esbuild" -S package-lock.json; sed -n '1700,1755p' package-lock.json; rg -n "speed-insights" package-lock.json; date +%F.
+- Security: removed unused `@vercel/speed-insights` (reduces supply-chain surface); `esbuild` remains as a transitive dependency via vitest/vite.
+- Follow-ups: none.
+
+## 2026-01-12
+- Purpose: add file-scoped, contextual data-testid attributes to every div across HTML pages for reliable inspection/automation.
+- Files: index.html, consent.html, sign-in.html, sign-up.html, vilkaar.html, privatlivspolitik.html, persondatapolitik.html, handelsbetingelser.html, docs/activity.md.
+- Commands: rg --files -g "*.html"; python3 - <<'PY' ...; python3 - <<'PY' ...; rg -n "brand-block" index.html; rg -n "consent__" consent.html; date +%F.
+- Security: no change; UI-only selector attributes added.
+- Follow-ups: none.
+
+## 2026-01-12
+- Purpose: block round start unless the user has Pro access or an own API key, and add a shared access policy helper with tests.
+- Files: access-policy.js, index.html, app.js, tests/accessPolicy.test.mjs, docs/activity.md.
+- Commands: apply_patch (access-policy.js, index.html, app.js, tests/accessPolicy.test.mjs); npm test -- tests/accessPolicy.test.mjs; date +%F.
+- Security: prevents starting full rounds without verified access (subscription or own key); no secrets added or logged.
+- Follow-ups: verify in the browser that start is disabled without access and enabled for Pro or own-key users.
+
+## 2026-01-12
+- Purpose: switch local Stripe env values to live keys, align base URL/price ID across env files, and leave webhook secret pending.
+- Files: .env, scripts/.env.local, docs/activity.md.
+- Commands: python3 - <<'PY' ...; apply_patch (.env); apply_patch (scripts/.env.local); date +%F.
+- Security: live Stripe keys now live in local env files (gitignored); webhook secret left empty until configured; avoid sharing keys and rotate if exposed.
+- Follow-ups: set STRIPE_WEBHOOK_SECRET from the live webhook endpoint; mirror live values in Vercel Environment Variables; consider removing live keys from local env when production-only.
