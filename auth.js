@@ -9,6 +9,24 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const AUTH_REDIRECT_BLOCKLIST = new Set(["/sign-in.html", "/sign-up.html", "/consent.html"]);
 const canUseDOM = typeof window !== "undefined" && typeof document !== "undefined";
 
+function safeStorageGet(key) {
+  if (!canUseDOM) return null;
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    return null;
+  }
+}
+
+function safeStorageSet(key, value) {
+  if (!canUseDOM) return;
+  try {
+    localStorage.setItem(key, value);
+  } catch (error) {
+    // Ignore storage errors (private mode or blocked storage).
+  }
+}
+
 const elements = canUseDOM
   ? {
       themeToggle: document.getElementById("theme-toggle"),
@@ -25,6 +43,8 @@ const elements = canUseDOM
   : {};
 
 let supabase = null;
+let cachedConfig = null;
+let cachedConfigPromise = null;
 
 function getBaseUrl() {
   if (canUseDOM && window.location && window.location.href) {
@@ -96,7 +116,7 @@ function applyRedirectParams() {
 
 function getInitialTheme() {
   if (!canUseDOM) return "light";
-  const stored = localStorage.getItem(STORAGE_KEYS.theme);
+  const stored = safeStorageGet(STORAGE_KEYS.theme);
   if (stored) return stored;
   if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
     return "dark";
@@ -112,7 +132,7 @@ function applyTheme(theme) {
     elements.themeToggle.checked = nextTheme === "dark";
     elements.themeToggle.setAttribute("aria-checked", String(nextTheme === "dark"));
   }
-  localStorage.setItem(STORAGE_KEYS.theme, nextTheme);
+  safeStorageSet(STORAGE_KEYS.theme, nextTheme);
 }
 
 function setStatus(message, isWarn = false) {
@@ -154,6 +174,32 @@ async function loadConfig() {
     throw new Error(detail);
   }
   return res.json();
+}
+
+async function getRuntimeConfig() {
+  if (cachedConfig) return cachedConfig;
+  if (cachedConfigPromise) return cachedConfigPromise;
+  cachedConfigPromise = loadConfig()
+    .then((config) => {
+      cachedConfig = config;
+      return config;
+    })
+    .finally(() => {
+      cachedConfigPromise = null;
+    });
+  return cachedConfigPromise;
+}
+
+function buildOAuthAuthorizeUrl({ provider, supabaseUrl, redirectUrl }) {
+  if (!provider || !supabaseUrl || !redirectUrl) return "";
+  try {
+    const url = new URL("auth/v1/authorize", supabaseUrl);
+    url.searchParams.set("provider", provider);
+    url.searchParams.set("redirect_to", redirectUrl);
+    return url.toString();
+  } catch (error) {
+    return "";
+  }
 }
 
 function initSupabaseClient(config) {
@@ -225,6 +271,28 @@ function logAuthError(context, error) {
   console.warn("[auth]", context, { code, status, message });
 }
 
+async function ensureSupabaseReady() {
+  if (supabase) return supabase;
+  const config = await getRuntimeConfig();
+  initSupabaseClient(config);
+  return supabase;
+}
+
+async function redirectToOAuthProvider(provider) {
+  const config = await getRuntimeConfig();
+  const authorizeUrl = buildOAuthAuthorizeUrl({
+    provider,
+    supabaseUrl: config?.supabaseUrl,
+    redirectUrl: getRedirectUrl(),
+  });
+  if (!authorizeUrl) {
+    const missing = new Error("OAuth URL missing");
+    missing.code = "oauth_url_missing";
+    throw missing;
+  }
+  window.location.assign(authorizeUrl);
+}
+
 function mapAuthError(error, { mode } = {}) {
   const { message, code, status } = normalizeAuthError(error);
   const normalizedMessage = message.toLowerCase();
@@ -271,6 +339,9 @@ function mapAuthError(error, { mode } = {}) {
   ) {
     return "For mange forsøg. Vent lidt og prøv igen.";
   }
+  if (normalizedCode === "oauth_url_missing" || normalizedMessage.includes("oauth url")) {
+    return "Kunne ikke starte OAuth-login.";
+  }
   if (
     normalizedCode === "signup_disabled" ||
     normalizedMessage.includes("signups not allowed")
@@ -308,7 +379,10 @@ function redirectIfAuthenticated(session) {
 
 async function handleEmailAuth(event) {
   event?.preventDefault?.();
-  if (!supabase) {
+  try {
+    await ensureSupabaseReady();
+  } catch (error) {
+    logAuthError("email-init", error);
     setStatus("Login er ikke klar endnu.", true);
     return;
   }
@@ -361,17 +435,31 @@ async function handleEmailAuth(event) {
 }
 
 async function handleOAuth(provider) {
-  if (!supabase) return;
   setStatus("");
   setControlsEnabled(false);
   try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: getRedirectUrl(),
-      },
-    });
-    if (error) throw error;
+    if (!supabase) {
+      try {
+        await ensureSupabaseReady();
+      } catch (error) {
+        logAuthError("oauth-init", error);
+      }
+    }
+    if (supabase) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: getRedirectUrl(),
+          skipBrowserRedirect: true,
+        },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.assign(data.url);
+        return;
+      }
+    }
+    await redirectToOAuthProvider(provider);
   } catch (error) {
     logAuthError("oauth", error);
     setStatus(mapAuthError(error, { mode: "oauth" }), true);
@@ -391,15 +479,15 @@ function subscribeToAuthChanges() {
 async function initAuth() {
   setControlsEnabled(false);
   try {
-    const config = await loadConfig();
+    const config = await getRuntimeConfig();
     initSupabaseClient(config);
     const session = await getExistingSession();
     if (redirectIfAuthenticated(session)) return;
     subscribeToAuthChanges();
-    setControlsEnabled(true);
   } catch (error) {
     setStatus(error.message || "Login er ikke klar endnu.", true);
-    setControlsEnabled(false);
+  } finally {
+    setControlsEnabled(true);
   }
 }
 
@@ -437,5 +525,6 @@ if (typeof module !== "undefined" && module.exports) {
     sanitizeRedirectPath,
     validateCredentials,
     mapAuthError,
+    buildOAuthAuthorizeUrl,
   };
 }

@@ -220,8 +220,57 @@
 - Follow-ups: run the auth flow checklist manually with real Supabase credentials.
 
 ## 2026-01-12
+- Purpose: verify apex biologistudio.dk DNS/TLS and identify stale nameservers serving a self-signed certificate.
+- Files: docs/activity.md.
+- Commands: dig +short biologistudio.dk A; dig +short biologistudio.dk AAAA; dig +short biologistudio.dk CNAME; dig @1.1.1.1 +short biologistudio.dk A; dig @8.8.8.8 +short biologistudio.dk A; getent hosts biologistudio.dk || nslookup biologistudio.dk; curl -I https://biologistudio.dk; openssl s_client -connect biologistudio.dk:443 -servername biologistudio.dk -brief </dev/null; for ip in 142.132.143.218 216.198.79.1 64.29.17.1 64.29.17.65; do ...; done; dig +short biologistudio.dk NS; dig +trace biologistudio.dk A; dig @ns1.vercel-dns.com +short biologistudio.dk A; dig @ns2.vercel-dns.com +short biologistudio.dk A; dig @ns1.nordicway.dk +short biologistudio.dk A; dig @ns2.nordicway.dk +short biologistudio.dk A; dig @ns3.nordicway.dk +short biologistudio.dk A; dig @ns4.nordicway.dk +short biologistudio.dk A.
+- Security: stale Nordicway NS return 142.132.143.218 with a self-signed cert; clients hitting that IP fail HSTS/TLS while Vercel A records serve valid certs.
+- Follow-ups: remove or align the legacy Nordicway A record to the Vercel A records and re-check DNS/TLS.
+
+## 2026-01-12
 - Purpose: diagnose TLS/HSTS error for biologistudio.dk by inspecting DNS resolution and certificate chain from multiple resolvers.
 - Files: docs/activity.md.
 - Commands: dig +short biologistudio.dk A biologistudio.dk AAAA; openssl s_client -connect biologistudio.dk:443 -servername biologistudio.dk -brief </dev/null; getent hosts biologistudio.dk || nslookup biologistudio.dk; curl -I https://biologistudio.dk; dig @1.1.1.1 +short biologistudio.dk A; dig @8.8.8.8 +short biologistudio.dk A; for ip in 64.29.17.1 64.29.17.65 216.198.79.1 216.198.79.65 142.132.143.218; do ...; done.
 - Security: found a self-signed certificate on one A record, which triggers HSTS blocking.
 - Follow-ups: update DNS to remove the self-signed host and point apex to the correct provider (e.g., Vercel).
+
+## 2026-01-12
+- Purpose: diagnose TLS/DNS failure for biologistudio.dk.kristenson.dk and confirm authoritative records/cert chain.
+- Files: README.md, vercel.json, docs/activity.md.
+- Commands: rg -n "biologistudio|kristenson|domain|vercel" README.md vercel.json docs -S; sed -n '1,200p' README.md; cat vercel.json; dig +short biologistudio.dk.kristenson.dk A; dig +short biologistudio.dk.kristenson.dk AAAA; dig +short biologistudio.dk.kristenson.dk CNAME; dig @1.1.1.1 +short biologistudio.dk.kristenson.dk A; dig @8.8.8.8 +short biologistudio.dk.kristenson.dk A; getent hosts biologistudio.dk.kristenson.dk || nslookup biologistudio.dk.kristenson.dk; curl -I https://biologistudio.dk.kristenson.dk; openssl s_client -connect biologistudio.dk.kristenson.dk:443 -servername biologistudio.dk.kristenson.dk -brief </dev/null; for ip in 142.132.143.218 216.198.79.1 216.198.79.65 64.29.17.65; do ...; done; dig +trace biologistudio.dk.kristenson.dk A; date +%F.
+- Security: authoritative A records do not present a trusted TLS chain; some IPs terminate TLS or present a self-signed cert, so browsers will block access.
+- Follow-ups: update DNS so the subdomain points only to the intended host with a valid certificate (e.g., Vercel CNAME), then recheck TLS.
+
+## 2026-01-12
+- Purpose: investigate Google OAuth login failure by reviewing auth flow, config surfaces, and CSP.
+- Files: agents.md, docs/activity.md, auth.js, sign-in.html, sign-up.html, api/config.js, vercel.json, README.md, docs/auth-flow-checklist.md, tests/authSupabase.test.mjs, app.js.
+- Commands: ls; cat agents.md; cat docs/activity.md; sed -n '1,240p' auth.js; sed -n '240,520p' auth.js; sed -n '1,240p' sign-in.html; sed -n '1,240p' sign-up.html; sed -n '1,200p' api/config.js; rg -n "supabase|OAuth|google|signInWithOAuth" app.js auth.js api -S; rg -n "Supabase|OAuth|Google" README.md docs -S; sed -n '1,140p' README.md; sed -n '1,220p' docs/auth-flow-checklist.md; sed -n '1,240p' tests/authSupabase.test.mjs; cat vercel.json; rg -n "signInWithProvider|auth-google-btn|AUTH_PROVIDERS" app.js; sed -n '4600,4805p' app.js; rg -n "initSupabaseClient|loadRuntimeConfig|init\\(|initialize" app.js; sed -n '15680,15960p' app.js; rg -n "handleReturnParams" -n app.js; sed -n '5540,5695p' app.js; rg -n "redirectToAuth|redirect.*sign-in" app.js; sed -n '1540,1725p' app.js; date +%F.
+- Security: none (read-only investigation).
+- Follow-ups: capture repro details (environment + auth error) and confirm Supabase OAuth provider + redirect URL configuration.
+
+## 2026-01-12
+- Purpose: harden Google OAuth initiation in auth UI and add clearer error mapping plus storage guards.
+- Files: auth.js, tests/authClient.test.mjs, docs/activity.md.
+- Commands: rg -n "auth|Log ind|Fortsæt med Google|auth-google-btn" index.html; rg -n "auth-oauth|auth-status|auth-panel|btn" styles.css; sed -n '4170,4270p' styles.css; sed -n '2020,2145p' styles.css; curl -s -D - https://biologistudio.dk/sign-in.html; curl -s -D - https://biologistudio.dk/auth.js; curl -s -D - https://biologistudio.dk/api/config; curl -s -H "apikey: <supabase_anon>" -H "Authorization: Bearer <supabase_anon>" https://ywvehrbzqdyhxwlwrhkj.supabase.co/auth/v1/settings; rg -n "auth-google-btn" -S .; rg -n "signInWithOAuth" node_modules/@supabase/supabase-js -S; rg -n "_handleProviderSignIn" node_modules/@supabase/supabase-js/dist/umd/supabase.js; curl -s -D - https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2; curl -s -D - "https://ywvehrbzqdyhxwlwrhkj.supabase.co/auth/v1/authorize?provider=google&redirect_to=https://biologistudio.dk/index.html"; curl -s -D - "https://ywvehrbzqdyhxwlwrhkj.supabase.co/auth/v1/authorize?provider=google&redirect_to=https://biologistudio.dk/index.html&skip_http_redirect=true"; apply_patch (auth.js, tests/authClient.test.mjs); npm test -- tests/authClient.test.mjs; date +%F.
+- Security: OAuth redirect now uses an explicit URL from Supabase and storage access is guarded against blocked localStorage; no secrets introduced.
+- Follow-ups: verify Google OAuth redirect starts on production and confirm any console errors if it still fails.
+
+## 2026-01-12
+- Purpose: add a reusable API-based studio pipeline importer with retry/dedupe safeguards, document DB vs local data flow, and import pipeline data into Supabase.
+- Files: scripts/import_studio_pipeline.js, README.md, docs/activity.md.
+- Commands: node scripts/import_studio_pipeline.js --chunk-size 200 --verify; date +%F.
+- Security: importer uses Supabase service role from env with idempotent upserts, does not log secrets, and keeps data server-side only.
+- Follow-ups: consider reviewing asset_annotations source_key duplicates if you expect the full 150 entries.
+
+## 2026-01-12
+- Purpose: add OAuth fallback redirect and keep auth controls usable if initialization fails; extend auth client tests.
+- Files: auth.js, tests/authClient.test.mjs, docs/activity.md.
+- Commands: tail -n 40 docs/activity.md; rg -n "FKGrotesk|Grotesk" styles.css; curl -s https://biologistudio.dk/auth.js | rg -n "skipBrowserRedirect|safeStorage"; curl -s https://biologistudio.dk/auth.js | head -n 120; sed -n '1,220p' auth.js; rg -n "handleOAuth|initAuth" -n auth.js; sed -n '360,470p' auth.js; apply_patch (auth.js, tests/authClient.test.mjs); npm test -- tests/authClient.test.mjs; date +%F.
+- Security: OAuth fallback builds authorize URL from Supabase public config only; controls remain enabled for retries without exposing secrets.
+- Follow-ups: deploy and verify Google OAuth on production; capture console errors if the click still does nothing.
+
+## 2026-01-12
+- Purpose: verify Supabase pipeline import row counts via service role read-only queries.
+- Files: docs/activity.md.
+- Commands: node - <<'NODE' ...; date +%F.
+- Security: read-only counts using service role, no secrets logged.
+- Follow-ups: investigate asset_annotations count if 150 rows are expected.

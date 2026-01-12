@@ -46,6 +46,7 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
    - Run SQL from `supabase/schema.sql` in the Supabase SQL Editor (schema + policies).
    - Generate pipeline inserts with `python3 scripts/build_studio_pipeline.py` (writes `supabase/studio_pipeline.sql`).
    - Apply `supabase/studio_pipeline.sql` (Supabase CLI or SQL Editor chunks).
+   - Alternativ: kør `node scripts/import_studio_pipeline.js --chunk-size 200` for API-import (kræver `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` i `.env`).
    - If SQL Editor limits apply, run `python3 scripts/build_studio_pipeline.py --chunk-size 200` and paste chunk files from `supabase/studio_pipeline_chunks/` in order.
    - If you already ran the old schema file, rerun `supabase/schema.sql` to ensure `user_state` and `rate_limits` exist.
 2. Stripe:
@@ -100,6 +101,7 @@ Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 - Kør `python3 scripts/convert_kortsvar.py` for at regenerere `data/kortsvar.json`.
 - Sygdomslære pensum ligger i `rawdata-sygdomslaere.txt` (bruges af Sygdomslære Studio).
 - Kør `python3 scripts/convert_sygdomslaere.py` for at regenerere `data/sygdomslaere.json`.
+- Appen loader som standard studiemateriale fra `data/*.json`, så DB-pipeline er valgfri for normal drift.
 - `data/figure_captions.json` er en valgfri cache af AI-figurbeskrivelser.
 - Billeder til kortsvar ligger i `billeder/opgaver` og navngives som `YYYY[-syg]-OO-L[variant].*` (fx `2025-06-a.jpg`).
 

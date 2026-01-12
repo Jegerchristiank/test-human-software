@@ -7,6 +7,7 @@ const {
   sanitizeRedirectPath,
   validateCredentials,
   mapAuthError,
+  buildOAuthAuthorizeUrl,
 } = require("../auth.js");
 
 describe("auth client helpers", () => {
@@ -60,6 +61,26 @@ describe("auth client helpers", () => {
     );
     expect(mapAuthError({ message: "Password should be at least 10 characters" })).toBe(
       "Adgangskoden skal være mindst 10 tegn."
+    );
+    expect(mapAuthError({ code: "oauth_url_missing", message: "OAuth URL missing" })).toBe(
+      "Kunne ikke starte OAuth-login."
+    );
+  });
+
+  it("builds a Supabase OAuth authorize URL", () => {
+    const url = buildOAuthAuthorizeUrl({
+      provider: "google",
+      supabaseUrl: "https://project.supabase.co",
+      redirectUrl: "https://app.example/index.html",
+    });
+    expect(url).toBe(
+      "https://project.supabase.co/auth/v1/authorize?provider=google&redirect_to=https%3A%2F%2Fapp.example%2Findex.html"
+    );
+  });
+
+  it("returns empty string when OAuth authorize inputs are missing", () => {
+    expect(buildOAuthAuthorizeUrl({ provider: "", supabaseUrl: "https://x", redirectUrl: "" })).toBe(
+      ""
     );
   });
 });
