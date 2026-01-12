@@ -2078,11 +2078,21 @@ input[type="search"] {
 }
 
 .btn.oauth::before {
-  content: "";
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  background: var(--line);
+  content: none;
+}
+
+.btn.oauth .oauth-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn.oauth .oauth-icon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .btn.oauth.google {

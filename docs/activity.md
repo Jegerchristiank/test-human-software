@@ -281,3 +281,10 @@
 - Commands: node - <<'NODE' ...; date +%F.
 - Security: read-only counts using service role, no secrets logged.
 - Follow-ups: investigate asset_annotations count if 150 rows are expected.
+
+## 2026-01-12
+- Purpose: fix consent page redeclare error and add inline OAuth icons for sign-in/up buttons.
+- Files: consent.js, sign-in.html, sign-up.html, styles.css, tests/consentScript.test.mjs, docs/activity.md.
+- Commands: tail -n 80 docs/activity.md; sed -n '1,260p' consent.js; sed -n '1,220p' consent.html; rg -n "auth-oauth|oauth" styles.css; sed -n '2050,2115p' styles.css; rg -n "auth-google-btn|auth-apple-btn" -n sign-in.html sign-up.html; apply_patch (consent.js, sign-in.html, sign-up.html, styles.css); cat <<'EOF' > tests/consentScript.test.mjs; npm test -- tests/authClient.test.mjs tests/consentScript.test.mjs; date +%F.
+- Security: consent script now isolates globals and guards init to avoid redeclare errors; OAuth icons are inline SVG with no external dependencies.
+- Follow-ups: deploy and verify consent accept flow and OAuth button visuals on production.

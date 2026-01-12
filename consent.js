@@ -1,16 +1,39 @@
+(() => {
 const STORAGE_KEYS = {
   theme: "ku_mcq_theme",
 };
 
-const elements = {
-  themeToggle: document.getElementById("theme-toggle"),
-  status: document.getElementById("gate-status"),
-  email: document.getElementById("gate-email"),
-  terms: document.getElementById("gate-terms"),
-  privacy: document.getElementById("gate-privacy"),
-  acceptBtn: document.getElementById("gate-accept-btn"),
-  logoutBtn: document.getElementById("gate-logout-btn"),
-};
+const canUseDOM = typeof window !== "undefined" && typeof document !== "undefined";
+
+function safeStorageGet(key) {
+  if (!canUseDOM) return null;
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    return null;
+  }
+}
+
+function safeStorageSet(key, value) {
+  if (!canUseDOM) return;
+  try {
+    localStorage.setItem(key, value);
+  } catch (error) {
+    // Ignore storage errors (private mode or blocked storage).
+  }
+}
+
+const elements = canUseDOM
+  ? {
+      themeToggle: document.getElementById("theme-toggle"),
+      status: document.getElementById("gate-status"),
+      email: document.getElementById("gate-email"),
+      terms: document.getElementById("gate-terms"),
+      privacy: document.getElementById("gate-privacy"),
+      acceptBtn: document.getElementById("gate-accept-btn"),
+      logoutBtn: document.getElementById("gate-logout-btn"),
+    }
+  : {};
 
 let supabase = null;
 let activeSession = null;
@@ -24,7 +47,8 @@ function setStatus(message, isWarn = false) {
 }
 
 function getInitialTheme() {
-  const stored = localStorage.getItem(STORAGE_KEYS.theme);
+  if (!canUseDOM) return "light";
+  const stored = safeStorageGet(STORAGE_KEYS.theme);
   if (stored) return stored;
   if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
     return "dark";
@@ -33,13 +57,14 @@ function getInitialTheme() {
 }
 
 function applyTheme(theme) {
+  if (!canUseDOM) return;
   const nextTheme = theme === "dark" ? "dark" : "light";
   document.body.dataset.theme = nextTheme;
   if (elements.themeToggle) {
     elements.themeToggle.checked = nextTheme === "dark";
     elements.themeToggle.setAttribute("aria-checked", String(nextTheme === "dark"));
   }
-  localStorage.setItem(STORAGE_KEYS.theme, nextTheme);
+  safeStorageSet(STORAGE_KEYS.theme, nextTheme);
 }
 
 function updateAcceptButton() {
@@ -67,6 +92,7 @@ function setControlsEnabled(enabled) {
 }
 
 function redirectToSignIn() {
+  if (!canUseDOM) return;
   const redirectPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   const url = new URL("sign-in.html", window.location.href);
   url.searchParams.set("redirect", redirectPath);
@@ -115,7 +141,7 @@ async function loadProfile() {
 
 function initSupabaseClient(config) {
   if (supabase) return;
-  const supabaseLib = window.supabase;
+  const supabaseLib = canUseDOM ? window.supabase : null;
   if (!supabaseLib?.createClient || !config?.supabaseUrl || !config?.supabaseAnonKey) {
     return;
   }
@@ -250,4 +276,11 @@ function init() {
   });
 }
 
-init();
+if (canUseDOM) {
+  const initKey = "__hbsConsentInit";
+  if (!window[initKey]) {
+    window[initKey] = true;
+    init();
+  }
+}
+})();
