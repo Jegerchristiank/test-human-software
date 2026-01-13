@@ -2,7 +2,10 @@ const Stripe = require("stripe");
 const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest, getProfileForUser, getActiveSubscription } = require("../_lib/auth");
 const { enforceRateLimit } = require("../_lib/rateLimit");
-const { resolveOneTimePaymentMethodTypes } = require("../_lib/stripe");
+const {
+  resolveSubscriptionPaymentMethodTypes,
+  resolveOneTimePaymentMethodTypes,
+} = require("../_lib/stripe");
 
 function toIsoSeconds(value) {
   if (!value) return null;
@@ -126,7 +129,9 @@ module.exports = async function handler(req, res) {
     }
 
     const normalizedSubscription = normalizeSubscription({ stripeSubscription, dbSubscription });
-    const priceId = normalizedSubscription?.price_id || process.env.STRIPE_PRICE_ID || null;
+    const subscriptionPriceId = process.env.STRIPE_PRICE_ID || null;
+    const lifetimePriceId = process.env.STRIPE_LIFETIME_PRICE_ID || null;
+    const priceId = normalizedSubscription?.price_id || subscriptionPriceId;
 
     let price = null;
     if (priceId) {
@@ -134,6 +139,15 @@ module.exports = async function handler(req, res) {
         price = await stripe.prices.retrieve(priceId, { expand: ["product"] });
       } catch (err) {
         price = null;
+      }
+    }
+
+    let lifetimePrice = null;
+    if (lifetimePriceId) {
+      try {
+        lifetimePrice = await stripe.prices.retrieve(lifetimePriceId, { expand: ["product"] });
+      } catch (err) {
+        lifetimePrice = null;
       }
     }
 
@@ -189,7 +203,10 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    const paymentMethodTypes = resolveOneTimePaymentMethodTypes();
+    const paymentMethodTypes = {
+      subscription: resolveSubscriptionPaymentMethodTypes(),
+      lifetime: resolveOneTimePaymentMethodTypes(),
+    };
 
     return sendJson(res, 200, {
       subscription: normalizedSubscription,
@@ -212,6 +229,25 @@ module.exports = async function handler(req, res) {
               : null,
           }
         : null,
+      lifetimePrice: lifetimePrice
+        ? {
+            unit_amount: lifetimePrice.unit_amount,
+            unit_amount_decimal: lifetimePrice.unit_amount_decimal || null,
+            currency: lifetimePrice.currency,
+            recurring: lifetimePrice.recurring
+              ? {
+                  interval: lifetimePrice.recurring.interval,
+                  interval_count: lifetimePrice.recurring.interval_count,
+                }
+              : null,
+            product: lifetimePrice.product && typeof lifetimePrice.product === "object"
+              ? {
+                  name: lifetimePrice.product.name || null,
+                  description: lifetimePrice.product.description || null,
+                }
+              : null,
+          }
+        : null,
       paymentMethod: mapPaymentMethod(paymentMethod),
       invoices,
       upcomingInvoice,
@@ -219,8 +255,8 @@ module.exports = async function handler(req, res) {
         ? {
             id: customer.id,
             email: customer.email || null,
-            name: customer.name || null,
-          }
+          name: customer.name || null,
+        }
         : null,
       paymentMethodTypes,
     });

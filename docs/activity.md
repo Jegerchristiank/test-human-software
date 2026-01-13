@@ -198,6 +198,13 @@
 - Security: none (read-only inspection).
 - Follow-ups: confirm exact Vercel command, working directory, and failing URL to pinpoint the 404 source.
 
+## 2026-01-13
+- Formål: Integrere banner/logo i centrale hero- og headerområder, samt gøre brand-elementer klikbare til tilbage-navigation.
+- Berørte filer: index.html, styles.css, app.js, sign-in.html, sign-up.html, vilkaar.html, privatlivspolitik.html, persondatapolitik.html, handelsbetingelser.html, docs/activity.md.
+- Kommandoer: rg -n "logo|banner|brand" index.html sign-in.html sign-up.html vilkaar.html; sed -n '1,220p' index.html; apply_patch (styles.css, index.html, app.js, sign-in.html, sign-up.html, vilkaar.html, privatlivspolitik.html, persondatapolitik.html, handelsbetingelser.html); date +%F.
+- Sikkerhedsimplikationer: Ingen; kun UI/layout og klientnavigation.
+- Opfølgning: Visuel verifikation i browser på auth/landing/menu/quiz/result og de juridiske sider.
+
 ## 2026-01-11
 - Purpose: reproduce Vercel dev behavior from repo root and verify local routing for /, /index.html, and /api/config.
 - Files: docs/activity.md, vercel.json, package.json.
@@ -344,3 +351,73 @@
 - Commands: ls; cat docs/activity.md; rg -n "updateBillingUI|renderBillingTimeline|createSubscriptionIntent|openHostedCheckout|hasPaidPlan" app.js; sed -n '3120,3685p' app.js; sed -n '3685,4345p' app.js; sed -n '4970,5385p' app.js; rg -n "abonnement|pris|måned|pro|betaling|stripe|checkout" index.html; sed -n '260,340p' index.html; sed -n '1240,1530p' index.html; sed -n '1530,1710p' index.html; sed -n '1,200p' handelsbetingelser.html; sed -n '70,130p' vilkaar.html; sed -n '60,90p' persondatapolitik.html; rg -n "subscription|Stripe|checkout" README.md; rg -n "create-subscription|checkout|stripe" docs/security-contracts.md; npm test -- tests/accessPolicy.test.mjs tests/aiAccess.test.mjs tests/stripeWebhook.test.mjs tests/stripeCreateSubscription.test.mjs; date +%F.
 - Security: server now blocks duplicate paid checkout attempts; lifetime plan is treated as paid access without adding new secrets.
 - Follow-ups: verify the live Stripe price is a non-recurring DKK 1.500 product and run a real checkout; review legal copy updates before production publishing.
+
+## 2026-01-13
+- Formål: forenkle landingpage-branding, fjerne redundant login-panel og stramme hero-oplevelsen.
+- Berørte filer: index.html, styles.css, docs/activity.md.
+- Kommandoer: ls; sed -n '1,200p' docs/activity.md; rg -n "auth-start|global-header|auth-hero" -S index.html styles.css sign-in.html sign-up.html auth.js; sed -n '52,130p' index.html; rg -n "auth-start" -S .; rg -n "auth-status" -S app.js auth.js index.html; rg -n "authStatus" -S app.js; sed -n '1120,1205p' app.js; rg -n "data-brand-back" -S .; sed -n '1200,1285p' styles.css; sed -n '4040,4105p' styles.css; apply_patch (index.html, styles.css, docs/activity.md); date +%F.
+- Sikkerhedsimplikationer: Ingen; kun UI/layout og landingpage-copy.
+- Opfølgning: Visuel gennemgang af auth-landing i desktop + mobil.
+
+## 2026-01-13
+- Formål: samle auth-hero kicker til én linje og stramme hero-teksten uden at fjerne eksisterende selectors.
+- Berørte filer: index.html, styles.css, docs/activity.md.
+- Kommandoer: sed -n '52,140p' index.html; sed -n '520,640p' styles.css; sed -n '1240,1345p' styles.css; file Logo.png Banner.png; apply_patch (index.html, styles.css, docs/activity.md); date +%F.
+- Sikkerhedsimplikationer: Ingen; kun UI/kopi og layout.
+- Opfølgning: Visuel gennemgang af auth-hero på smalle skærme for korrekt wrap af kicker-linje.
+
+## 2026-01-13
+- Formål: opdatere vilkår, handelsbetingelser, privatlivspolitik og persondatapolitik til juridisk udfyldende niveau samt gøre dokumenterne tilgængelige på forsiden.
+- Berørte filer: vilkaar.html, handelsbetingelser.html, privatlivspolitik.html, persondatapolitik.html, index.html, docs/activity.md.
+- Kommandoer: rg --files; sed -n '1,200p' docs/activity.md; sed -n '1,260p' vilkaar.html; sed -n '1,260p' handelsbetingelser.html; sed -n '1,260p' privatlivspolitik.html; sed -n '1,260p' persondatapolitik.html; sed -n '1,260p' consent.html; sed -n '1,260p' index.html; rg -n "vilkår|privatliv|persondata|handelsbetingelser|jurid" index.html; rg -n "footer|legal" index.html; sed -n '1180,1420p' index.html; rg -n "auth-screen|landing-shell" index.html; sed -n '260,380p' index.html; rg -n "legal-links|legal-link|legal-" styles.css; sed -n '5070,5180p' styles.css; sed -n '1,200p' README.md; sed -n '1,200p' agents.md; sed -n '1,220p' api/stripe/create-subscription.js; sed -n '1,220p' api/stripe/create-checkout-session.js; rg -n "subscription|abonnement|monthly|recurring" app.js index.html styles.css; sed -n '1,240p' api/stripe/update-subscription.js; sed -n '1,220p' api/stripe/create-portal-session.js; sed -n '1,220p' api/stripe/billing-overview.js; sed -n '220,440p' api/stripe/billing-overview.js; rg -n "plausible|analytics|tracking" -S *.html app.js; date +%Y-%m-%d; cat <<'EOF' > vilkaar.html; cat <<'EOF' > handelsbetingelser.html; cat <<'EOF' > privatlivspolitik.html; cat <<'EOF' > persondatapolitik.html; sed -n '240,320p' index.html; sed -n '300,360p' index.html; apply_patch (index.html, handelsbetingelser.html).
+- Sikkerhedsimplikationer: opdaterede juridiske disclosure-tekster og tydeliggjorde databehandlere, tredjelandsoverførsler og AI-træning; ingen ændringer i runtime-adgangskontrol.
+- Opfølgning: afklar om pris/checkout UI og Stripe-flow skal opdateres til abonnementsmodel, så kommunikation og funktionalitet matcher hinanden.
+
+## 2026-01-13
+- Formål: præcisere, at OpenAI kan være selvstændig dataansvarlig for modeltræning i privatlivs- og persondatapolitik.
+- Berørte filer: privatlivspolitik.html, persondatapolitik.html, docs/activity.md.
+- Kommandoer: apply_patch (privatlivspolitik.html, persondatapolitik.html).
+- Sikkerhedsimplikationer: tydeliggjorde tredjepartsansvar for AI-træning; ingen ændring i databehandling eller adgangskontrol.
+- Opfølgning: Ingen.
+
+## 2026-01-13
+- Formål: løfte WCAG 2.2 AA-tilgængelighed på hele sitet med bedre tastaturadgang, fokusmarkeringer, status-announce og modal-fokus.
+- Berørte filer: index.html, styles.css, app.js, sign-in.html, sign-up.html, consent.html, vilkaar.html, privatlivspolitik.html, persondatapolitik.html, handelsbetingelser.html, docs/accessibility-checklist.md, docs/activity.md.
+- Kommandoer: ls; cat docs/activity.md; rg --files -g "*.html"; sed -n '1,220p' index.html; sed -n '1,240p' sign-in.html; sed -n '1,240p' sign-up.html; sed -n '1,260p' consent.html; sed -n '1,200p' vilkaar.html; sed -n '1,120p' privatlivspolitik.html; sed -n '1,80p' persondatapolitik.html; sed -n '1,80p' handelsbetingelser.html; rg -n "aria-|role=\"" index.html; rg -n "focus|outline|option-btn|chip-btn|sketch-text-box" styles.css; rg -n "modal|figure" app.js; python3 - <<'PY' ...; date +%F; cat <<'EOF' > docs/accessibility-checklist.md; apply_patch (index.html, styles.css, app.js, sign-in.html, sign-up.html, consent.html, vilkaar.html, privatlivspolitik.html, persondatapolitik.html, handelsbetingelser.html, docs/activity.md).
+- Sikkerhedsimplikationer: Ingen; tilgængeligheds- og UI-justeringer uden ændring af dataadgang.
+- Opfølgning: Manuel WCAG 2.2 AA-gennemgang med tastatur og skærmlæser, især modaler, quiz og auth-flow.
+
+## 2026-01-13
+- Formål: låse studioskift under aktive runder, så Human Biologi og Sygdomslære ikke blandes, samt rette mørk/lys-tema for Sygdomslære.
+- Berørte filer: app.js, styles.css, tests/courseSwitchLock.test.mjs, docs/activity.md.
+- Kommandoer: rg -n "dark|light|theme|mode|toggle" sygdomslaere.html index.html styles.css app.js; sed -n '880,1040p' index.html; sed -n '1,260p' styles.css; sed -n '1680,2105p' app.js; apply_patch (app.js, styles.css, tests/courseSwitchLock.test.mjs); npm test -- tests/courseSwitchLock.test.mjs; date +%F.
+- Sikkerhedsimplikationer: Ingen; UI/tilstandsgating og tema-justeringer uden ændring af dataadgang.
+- Opfølgning: Manuelt tjek at studioskift er blokeret under pauset runde, og at Sygdomslære dark mode ikke falder tilbage til lys palette.
+
+## 2026-01-13
+- Formål: tillade `lifetime` i plan-check constraint, så engangsbetaling kan opdatere plan uden DB-fejl.
+- Berørte filer: supabase/schema.sql, docs/activity.md.
+- Kommandoer: ls; cat docs/activity.md; rg -n "checkout|stripe|subscription|lifetime|engangs" app.js; sed -n '3200,5745p' app.js; sed -n '1,240p' api/stripe/create-subscription.js; sed -n '1,240p' api/stripe/create-checkout-session.js; sed -n '1,240p' api/stripe/billing-overview.js; rg -n "^STRIPE_LIFETIME_PRICE_ID" .env scripts/.env.local; rg -n "^STRIPE_PRICE_ID" .env scripts/.env.local; rg -n "plan in" supabase/schema.sql; apply_patch (supabase/schema.sql); date +%F.
+- Sikkerhedsimplikationer: plan-check tillader nu `lifetime`, så webhooks ikke fejler ved plan-opdatering; ingen nye secrets.
+- Opfølgning: kør opdateret `supabase/schema.sql` i Supabase for at opdatere check constraint.
+
+## 2026-01-13
+- Purpose: add API CORS allowlist + preflight handling, set HSTS for production headers, and document CORS config.
+- Files: api/_lib/cors.js, api/_lib/response.js, vercel.json, docs/security-contracts.md, README.md, tests/cors.test.mjs, docs/activity.md.
+- Commands: rg -n "Stripe|stripe" app.js index.html consent.js auth.js sign-in.html sign-up.html; rg -n "Method not allowed" api/stripe/*.js; apply_patch (multiple files); date +%F.
+- Security: API now enforces a strict origin allowlist with explicit preflight responses; HSTS enabled for API responses and static headers.
+- Follow-ups: set CORS_ALLOW_ORIGINS if additional production origins are required; verify Stripe flows after deploy.
+
+## 2026-01-13
+- Purpose: run CORS regression test.
+- Files: tests/cors.test.mjs, docs/activity.md.
+- Commands: npm test -- tests/cors.test.mjs; date +%F.
+- Security: validates CORS allowlist and preflight handling behavior.
+- Follow-ups: none.
+
+## 2026-01-13
+- Formål: fjerne ikke-anvendte databehandlere (Cloudflare R2) fra juridiske tekster efter bekræftelse.
+- Berørte filer: persondatapolitik.html, privatlivspolitik.html, vilkaar.html, docs/activity.md.
+- Kommandoer: rg -n "Cloudflare R2|R2|Resend|Plausible|analytics|tracking" *.html docs; apply_patch (persondatapolitik.html, privatlivspolitik.html, vilkaar.html); date +%F.
+- Sikkerhedsimplikationer: ingen kodeændringer; juridiske tekster matcher aktuelle leverandører.
+- Opfølgning: opdater igen hvis nye databehandlere tilføjes.

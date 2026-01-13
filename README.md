@@ -50,7 +50,8 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
    - If SQL Editor limits apply, run `python3 scripts/build_studio_pipeline.py --chunk-size 200` and paste chunk files from `supabase/studio_pipeline_chunks/` in order.
    - If you already ran the old schema file, rerun `supabase/schema.sql` to ensure `user_state` and `rate_limits` exist.
 2. Stripe:
-   - Opret et produkt og en price (engangsbetaling).
+   - Opret et produkt og en subscription price (179 kr/md).
+   - Opret et produkt og en engangs price (1.500 kr).
    - Tilføj webhook til `/api/stripe/webhook`.
 3. Vercel:
    - Tilføj miljøvariabler fra `.env` i Vercel Dashboard.
@@ -70,14 +71,17 @@ Minimum for online drift:
 - `STRIPE_PUBLISHABLE_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_ID`
+- `STRIPE_LIFETIME_PRICE_ID`
 - `OPENAI_API_KEY`
 - `STRIPE_BASE_URL` (påkrævet hvis Stripe er aktiveret)
 - `STRIPE_PORTAL_CONFIGURATION_ID` (valgfri)
 - `TRUST_PROXY` (valgfri, brug `true` hvis din platform sætter sikre forwarded headers)
 - `TRUST_PROXY_HEADERS` (valgfri, kommasepareret liste, default `x-forwarded-for`)
+- `CORS_ALLOW_ORIGINS` (valgfri, kommasepareret liste over fulde origins til API CORS allowlist)
 
 Stripe nøgler:
-- `STRIPE_PRICE_ID` findes i Stripe Dashboard → Products → Price (starter med `price_`). Brug en engangspris (ikke recurring).
+- `STRIPE_PRICE_ID` findes i Stripe Dashboard → Products → Price (starter med `price_`) og skal være recurring (abonnement).
+- `STRIPE_LIFETIME_PRICE_ID` findes i Stripe Dashboard → Products → Price (starter med `price_`) og skal være engangsbetaling.
 - `STRIPE_WEBHOOK_SECRET` findes i Stripe Dashboard → Developers → Webhooks (starter med `whsec_`).
 - `STRIPE_BASE_URL` er påkrævet og skal være din app-URL (bruges til success/cancel).
 - `STRIPE_PORTAL_CONFIGURATION_ID` er valgfri og bruges til Stripe Customer Portal.

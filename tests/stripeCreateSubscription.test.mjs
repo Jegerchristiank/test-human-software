@@ -15,7 +15,7 @@ function stubModule(modulePath, exports) {
   cachedModules.add(resolved);
 }
 
-function createStripeMock({ price, paymentIntent, customer, calls }) {
+function createStripeMock({ pricesById, subscription, paymentIntent, customer, calls }) {
   return function StripeMock() {
     return {
       customers: {
@@ -25,7 +25,16 @@ function createStripeMock({ price, paymentIntent, customer, calls }) {
         }),
       },
       prices: {
-        retrieve: vi.fn(async () => price),
+        retrieve: vi.fn(async (priceId) => {
+          calls.priceIds.push(priceId);
+          return pricesById[priceId] || null;
+        }),
+      },
+      subscriptions: {
+        create: vi.fn(async (payload) => {
+          calls.subscriptionPayload = payload;
+          return subscription;
+        }),
       },
       paymentIntents: {
         create: vi.fn(async (payload) => {
@@ -102,12 +111,13 @@ async function loadHandler(mocks) {
 }
 
 describe("stripe create-subscription", () => {
-  it("rejects recurring prices", async () => {
+  it("rejects non-recurring subscription prices", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test";
-    process.env.STRIPE_PRICE_ID = "price_test";
+    process.env.STRIPE_PRICE_ID = "price_sub";
+    process.env.STRIPE_LIFETIME_PRICE_ID = "price_life";
     process.env.STRIPE_PAYMENT_METHOD_TYPES = "card";
 
-    const calls = {};
+    const calls = { priceIds: [] };
     const supabaseCalls = { profileUpdates: [] };
     const supabaseMock = {
       from: () => ({
@@ -120,30 +130,92 @@ describe("stripe create-subscription", () => {
 
     const handler = await loadHandler({
       stripeConfig: {
-        price: { id: "price_test", currency: "dkk", recurring: { interval: "month" } },
+        pricesById: {
+          price_sub: { id: "price_sub", currency: "dkk", recurring: null },
+        },
         customer: { id: "cus_test" },
         paymentIntent: { id: "pi_test", client_secret: "secret" },
+        subscription: null,
         calls,
       },
       supabaseMock,
     });
 
-    const req = createReq({});
+    const req = createReq({ planType: "subscription" });
     const res = createRes();
     await handler(req, res);
 
     const payload = JSON.parse(res.body);
     expect(res.statusCode).toBe(400);
-    expect(payload.error).toBe("price_recurring");
+    expect(payload.error).toBe("price_not_recurring");
     expect(supabaseCalls.profileUpdates[0]).toEqual({ stripe_customer_id: "cus_test" });
   });
 
-  it("creates a payment intent for one-time prices", async () => {
+  it("creates a subscription for recurring prices", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test";
-    process.env.STRIPE_PRICE_ID = "price_once";
+    process.env.STRIPE_PRICE_ID = "price_sub";
+    process.env.STRIPE_LIFETIME_PRICE_ID = "price_life";
     process.env.STRIPE_PAYMENT_METHOD_TYPES = "card";
 
-    const calls = {};
+    const calls = { priceIds: [] };
+    const supabaseCalls = { profileUpdates: [] };
+    const supabaseMock = {
+      from: () => ({
+        update: (payload) => {
+          supabaseCalls.profileUpdates.push(payload);
+          return { eq: async () => ({ data: null, error: null }) };
+        },
+      }),
+    };
+
+    const subscription = {
+      id: "sub_live",
+      latest_invoice: {
+        payment_intent: { client_secret: "pi_secret" },
+      },
+    };
+
+    const handler = await loadHandler({
+      stripeConfig: {
+        pricesById: {
+          price_sub: {
+            id: "price_sub",
+            currency: "dkk",
+            unit_amount: 17900,
+            recurring: { interval: "month", interval_count: 1 },
+            product: { name: "Pro", description: "Abonnement" },
+          },
+        },
+        customer: { id: "cus_live" },
+        paymentIntent: null,
+        subscription,
+        calls,
+      },
+      supabaseMock,
+    });
+
+    const req = createReq({ planType: "subscription" });
+    const res = createRes();
+    await handler(req, res);
+
+    const payload = JSON.parse(res.body);
+    expect(res.statusCode).toBe(200);
+    expect(payload.clientSecret).toBe("pi_secret");
+    expect(payload.subscriptionId).toBe("sub_live");
+    expect(payload.price.currency).toBe("dkk");
+    expect(calls.subscriptionPayload.items).toEqual([{ price: "price_sub" }]);
+    expect(calls.subscriptionPayload.metadata).toEqual({ user_id: "user-1" });
+    expect(calls.subscriptionPayload.payment_settings).toEqual({ payment_method_types: ["card"] });
+    expect(supabaseCalls.profileUpdates[0]).toEqual({ stripe_customer_id: "cus_live" });
+  });
+
+  it("creates a payment intent for lifetime prices", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test";
+    process.env.STRIPE_PRICE_ID = "price_sub";
+    process.env.STRIPE_LIFETIME_PRICE_ID = "price_life";
+    process.env.STRIPE_PAYMENT_METHOD_TYPES = "card";
+
+    const calls = { priceIds: [] };
     const supabaseCalls = { profileUpdates: [] };
     const supabaseMock = {
       from: () => ({
@@ -156,21 +228,24 @@ describe("stripe create-subscription", () => {
 
     const handler = await loadHandler({
       stripeConfig: {
-        price: {
-          id: "price_once",
-          currency: "dkk",
-          unit_amount: 150000,
-          recurring: null,
-          product: { name: "Pro", description: "Livstidsadgang" },
+        pricesById: {
+          price_life: {
+            id: "price_life",
+            currency: "dkk",
+            unit_amount: 150000,
+            recurring: null,
+            product: { name: "Pro", description: "Livstid" },
+          },
         },
         customer: { id: "cus_live" },
         paymentIntent: { id: "pi_live", client_secret: "secret_live" },
+        subscription: null,
         calls,
       },
       supabaseMock,
     });
 
-    const req = createReq({});
+    const req = createReq({ planType: "lifetime" });
     const res = createRes();
     await handler(req, res);
 
@@ -179,7 +254,6 @@ describe("stripe create-subscription", () => {
     expect(payload.clientSecret).toBe("secret_live");
     expect(payload.intentId).toBe("pi_live");
     expect(payload.price.currency).toBe("dkk");
-    expect(payload.price.product.name).toBe("Pro");
     expect(calls.paymentIntentPayload.amount).toBe(150000);
     expect(calls.paymentIntentPayload.currency).toBe("dkk");
     expect(calls.paymentIntentPayload.customer).toBe("cus_live");

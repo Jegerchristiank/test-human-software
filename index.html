@@ -14,26 +14,27 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body data-testid="page-index">
-    <div class="ambient ambient-one" data-testid="index__page-index__ambient-one"></div>
-    <div class="ambient ambient-two" data-testid="index__page-index__ambient-two"></div>
-    <div class="ambient ambient-three" data-testid="index__page-index__ambient-three"></div>
-    <div class="noise-layer" data-testid="index__page-index__noise-layer"></div>
+    <a class="skip-link" href="#main-content">Gå til indhold</a>
+    <div class="ambient ambient-one" data-testid="index__page-index__ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" data-testid="index__page-index__ambient-two" aria-hidden="true"></div>
+    <div class="ambient ambient-three" data-testid="index__page-index__ambient-three" aria-hidden="true"></div>
+    <div class="noise-layer" data-testid="index__page-index__noise-layer" aria-hidden="true"></div>
     <div class="theme-switch" role="group" aria-label="Tema" data-testid="theme-switch">
       <span class="theme-label">Lys</span>
       <label class="theme-toggle">
-        <input type="checkbox" id="theme-toggle" data-testid="theme-toggle" aria-label="Skift til mørk tilstand" />
+        <input type="checkbox" id="theme-toggle" data-testid="theme-toggle" aria-label="Skift til mørk tilstand" role="switch" aria-checked="false" />
       </label>
       <span class="theme-label">Mørk</span>
-    </div>
+    </main>
 
-    <div class="app" data-testid="app-root">
+    <main class="app" id="main-content" data-testid="app-root" tabindex="-1">
       <section id="loading-screen" data-testid="loading-screen" class="screen active">
         <div class="loading-shell" data-testid="loading-shell">
           <div class="loading-orbit" role="status" aria-live="polite" aria-label="Indlæser" data-testid="index__loading-screen--loading-shell__indlaeser">
             <img class="loading-logo" src="Logo.png" alt="Human Biologi Studio logo" />
           </div>
-          <div class="loading-text" id="loading-status" data-testid="loading-status">Indlæser …</div>
-          <div class="loading-detail" id="loading-detail" data-testid="loading-detail">Gør klar til din session</div>
+          <div class="loading-text" id="loading-status" data-testid="loading-status" role="status" aria-live="polite" aria-atomic="true">Indlæser …</div>
+          <div class="loading-detail" id="loading-detail" data-testid="loading-detail" role="status" aria-live="polite" aria-atomic="true">Gør klar til din session</div>
           <div
             class="loading-progress"
             id="loading-progress" data-testid="loading-progress"
@@ -56,16 +57,7 @@
       </section>
       <section id="auth-screen" data-testid="auth-screen" class="screen hidden">
         <div class="landing-shell auth-shell" data-testid="auth-shell">
-          <header class="global-header" data-testid="global-header">
-            <div class="brand-block" data-testid="index__auth-shell--global-header__brand-block">
-              <div class="brand-mark" data-testid="index__global-header--brand-block__brand-mark">
-                <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
-              </div>
-              <div data-testid="index__global-header--brand-block__div">
-                <div class="brand-subtitle" data-testid="index__global-header--brand-block__brand-subtitle">Sundhed &amp; Informatik</div>
-                <div class="brand-title" data-testid="index__global-header--brand-block__brand-title">Human Biologi Studio</div>
-              </div>
-            </div>
+          <header class="global-header landing-topbar" data-testid="global-header">
             <nav class="global-header-links" aria-label="Login links" data-testid="global-header-links">
               <a class="btn ghost small" href="sign-in.html" data-testid="nav-sign-in">Log ind</a>
               <a class="btn primary small" href="sign-up.html" data-testid="nav-sign-up">Opret konto</a>
@@ -73,18 +65,22 @@
           </header>
           <header class="sales-hero" data-testid="auth-hero">
             <div class="sales-copy reveal" data-testid="auth-hero-copy" style="--delay: 0s">
-              <div class="brand-block" data-testid="index__auth-hero--auth-hero-copy__brand-block">
-                <div class="brand-mark" data-testid="index__auth-hero-copy--brand-block__brand-mark">
-                  <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
-                </div>
-                <div data-testid="index__auth-hero-copy--brand-block__div">
-                  <div class="brand-subtitle" data-testid="index__auth-hero-copy--brand-block__brand-subtitle">Sundhed &amp; Informatik</div>
-                  <div class="hero-eyebrow" data-testid="index__auth-hero-copy--brand-block__hero-eyebrow">Eksamensro, bygget til fokus</div>
-                  <h1>Human Biologi Studio</h1>
-                  <p>
-                    Byg en runde på få sekunder, træn MCQ og kortsvar i samme flow, og følg dit niveau uden støj.
-                  </p>
-                </div>
+              <a class="brand-action" href="index.html" data-brand-back data-testid="index__auth-hero-copy--brand-banner">
+                <img class="brand-banner hero" src="Banner.png" alt="Human Biologi Studio banner" />
+              </a>
+              <div class="hero-kicker" data-testid="auth-hero-kicker">
+                <span class="brand-subtitle" data-testid="index__auth-hero-copy--brand-block__brand-subtitle">Sundhed &amp; Informatik</span>
+                <span class="hero-divider" aria-hidden="true">|</span>
+                <span class="hero-eyebrow" data-testid="index__auth-hero-copy--brand-block__hero-eyebrow">Eksamensro, bygget til fokus</span>
+              </div>
+              <h1>Human Biologi Studio</h1>
+              <p>
+                Byg en runde på få sekunder, træn MCQ og kortsvar i samme flow, og se præcis, hvor du løfter din 7-trinsscore.
+              </p>
+              <div class="hero-meta-row" data-testid="auth-hero-highlights">
+                <span class="hero-meta-item">MCQ + kortsvar</span>
+                <span class="hero-meta-item">7-trinsscore</span>
+                <span class="hero-meta-item">AI-hjælp på Pro</span>
               </div>
               <div class="sales-cta" data-testid="auth-hero-cta">
                 <a class="btn primary" href="sign-up.html" data-testid="auth-cta-start">Start gratis</a>
@@ -94,13 +90,8 @@
                 Demo gemmer kun lokalt og giver ikke adgang til Pro.
               </div>
               <div class="sales-price" data-testid="auth-hero-price">
-                <div class="price-pill" data-testid="index__auth-hero-copy--auth-hero-price__price-pill">Pro 1.500 kr</div>
+                <div class="price-pill" data-testid="index__auth-hero-copy--auth-hero-price__price-pill">Pro 179 kr/md eller 1.500 kr</div>
                 <div class="price-note" data-testid="index__auth-hero-copy--auth-hero-price__price-note">Gratis plan med egen nøgle</div>
-              </div>
-              <div class="trust-row" data-testid="auth-hero-trust">
-                <span>MCQ + kortsvar</span>
-                <span>7-trinsscore</span>
-                <span>AI-hjælp på Pro</span>
               </div>
             </div>
             <div class="sales-visual reveal" data-testid="auth-hero-visual" style="--delay: 0.05s">
@@ -202,7 +193,7 @@
                   <span>4-5 min</span>
                   <span>Én gang pr. dag</span>
                 </div>
-                <div class="demo-status" id="demo-status" data-testid="demo-status">Klar til at starte.</div>
+                <div class="demo-status" id="demo-status" data-testid="demo-status" role="status" aria-live="polite" aria-atomic="true">Klar til at starte.</div>
               </div>
               <div class="panel demo-card" id="demo-card" data-testid="demo-card">
                 <div class="demo-card-header" data-testid="index__demo-grid--demo-card__demo-card-header">
@@ -238,7 +229,7 @@
                       <div class="short-answer demo-short hidden" id="demo-short" data-testid="demo-short">
                         <div class="short-group-meta" data-testid="index__demo-question-card--demo-short__short-group-meta">
                           <span class="field-label">Delspørgsmål</span>
-                          <span class="short-group-status" id="demo-short-status" data-testid="demo-short-status"></span>
+                          <span class="short-group-status" id="demo-short-status" data-testid="demo-short-status" role="status" aria-live="polite" aria-atomic="true"></span>
                         </div>
                         <div class="short-part-list" id="demo-short-list" data-testid="demo-short-list"></div>
                         <button id="demo-short-check" data-testid="demo-short-check" class="btn secondary small" type="button">
@@ -248,7 +239,7 @@
                           Fokusér på de vigtigste begreber.
                         </div>
                       </div>
-                      <div class="demo-feedback" id="demo-feedback" data-testid="demo-feedback"></div>
+                      <div class="demo-feedback" id="demo-feedback" data-testid="demo-feedback" role="status" aria-live="polite" aria-atomic="true"></div>
                       <div class="demo-controls" data-testid="index__demo-question--demo-question-card__demo-controls">
                         <button id="demo-next-btn" data-testid="demo-next-btn" class="btn primary" type="button" disabled>Næste</button>
                         <button id="demo-exit-btn" data-testid="demo-exit-btn" class="btn ghost small" type="button">Luk</button>
@@ -271,7 +262,7 @@
           <section class="sales-section pricing-section reveal" data-testid="pricing-section" style="--delay: 0.15s">
             <div class="section-header" data-testid="pricing-section-header">
               <h2>Vælg din adgang</h2>
-              <p>Start gratis med egen nøgle eller vælg Pro som engangsbetaling.</p>
+              <p>Start gratis med egen nøgle eller vælg Pro som abonnement eller engangsbetaling.</p>
             </div>
             <div class="pricing-grid" data-testid="pricing-grid">
               <div class="pricing-card" data-testid="pricing-card-free">
@@ -284,30 +275,53 @@
                 </ul>
                 <div class="pricing-note" data-testid="index__pricing-grid--pricing-card-free__pricing-note">Brug din egen nøgle for AI-hjælp.</div>
               </div>
-              <div class="pricing-card highlight" data-testid="pricing-card-pro">
-                <div class="pricing-title" data-testid="index__pricing-grid--pricing-card-pro__pricing-title">Pro</div>
-                <div class="pricing-price" data-testid="index__pricing-grid--pricing-card-pro__pricing-price">1.500 kr</div>
+              <div class="pricing-card highlight" data-testid="pricing-card-pro-subscription">
+                <div class="pricing-title" data-testid="index__pricing-grid--pricing-card-pro-subscription__pricing-title">Pro abonnement</div>
+                <div class="pricing-price" data-testid="index__pricing-grid--pricing-card-pro-subscription__pricing-price">179 kr/md</div>
                 <ul>
                   <li>AI-hints og auto-bedømmelse</li>
                   <li>Oplæsning og figurbeskrivelser</li>
                   <li>Prioritering af svage områder</li>
                 </ul>
-                <div class="pricing-note" data-testid="index__pricing-grid--pricing-card-pro__pricing-note">Engangsbetaling · livstidsadgang.</div>
+                <div class="pricing-note" data-testid="index__pricing-grid--pricing-card-pro-subscription__pricing-note">Fornyes månedligt. Opsig når som helst.</div>
+              </div>
+              <div class="pricing-card" data-testid="pricing-card-pro-lifetime">
+                <div class="pricing-title" data-testid="index__pricing-grid--pricing-card-pro-lifetime__pricing-title">Pro livstid</div>
+                <div class="pricing-price" data-testid="index__pricing-grid--pricing-card-pro-lifetime__pricing-price">1.500 kr</div>
+                <ul>
+                  <li>Livstidsadgang med én betaling</li>
+                  <li>AI-hints og auto-bedømmelse</li>
+                  <li>Oplæsning og figurbeskrivelser</li>
+                </ul>
+                <div class="pricing-note" data-testid="index__pricing-grid--pricing-card-pro-lifetime__pricing-note">
+                  Engangsbetaling · vi kan blive nødt til at lukke for Pro, hvis driftsudgifterne bliver en økonomisk byrde.
+                </div>
               </div>
             </div>
           </section>
 
-          <section class="panel auth-panel reveal" id="auth-start" data-testid="auth-start" style="--delay: 0.2s">
-            <div class="panel-header" data-testid="index__auth-shell--auth-start__panel-header">
-              <h2>Klar til at komme i gang?</h2>
-              <p>Log ind eller opret konto for at åbne dit studio.</p>
+          <section class="sales-section legal-section reveal" data-testid="legal-section" style="--delay: 0.18s">
+            <div class="section-header" data-testid="legal-section-header">
+              <h2>Juridiske dokumenter</h2>
+              <p>Læs vilkår, handelsbetingelser og privatlivspolitikker, før du opretter konto.</p>
             </div>
-            <div class="auth-actions" data-testid="auth-primary-actions">
-              <a class="btn primary" href="sign-up.html" data-testid="auth-sign-up-link">Opret konto</a>
-              <a class="btn secondary" href="sign-in.html" data-testid="auth-sign-in-link">Log ind</a>
+            <div class="legal-links" data-testid="front-legal-links">
+              <a class="legal-link" href="vilkaar.html" data-testid="front-legal-vilkaar">Vilkår</a>
+              <a class="legal-link" href="privatlivspolitik.html" data-testid="front-legal-privatliv">
+                Privatlivspolitik
+              </a>
+              <a class="legal-link" href="persondatapolitik.html" data-testid="front-legal-persondata">
+                Persondatapolitik
+              </a>
+              <a class="legal-link" href="handelsbetingelser.html" data-testid="front-legal-handelsbetingelser">
+                Handelsbetingelser
+              </a>
             </div>
-            <div class="auth-status" id="auth-status" data-testid="auth-status">Log ind for at starte.</div>
+            <div class="legal-body" data-testid="front-legal-note">
+              <p>Senest opdateret 2026-01-13. Kontakt: christian@biologistudio.dk.</p>
+            </div>
           </section>
+
         </div>
       </section>
 
@@ -324,7 +338,7 @@
             </div>
             <button id="consent-back-btn" data-testid="consent-back-btn" class="btn ghost" type="button">Log ud</button>
           </header>
-          <div class="consent-status hidden" id="consent-status" data-testid="consent-status"></div>
+          <div class="consent-status hidden" id="consent-status" data-testid="consent-status" role="status" aria-live="polite" aria-atomic="true"></div>
           <div class="consent-grid" data-testid="consent-grid">
             <section class="panel consent-panel" data-testid="consent-panel-terms">
               <div class="panel-header" data-testid="index__consent-grid--consent-panel-terms__panel-header">
@@ -374,6 +388,9 @@
         <div class="landing-shell dashboard-shell" data-testid="landing-shell">
           <header class="dashboard-hero reveal" data-testid="landing-hero" style="--delay: 0s">
             <div class="dashboard-copy" data-testid="landing-hero-copy">
+              <a class="brand-action" href="index.html" data-brand-back data-testid="index__landing-hero--brand-banner">
+                <img class="brand-banner" src="Banner.png" alt="Human Biologi Studio banner" />
+              </a>
               <div class="eyebrow" data-testid="index__landing-hero--landing-hero-copy__eyebrow">Velkommen tilbage</div>
               <h1>Din næste runde starter her</h1>
               <p>
@@ -398,7 +415,7 @@
                   </div>
                 </div>
                 <div class="highlight-progress" data-testid="index__landing-highlight--highlight-card__highlight-progress">
-                  <div class="highlight-progress-bar" data-testid="index__highlight-card--highlight-progress__highlight-progress-bar">
+                  <div class="highlight-progress-bar" id="hero-progress-bar" data-testid="index__highlight-card--highlight-progress__highlight-progress-bar" role="progressbar" aria-label="Fremskridt mod mål" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                     <div class="highlight-progress-fill" id="hero-progress-fill" data-testid="hero-progress-fill"></div>
                   </div>
                 </div>
@@ -424,11 +441,12 @@
       <section id="menu-screen" data-testid="menu-screen" class="screen hidden">
         <div class="menu-shell" data-testid="menu-shell">
           <header class="menu-header reveal" data-testid="menu-header" style="--delay: 0s">
-            <div class="brand-block" data-testid="index__menu-shell--menu-header__brand-block">
+            <a class="brand-block brand-action" href="index.html" data-brand-back data-testid="index__menu-shell--menu-header__brand-block">
               <div class="brand-mark" data-testid="index__menu-header--brand-block__brand-mark">
                 <img class="brand-logo" id="menu-logo" data-testid="menu-logo" src="Logo.png" alt="Human Biologi Studio logo" />
               </div>
                 <div data-testid="index__menu-header--brand-block__div">
+                  <img class="brand-banner compact" src="Banner.png" alt="Human Biologi Studio banner" data-testid="index__menu-header--brand-block__brand-banner" />
                   <div class="brand-subtitle" id="menu-subtitle" data-testid="menu-subtitle">Sundhed &amp; Informatik</div>
                   <h1 id="menu-title" data-testid="menu-title">Human Biologi Studio</h1>
                   <p id="menu-description" data-testid="menu-description">
@@ -436,7 +454,7 @@
                   selv.
                   </p>
                 </div>
-              </div>
+              </a>
             <div class="menu-right" data-testid="index__menu-shell--menu-header__menu-right">
               <div class="menu-stats" data-testid="index__menu-header--menu-right__menu-stats">
                 <div class="stat-pill" id="question-count-chip" data-testid="question-count-chip">Indlæser …</div>
@@ -885,6 +903,7 @@
                         >i</span
                       >
                     </h3>
+                    <label class="sr-only" for="category-search">Søg emne</label>
                     <input type="search" id="category-search" data-testid="category-search" placeholder="Søg emne" />
                   </div>
                   <div class="chip-group" id="category-chips" data-testid="category-chips"></div>
@@ -924,7 +943,9 @@
         <div class="game-shell" data-testid="quiz-shell">
           <header class="game-header reveal" data-testid="quiz-header" style="--delay: 0s">
             <div class="game-left" data-testid="index__quiz-shell--quiz-header__game-left">
-              <img class="brand-logo small" id="quiz-logo" data-testid="quiz-logo" src="Logo.png" alt="Human Biologi Studio logo" />
+              <a class="brand-action" href="index.html" data-brand-back data-testid="quiz-brand-link">
+                <img class="brand-logo small" id="quiz-logo" data-testid="quiz-logo" src="Logo.png" alt="Human Biologi Studio logo" />
+              </a>
               <div class="session-pill" id="session-pill" data-testid="session-pill">Runde</div>
             </div>
             <div class="scoreboard" data-testid="index__quiz-shell--quiz-header__scoreboard">
@@ -942,7 +963,7 @@
                   <span id="progress-text" data-testid="progress-text">0 / 0</span>
                   <span class="tempo" id="tempo-text" data-testid="tempo-text">Tempo: —</span>
                 </div>
-                <div class="progress-bar" data-testid="index__quiz-aside--compact__progress-bar">
+                <div class="progress-bar" id="quiz-progress-bar" data-testid="index__quiz-aside--compact__progress-bar" role="progressbar" aria-label="Fremdrift i runden" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                   <div class="progress-fill" id="progress-fill" data-testid="progress-fill"></div>
                 </div>
               </div>
@@ -1038,7 +1059,7 @@
               </details>
             </aside>
 
-            <main class="question-wrap reveal" data-testid="question-wrap" style="--delay: 0.1s">
+            <div class="question-wrap reveal" data-testid="question-wrap" style="--delay: 0.1s">
               <div class="question-card" data-testid="question-card">
                 <div class="question-meta" id="question-meta" data-testid="question-meta">
                   <span class="chip soft" id="question-type" data-testid="question-type"></span>
@@ -1061,7 +1082,7 @@
                 <div id="short-answer-container" data-testid="short-answer-container" class="short-answer hidden">
                   <div class="short-group-meta" data-testid="index__question-card--short-answer-container__short-group-meta">
                     <span class="field-label" id="short-group-label" data-testid="short-group-label">Delspørgsmål</span>
-                    <span class="short-group-status" id="short-group-status" data-testid="short-group-status"></span>
+                    <span class="short-group-status" id="short-group-status" data-testid="short-group-status" role="status" aria-live="polite" aria-atomic="true"></span>
                   </div>
                   <div class="short-part-list" id="short-part-list" data-testid="short-part-list"></div>
                   <div class="short-average hidden" id="short-average-summary" data-testid="short-average-summary">
@@ -1084,11 +1105,11 @@
                   <div class="review-drawer hidden" id="short-review-drawer" data-testid="short-review-drawer" data-open="false">
                     <div class="short-toolbar" data-testid="index__short-answer-container--short-review-drawer__short-toolbar">
                       <div class="score-control" data-testid="index__short-review-drawer--short-toolbar__score-control">
-                        <div class="score-label" data-testid="index__short-toolbar--score-control__score-label">
+                        <div class="score-label" id="short-score-range-label" data-testid="index__short-toolbar--score-control__score-label">
                           Point <span class="score-max">/ <span id="short-max-points" data-testid="short-max-points">0</span></span>
                         </div>
                         <div class="score-inputs" data-testid="index__short-toolbar--score-control__score-inputs">
-                          <input type="range" id="short-score-range" data-testid="short-score-range" min="0" max="10" step="0.5" value="0" />
+                          <input type="range" id="short-score-range" data-testid="short-score-range" min="0" max="10" step="0.5" value="0" aria-labelledby="short-score-range-label" />
                         </div>
                         <div class="score-hint" id="short-score-hint" data-testid="short-score-hint"></div>
                       </div>
@@ -1098,7 +1119,7 @@
                         </button>
                       </div>
                     </div>
-                    <div class="ai-status" id="ai-status-inline" data-testid="ai-status-inline"></div>
+                    <div class="ai-status" id="ai-status-inline" data-testid="ai-status-inline" role="status" aria-live="polite" aria-atomic="true"></div>
                     <div class="short-ai-feedback" id="short-ai-feedback" data-testid="short-ai-feedback"></div>
                     <div class="short-ai-actions" data-testid="index__short-answer-container--short-review-drawer__short-ai-actions">
                       <button class="btn ghost small hidden" id="short-ai-retry-btn" data-testid="short-ai-retry-btn" type="button">
@@ -1116,7 +1137,7 @@
                           <h5>Figurbeskrivelse</h5>
                           <button class="btn ghost small" id="short-figure-generate-btn" data-testid="short-figure-generate-btn" type="button">Generér</button>
                         </div>
-                        <div class="short-figure-status" id="short-figure-status" data-testid="short-figure-status"></div>
+                        <div class="short-figure-status" id="short-figure-status" data-testid="short-figure-status" role="status" aria-live="polite" aria-atomic="true"></div>
                         <p id="short-figure-text" data-testid="short-figure-text"></p>
                       </div>
                       <div class="short-sources" id="short-sources" data-testid="short-sources"></div>
@@ -1126,7 +1147,7 @@
                 <div class="question-hint hidden" id="question-hint" data-testid="question-hint">
                   <div class="question-hint-head" data-testid="index__question-card--question-hint__question-hint-head">
                     <span>Hint</span>
-                    <span class="question-hint-status" id="question-hint-status" data-testid="question-hint-status"></span>
+                    <span class="question-hint-status" id="question-hint-status" data-testid="question-hint-status" role="status" aria-live="polite" aria-atomic="true"></span>
                   </div>
                   <div class="question-hint-text hidden" id="question-hint-text" data-testid="question-hint-text"></div>
                 </div>
@@ -1145,9 +1166,9 @@
                   </button>
                   <button class="btn secondary" id="next-btn" data-testid="next-btn" type="button" disabled>Næste</button>
                 </div>
-                <div class="feedback" id="feedback-area" data-testid="feedback-area"></div>
+                <div class="feedback" id="feedback-area" data-testid="feedback-area" role="status" aria-live="polite" aria-atomic="true"></div>
               </div>
-            </main>
+            </div>
           </div>
         </div>
       </section>
@@ -1167,7 +1188,9 @@
               <p id="final-message" data-testid="final-message"></p>
             </div>
             <div class="result-badge" data-testid="index__result-shell--result-header__result-badge">
-              <img class="brand-logo small" id="result-logo" data-testid="result-logo" src="Logo.png" alt="Human Biologi Studio logo" />
+              <a class="brand-action" href="index.html" data-brand-back data-testid="result-brand-link">
+                <img class="brand-logo small" id="result-logo" data-testid="result-logo" src="Logo.png" alt="Human Biologi Studio logo" />
+              </a>
               <div class="pill highlight" id="best-badge" data-testid="best-badge">Ny personlig rekord!</div>
             </div>
           </div>
@@ -1290,10 +1313,10 @@
                 <button id="upgrade-btn" data-testid="upgrade-btn" class="btn primary" type="button">Aktivér Pro</button>
                 <button id="portal-btn" data-testid="portal-btn" class="btn ghost" type="button">Se betalinger</button>
               </div>
-              <div class="field-hint" data-testid="index__account-hero--account-hero-card__field-hint">Engangsbetaling giver livstidsadgang til Pro.</div>
+              <div class="field-hint" data-testid="index__account-hero--account-hero-card__field-hint">Vælg abonnement eller engangsbetaling for Pro.</div>
             </div>
           </header>
-          <div class="account-status" id="account-status" data-testid="account-status"></div>
+          <div class="account-status" id="account-status" data-testid="account-status" role="status" aria-live="polite" aria-atomic="true"></div>
 
           <div class="account-grid" data-testid="account-grid">
             <section class="panel account-panel reveal" data-testid="account-panel-profile" style="--delay: 0.05s">
@@ -1483,7 +1506,7 @@
             </div>
           </header>
 
-          <div class="billing-status" id="billing-status" data-testid="billing-status"></div>
+          <div class="billing-status" id="billing-status" data-testid="billing-status" role="status" aria-live="polite" aria-atomic="true"></div>
 
           <div class="billing-grid" data-testid="billing-grid">
             <section class="panel billing-panel wide reveal" data-testid="billing-panel-method" style="--delay: 0.05s">
@@ -1506,7 +1529,7 @@
                   </div>
                   <button id="billing-update-close-btn" data-testid="billing-update-close-btn" class="icon-btn" type="button">Luk</button>
                 </div>
-                <div class="billing-update-status" id="billing-update-status" data-testid="billing-update-status"></div>
+                <div class="billing-update-status" id="billing-update-status" data-testid="billing-update-status" role="status" aria-live="polite" aria-atomic="true"></div>
                 <form id="billing-update-form" data-testid="billing-update-form">
                   <div id="billing-payment-element" data-testid="billing-payment-element" class="billing-payment-element"></div>
                   <div class="billing-update-actions" data-testid="index__billing-update-panel--billing-update-form__billing-update-actions">
@@ -1553,7 +1576,7 @@
               <div class="billing-security" data-testid="index__billing-grid--billing-panel-methods__billing-security">
                 <div class="billing-security-item" data-testid="index__billing-panel-methods--billing-security__billing-security-item">PCI-sikret håndtering</div>
                 <div class="billing-security-item" data-testid="index__billing-panel-methods--billing-security__billing-security-item--2">Kvitteringer sendes til din e-mail</div>
-                <div class="billing-security-item" data-testid="index__billing-panel-methods--billing-security__billing-security-item--3">Engangsbetaling · ingen abonnement</div>
+                <div class="billing-security-item" data-testid="index__billing-panel-methods--billing-security__billing-security-item--3">Abonnement eller engangsbetaling</div>
               </div>
             </section>
           </div>
@@ -1569,7 +1592,7 @@
             </div>
             <button id="checkout-back-btn" data-testid="checkout-back-btn" class="btn ghost" type="button">Tilbage</button>
           </header>
-          <div class="checkout-status hidden" id="checkout-status" data-testid="checkout-status"></div>
+          <div class="checkout-status hidden" id="checkout-status" data-testid="checkout-status" role="status" aria-live="polite" aria-atomic="true"></div>
           <div class="checkout-grid" data-testid="checkout-grid">
             <section class="panel checkout-panel" data-testid="checkout-payment-panel">
               <div class="panel-header" data-testid="index__checkout-grid--checkout-payment-panel__panel-header">
@@ -1589,12 +1612,20 @@
                   <button id="checkout-hosted-btn" data-testid="checkout-hosted-btn" class="btn ghost" type="button">Åbn Stripe Checkout</button>
                 </div>
               </form>
-              <div class="field-hint" data-testid="index__checkout-grid--checkout-payment-panel__field-hint">Engangsbetaling giver livstidsadgang. Ingen abonnement.</div>
+              <div class="field-hint" data-testid="index__checkout-grid--checkout-payment-panel__field-hint">Vælg abonnement eller engangsbetaling før du betaler.</div>
             </section>
             <section class="panel checkout-summary" data-testid="checkout-summary-panel">
               <div class="panel-header" data-testid="index__checkout-grid--checkout-summary-panel__panel-header">
                 <h2>Det får du med Pro</h2>
                 <p>Designet til fokus og højere score.</p>
+              </div>
+              <div class="checkout-plan-switch" id="checkout-plan-switch" data-testid="checkout-plan-switch">
+                <button id="checkout-plan-subscription" data-testid="checkout-plan-subscription" class="btn ghost small" type="button">
+                  Abonnement · 179 kr/md
+                </button>
+                <button id="checkout-plan-lifetime" data-testid="checkout-plan-lifetime" class="btn ghost small" type="button">
+                  Livstid · 1.500 kr
+                </button>
               </div>
               <div class="checkout-plan" data-testid="index__checkout-grid--checkout-summary-panel__checkout-plan">
                 <div class="checkout-plan-name" id="checkout-plan-name" data-testid="checkout-plan-name">Pro</div>
@@ -1602,10 +1633,9 @@
               </div>
               <div class="checkout-price" data-testid="index__checkout-grid--checkout-summary-panel__checkout-price">
                 <div class="checkout-price-amount" id="checkout-price" data-testid="checkout-price">—</div>
-                <div class="checkout-price-interval" id="checkout-interval" data-testid="checkout-interval">Engangsbetaling</div>
+                <div class="checkout-price-interval" id="checkout-interval" data-testid="checkout-interval">Pr. måned</div>
               </div>
               <ul class="checkout-features" data-testid="checkout-features">
-                <li>Livstidsadgang til Pro med én betaling.</li>
                 <li>AI-hjælp til MCQ og kortsvar, når du går i stå.</li>
                 <li>Forklaringer på fejl, så du lærer af hver runde.</li>
                 <li>Oplæsning med stemmevalg og tempo.</li>
@@ -1616,7 +1646,8 @@
                 <span>Beløb i dag</span>
                 <strong id="checkout-total" data-testid="checkout-total">—</strong>
               </div>
-              <div class="checkout-trust" data-testid="index__checkout-grid--checkout-summary-panel__checkout-trust">Betal med kort, Apple Pay, Google Pay eller MobilePay (hvis tilgængeligt).</div>
+              <div class="checkout-plan-disclaimer hidden" id="checkout-plan-disclaimer" data-testid="checkout-plan-disclaimer"></div>
+              <div class="checkout-trust" id="checkout-trust" data-testid="index__checkout-grid--checkout-summary-panel__checkout-trust">Betal med kort, Apple Pay eller Google Pay (hvis tilgængeligt).</div>
             </section>
           </div>
         </div>
@@ -1624,10 +1655,10 @@
 
     </div>
 
-    <div class="modal hidden" id="rules-modal" data-testid="rules-modal">
+    <div class="modal hidden" id="rules-modal" data-testid="rules-modal" role="dialog" aria-modal="true" aria-labelledby="rules-modal-title" aria-hidden="true" tabindex="-1">
       <div class="modal-content" data-testid="index__page-index--rules-modal__modal-content">
         <div class="modal-header" data-testid="index__rules-modal--modal-content__modal-header">
-          <h3>Spilguide</h3>
+          <h3 id="rules-modal-title">Spilguide</h3>
           <button class="icon-btn" id="close-modal" data-testid="close-modal" type="button">Luk</button>
         </div>
         <div class="modal-grid" data-testid="index__rules-modal--modal-content__modal-grid">
@@ -1692,11 +1723,11 @@
       </div>
     </div>
 
-    <div class="modal hidden sketch-modal" id="sketch-modal" data-testid="sketch-modal">
+    <div class="modal hidden sketch-modal" id="sketch-modal" data-testid="sketch-modal" role="dialog" aria-modal="true" aria-labelledby="sketch-modal-heading" aria-describedby="sketch-modal-hint" aria-hidden="true" tabindex="-1">
       <div class="modal-content sketch-modal-content" data-testid="index__page-index--sketch-modal__sketch-modal-content">
         <div class="modal-header" data-testid="index__sketch-modal--sketch-modal-content__modal-header">
           <div data-testid="index__sketch-modal-content--modal-header__div">
-            <h3>Skitse</h3>
+            <h3 id="sketch-modal-heading">Skitse</h3>
             <p class="sketch-modal-subtitle" id="sketch-modal-title" data-testid="sketch-modal-title">Delspørgsmål</p>
           </div>
           <button class="icon-btn" id="sketch-modal-close" data-testid="sketch-modal-close" type="button">Luk</button>
@@ -1746,7 +1777,7 @@
       </div>
     </div>
 
-    <div class="modal hidden figure-modal" id="figure-modal" data-testid="figure-modal">
+    <div class="modal hidden figure-modal" id="figure-modal" data-testid="figure-modal" role="dialog" aria-modal="true" aria-labelledby="figure-modal-title" aria-describedby="figure-modal-caption" aria-hidden="true" tabindex="-1">
       <div class="modal-content figure-modal-content" data-testid="index__page-index--figure-modal__figure-modal-content">
         <div class="modal-header" data-testid="index__figure-modal--figure-modal-content__modal-header">
           <h3 id="figure-modal-title" data-testid="figure-modal-title">Figur</h3>

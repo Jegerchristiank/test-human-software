@@ -23,10 +23,10 @@
 - `POST /api/vision` (auth + AI access): vision tasks (figure/sketch).
 - `POST /api/transcribe` (auth + AI access): audio transcription.
 - `POST /api/tts` (auth + AI access): text-to-speech.
-- `POST /api/stripe/create-checkout-session` (auth): Stripe one-time checkout session.
+- `POST /api/stripe/create-checkout-session` (auth): Stripe checkout session (subscription or one-time).
 - `POST /api/stripe/create-setup-intent` (auth): payment method setup intent.
 - `POST /api/stripe/create-portal-session` (auth): Stripe customer portal.
-- `POST /api/stripe/create-subscription` (auth): create one-time payment intent.
+- `POST /api/stripe/create-subscription` (auth): create subscription or one-time payment intent (planType).
 - `GET /api/stripe/billing-overview` (auth): billing status overview.
 - `POST /api/stripe/set-default-payment-method` (auth): set default payment method.
 - `POST /api/stripe/update-subscription` (auth): cancel at period end toggle.
@@ -43,6 +43,12 @@
 - Import/ingest endpoints (`/api/user-state`, `/api/stripe/webhook`,
   media upload endpoints) are rate limited to reduce abuse.
 
+## CORS
+- API responses apply a strict allowlist for `Origin`.
+- Default allowlist: `https://biologistudio.dk`.
+- Override via `CORS_ALLOW_ORIGINS` (comma-separated, full origins).
+- Preflight requests return 204 for allowed origins; disallowed origins are rejected.
+
 ## Input Validation
 - All JSON payloads are schema-validated with type checks, length limits,
   and unknown-field rejection by default.
@@ -57,6 +63,8 @@
 - Secrets are only read from environment variables:
   `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`,
   `STRIPE_WEBHOOK_SECRET`, `OPENAI_API_KEY`.
+  Stripe pricing relies on `STRIPE_PRICE_ID` (subscription) and
+  `STRIPE_LIFETIME_PRICE_ID` (one-time).
 - `/api/config` only returns publishable keys and a `stripeConfigured`
   boolean; no server secrets are returned to clients.
 

@@ -877,6 +877,7 @@ const state = {
   sessionActive: false,
   sessionPaused: false,
   sessionPausedAt: null,
+  sessionCourse: null,
   sessionNeedsRender: false,
   activeSessionLoaded: false,
   activeSessionDirty: false,
@@ -935,6 +936,8 @@ const state = {
   checkoutClientSecret: null,
   checkoutSubscriptionId: null,
   checkoutPrice: null,
+  checkoutPlanType: "subscription",
+  checkoutLoading: false,
   billing: {
     data: null,
     isLoading: false,
@@ -1109,6 +1112,8 @@ const shortcutStatusTimers = new Map();
 
 const elements = {
   startButtons: [document.getElementById("start-btn")].filter(Boolean),
+  appRoot: document.querySelector(".app"),
+  brandBackLinks: Array.from(document.querySelectorAll("[data-brand-back]")),
   landingStartBtn: document.getElementById("landing-start-btn"),
   landingQuickBtn: document.getElementById("landing-quick-btn"),
   demoStartBtn: document.getElementById("demo-start-btn"),
@@ -1173,11 +1178,16 @@ const elements = {
   checkoutElement: document.getElementById("checkout-element"),
   checkoutExpress: document.getElementById("checkout-express"),
   checkoutWallets: document.getElementById("checkout-wallets"),
+  checkoutPlanSwitch: document.getElementById("checkout-plan-switch"),
+  checkoutPlanSubscriptionBtn: document.getElementById("checkout-plan-subscription"),
+  checkoutPlanLifetimeBtn: document.getElementById("checkout-plan-lifetime"),
+  checkoutPlanDisclaimer: document.getElementById("checkout-plan-disclaimer"),
   checkoutPlanName: document.getElementById("checkout-plan-name"),
   checkoutPlanNote: document.getElementById("checkout-plan-note"),
   checkoutPrice: document.getElementById("checkout-price"),
   checkoutInterval: document.getElementById("checkout-interval"),
   checkoutTotal: document.getElementById("checkout-total"),
+  checkoutTrust: document.getElementById("checkout-trust"),
   accountStatus: document.getElementById("account-status"),
   billingStatus: document.getElementById("billing-status"),
   billingPlan: document.getElementById("billing-plan"),
@@ -1329,6 +1339,7 @@ const elements = {
   heroRankMeta: document.getElementById("hero-rank-meta"),
   heroTarget: document.getElementById("hero-target"),
   heroTargetMeta: document.getElementById("hero-target-meta"),
+  heroProgressBar: document.getElementById("hero-progress-bar"),
   heroProgressFill: document.getElementById("hero-progress-fill"),
   heroStreak: document.getElementById("hero-streak"),
   heroStreakMeta: document.getElementById("hero-streak-meta"),
@@ -1374,6 +1385,7 @@ const elements = {
   sessionPill: document.getElementById("session-pill"),
   progressText: document.getElementById("progress-text"),
   tempoText: document.getElementById("tempo-text"),
+  quizProgressBar: document.getElementById("quiz-progress-bar"),
   progressFill: document.getElementById("progress-fill"),
   scoreValue: document.getElementById("score-value"),
   mcqScoreValue: document.getElementById("mcq-score-value"),
@@ -1492,6 +1504,127 @@ const elements = {
   reviewFilterSkipped: document.getElementById("review-filter-skipped"),
   reviewList: document.getElementById("review-list"),
 };
+
+const MODAL_FOCUS_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled]):not([type='hidden'])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+const modalState = {
+  active: null,
+  lastFocused: null,
+};
+
+function isModalVisible(modal) {
+  return Boolean(modal && !modal.classList.contains("hidden"));
+}
+
+function isAnyModalOpen() {
+  return (
+    isModalVisible(elements.modal) ||
+    isModalVisible(elements.sketchModal) ||
+    isModalVisible(elements.figureModal)
+  );
+}
+
+function getFocusableElements(container) {
+  if (!container) return [];
+  return Array.from(container.querySelectorAll(MODAL_FOCUS_SELECTOR)).filter((el) => {
+    if (el.getAttribute("aria-hidden") === "true") return false;
+    if (el.hasAttribute("disabled")) return false;
+    return el.getClientRects().length > 0;
+  });
+}
+
+function trapModalFocus(event) {
+  if (event.key !== "Tab") return;
+  const modal = modalState.active;
+  if (!modal) return;
+  const focusable = getFocusableElements(modal);
+  if (!focusable.length) {
+    event.preventDefault();
+    modal.focus();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function setModalOpen(modal, { initialFocus } = {}) {
+  if (!modal) return;
+  modalState.active = modal;
+  modalState.lastFocused = document.activeElement;
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+  if (elements.appRoot) {
+    elements.appRoot.setAttribute("aria-hidden", "true");
+  }
+  document.body.classList.add("modal-open");
+  document.addEventListener("keydown", trapModalFocus, true);
+  const focusTarget =
+    initialFocus && typeof initialFocus.focus === "function" ? initialFocus : null;
+  const focusable = getFocusableElements(modal);
+  const next = focusTarget || focusable[0] || modal;
+  requestAnimationFrame(() => {
+    next.focus();
+  });
+}
+
+function setModalClosed(modal) {
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+  if (elements.appRoot) {
+    elements.appRoot.removeAttribute("aria-hidden");
+  }
+  document.removeEventListener("keydown", trapModalFocus, true);
+  const lastFocused = modalState.lastFocused;
+  modalState.active = null;
+  modalState.lastFocused = null;
+  if (lastFocused && typeof lastFocused.focus === "function") {
+    lastFocused.focus();
+  }
+}
+
+function closeActiveModal() {
+  if (isModalVisible(elements.figureModal)) {
+    closeFigureModal();
+    return true;
+  }
+  if (isModalVisible(elements.sketchModal)) {
+    void closeSketchModal();
+    return true;
+  }
+  if (isModalVisible(elements.modal)) {
+    hideRules();
+    return true;
+  }
+  return false;
+}
+
+function hydrateInfoTooltips() {
+  const items = document.querySelectorAll(".info[data-tooltip]");
+  items.forEach((item) => {
+    const tooltip = item.getAttribute("data-tooltip");
+    if (!tooltip) return;
+    const current = item.getAttribute("aria-label") || "";
+    if (!current || current.toLowerCase().startsWith("info om")) {
+      item.setAttribute("aria-label", tooltip);
+    }
+  });
+}
 
 function normalizeBestScoreValue(value) {
   const numeric = Number(value);
@@ -1641,6 +1774,23 @@ function getActiveCourse() {
   return normalizeCourse(current || DEFAULT_COURSE);
 }
 
+function getSessionCourse() {
+  if (!state.sessionActive) return null;
+  if (typeof state.sessionCourse === "string" && state.sessionCourse.trim()) {
+    return normalizeCourse(state.sessionCourse);
+  }
+  const inferred = state.activeQuestions.find((question) => question?.course)?.course;
+  if (inferred) return normalizeCourse(inferred);
+  return normalizeCourse(state.activeCourse || DEFAULT_COURSE);
+}
+
+function canSwitchCourse(course) {
+  const sessionCourse = getSessionCourse();
+  if (!sessionCourse) return true;
+  const courseId = normalizeCourse(course || DEFAULT_COURSE);
+  return sessionCourse === courseId;
+}
+
 function getCourseUi(course) {
   const courseId = normalizeCourse(course || DEFAULT_COURSE);
   return COURSE_UI[courseId] || COURSE_UI[DEFAULT_COURSE];
@@ -1736,6 +1886,46 @@ function updateCourseTabs(course) {
     const isActive = courseId === "sygdomslaere";
     elements.studioSygdomBtn.classList.toggle("active", isActive);
     elements.studioSygdomBtn.toggleAttribute("aria-current", isActive);
+  }
+}
+
+function updateCourseSwitchLock() {
+  const sessionCourse = getSessionCourse();
+  const isLocked = Boolean(sessionCourse);
+  const lockMessage = "Afslut eller annuller runden for at skifte studio.";
+
+  if (elements.switchStudioBtn) {
+    elements.switchStudioBtn.classList.toggle("hidden", isLocked);
+    elements.switchStudioBtn.disabled = isLocked;
+    if (isLocked) {
+      elements.switchStudioBtn.setAttribute("aria-hidden", "true");
+      elements.switchStudioBtn.title = lockMessage;
+    } else {
+      elements.switchStudioBtn.removeAttribute("aria-hidden");
+      elements.switchStudioBtn.removeAttribute("title");
+    }
+  }
+
+  if (elements.studioHumanBtn) {
+    const disabled = isLocked && sessionCourse !== DEFAULT_COURSE;
+    elements.studioHumanBtn.disabled = disabled;
+    elements.studioHumanBtn.toggleAttribute("aria-disabled", disabled);
+    if (disabled) {
+      elements.studioHumanBtn.title = lockMessage;
+    } else {
+      elements.studioHumanBtn.removeAttribute("title");
+    }
+  }
+
+  if (elements.studioSygdomBtn) {
+    const disabled = isLocked && sessionCourse !== "sygdomslaere";
+    elements.studioSygdomBtn.disabled = disabled;
+    elements.studioSygdomBtn.toggleAttribute("aria-disabled", disabled);
+    if (disabled) {
+      elements.studioSygdomBtn.title = lockMessage;
+    } else {
+      elements.studioSygdomBtn.removeAttribute("title");
+    }
   }
 }
 
@@ -1868,11 +2058,16 @@ function updateCourseUI(course) {
   updateCourseTabs(courseId);
   updateCourseVisibility(courseId);
   updateCourseStatsPill(courseId);
+  updateCourseSwitchLock();
   updateDebugPanel();
 }
 
 function setActiveCourse(course) {
   const courseId = isKnownCourse(course) ? normalizeCourse(course) : DEFAULT_COURSE;
+  if (!canSwitchCourse(courseId)) {
+    updateCourseSwitchLock();
+    return;
+  }
   const previous = getActiveCourse();
   if (previous === courseId && state.filters.courses.has(courseId)) {
     updateCourseUI(courseId);
@@ -2073,11 +2268,13 @@ function buildActiveSessionPayload() {
         cycle: Number(state.infiniteState.cycle) || 0,
       }
     : null;
+  const sessionCourse = getSessionCourse() || getActiveCourse();
+  const sessionPolicy = getScoringPolicyForCourse(sessionCourse);
 
   return {
     version: 1,
-    studio: getActiveCourse(),
-    policyId: getActiveScoringPolicy().id,
+    studio: sessionCourse,
+    policyId: sessionPolicy.id,
     paused: Boolean(state.sessionPaused),
     elapsedMs: getSessionElapsedMs(),
     currentIndex: state.currentIndex,
@@ -2368,6 +2565,7 @@ async function restoreActiveSession(payload) {
   if (payloadStudio && payloadStudio !== getActiveCourse()) {
     setActiveCourse(payloadStudio);
   }
+  state.sessionCourse = payloadStudio || getActiveCourse();
 
   await ensureQuestionsLoaded();
 
@@ -2751,6 +2949,30 @@ function showScreen(target) {
   }
 }
 
+function handleBrandBack() {
+  if (screens.result?.classList.contains("active")) {
+    goToMenu();
+    return;
+  }
+  if (state.sessionActive) {
+    pauseSession();
+    return;
+  }
+  if (state.session?.user) {
+    showScreen("menu");
+    return;
+  }
+  showScreen("auth");
+}
+
+function handleBrandBackClick(event) {
+  if (event.defaultPrevented) return;
+  if (event.button !== 0) return;
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  handleBrandBack();
+}
+
 const LOADING_FALLBACK_DELAY = 7000;
 const LOGIN_TIMEOUT_MS = 5000;
 const CONFIG_TIMEOUT_MS = 8000;
@@ -3104,6 +3326,7 @@ function updateDiagnosticsUI() {
     const fallback = state.session?.user ? "Tjek din adgang" : "Kræver login";
     elements.diagAiMeta.textContent = state.aiStatus?.message || fallback;
   }
+  setCheckoutPlanType(state.checkoutPlanType);
   updateDebugPanel();
 }
 
@@ -3417,8 +3640,17 @@ function renderBillingMethodTags(methodTypes) {
     customer_balance: "Bankoverførsel",
     mobilepay: "MobilePay",
   };
-  const normalized = Array.isArray(methodTypes) && methodTypes.length
-    ? methodTypes.map((method) => String(method || "").toLowerCase())
+  let methodList = [];
+  if (Array.isArray(methodTypes)) {
+    methodList = methodTypes;
+  } else if (methodTypes && typeof methodTypes === "object") {
+    methodList = [
+      ...(Array.isArray(methodTypes.subscription) ? methodTypes.subscription : []),
+      ...(Array.isArray(methodTypes.lifetime) ? methodTypes.lifetime : []),
+    ];
+  }
+  const normalized = methodList.length
+    ? methodList.map((method) => String(method || "").toLowerCase())
     : ["card"];
   normalized.forEach((method) => {
     if (!method) return;
@@ -3571,21 +3803,23 @@ function updateBillingUI() {
   const data = state.billing.data || {};
   const subscription = data.subscription || null;
   const price = data.price || null;
+  const lifetimePrice = data.lifetimePrice || null;
   const upcoming = data.upcomingInvoice || null;
   const paymentMethod = data.paymentMethod || null;
   const normalizedPlan = normalizePlanValue(state.profile?.plan);
   const isLifetime = normalizedPlan === "lifetime";
+  const planPrice = isLifetime ? lifetimePrice : price;
   const planLabel = isLifetime
-    ? formatPlanLabel(state.profile?.plan)
-    : price?.product?.name || formatPlanLabel(state.profile?.plan);
+    ? (planPrice?.product?.name || formatPlanLabel(state.profile?.plan))
+    : planPrice?.product?.name || formatPlanLabel(state.profile?.plan);
   let planNote =
-    price?.product?.description ||
+    planPrice?.product?.description ||
     (subscription ? "Fuld adgang til alle Pro-funktioner." : "Aktivér Pro for at komme i gang.");
   if (isLifetime) {
     planNote = "Engangsbetaling giver livstidsadgang til Pro.";
   }
-  const priceAmount = resolveUnitAmount(price);
-  const planInterval = price?.recurring ? formatIntervalLabel(price.recurring) : "Engangsbetaling";
+  const priceAmount = resolveUnitAmount(planPrice);
+  const planInterval = planPrice?.recurring ? formatIntervalLabel(planPrice.recurring) : "Engangsbetaling";
   const normalizedStatus = String(subscription?.status || "").toLowerCase();
   const isCanceled = Boolean(subscription?.cancel_at_period_end) ||
     ["canceled", "incomplete_expired"].includes(normalizedStatus);
@@ -3600,7 +3834,7 @@ function updateBillingUI() {
     ? ""
     : resolveBillingTone(subscription?.status, subscription?.cancel_at_period_end);
   const summary = formatPaymentMethodSummary(paymentMethod);
-  const nextCurrency = upcoming?.currency || price?.currency;
+  const nextCurrency = upcoming?.currency || planPrice?.currency;
   let nextLabel = isLifetime ? "Betaling" : "Næste betaling";
   let nextAmount = isLifetime ? priceAmount : null;
   let nextDateText = isLifetime ? "Engangsbetaling gennemført." : "—";
@@ -3627,7 +3861,7 @@ function updateBillingUI() {
     let meta = "Ingen aktiv plan";
     if (isLifetime) {
       meta = "Livstidsadgang";
-    } else if (price?.recurring) {
+    } else if (planPrice?.recurring) {
       meta = planInterval;
     } else if (subscription) {
       meta = "Aktiv plan";
@@ -3642,16 +3876,16 @@ function updateBillingUI() {
   }
   if (elements.billingPlanPrice) {
     elements.billingPlanPrice.textContent = priceAmount !== null
-      ? formatCurrency(priceAmount, price?.currency)
+      ? formatCurrency(priceAmount, planPrice?.currency)
       : "—";
   }
   if (elements.billingPlanCycle) {
     let cycle = "—";
     if (isLifetime) {
       cycle = "Engangsbetaling";
-    } else if (price?.recurring) {
+    } else if (planPrice?.recurring) {
       cycle = planInterval;
-    } else if (price) {
+    } else if (planPrice) {
       cycle = "Engangsbetaling";
     } else if (subscription) {
       cycle = "Abonnementsperiode";
@@ -3704,11 +3938,11 @@ function updateBillingUI() {
   }
 
   if (elements.billingHeroHint) {
-    let hint = "Aktivér Pro med engangsbetaling for livstidsadgang.";
+    let hint = "Aktivér Pro via abonnement eller engangsbetaling.";
     if (isLifetime) {
       hint = "Du har livstidsadgang. Ingen abonnement eller fornyelser.";
     } else if (!subscription) {
-      hint = "Aktivér Pro med engangsbetaling for livstidsadgang.";
+      hint = "Aktivér Pro via abonnement eller engangsbetaling.";
     } else if (subscription.cancel_at_period_end) {
       hint = `Opsagt. Adgangen udløber ${formatBillingDate(subscription.current_period_end)}.`;
     } else if (["past_due", "unpaid"].includes(String(subscription.status || "").toLowerCase())) {
@@ -4882,6 +5116,9 @@ function setCheckoutStatus(message, isWarn = false) {
 
 function setCheckoutControlsEnabled(enabled) {
   const canSubmit = Boolean(enabled && state.checkoutClientSecret && state.stripeElements);
+  const canSwitchPlans = Boolean(enabled);
+  const hasSubscription = Boolean(state.config?.stripeHasSubscriptionPrice || !state.config);
+  const hasLifetime = Boolean(state.config?.stripeHasLifetimePrice || !state.config);
   if (elements.checkoutSubmitBtn) {
     elements.checkoutSubmitBtn.disabled = !canSubmit;
   }
@@ -4893,6 +5130,12 @@ function setCheckoutControlsEnabled(enabled) {
   }
   if (elements.checkoutBackBtn) {
     elements.checkoutBackBtn.disabled = !enabled;
+  }
+  if (elements.checkoutPlanSubscriptionBtn) {
+    elements.checkoutPlanSubscriptionBtn.disabled = !canSwitchPlans || !hasSubscription;
+  }
+  if (elements.checkoutPlanLifetimeBtn) {
+    elements.checkoutPlanLifetimeBtn.disabled = !canSwitchPlans || !hasLifetime;
   }
 }
 
@@ -4932,6 +5175,13 @@ function clearCheckoutElement() {
   if (elements.checkoutPlanNote) {
     elements.checkoutPlanNote.textContent = "";
     setElementVisible(elements.checkoutPlanNote, false);
+  }
+  if (elements.checkoutPlanDisclaimer) {
+    elements.checkoutPlanDisclaimer.textContent = "";
+    setElementVisible(elements.checkoutPlanDisclaimer, false);
+  }
+  if (elements.checkoutTrust) {
+    elements.checkoutTrust.textContent = "Betal med kort, Apple Pay eller Google Pay (hvis tilgængeligt).";
   }
 }
 
@@ -5003,19 +5253,61 @@ function formatIntervalLabel(recurring) {
   return `Hver ${count} ${unit.plural}`;
 }
 
-function updateCheckoutSummary(price) {
+const LIFETIME_PLAN_DISCLAIMER =
+  "Vigtigt: Ved livstidsadgang kan vi blive nødt til at lukke for Pro, hvis driftsudgifterne på et tidspunkt " +
+  "overstiger et niveau, der bliver en økonomisk byrde for virksomheden.";
+
+function normalizeCheckoutPlanType(value) {
+  return value === "lifetime" ? "lifetime" : "subscription";
+}
+
+function resolveCheckoutPlanType(value) {
+  const normalized = normalizeCheckoutPlanType(value);
+  const hasSubscription = Boolean(state.config?.stripeHasSubscriptionPrice);
+  const hasLifetime = Boolean(state.config?.stripeHasLifetimePrice);
+  if (normalized === "subscription" && !hasSubscription && hasLifetime) return "lifetime";
+  if (normalized === "lifetime" && !hasLifetime && hasSubscription) return "subscription";
+  return normalized;
+}
+
+function applyCheckoutPlanButtons(planType) {
+  const normalized = normalizeCheckoutPlanType(planType);
+  const hasSubscription = Boolean(state.config?.stripeHasSubscriptionPrice || !state.config);
+  const hasLifetime = Boolean(state.config?.stripeHasLifetimePrice || !state.config);
+  if (elements.checkoutPlanSubscriptionBtn) {
+    elements.checkoutPlanSubscriptionBtn.disabled = !hasSubscription;
+    elements.checkoutPlanSubscriptionBtn.classList.toggle("primary", normalized === "subscription");
+    elements.checkoutPlanSubscriptionBtn.classList.toggle("ghost", normalized !== "subscription");
+  }
+  if (elements.checkoutPlanLifetimeBtn) {
+    elements.checkoutPlanLifetimeBtn.disabled = !hasLifetime;
+    elements.checkoutPlanLifetimeBtn.classList.toggle("primary", normalized === "lifetime");
+    elements.checkoutPlanLifetimeBtn.classList.toggle("ghost", normalized !== "lifetime");
+  }
+}
+
+function updateCheckoutSummary(price, planType) {
   if (!price) return;
+  const normalizedPlanType = normalizeCheckoutPlanType(planType);
   const unitAmount = resolveUnitAmount(price);
   const amount = formatCurrency(unitAmount, price.currency);
   const interval = formatIntervalLabel(price.recurring);
-  const productName = price.product?.name || "Pro";
+  const baseName = price.product?.name || "Pro";
   const productNote = String(price.product?.description || "").trim();
+  const planName = normalizedPlanType === "lifetime"
+    ? `${baseName} (livstid)`
+    : `${baseName} (abonnement)`;
+  const planNote = productNote || (
+    normalizedPlanType === "lifetime"
+      ? "Engangsbetaling med livstidsadgang."
+      : "Fornyes månedligt. Du kan opsige når som helst."
+  );
   if (elements.checkoutPlanName) {
-    elements.checkoutPlanName.textContent = productName;
+    elements.checkoutPlanName.textContent = planName;
   }
   if (elements.checkoutPlanNote) {
-    elements.checkoutPlanNote.textContent = productNote;
-    setElementVisible(elements.checkoutPlanNote, Boolean(productNote));
+    elements.checkoutPlanNote.textContent = planNote;
+    setElementVisible(elements.checkoutPlanNote, Boolean(planNote));
   }
   if (elements.checkoutPrice) {
     elements.checkoutPrice.textContent = amount;
@@ -5026,6 +5318,71 @@ function updateCheckoutSummary(price) {
   if (elements.checkoutTotal) {
     elements.checkoutTotal.textContent = amount;
   }
+  if (elements.checkoutPlanDisclaimer) {
+    const showDisclaimer = normalizedPlanType === "lifetime";
+    elements.checkoutPlanDisclaimer.textContent = showDisclaimer ? LIFETIME_PLAN_DISCLAIMER : "";
+    setElementVisible(elements.checkoutPlanDisclaimer, showDisclaimer);
+  }
+  if (elements.checkoutTrust) {
+    elements.checkoutTrust.textContent = normalizedPlanType === "lifetime"
+      ? "Betal med kort, Apple Pay, Google Pay eller MobilePay (hvis tilgængeligt)."
+      : "Betal med kort, Apple Pay eller Google Pay (hvis tilgængeligt).";
+  }
+}
+
+async function beginCheckout(planType) {
+  const resolvedPlanType = resolveCheckoutPlanType(planType);
+  state.checkoutPlanType = resolvedPlanType;
+  applyCheckoutPlanButtons(resolvedPlanType);
+  setCheckoutStatus("Klargør betaling …");
+  setCheckoutControlsEnabled(false);
+  clearCheckoutElement();
+  state.checkoutLoading = true;
+  try {
+    const data = await createSubscriptionIntent(resolvedPlanType);
+    state.checkoutClientSecret = data.clientSecret;
+    state.checkoutSubscriptionId = data.subscriptionId || null;
+    state.checkoutPrice = data.price || null;
+    updateCheckoutSummary(data.price, resolvedPlanType);
+    await setupExpressCheckout(data.price, resolvedPlanType);
+    await mountCheckoutElement(data.clientSecret);
+    setCheckoutStatus("");
+  } catch (error) {
+    setCheckoutStatus(error.message || "Kunne ikke starte betalingen.", true);
+  } finally {
+    state.checkoutLoading = false;
+    setCheckoutControlsEnabled(true);
+  }
+}
+
+function setCheckoutPlanType(planType, { refresh = false } = {}) {
+  const resolved = resolveCheckoutPlanType(planType);
+  if (state.checkoutPlanType === resolved && !refresh) {
+    applyCheckoutPlanButtons(resolved);
+    return;
+  }
+  state.checkoutPlanType = resolved;
+  applyCheckoutPlanButtons(resolved);
+  if (refresh && screens.checkout?.classList.contains("active")) {
+    clearCheckoutElement();
+    void beginCheckout(resolved);
+    return;
+  }
+  if (state.checkoutPrice) {
+    updateCheckoutSummary(state.checkoutPrice, resolved);
+  }
+}
+
+function explainPlanTypeIssue() {
+  const hasSubscription = Boolean(state.config?.stripeHasSubscriptionPrice);
+  const hasLifetime = Boolean(state.config?.stripeHasLifetimePrice);
+  if (hasSubscription && !hasLifetime) {
+    return "Engangsbetalingen er ikke sat op endnu.";
+  }
+  if (!hasSubscription && hasLifetime) {
+    return "Abonnementet er ikke sat op endnu.";
+  }
+  return "Betaling er ikke sat op endnu.";
 }
 
 function buildStripeAppearance() {
@@ -5062,8 +5419,12 @@ function clearExpressCheckout() {
   setElementVisible(elements.checkoutExpress, false);
 }
 
-async function createSubscriptionIntent() {
-  const res = await apiFetch("/api/stripe/create-subscription", { method: "POST" });
+async function createSubscriptionIntent(planType) {
+  const res = await apiFetch("/api/stripe/create-subscription", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ planType: resolveCheckoutPlanType(planType) }),
+  });
   if (!res.ok) {
     let message = "Kunne ikke starte betalingen.";
     try {
@@ -5075,8 +5436,12 @@ async function createSubscriptionIntent() {
         message = "Betaling er ikke sat op endnu.";
       } else if (errorCode === "subscription_active") {
         message = "Du har allerede Pro.";
+      } else if (errorCode === "invalid_plan_type") {
+        message = explainPlanTypeIssue();
       } else if (errorCode === "price_recurring") {
-        message = "Prisen er sat som abonnement. Opret en engangspris i Stripe.";
+        message = "Prisen er sat som abonnement. Brug engangsprisen i Stripe.";
+      } else if (errorCode === "price_not_recurring") {
+        message = "Prisen er ikke sat som abonnement. Brug abonnementsprisen i Stripe.";
       } else if (errorCode === "price_amount_missing") {
         message = "Prisen mangler et beløb i Stripe.";
       } else if (errorCode === "unauthenticated") {
@@ -5095,6 +5460,8 @@ async function createSubscriptionIntent() {
         }
       } else if (errorCode === "could not create payment intent") {
         message = "Stripe kunne ikke starte betalingen.";
+      } else if (errorCode === "could not create subscription") {
+        message = "Stripe kunne ikke starte abonnementet.";
       }
     } catch (error) {
       // Ignore JSON parse errors.
@@ -5137,7 +5504,11 @@ async function openHostedCheckout() {
   setCheckoutStatus("Åbner Stripe Checkout …");
   setCheckoutControlsEnabled(false);
   try {
-    const res = await apiFetch("/api/stripe/create-checkout-session", { method: "POST" });
+    const res = await apiFetch("/api/stripe/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ planType: resolveCheckoutPlanType(state.checkoutPlanType) }),
+    });
     if (!res.ok) {
       let message = "Kunne ikke åbne Stripe Checkout.";
       try {
@@ -5147,8 +5518,12 @@ async function openHostedCheckout() {
           message = "Betaling er ikke sat op endnu.";
         } else if (errorCode === "subscription_active") {
           message = "Du har allerede Pro.";
+        } else if (errorCode === "invalid_plan_type") {
+          message = explainPlanTypeIssue();
         } else if (errorCode === "price_recurring") {
-          message = "Prisen er sat som abonnement. Opret en engangspris i Stripe.";
+          message = "Prisen er sat som abonnement. Brug engangsprisen i Stripe.";
+        } else if (errorCode === "price_not_recurring") {
+          message = "Prisen er ikke sat som abonnement. Brug abonnementsprisen i Stripe.";
         } else if (errorCode === "price_amount_missing") {
           message = "Prisen mangler et beløb i Stripe.";
         } else if (errorCode === "unauthenticated") {
@@ -5219,7 +5594,7 @@ async function completeCheckoutSuccess() {
   }, 800);
 }
 
-async function setupExpressCheckout(price) {
+async function setupExpressCheckout(price, planType) {
   clearExpressCheckout();
   if (!elements.checkoutExpress || !elements.checkoutWallets) return;
   const stripe = getStripeClient();
@@ -5227,7 +5602,11 @@ async function setupExpressCheckout(price) {
   const unitAmount = resolveUnitAmount(price);
   if (!unitAmount) return;
   const currency = String(price.currency || "dkk").toLowerCase();
-  const label = price.product?.name || "Pro";
+  const normalizedPlanType = normalizeCheckoutPlanType(planType);
+  const baseLabel = price.product?.name || "Pro";
+  const label = normalizedPlanType === "lifetime"
+    ? `${baseLabel} (livstid)`
+    : `${baseLabel} (abonnement)`;
   try {
     const paymentRequest = stripe.paymentRequest({
       country: resolveCheckoutCountry(),
@@ -5286,7 +5665,7 @@ async function setupExpressCheckout(price) {
       paymentRequest,
       style: {
         paymentRequestButton: {
-          type: "buy",
+          type: normalizedPlanType === "lifetime" ? "buy" : "subscribe",
           theme: "dark",
           height: "48px",
         },
@@ -5364,23 +5743,9 @@ async function openCheckout() {
 
   setAccountStatus("");
   showScreen("checkout");
-  setCheckoutStatus("Klargør betaling …");
-  setCheckoutControlsEnabled(false);
-  clearCheckoutElement();
-  try {
-    const data = await createSubscriptionIntent();
-    state.checkoutClientSecret = data.clientSecret;
-    state.checkoutSubscriptionId = data.subscriptionId || null;
-    state.checkoutPrice = data.price || null;
-    updateCheckoutSummary(data.price);
-    await setupExpressCheckout(data.price);
-    await mountCheckoutElement(data.clientSecret);
-    setCheckoutStatus("");
-  } catch (error) {
-    setCheckoutStatus(error.message || "Kunne ikke starte betalingen.", true);
-  } finally {
-    setCheckoutControlsEnabled(true);
-  }
+  const planType = resolveCheckoutPlanType(state.checkoutPlanType);
+  setCheckoutPlanType(planType);
+  await beginCheckout(planType);
 }
 
 function closeCheckout() {
@@ -5870,6 +6235,7 @@ async function handleLogout() {
   state.sessionActive = false;
   state.sessionPaused = false;
   state.sessionPausedAt = null;
+  state.sessionCourse = null;
   state.sessionNeedsRender = false;
   state.activeQuestions = [];
   state.results = [];
@@ -7004,10 +7370,19 @@ function updateTopBar() {
     elements.progressText.textContent = `${current} / ∞`;
     elements.progressFill.style.width = "100%";
     elements.progressFill.classList.add("infinite");
+    if (elements.quizProgressBar) {
+      elements.quizProgressBar.setAttribute("aria-valuenow", "100");
+      elements.quizProgressBar.setAttribute("aria-valuetext", `${current} af ∞`);
+    }
   } else {
     elements.progressText.textContent = `${current} / ${total}`;
-    elements.progressFill.style.width = total ? `${(state.currentIndex / total) * 100}%` : "0%";
+    const percent = total ? (state.currentIndex / total) * 100 : 0;
+    elements.progressFill.style.width = total ? `${percent}%` : "0%";
     elements.progressFill.classList.remove("infinite");
+    if (elements.quizProgressBar) {
+      elements.quizProgressBar.setAttribute("aria-valuenow", String(Math.round(percent)));
+      elements.quizProgressBar.setAttribute("aria-valuetext", total ? `${current} af ${total}` : "0 af 0");
+    }
   }
   if (elements.mcqScoreValue) {
     elements.mcqScoreValue.textContent = state.scoreBreakdown.mcq;
@@ -7109,6 +7484,14 @@ function updateQuestionFigure(question) {
     const img = document.createElement("img");
     img.src = src;
     img.alt = `Figur ${index + 1} til ${question.category}`;
+    img.title = "Klik for at forstørre";
+    const titleText = images.length > 1 ? `Figur ${index + 1}` : "Figur";
+    attachFigureModalHandlers(img, {
+      src,
+      alt: img.alt,
+      caption: getFigureCaptionForImage(src),
+      title: titleText,
+    });
     elements.questionFigureMedia.appendChild(img);
   });
 
@@ -7914,7 +8297,7 @@ function openSketchModal(part = null) {
   setSketchTool(state.sketchEditor.tool);
   setSketchColor(state.sketchEditor.color || SKETCH_DEFAULT_COLOR);
   syncSketchToolbar();
-  elements.sketchModal.classList.remove("hidden");
+  setModalOpen(elements.sketchModal, { initialFocus: elements.sketchModalClose });
 }
 
 async function closeSketchModal({ analyze = false } = {}) {
@@ -7944,7 +8327,7 @@ async function closeSketchModal({ analyze = false } = {}) {
       removeSketchUpload(part);
     }
   }
-  elements.sketchModal.classList.add("hidden");
+  setModalClosed(elements.sketchModal);
   state.sketchEditor.active = false;
   state.sketchEditor.part = null;
   state.sketchEditor.isDrawing = false;
@@ -8322,14 +8705,12 @@ function updateShortPartFigure(part) {
     img.src = src;
     img.alt = `Figur ${index + 1} til ${part.category}`;
     img.title = "Klik for at forstørre";
-    img.addEventListener("click", () => {
-      const titleText = images.length > 1 ? `Figur ${index + 1}` : "Figur";
-      openFigureModal({
-        src,
-        alt: img.alt,
-        caption: getFigureCaptionForImage(src),
-        title: titleText,
-      });
+    const titleText = images.length > 1 ? `Figur ${index + 1}` : "Figur";
+    attachFigureModalHandlers(img, {
+      src,
+      alt: img.alt,
+      caption: getFigureCaptionForImage(src),
+      title: titleText,
     });
     nodes.figureMedia.appendChild(img);
   });
@@ -11536,6 +11917,10 @@ function renderHistory() {
       ? Math.min((currentPercent / targetPercent) * 100, 100)
       : 0;
     elements.heroProgressFill.style.width = `${progressValue.toFixed(1)}%`;
+    if (elements.heroProgressBar) {
+      elements.heroProgressBar.setAttribute("aria-valuenow", String(Math.round(progressValue)));
+      elements.heroProgressBar.setAttribute("aria-valuetext", `${progressValue.toFixed(1)}%`);
+    }
   }
   if (elements.heroStreak) {
     const streak = getImprovementStreak(entries);
@@ -12766,14 +13151,12 @@ function buildReviewFigure(entry) {
     img.title = "Klik for at forstørre";
 
     const captionText = getFigureCaptionForImage(src);
-    img.addEventListener("click", () => {
-      const titleText = images.length > 1 ? `Figur ${index + 1}` : "Figur";
-      openFigureModal({
-        src,
-        alt: img.alt,
-        caption: captionText,
-        title: titleText,
-      });
+    const titleText = images.length > 1 ? `Figur ${index + 1}` : "Figur";
+    attachFigureModalHandlers(img, {
+      src,
+      alt: img.alt,
+      caption: captionText,
+      title: titleText,
     });
 
     figure.appendChild(img);
@@ -13184,6 +13567,7 @@ function showResults() {
   state.sessionActive = false;
   state.sessionPaused = false;
   state.sessionPausedAt = null;
+  state.sessionCourse = null;
   state.sessionNeedsRender = false;
   state.activeSessionDirty = true;
   resetCancelRoundConfirm();
@@ -14054,6 +14438,7 @@ function startGame(options = {}) {
   state.sessionActive = true;
   state.sessionPaused = false;
   state.sessionPausedAt = null;
+  state.sessionCourse = getActiveCourse();
   state.sessionNeedsRender = false;
   state.activeSessionDirty = true;
   resetCancelRoundConfirm();
@@ -14112,11 +14497,12 @@ function handleRestartRoundClick() {
 }
 
 function showRules() {
-  elements.modal.classList.remove("hidden");
+  const focusTarget = elements.closeModal || elements.modalClose;
+  setModalOpen(elements.modal, { initialFocus: focusTarget });
 }
 
 function hideRules() {
-  elements.modal.classList.add("hidden");
+  setModalClosed(elements.modal);
 }
 
 function openFigureModal({ src, alt, caption, title } = {}) {
@@ -14131,12 +14517,12 @@ function openFigureModal({ src, alt, caption, title } = {}) {
     elements.figureModalCaption.textContent = text;
     elements.figureModalCaption.classList.toggle("hidden", !text);
   }
-  elements.figureModal.classList.remove("hidden");
+  setModalOpen(elements.figureModal, { initialFocus: elements.figureModalClose });
 }
 
 function closeFigureModal() {
   if (!elements.figureModal || elements.figureModal.classList.contains("hidden")) return;
-  elements.figureModal.classList.add("hidden");
+  setModalClosed(elements.figureModal);
   if (elements.figureModalImg) {
     elements.figureModalImg.src = "";
     elements.figureModalImg.alt = "";
@@ -14144,6 +14530,24 @@ function closeFigureModal() {
   if (elements.figureModalCaption) {
     elements.figureModalCaption.textContent = "";
   }
+}
+
+function attachFigureModalHandlers(img, { src, alt, caption, title }) {
+  if (!img) return;
+  const label = title ? `Åbn ${title.toLowerCase()}` : "Åbn figur";
+  img.tabIndex = 0;
+  img.setAttribute("role", "button");
+  img.setAttribute("aria-label", label);
+  const open = () => {
+    openFigureModal({ src, alt, caption, title });
+  };
+  img.addEventListener("click", open);
+  img.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      open();
+    }
+  });
 }
 
 function resetCancelRoundConfirm() {
@@ -14158,6 +14562,7 @@ function resetCancelRoundConfirm() {
 }
 
 function updatePausedSessionUI() {
+  updateCourseSwitchLock();
   if (!elements.pausedSessionPanel) return;
   const isPaused = state.sessionActive && state.sessionPaused;
   elements.pausedSessionPanel.classList.toggle("hidden", !isPaused);
@@ -14290,6 +14695,7 @@ function cancelSession() {
   state.sessionActive = false;
   state.sessionPaused = false;
   state.sessionPausedAt = null;
+  state.sessionCourse = null;
   state.sessionNeedsRender = false;
   state.activeSessionDirty = true;
   state.shouldRecordHistory = false;
@@ -14331,6 +14737,7 @@ function goToMenu() {
   state.sessionActive = false;
   state.sessionPaused = false;
   state.sessionPausedAt = null;
+  state.sessionCourse = null;
   state.sessionNeedsRender = false;
   state.activeSessionDirty = true;
   resetCancelRoundConfirm();
@@ -14940,8 +15347,7 @@ function performShortcutAction(action) {
 
 function handleKeyDown(event) {
   if (!screens.quiz.classList.contains("active")) return;
-  if (elements.modal && !elements.modal.classList.contains("hidden")) return;
-  if (elements.sketchModal && !elements.sketchModal.classList.contains("hidden")) return;
+  if (isAnyModalOpen()) return;
   const key = event.key.toLowerCase();
   if ((event.metaKey || event.ctrlKey) && key === "c") return;
   const focusModeActive = Boolean(state.sessionSettings?.focusMode);
@@ -14977,6 +15383,11 @@ function handleKeyDown(event) {
 }
 
 function attachEvents() {
+  if (elements.brandBackLinks.length) {
+    elements.brandBackLinks.forEach((link) => {
+      link.addEventListener("click", handleBrandBackClick);
+    });
+  }
   if (elements.landingStartBtn) {
     elements.landingStartBtn.addEventListener("click", () => {
       if (!requireAuthGuard("Log ind for at fortsætte.")) return;
@@ -15127,6 +15538,16 @@ function attachEvents() {
   if (elements.checkoutHostedBtn) {
     elements.checkoutHostedBtn.addEventListener("click", openHostedCheckout);
   }
+  if (elements.checkoutPlanSubscriptionBtn) {
+    elements.checkoutPlanSubscriptionBtn.addEventListener("click", () => {
+      setCheckoutPlanType("subscription", { refresh: true });
+    });
+  }
+  if (elements.checkoutPlanLifetimeBtn) {
+    elements.checkoutPlanLifetimeBtn.addEventListener("click", () => {
+      setCheckoutPlanType("lifetime", { refresh: true });
+    });
+  }
   if (elements.checkoutForm) {
     elements.checkoutForm.addEventListener("submit", submitCheckout);
   }
@@ -15214,6 +15635,7 @@ function attachEvents() {
     elements.switchStudioBtn.addEventListener("click", () => {
       const target =
         getActiveCourse() === "sygdomslaere" ? DEFAULT_COURSE : "sygdomslaere";
+      if (!canSwitchCourse(target)) return;
       void navigateToStudio(target);
     });
   }
@@ -15602,9 +16024,8 @@ function attachEvents() {
   document.addEventListener("keydown", handleKeyDown);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
-      closeFigureModal();
-      if (isSketchModalOpen()) {
-        void closeSketchModal();
+      if (closeActiveModal()) {
+        event.preventDefault();
       }
     }
   });
@@ -15908,6 +16329,7 @@ async function loadQuestions() {
 
 async function init() {
   clearStoredOwnKey();
+  hydrateInfoTooltips();
   attachEvents();
   resetDemoQuizState();
   setAccountStatus("");

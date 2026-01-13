@@ -4,14 +4,22 @@ const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest, getProfileForUser, getActiveSubscription } = require("../_lib/auth");
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { enforceRateLimit } = require("../_lib/rateLimit");
-const { resolveOneTimePaymentMethodTypes } = require("../_lib/stripe");
+const {
+  resolveSubscriptionPaymentMethodTypes,
+  resolveOneTimePaymentMethodTypes,
+} = require("../_lib/stripe");
 const { validatePayload } = require("../_lib/validate");
 const { logAuditEvent } = require("../_lib/audit");
 
 const PAID_PLANS = new Set(["paid", "trial", "lifetime"]);
+const PLAN_TYPES = new Set(["subscription", "lifetime"]);
 
 function normalizePlan(plan) {
   return typeof plan === "string" ? plan.toLowerCase() : "free";
+}
+
+function normalizePlanType(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "subscription";
 }
 
 function resolveUnitAmount(price) {
@@ -42,9 +50,24 @@ module.exports = async function handler(req, res) {
     return sendError(res, status, error.message || "Invalid JSON");
   }
 
-  const validation = validatePayload(payload, { fields: {} });
+  const validation = validatePayload(payload, {
+    fields: {
+      planType: {
+        type: "string",
+        required: false,
+        maxLen: 32,
+        enum: ["subscription", "lifetime"],
+        enumMessage: "Invalid plan type",
+      },
+    },
+  });
   if (!validation.ok) {
     return sendError(res, validation.status, validation.error);
+  }
+
+  const planType = normalizePlanType(payload?.planType);
+  if (!PLAN_TYPES.has(planType)) {
+    return sendError(res, 400, "invalid_plan_type");
   }
 
   const { user, error } = await getUserFromRequest(req);
@@ -63,10 +86,12 @@ module.exports = async function handler(req, res) {
   }
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
-  const priceId = process.env.STRIPE_PRICE_ID;
+  const subscriptionPriceId = process.env.STRIPE_PRICE_ID;
+  const lifetimePriceId = process.env.STRIPE_LIFETIME_PRICE_ID;
   const missing = [];
   if (!secretKey) missing.push("secret");
-  if (!priceId) missing.push("price");
+  if (planType === "subscription" && !subscriptionPriceId) missing.push("subscription_price");
+  if (planType === "lifetime" && !lifetimePriceId) missing.push("lifetime_price");
   if (missing.length) {
     return sendError(res, 500, "payment_not_configured", { missing });
   }
@@ -97,7 +122,61 @@ module.exports = async function handler(req, res) {
         .eq("id", user.id);
     }
 
-    const price = await stripe.prices.retrieve(priceId, { expand: ["product"] });
+    if (planType === "subscription") {
+      const price = await stripe.prices.retrieve(subscriptionPriceId, { expand: ["product"] });
+      if (!price?.recurring) {
+        return sendError(res, 400, "price_not_recurring");
+      }
+      const paymentMethodTypes = resolveSubscriptionPaymentMethodTypes();
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: subscriptionPriceId }],
+        metadata: { user_id: user.id },
+        payment_behavior: "default_incomplete",
+        ...(paymentMethodTypes.length
+          ? { payment_settings: { payment_method_types: paymentMethodTypes } }
+          : {}),
+        expand: ["latest_invoice.payment_intent"],
+      });
+      const paymentIntent = subscription?.latest_invoice?.payment_intent || null;
+      if (!paymentIntent?.client_secret) {
+        return sendError(res, 500, "Could not create subscription");
+      }
+
+      await logAuditEvent({
+        eventType: "stripe_subscription_created",
+        userId: user.id,
+        status: "success",
+        req,
+        targetType: "stripe_subscription",
+        targetId: subscription.id,
+      });
+
+      return sendJson(res, 200, {
+        clientSecret: paymentIntent.client_secret,
+        subscriptionId: subscription.id,
+        customerId,
+        price: {
+          unit_amount: price.unit_amount,
+          unit_amount_decimal: price.unit_amount_decimal || null,
+          currency: price.currency,
+          recurring: price.recurring
+            ? {
+                interval: price.recurring.interval,
+                interval_count: price.recurring.interval_count,
+              }
+            : null,
+          product: price.product && typeof price.product === "object"
+            ? {
+                name: price.product.name || null,
+                description: price.product.description || null,
+              }
+            : null,
+        },
+      });
+    }
+
+    const price = await stripe.prices.retrieve(lifetimePriceId, { expand: ["product"] });
     if (price?.recurring) {
       return sendError(res, 400, "price_recurring");
     }

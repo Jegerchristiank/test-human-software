@@ -49,7 +49,7 @@ const SETUP_PAYMENT_METHODS = new Set([
   "us_bank_account",
 ]);
 
-const ONE_TIME_PAYMENT_METHODS = new Set([...SUBSCRIPTION_PAYMENT_METHODS]);
+const ONE_TIME_PAYMENT_METHODS = new Set([...SUBSCRIPTION_PAYMENT_METHODS, "mobilepay"]);
 
 function resolvePaymentMethodTypes(rawValue, supported, options = {}) {
   const { ensureCard = false, fallbackToCard = false } = options;

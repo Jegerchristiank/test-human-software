@@ -14,24 +14,33 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="mode-auth legal-page" data-testid="legal-page-persondatapolitik">
-    <div class="ambient ambient-one" data-testid="persondatapolitik__legal-page-persondatapolitik__ambient-one"></div>
-    <div class="ambient ambient-two" data-testid="persondatapolitik__legal-page-persondatapolitik__ambient-two"></div>
-    <div class="ambient ambient-three" data-testid="persondatapolitik__legal-page-persondatapolitik__ambient-three"></div>
-    <div class="noise-layer" data-testid="persondatapolitik__legal-page-persondatapolitik__noise-layer"></div>
-    <main class="legal-shell" data-testid="legal-shell">
+    <a class="skip-link" href="#main-content">Gå til indhold</a>
+    <div class="ambient ambient-one" data-testid="persondatapolitik__legal-page-persondatapolitik__ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" data-testid="persondatapolitik__legal-page-persondatapolitik__ambient-two" aria-hidden="true"></div>
+    <div class="ambient ambient-three" data-testid="persondatapolitik__legal-page-persondatapolitik__ambient-three" aria-hidden="true"></div>
+    <div class="noise-layer" data-testid="persondatapolitik__legal-page-persondatapolitik__noise-layer" aria-hidden="true"></div>
+    <main class="legal-shell" data-testid="legal-shell" id="main-content" tabindex="-1">
       <header class="legal-header" data-testid="legal-header">
-        <div class="brand-block" data-testid="persondatapolitik__legal-shell--legal-header__brand-block">
+        <a
+          class="brand-block brand-action"
+          href="index.html"
+          data-testid="persondatapolitik__legal-shell--legal-header__brand-block"
+          onclick="if (history.length > 1) { history.back(); return false; }"
+        >
           <div class="brand-mark" data-testid="persondatapolitik__legal-header--brand-block__brand-mark">
             <img class="brand-logo small" src="Logo.png" alt="Human Biologi Studio logo" />
           </div>
           <div data-testid="persondatapolitik__legal-header--brand-block__div">
+            <img class="brand-banner compact" src="Banner.png" alt="Human Biologi Studio banner" data-testid="persondatapolitik__legal-header--brand-block__brand-banner" />
             <div class="legal-eyebrow" data-testid="persondatapolitik__legal-header--brand-block__legal-eyebrow">Persondata</div>
             <h1 data-testid="legal-title">Persondatapolitik</h1>
             <p>
-              Her beskriver vi, hvordan persondata behandles i Human Biologi Studio i overensstemmelse med GDPR.
+              Her beskriver vi, hvordan persondata behandles i Human Biologi Studio i overensstemmelse med GDPR,
+              herunder behandlingsgrundlag, databehandlere og dine rettigheder.
             </p>
+            <div class="legal-meta" data-testid="legal-meta">Senest opdateret: 2026-01-13 · KRISTENSON (CVR 40679456)</div>
           </div>
-        </div>
+        </a>
         <a
           class="btn ghost"
           href="index.html"
@@ -63,55 +72,110 @@
       <div class="legal-grid" data-testid="legal-grid">
         <section class="legal-card" data-testid="legal-card-dataansvarlig">
           <h2>1. Dataansvarlig</h2>
-          <p>Christian Kristensen (kristenson.dk) er dataansvarlig for behandlingen af personoplysninger.</p>
+          <p>
+            KRISTENSON (CVR 40679456), Blomstergården 13, 4700 Næstved, Danmark, er dataansvarlig for
+            behandlingen. Kontakt: christian@biologistudio.dk · +45 53 •• •• 60 (dagstimer 8-16).
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-retsgrundlag">
+          <h2>2. Behandlingsgrundlag (GDPR art. 6)</h2>
+          <ul>
+            <li>Opfyldelse af kontrakt (art. 6(1)(b)): konto, adgang, historik og funktioner.</li>
+            <li>Retlig forpligtelse (art. 6(1)(c)): regnskab og dokumentation.</li>
+            <li>Legitim interesse (art. 6(1)(f)): drift, sikkerhed, misbrugsforebyggelse.</li>
+            <li>Samtykke (art. 6(1)(a)): frivillige funktioner, hvor samtykke kræves.</li>
+          </ul>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-kategorier">
+          <h2>3. Kategorier af personoplysninger</h2>
+          <ul>
+            <li>Identifikationsoplysninger: navn, e-mail, bruger-id.</li>
+            <li>Brugsdata: svar, score, historik, progression og præferencer.</li>
+            <li>Tekniske data: IP-adresse, enheds- og browserdata, logfiler.</li>
+            <li>Betalingsdata: transaktions-id, betalingsstatus og fakturaoplysninger.</li>
+            <li>Supportdata: henvendelser og korrespondance.</li>
+          </ul>
         </section>
 
         <section class="legal-card" data-testid="legal-card-behandlingsaktiviteter">
-          <h2>2. Behandlingsaktiviteter</h2>
+          <h2>4. Behandlingsaktiviteter</h2>
           <ul>
             <li>Oprettelse og vedligehold af brugerkonti.</li>
             <li>Lagring af læringshistorik, resultater og indstillinger.</li>
-            <li>Levering af AI-funktioner og støtteværktøjer, hvis de aktiveres.</li>
+            <li>Levering af AI-funktioner og støtteværktøjer.</li>
             <li>Betalingsstyring for Pro-planen.</li>
+            <li>Support, fejlretning og sikkerhedsmonitorering.</li>
           </ul>
         </section>
 
         <section class="legal-card" data-testid="legal-card-databehandlere">
-          <h2>3. Databehandlere</h2>
+          <h2>5. Databehandlere</h2>
           <p>
-            Vi anvender betroede leverandører til hosting, login, betaling og AI-behandling. De må kun behandle data
+            Vi anvender betroede leverandører til hosting, login, betaling og AI-behandling. Det omfatter
+            Supabase (EU), Stripe, OpenAI og Vercel samt deres underleverandører. De må kun behandle data
             efter vores instrukser og under databehandleraftaler.
           </p>
         </section>
 
         <section class="legal-card" data-testid="legal-card-overfoersel-tredjelande">
-          <h2>4. Overførsel til tredjelande</h2>
+          <h2>6. Overførsel til tredjelande</h2>
           <p>
-            Hvis data behandles uden for EU/EØS, sker det på et lovligt overførselsgrundlag, f.eks. standardkontrakter.
+            Hvis data behandles uden for EU/EØS, sker det på et lovligt overførselsgrundlag, herunder
+            standardkontraktbestemmelser (SCC) og relevante sikkerhedsforanstaltninger.
           </p>
         </section>
 
         <section class="legal-card" data-testid="legal-card-opbevaringsperiode">
-          <h2>5. Opbevaringsperiode</h2>
+          <h2>7. Opbevaringsperiode</h2>
           <p>
-            Persondata opbevares så længe din konto er aktiv. Ved sletning af konto fjernes data, medmindre vi er
-            retligt forpligtet til at opbevare dem længere.
+            Persondata opbevares så længe din konto er aktiv. Ved sletning af konto fjernes data, medmindre
+            vi er retligt forpligtet til at opbevare dem længere (typisk 5 år for regnskabsdata). Log- og
+            sikkerhedsdata opbevares i kortere perioder.
           </p>
         </section>
 
-        <section class="legal-card" data-testid="legal-card-sikkerhed">
-          <h2>6. Sikkerhed</h2>
+        <section class="legal-card" data-testid="legal-card-ai">
+          <h2>8. AI og modeltræning</h2>
           <p>
-            Vi benytter tekniske og organisatoriske sikkerhedsforanstaltninger, herunder adgangsstyring, backup og
-            overvågning.
+            Når du bruger AI-funktioner, sendes Brugerindhold til OpenAI. OpenAI kan anvende input til
+            modeltræning efter deres egne vilkår og kan være selvstændig dataansvarlig for den del af
+            behandlingen. Du bør undlade at indsende følsomme eller fortrolige oplysninger, hvis du ikke
+            ønsker denne behandling.
           </p>
         </section>
 
         <section class="legal-card" data-testid="legal-card-rettigheder-klage">
-          <h2>7. Rettigheder og klage</h2>
+          <h2>9. Rettigheder og klage</h2>
           <p>
-            Du har ret til indsigt, berigtigelse, sletning, begrænsning og dataportabilitet. Du kan kontakte os via
-            kristenson.dk for at gøre dine rettigheder gældende. Hvis du ønsker at klage, kan du kontakte Datatilsynet.
+            Du har ret til indsigt, berigtigelse, sletning, begrænsning, dataportabilitet og indsigelse.
+            Du kan kontakte os på christian@biologistudio.dk for at gøre dine rettigheder gældende. Hvis
+            du ønsker at klage, kan du kontakte Datatilsynet.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-sikkerhed">
+          <h2>10. Sikkerhed</h2>
+          <p>
+            Vi benytter tekniske og organisatoriske sikkerhedsforanstaltninger, herunder adgangsstyring,
+            kryptering, backup og overvågning, for at beskytte persondata.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-automatik">
+          <h2>11. Automatiske afgørelser og profilering</h2>
+          <p>
+            Tjenesten bruger automatiserede beregninger til at vise score og progression. Disse beregninger
+            har ikke retlige eller tilsvarende væsentlige konsekvenser for dig.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-aendringer">
+          <h2>12. Ændringer</h2>
+          <p>
+            Vi kan opdatere persondatapolitikken ved ændringer i lovgivning, leverandører eller behandling.
+            Væsentlige ændringer varsles i appen eller via e-mail.
           </p>
         </section>
       </div>

@@ -14,25 +14,33 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="mode-auth legal-page" data-testid="legal-page-vilkaar">
-    <div class="ambient ambient-one" data-testid="vilkaar__legal-page-vilkaar__ambient-one"></div>
-    <div class="ambient ambient-two" data-testid="vilkaar__legal-page-vilkaar__ambient-two"></div>
-    <div class="ambient ambient-three" data-testid="vilkaar__legal-page-vilkaar__ambient-three"></div>
-    <div class="noise-layer" data-testid="vilkaar__legal-page-vilkaar__noise-layer"></div>
-    <main class="legal-shell" data-testid="legal-shell">
+    <a class="skip-link" href="#main-content">Gå til indhold</a>
+    <div class="ambient ambient-one" data-testid="vilkaar__legal-page-vilkaar__ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" data-testid="vilkaar__legal-page-vilkaar__ambient-two" aria-hidden="true"></div>
+    <div class="ambient ambient-three" data-testid="vilkaar__legal-page-vilkaar__ambient-three" aria-hidden="true"></div>
+    <div class="noise-layer" data-testid="vilkaar__legal-page-vilkaar__noise-layer" aria-hidden="true"></div>
+    <main class="legal-shell" data-testid="legal-shell" id="main-content" tabindex="-1">
       <header class="legal-header" data-testid="legal-header">
-        <div class="brand-block" data-testid="vilkaar__legal-shell--legal-header__brand-block">
+        <a
+          class="brand-block brand-action"
+          href="index.html"
+          data-testid="vilkaar__legal-shell--legal-header__brand-block"
+          onclick="if (history.length > 1) { history.back(); return false; }"
+        >
           <div class="brand-mark" data-testid="vilkaar__legal-header--brand-block__brand-mark">
             <img class="brand-logo small" src="Logo.png" alt="Human Biologi Studio logo" />
           </div>
           <div data-testid="vilkaar__legal-header--brand-block__div">
+            <img class="brand-banner compact" src="Banner.png" alt="Human Biologi Studio banner" data-testid="vilkaar__legal-header--brand-block__brand-banner" />
             <div class="legal-eyebrow" data-testid="vilkaar__legal-header--brand-block__legal-eyebrow">Juridiske vilkår</div>
             <h1 data-testid="legal-title">Vilkår</h1>
             <p>
-              Disse vilkår beskriver rammerne for brug af Human Biologi Studio. Ved at bruge tjenesten accepterer du
-              vilkårene.
+              Disse vilkår beskriver rammerne for brug af Human Biologi Studio. Ved at oprette konto,
+              købe adgang eller bruge tjenesten accepterer du vilkårene.
             </p>
+            <div class="legal-meta" data-testid="legal-meta">Senest opdateret: 2026-01-13 · KRISTENSON (CVR 40679456)</div>
           </div>
-        </div>
+        </a>
         <a
           class="btn ghost"
           href="index.html"
@@ -62,82 +70,188 @@
         <section class="legal-card" data-testid="legal-card-om-tjenesten">
           <h2>1. Om tjenesten</h2>
           <p>
-            Human Biologi Studio er en digital studieplatform til træning af multiple choice og kortsvar baseret på
-            tidligere eksamensopgaver i sundhed og informatik. Tjenesten leveres som online software.
+            Human Biologi Studio er en digital studieplatform til træning af multiple choice og kortsvar
+            baseret på tidligere eksamensopgaver i sundhed og informatik. Tjenesten leveres som online
+            software og kan ændre sig over tid, herunder indhold, funktioner og præsentation.
           </p>
         </section>
 
-        <section class="legal-card" data-testid="legal-card-konto-og-adgang">
-          <h2>2. Konto og adgang</h2>
+        <section class="legal-card" data-testid="legal-card-parter">
+          <h2>2. Parter og kontakt</h2>
           <ul>
-            <li>Adgang er personlig og må ikke deles med andre.</li>
-            <li>Du er ansvarlig for, at dine loginoplysninger behandles fortroligt.</li>
-            <li>Du skal have retlig kompetence til at indgå aftalen om brug.</li>
+            <li>Udbyder: KRISTENSON (CVR 40679456).</li>
+            <li>Adresse: Blomstergården 13, 4700 Næstved, Danmark.</li>
+            <li>Kontakt: christian@biologistudio.dk (foretrukken) · +45 53 •• •• 60 (dagstimer 8-16).</li>
+            <li>Moms: Ikke momsregistreret. Priser oplyses i DKK uden moms.</li>
           </ul>
         </section>
 
+        <section class="legal-card" data-testid="legal-card-definitioner">
+          <h2>3. Definitioner</h2>
+          <ul>
+            <li><strong>Tjenesten</strong>: Human Biologi Studio, inklusive webapp, indhold og API.</li>
+            <li><strong>Bruger</strong>: Enhver person, der anvender Tjenesten.</li>
+            <li><strong>Gratis plan</strong>: Adgang uden betaling, med begrænset funktionalitet.</li>
+            <li><strong>Pro</strong>: Betalt adgang med udvidede funktioner, herunder AI-hjælp.</li>
+            <li><strong>Abonnement</strong>: Løbende betaling på 179 kr/md for Pro-adgang.</li>
+            <li><strong>Engangsbetaling</strong>: Betaling på 1.500 kr for livstidsadgang til Pro.</li>
+            <li><strong>Brugerindhold</strong>: Dine svar, noter, uploads og øvrige data, du indsender.</li>
+            <li><strong>AI-hjælp</strong>: Funktioner der bruger eksterne AI-tjenester til vurdering og hints.</li>
+          </ul>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-accept">
+          <h2>4. Accept og ændringer af vilkår</h2>
+          <p>
+            Du accepterer vilkårene ved at oprette konto, købe adgang eller bruge Tjenesten. Vi kan
+            opdatere vilkårene, når det er nødvendigt for drift, sikkerhed, lovkrav eller produktændringer.
+            Væsentlige ændringer varsles på rimelig vis. Fortsat brug efter ændringer udgør accept.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-alder">
+          <h2>5. Alderskrav og samtykke</h2>
+          <ul>
+            <li>Under 15 år: kræver forældres/værges tilladelse for at oprette og bruge konto.</li>
+            <li>15-17 år: brugeren skal informere forældre/værge om brugen af Tjenesten.</li>
+            <li>18+ år: fri adgang under disse vilkår.</li>
+          </ul>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-konto-og-adgang">
+          <h2>6. Konto og adgang</h2>
+          <ul>
+            <li>Adgang er personlig og må ikke deles med andre.</li>
+            <li>Du er ansvarlig for, at dine loginoplysninger behandles fortroligt.</li>
+            <li>Du skal give korrekte oplysninger og holde din profil opdateret.</li>
+            <li>Vi kan kræve, at du bekræfter din e-mail for at bruge visse funktioner.</li>
+          </ul>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-brugsret">
+          <h2>7. Brugsret og licens</h2>
+          <p>
+            Du får en ikke-eksklusiv, ikke-overdragelig og tilbagekaldelig licens til at bruge Tjenesten
+            til personlig studiebrug i overensstemmelse med disse vilkår. Licensen omfatter ikke retten
+            til at kopiere, videresælge, udlåne eller distribuere Tjenesten eller indhold uden skriftlig
+            tilladelse.
+          </p>
+        </section>
+
         <section class="legal-card" data-testid="legal-card-brug-og-adfaerd">
-          <h2>3. Brug og adfærd</h2>
+          <h2>8. Brug og adfærd</h2>
           <ul>
             <li>Automatiseret scraping, reverse engineering eller omgåelse af begrænsninger er ikke tilladt.</li>
             <li>Misbrug af funktioner, herunder AI-ressourcer, kan medføre begrænsning af adgang.</li>
-            <li>Du må ikke anvende tjenesten til ulovlige formål eller forstyrre driften.</li>
+            <li>Du må ikke anvende Tjenesten til ulovlige formål eller forstyrre driften.</li>
+            <li>Du må ikke forsøge at skaffe adgang til andre brugeres data eller systemer.</li>
           </ul>
         </section>
 
         <section class="legal-card" data-testid="legal-card-indhold-og-ai">
-          <h2>4. Indhold og AI-funktioner</h2>
+          <h2>9. Indhold, AI-funktioner og faglige forbehold</h2>
           <p>
-            Indhold, hints og AI-genererede forklaringer er vejledende og kan indeholde fejl. De er ikke faglig
-            certificering eller rådgivning. Du er selv ansvarlig for, hvordan materialet anvendes i din studiepraksis.
+            Indhold, hints og AI-genererede forklaringer er vejledende og kan indeholde fejl. De udgør
+            ikke faglig certificering, sundhedsfaglig rådgivning eller garanti for eksamensresultater.
+            Du er selv ansvarlig for, hvordan materialet anvendes i din studiepraksis.
+          </p>
+          <p>
+            Når du bruger AI-funktioner, sendes Brugerindhold til OpenAI. OpenAI kan anvende input til
+            modeltræning i henhold til deres egne vilkår. Undlad at indsende følsomme eller fortrolige
+            oplysninger, medmindre du er indforstået med denne behandling.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-tredjepart">
+          <h2>10. Tredjepartstjenester</h2>
+          <p>
+            Tjenesten afhænger af eksterne leverandører, herunder Supabase (auth og datalagring), Stripe
+            (betalinger), OpenAI (AI-hjælp) og Vercel (hosting). Deres vilkår og privatlivspolitikker kan
+            finde anvendelse for de relevante dele af Tjenesten.
           </p>
         </section>
 
         <section class="legal-card" data-testid="legal-card-abonnement-og-pris">
-          <h2>5. Pris og adgang</h2>
+          <h2>11. Pris og adgang</h2>
           <p>
-            Tjenesten tilbyder en gratis plan samt Pro-adgang som engangsbetaling på 1.500 kr. Betaling håndteres via
-            betalingsudbyder, og priser fremgår ved checkout.
+            Pro-adgang tilbydes som abonnement (179 kr/md) eller engangsbetaling (1.500 kr) med livstidsadgang
+            til Pro. Gratis plan kan bruges uden betaling. De fulde betalingsvilkår fremgår af
+            Handelsbetingelserne.
+          </p>
+          <p>
+            Ved livstidsadgang kan vi blive nødt til at lukke for Pro, hvis driftsudgifterne på et tidspunkt
+            overstiger et niveau, der bliver en økonomisk byrde for virksomheden.
           </p>
         </section>
 
         <section class="legal-card" data-testid="legal-card-drift-og-aendringer">
-          <h2>6. Drift, ændringer og tilgængelighed</h2>
+          <h2>12. Drift, ændringer og tilgængelighed</h2>
           <p>
-            Vi kan opdatere funktioner, indhold og priser for at forbedre tjenesten. Planlagte ændringer varsles, når
-            det er relevant. Der kan forekomme midlertidige driftsafbrydelser i forbindelse med vedligehold.
+            Vi kan opdatere funktioner, indhold og priser for at forbedre Tjenesten. Planlagte ændringer
+            varsles, når det er relevant. Der kan forekomme midlertidige driftsafbrydelser i forbindelse
+            med vedligehold, sikkerhed eller fejlretning.
           </p>
         </section>
 
         <section class="legal-card" data-testid="legal-card-opsigelse-og-lukning">
-          <h2>7. Opsigelse og lukning</h2>
+          <h2>13. Opsigelse, suspension og lukning</h2>
           <ul>
-            <li>Der er ingen løbende abonnement; engangsbetalingen giver livstidsadgang.</li>
-            <li>Vi kan suspendere eller lukke konti ved grov misligholdelse af vilkårene.</li>
+            <li>Du kan til enhver tid slette din konto via appen eller kontakte os.</li>
+            <li>Abonnement kan opsiges, så adgangen udløber ved periodens slut.</li>
+            <li>Vi kan suspendere eller lukke konti ved væsentlig misligholdelse af vilkårene.</li>
+            <li>Ved lukning mister du adgang til Pro, men kan anmode om eksport af dine data.</li>
           </ul>
         </section>
 
         <section class="legal-card" data-testid="legal-card-rettigheder">
-          <h2>8. Rettigheder</h2>
+          <h2>14. Immaterielle rettigheder</h2>
           <p>
-            Alt indhold, design og software tilhører Human Biologi Studio og må ikke kopieres eller distribueres uden
-            skriftlig tilladelse.
+            Alt indhold, design og software tilhører KRISTENSON eller vores licensgivere og må ikke kopieres
+            eller distribueres uden skriftlig tilladelse. Du bevarer rettigheder til dit Brugerindhold,
+            men giver os en begrænset licens til at hoste, behandle og vise det, så vi kan levere Tjenesten.
           </p>
         </section>
 
         <section class="legal-card" data-testid="legal-card-ansvarsbegraensning">
-          <h2>9. Ansvarsbegrænsning</h2>
+          <h2>15. Ansvarsbegrænsning</h2>
           <p>
-            Tjenesten leveres "som den er". Vi fraskriver os ansvar for indirekte tab, følgeskader eller tab af data,
-            medmindre andet følger af ufravigelig lovgivning.
+            Tjenesten leveres "som den er" og "som tilgængelig". Vi fraskriver os ansvar for indirekte tab,
+            følgeskader, tab af data, driftstab og forventet udbytte, medmindre andet følger af ufravigelig
+            lovgivning. Vi hæfter ikke for valg truffet på baggrund af Tjenestens indhold eller AI-output.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-force-majeure">
+          <h2>16. Force majeure</h2>
+          <p>
+            Vi er ikke ansvarlige for forsinkelser eller manglende opfyldelse, der skyldes forhold uden
+            for vores rimelige kontrol, herunder nedbrud hos tredjepart, netværksfejl, myndighedspåbud
+            eller force majeure-lignende hændelser.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-klage">
+          <h2>17. Klage og tvistløsning</h2>
+          <p>
+            Hvis du er utilfreds, skal du kontakte os først, så vi kan forsøge at løse sagen. Du kan også
+            indgive klage til Center for Klageløsning, Nævnenes Hus, Toldboden 2, 8800 Viborg, eller via
+            EU's online tvistløsningsplatform: https://ec.europa.eu/consumers/odr.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-lovvalg">
+          <h2>18. Lovvalg og værneting</h2>
+          <p>
+            Vilkårene er underlagt dansk ret. Eventuelle tvister afgøres ved Retten i Næstved, medmindre
+            ufravigelig lovgivning foreskriver andet.
           </p>
         </section>
 
         <section class="legal-card" data-testid="legal-card-kontakt">
-          <h2>10. Kontakt</h2>
+          <h2>19. Kontakt</h2>
           <p>
-            Ved spørgsmål til vilkår eller brug af tjenesten kan du kontakte os via kristenson.dk eller via din
-            konto-side i appen.
+            Spørgsmål til vilkårene kan rettes til christian@biologistudio.dk. Vi foretrækker e-mail,
+            men kan også kontaktes på +45 53 •• •• 60 i dagtimerne 8-16.
           </p>
         </section>
       </div>

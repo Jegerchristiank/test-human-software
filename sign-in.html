@@ -14,29 +14,36 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="mode-auth" data-auth-mode="sign-in" data-testid="page-sign-in">
-    <div class="ambient ambient-one" data-testid="sign-in__page-sign-in__ambient-one"></div>
-    <div class="ambient ambient-two" data-testid="sign-in__page-sign-in__ambient-two"></div>
-    <div class="ambient ambient-three" data-testid="sign-in__page-sign-in__ambient-three"></div>
-    <div class="noise-layer" data-testid="sign-in__page-sign-in__noise-layer"></div>
+    <a class="skip-link" href="#main-content">Gå til indhold</a>
+    <div class="ambient ambient-one" data-testid="sign-in__page-sign-in__ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" data-testid="sign-in__page-sign-in__ambient-two" aria-hidden="true"></div>
+    <div class="ambient ambient-three" data-testid="sign-in__page-sign-in__ambient-three" aria-hidden="true"></div>
+    <div class="noise-layer" data-testid="sign-in__page-sign-in__noise-layer" aria-hidden="true"></div>
     <div class="theme-switch" role="group" aria-label="Tema" data-testid="theme-switch">
       <span class="theme-label">Lys</span>
       <label class="theme-toggle">
-        <input type="checkbox" id="theme-toggle" data-testid="theme-toggle" aria-label="Skift til mørk tilstand" />
+        <input type="checkbox" id="theme-toggle" data-testid="theme-toggle" aria-label="Skift til mørk tilstand" role="switch" aria-checked="false" />
       </label>
       <span class="theme-label">Mørk</span>
     </div>
 
-    <main class="auth-shell auth-page" data-testid="auth-page">
+    <main class="auth-shell auth-page" data-testid="auth-page" id="main-content" tabindex="-1">
       <header class="global-header" data-testid="global-header">
-        <div class="brand-block" data-testid="sign-in__auth-page--global-header__brand-block">
+        <a
+          class="brand-block brand-action"
+          href="index.html"
+          data-testid="sign-in__auth-page--global-header__brand-block"
+          onclick="if (history.length > 1) { history.back(); return false; }"
+        >
           <div class="brand-mark" data-testid="sign-in__global-header--brand-block__brand-mark">
             <img class="brand-logo" src="Logo.png" alt="Human Biologi Studio logo" />
           </div>
           <div data-testid="sign-in__global-header--brand-block__div">
+            <img class="brand-banner compact" src="Banner.png" alt="Human Biologi Studio banner" data-testid="sign-in__global-header--brand-block__brand-banner" />
             <div class="brand-subtitle" data-testid="sign-in__global-header--brand-block__brand-subtitle">Sundhed &amp; Informatik</div>
             <div class="brand-title" data-testid="sign-in__global-header--brand-block__brand-title">Human Biologi Studio</div>
           </div>
-        </div>
+        </a>
         <nav class="global-header-links" aria-label="Login links" data-testid="global-header-links">
           <a class="btn ghost small active" href="sign-in.html" aria-current="page" data-testid="nav-sign-in">Log ind</a>
           <a
@@ -100,7 +107,7 @@
             <span>Fortsæt med Apple</span>
           </button>
         </div>
-        <div class="auth-status" id="auth-status" data-testid="auth-status">Log ind for at fortsætte.</div>
+        <div class="auth-status" id="auth-status" data-testid="auth-status" role="status" aria-live="polite" aria-atomic="true">Log ind for at fortsætte.</div>
         <div class="auth-switch" data-testid="auth-switch">
           <span>Har du ikke en konto?</span>
           <a href="sign-up.html" data-testid="auth-switch-link" data-preserve-redirect="true">Opret konto</a>

@@ -25,6 +25,7 @@ module.exports = async function handler(req, res) {
   const stripePublishableKey = optionalEnv("STRIPE_PUBLISHABLE_KEY");
   const stripeSecretKey = optionalEnv("STRIPE_SECRET_KEY");
   const stripePriceId = optionalEnv("STRIPE_PRICE_ID");
+  const stripeLifetimePriceId = optionalEnv("STRIPE_LIFETIME_PRICE_ID");
 
   if (!supabaseUrl || !supabaseKey) {
     return sendError(
@@ -39,6 +40,8 @@ module.exports = async function handler(req, res) {
     supabaseAnonKey: supabaseKey,
     supabasePublishableKey: supabasePublishableKey || null,
     stripePublishableKey: stripePublishableKey || null,
-    stripeConfigured: Boolean(stripeSecretKey && stripePriceId),
+    stripeHasSubscriptionPrice: Boolean(stripePriceId),
+    stripeHasLifetimePrice: Boolean(stripeLifetimePriceId),
+    stripeConfigured: Boolean(stripeSecretKey && (stripePriceId || stripeLifetimePriceId)),
   });
 };

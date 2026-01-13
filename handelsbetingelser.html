@@ -14,24 +14,32 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="mode-auth legal-page" data-testid="legal-page-handelsbetingelser">
-    <div class="ambient ambient-one" data-testid="handelsbetingelser__legal-page-handelsbetingelser__ambient-one"></div>
-    <div class="ambient ambient-two" data-testid="handelsbetingelser__legal-page-handelsbetingelser__ambient-two"></div>
-    <div class="ambient ambient-three" data-testid="handelsbetingelser__legal-page-handelsbetingelser__ambient-three"></div>
-    <div class="noise-layer" data-testid="handelsbetingelser__legal-page-handelsbetingelser__noise-layer"></div>
-    <main class="legal-shell" data-testid="legal-shell">
+    <a class="skip-link" href="#main-content">Gå til indhold</a>
+    <div class="ambient ambient-one" data-testid="handelsbetingelser__legal-page-handelsbetingelser__ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" data-testid="handelsbetingelser__legal-page-handelsbetingelser__ambient-two" aria-hidden="true"></div>
+    <div class="ambient ambient-three" data-testid="handelsbetingelser__legal-page-handelsbetingelser__ambient-three" aria-hidden="true"></div>
+    <div class="noise-layer" data-testid="handelsbetingelser__legal-page-handelsbetingelser__noise-layer" aria-hidden="true"></div>
+    <main class="legal-shell" data-testid="legal-shell" id="main-content" tabindex="-1">
       <header class="legal-header" data-testid="legal-header">
-        <div class="brand-block" data-testid="handelsbetingelser__legal-shell--legal-header__brand-block">
+        <a
+          class="brand-block brand-action"
+          href="index.html"
+          data-testid="handelsbetingelser__legal-shell--legal-header__brand-block"
+          onclick="if (history.length > 1) { history.back(); return false; }"
+        >
           <div class="brand-mark" data-testid="handelsbetingelser__legal-header--brand-block__brand-mark">
             <img class="brand-logo small" src="Logo.png" alt="Human Biologi Studio logo" />
           </div>
           <div data-testid="handelsbetingelser__legal-header--brand-block__div">
+            <img class="brand-banner compact" src="Banner.png" alt="Human Biologi Studio banner" data-testid="handelsbetingelser__legal-header--brand-block__brand-banner" />
             <div class="legal-eyebrow" data-testid="handelsbetingelser__legal-header--brand-block__legal-eyebrow">Handel</div>
             <h1 data-testid="legal-title">Handelsbetingelser</h1>
             <p>
-              Handelsbetingelserne beskriver køb og betaling for Pro-adgang til Human Biologi Studio.
+              Handelsbetingelserne beskriver køb, betaling og fortrydelse for Pro-adgang til Human Biologi Studio.
             </p>
+            <div class="legal-meta" data-testid="legal-meta">Senest opdateret: 2026-01-13 · KRISTENSON (CVR 40679456)</div>
           </div>
-        </div>
+        </a>
         <a
           class="btn ghost"
           href="index.html"
@@ -61,51 +69,111 @@
       </nav>
 
       <div class="legal-grid" data-testid="legal-grid">
+        <section class="legal-card" data-testid="legal-card-saelgeroplysninger">
+          <h2>1. Sælgeroplysninger</h2>
+          <ul>
+            <li>KRISTENSON (CVR 40679456).</li>
+            <li>Adresse: Blomstergården 13, 4700 Næstved, Danmark.</li>
+            <li>Kontakt: christian@biologistudio.dk · +45 53 •• •• 60 (dagstimer 8-16).</li>
+            <li>Moms: Ikke momsregistreret. Priser angives i DKK uden moms.</li>
+          </ul>
+        </section>
+
         <section class="legal-card" data-testid="legal-card-produkt">
-          <h2>1. Produkt</h2>
+          <h2>2. Produkt</h2>
           <p>
-            Pro-adgang (engangsbetaling) giver adgang til udvidede funktioner såsom AI-hjælp og ekstra værktøjer i
-            Human Biologi Studio. Den gratis plan kan fortsat bruges med egne nøgler til hjælpefunktioner.
+            Pro-adgang kan købes som abonnement eller engangsbetaling og giver adgang til udvidede funktioner såsom
+            AI-hjælp, oplæsning og avancerede værktøjer i Human Biologi Studio. Tjenesten leveres digitalt og kræver
+            en aktiv konto.
           </p>
         </section>
 
         <section class="legal-card" data-testid="legal-card-pris-og-betaling">
-          <h2>2. Pris og betaling</h2>
+          <h2>3. Pris, valuta og betaling</h2>
           <ul>
-            <li>Pro koster 1.500 kr (engangsbetaling). Priser fremgår altid i checkout.</li>
-            <li>Betaling håndteres via betalingsudbyder, og kortdata gemmes ikke af os.</li>
-            <li>Eventuelle kampagner eller prøveperioder fremgår tydeligt ved køb.</li>
+            <li>Abonnement: 179 kr pr. måned (løbende betaling).</li>
+            <li>Engangsbetaling: 1.500 kr for livstidsadgang til Pro.</li>
+            <li>Alle priser er i DKK og uden moms (ikke momsregistreret).</li>
+            <li>Betaling håndteres via Stripe. Kortdata gemmes ikke af os.</li>
           </ul>
-        </section>
-
-        <section class="legal-card" data-testid="legal-card-levering">
-          <h2>3. Levering</h2>
-          <p>
-            Adgangen til Pro aktiveres straks efter gennemført betaling og giver livstidsadgang.
-          </p>
         </section>
 
         <section class="legal-card" data-testid="legal-card-fornyelse-og-opsigelse">
-          <h2>4. Fornyelse og opsigelse</h2>
+          <h2>4. Abonnement (fornyelse og opsigelse)</h2>
           <ul>
-            <li>Der er ingen automatisk fornyelse.</li>
-            <li>Engangsbetalingen giver livstidsadgang til Pro.</li>
-            <li>Se betalingsoversigt via konto-siden under "Se betalinger".</li>
+            <li>Abonnement fornyes automatisk hver måned, indtil det opsiges.</li>
+            <li>Opsigelse kan ske via konto-siden eller ved kontakt til os.</li>
+            <li>Opsigelse træder i kraft ved udløb af den betalte periode.</li>
+            <li>Der ydes som udgangspunkt ikke pro-rata refusion for resterende periode.</li>
           </ul>
         </section>
 
-        <section class="legal-card" data-testid="legal-card-aendringer-i-pris">
-          <h2>5. Ændringer i pris</h2>
+        <section class="legal-card" data-testid="legal-card-engangsbetaling">
+          <h2>5. Engangsbetaling og livstidsadgang</h2>
           <p>
-            Hvis vi ændrer prisen, gælder det kun fremtidige køb, og vi giver besked i rimelig tid.
+            Engangsbetaling giver livstidsadgang til Pro, så længe Tjenesten eksisterer og din konto
+            ikke er lukket eller suspenderes for misligholdelse. Livstidsadgang giver ikke garanti for
+            uændret indhold eller ubegrænset driftstid. Vi kan blive nødt til at lukke for Pro-adgang,
+            hvis driftsudgifterne på et tidspunkt overstiger et niveau, der bliver en økonomisk byrde
+            for virksomheden.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-levering">
+          <h2>6. Levering</h2>
+          <p>
+            Levering sker digitalt og aktiveres som udgangspunkt straks efter gennemført betaling.
+            Hvis der opstår tekniske problemer, kan vi kræve ekstra verifikation.
           </p>
         </section>
 
         <section class="legal-card" data-testid="legal-card-fortrydelse-og-refundering">
-          <h2>6. Fortrydelse og refundering</h2>
+          <h2>7. Fortrydelsesret og refundering</h2>
           <p>
-            Ved digitale køb afhænger fortrydelsesret af gældende lovgivning. Kontakt os via konto-siden, hvis du har
-            spørgsmål til betaling eller ønsker vurdering af refundering.
+            Som forbruger har du som udgangspunkt 14 dages fortrydelsesret. Da Tjenesten er digital og
+            leveres straks, kan fortrydelsesretten bortfalde, når leveringen er påbegyndt og du har taget
+            Tjenesten i brug ud over almindelig afprøvning. Vi vurderer refundering individuelt og kan
+            afslå refundering ved dokumenteret brug ud over prøvebetingelser.
+          </p>
+          <p>
+            Fortrydelse skal ske ved skriftlig henvendelse til christian@biologistudio.dk inden for
+            14 dage fra købet. Ved godkendt refundering tilbagefører vi beløbet via den oprindelige
+            betalingsmetode inden for rimelig tid.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-aendringer-i-pris">
+          <h2>8. Ændringer i pris</h2>
+          <p>
+            Prisændringer varsles i rimelig tid. Ændringer påvirker kun fremtidige betalinger eller
+            nye køb. Du kan opsige abonnementet, hvis du ikke ønsker at acceptere en prisændring.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-kampagner">
+          <h2>9. Kampagner og rabatkoder</h2>
+          <p>
+            Kampagner, rabatkoder og prøveperioder kan være tidsbegrænsede og gælder kun på de vilkår,
+            der fremgår ved købet. Rabatter kan ikke kombineres med andre tilbud, medmindre det fremgår
+            eksplicit.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-misligholdelse">
+          <h2>10. Manglende betaling og misligholdelse</h2>
+          <p>
+            Ved manglende betaling kan adgangen til Pro suspenderes, indtil forholdet er afklaret.
+            Chargebacks eller misbrug af betalingssystemet kan medføre lukning af konto og krav om
+            dokumentation.
+          </p>
+        </section>
+
+        <section class="legal-card" data-testid="legal-card-klage">
+          <h2>11. Klage og tvistløsning</h2>
+          <p>
+            Hvis du ønsker at klage, bedes du kontakte os først. Du kan også klage til Center for
+            Klageløsning, Nævnenes Hus, Toldboden 2, 8800 Viborg, eller via EU's online
+            tvistløsningsplatform: https://ec.europa.eu/consumers/odr.
           </p>
         </section>
       </div>

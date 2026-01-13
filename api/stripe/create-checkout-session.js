@@ -9,9 +9,14 @@ const { validatePayload } = require("../_lib/validate");
 const { logAuditEvent } = require("../_lib/audit");
 
 const PAID_PLANS = new Set(["paid", "trial", "lifetime"]);
+const PLAN_TYPES = new Set(["subscription", "lifetime"]);
 
 function normalizePlan(plan) {
   return typeof plan === "string" ? plan.toLowerCase() : "free";
+}
+
+function normalizePlanType(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "subscription";
 }
 
 module.exports = async function handler(req, res) {
@@ -28,9 +33,24 @@ module.exports = async function handler(req, res) {
     return sendError(res, status, error.message || "Invalid JSON");
   }
 
-  const validation = validatePayload(payload, { fields: {} });
+  const validation = validatePayload(payload, {
+    fields: {
+      planType: {
+        type: "string",
+        required: false,
+        maxLen: 32,
+        enum: ["subscription", "lifetime"],
+        enumMessage: "Invalid plan type",
+      },
+    },
+  });
   if (!validation.ok) {
     return sendError(res, validation.status, validation.error);
+  }
+
+  const planType = normalizePlanType(payload?.planType);
+  if (!PLAN_TYPES.has(planType)) {
+    return sendError(res, 400, "invalid_plan_type");
   }
 
   const { user, error } = await getUserFromRequest(req);
@@ -49,11 +69,13 @@ module.exports = async function handler(req, res) {
   }
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
-  const priceId = process.env.STRIPE_PRICE_ID;
+  const subscriptionPriceId = process.env.STRIPE_PRICE_ID;
+  const lifetimePriceId = process.env.STRIPE_LIFETIME_PRICE_ID;
   const baseUrl = getBaseUrl(req);
   const missing = [];
   if (!secretKey) missing.push("secret");
-  if (!priceId) missing.push("price");
+  if (planType === "subscription" && !subscriptionPriceId) missing.push("subscription_price");
+  if (planType === "lifetime" && !lifetimePriceId) missing.push("lifetime_price");
   if (!baseUrl) missing.push("base_url");
   if (missing.length) {
     return sendError(res, 500, "payment_not_configured", { missing });
@@ -84,26 +106,42 @@ module.exports = async function handler(req, res) {
         .eq("id", user.id);
     }
 
+    const priceId = planType === "subscription" ? subscriptionPriceId : lifetimePriceId;
     const price = await stripe.prices.retrieve(priceId);
-    if (price?.recurring) {
+    if (planType === "subscription" && !price?.recurring) {
+      return sendError(res, 400, "price_not_recurring");
+    }
+    if (planType === "lifetime" && price?.recurring) {
       return sendError(res, 400, "price_recurring");
     }
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
+    const sessionPayload = {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
       client_reference_id: user.id,
-      payment_intent_data: {
+      success_url: `${baseUrl}/?checkout=success`,
+      cancel_url: `${baseUrl}/?checkout=cancel`,
+    };
+
+    if (planType === "subscription") {
+      sessionPayload.mode = "subscription";
+      sessionPayload.subscription_data = {
+        metadata: {
+          user_id: user.id,
+        },
+      };
+    } else {
+      sessionPayload.mode = "payment";
+      sessionPayload.payment_intent_data = {
         metadata: {
           user_id: user.id,
           purchase_type: "lifetime",
         },
-      },
-      success_url: `${baseUrl}/?checkout=success`,
-      cancel_url: `${baseUrl}/?checkout=cancel`,
-    });
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionPayload);
 
     await logAuditEvent({
       eventType: "stripe_checkout_session_created",
