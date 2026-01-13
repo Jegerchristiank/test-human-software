@@ -337,3 +337,10 @@
 - Commands: npm test -- tests/accessPolicy.test.mjs; date +%F.
 - Security: upgrade gating now relies on the profile plan; server-side subscription checks still prevent duplicate subscriptions.
 - Follow-ups: verify in UI that free accounts can start checkout; if backend still reports an active subscription, inspect Stripe/Supabase subscription records.
+
+## 2026-01-13
+- Purpose: switch Pro checkout UI and copy to lifetime (one-time) access, tighten Stripe checkout guards, and add coverage for lifetime payment intents.
+- Files: app.js, api/stripe/create-checkout-session.js, index.html, handelsbetingelser.html, vilkaar.html, persondatapolitik.html, README.md, docs/security-contracts.md, tests/accessPolicy.test.mjs, tests/aiAccess.test.mjs, tests/stripeWebhook.test.mjs, tests/stripeCreateSubscription.test.mjs, docs/activity.md.
+- Commands: ls; cat docs/activity.md; rg -n "updateBillingUI|renderBillingTimeline|createSubscriptionIntent|openHostedCheckout|hasPaidPlan" app.js; sed -n '3120,3685p' app.js; sed -n '3685,4345p' app.js; sed -n '4970,5385p' app.js; rg -n "abonnement|pris|måned|pro|betaling|stripe|checkout" index.html; sed -n '260,340p' index.html; sed -n '1240,1530p' index.html; sed -n '1530,1710p' index.html; sed -n '1,200p' handelsbetingelser.html; sed -n '70,130p' vilkaar.html; sed -n '60,90p' persondatapolitik.html; rg -n "subscription|Stripe|checkout" README.md; rg -n "create-subscription|checkout|stripe" docs/security-contracts.md; npm test -- tests/accessPolicy.test.mjs tests/aiAccess.test.mjs tests/stripeWebhook.test.mjs tests/stripeCreateSubscription.test.mjs; date +%F.
+- Security: server now blocks duplicate paid checkout attempts; lifetime plan is treated as paid access without adding new secrets.
+- Follow-ups: verify the live Stripe price is a non-recurring DKK 1.500 product and run a real checkout; review legal copy updates before production publishing.

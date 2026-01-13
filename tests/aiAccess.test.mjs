@@ -39,6 +39,15 @@ describe("resolveAiAccess", () => {
     expect(access.mode).toBe("owner");
   });
 
+  it("allows lifetime plan with server key", () => {
+    const access = resolveAiAccess({
+      plan: "lifetime",
+      serverKey: "sk-server-1234567890".padEnd(25, "x"),
+    });
+    expect(access.allowed).toBe(true);
+    expect(access.mode).toBe("owner");
+  });
+
   it("blocks paid plan when server key missing", () => {
     const access = resolveAiAccess({
       plan: "paid",

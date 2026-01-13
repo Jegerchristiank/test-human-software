@@ -3090,7 +3090,7 @@ function updateDiagnosticsUI() {
     if (stripeReady) {
       elements.diagStripeMeta.textContent = "Betaling er sat op";
     } else if (state.config?.stripePublishableKey) {
-      elements.diagStripeMeta.textContent = "Betaling mangler abonnement";
+      elements.diagStripeMeta.textContent = "Betaling mangler backend-opsætning";
     } else {
       elements.diagStripeMeta.textContent = "Betaling er ikke sat op endnu";
     }
@@ -3168,14 +3168,21 @@ function setBillingControlsEnabled(enabled) {
   });
 }
 
+function normalizePlanValue(plan) {
+  return typeof plan === "string" ? plan.trim().toLowerCase() : "free";
+}
+
 function formatPlanLabel(plan) {
-  const normalized = String(plan || "free").toLowerCase();
+  const normalized = normalizePlanValue(plan);
   if (normalized === "paid") return "Pro";
   if (normalized === "trial") return "Trial";
+  if (normalized === "lifetime") return "Pro (livstid)";
   return "Gratis";
 }
 
-function formatSubscriptionStatus(subscription) {
+function formatSubscriptionStatus(subscription, plan) {
+  const normalizedPlan = normalizePlanValue(plan);
+  if (normalizedPlan === "lifetime") return "Livstidsadgang aktiv.";
   if (!subscription) return "Ingen aktiv betaling endnu.";
   const status = String(subscription.status || "").toLowerCase();
   const labelMap = {
@@ -3370,7 +3377,10 @@ function updateAccountUI() {
     elements.planStatus.textContent = `Plan: ${formatPlanLabel(state.profile?.plan)}`;
   }
   if (elements.subscriptionStatus) {
-    elements.subscriptionStatus.textContent = formatSubscriptionStatus(state.subscription);
+    elements.subscriptionStatus.textContent = formatSubscriptionStatus(
+      state.subscription,
+      state.profile?.plan
+    );
   }
   if (elements.ownKeyToggle) {
     elements.ownKeyToggle.checked = state.useOwnKey;
@@ -3405,6 +3415,7 @@ function renderBillingMethodTags(methodTypes) {
     link: "Link",
     cashapp: "Cash App",
     customer_balance: "Bankoverførsel",
+    mobilepay: "MobilePay",
   };
   const normalized = Array.isArray(methodTypes) && methodTypes.length
     ? methodTypes.map((method) => String(method || "").toLowerCase())
@@ -3499,9 +3510,17 @@ function renderBillingInvoices(invoices) {
   });
 }
 
-function renderBillingTimeline(subscription, upcomingInvoice) {
+function renderBillingTimeline(subscription, upcomingInvoice, plan) {
   if (!elements.billingTimeline) return;
   elements.billingTimeline.textContent = "";
+  const normalizedPlan = normalizePlanValue(plan);
+  if (!subscription && normalizedPlan === "lifetime") {
+    const item = document.createElement("div");
+    item.className = "history-empty";
+    item.textContent = "Livstidsadgang er aktiv.";
+    elements.billingTimeline.appendChild(item);
+    return;
+  }
   const items = [];
   if (subscription?.current_period_start) {
     items.push({
@@ -3554,38 +3573,51 @@ function updateBillingUI() {
   const price = data.price || null;
   const upcoming = data.upcomingInvoice || null;
   const paymentMethod = data.paymentMethod || null;
-  const planLabel = price?.product?.name || formatPlanLabel(state.profile?.plan);
-  const planNote =
+  const normalizedPlan = normalizePlanValue(state.profile?.plan);
+  const isLifetime = normalizedPlan === "lifetime";
+  const planLabel = isLifetime
+    ? formatPlanLabel(state.profile?.plan)
+    : price?.product?.name || formatPlanLabel(state.profile?.plan);
+  let planNote =
     price?.product?.description ||
     (subscription ? "Fuld adgang til alle Pro-funktioner." : "Aktivér Pro for at komme i gang.");
+  if (isLifetime) {
+    planNote = "Engangsbetaling giver livstidsadgang til Pro.";
+  }
   const priceAmount = resolveUnitAmount(price);
   const planInterval = price?.recurring ? formatIntervalLabel(price.recurring) : "Engangsbetaling";
   const normalizedStatus = String(subscription?.status || "").toLowerCase();
   const isCanceled = Boolean(subscription?.cancel_at_period_end) ||
     ["canceled", "incomplete_expired"].includes(normalizedStatus);
-  const statusLabel = subscription
-    ? subscription.cancel_at_period_end
-      ? "Opsagt"
-      : formatBillingStatusLabel(subscription.status)
-    : "Ingen aktiv betaling";
-  const tone = resolveBillingTone(subscription?.status, subscription?.cancel_at_period_end);
+  const statusLabel = isLifetime
+    ? "Livstidsadgang"
+    : subscription
+      ? subscription.cancel_at_period_end
+        ? "Opsagt"
+        : formatBillingStatusLabel(subscription.status)
+      : "Ingen aktiv betaling";
+  const tone = isLifetime
+    ? ""
+    : resolveBillingTone(subscription?.status, subscription?.cancel_at_period_end);
   const summary = formatPaymentMethodSummary(paymentMethod);
   const nextCurrency = upcoming?.currency || price?.currency;
-  let nextLabel = "Næste betaling";
-  let nextAmount = null;
-  let nextDateText = "—";
-  if (isCanceled) {
-    nextLabel = "Adgang udløber";
-    const endDate = subscription?.current_period_end || upcoming?.period_end || null;
-    nextDateText = endDate ? `Udløber ${formatBillingDate(endDate)}` : "Ingen kommende betalinger.";
-  } else if (subscription) {
-    nextAmount = typeof upcoming?.amount_due === "number" ? upcoming.amount_due : priceAmount;
-    const nextDate =
-      upcoming?.next_payment_attempt ||
-      upcoming?.period_end ||
-      subscription?.current_period_end ||
-      null;
-    nextDateText = nextDate ? `Forfalder ${formatBillingDate(nextDate)}` : "—";
+  let nextLabel = isLifetime ? "Betaling" : "Næste betaling";
+  let nextAmount = isLifetime ? priceAmount : null;
+  let nextDateText = isLifetime ? "Engangsbetaling gennemført." : "—";
+  if (!isLifetime) {
+    if (isCanceled) {
+      nextLabel = "Adgang udløber";
+      const endDate = subscription?.current_period_end || upcoming?.period_end || null;
+      nextDateText = endDate ? `Udløber ${formatBillingDate(endDate)}` : "Ingen kommende betalinger.";
+    } else if (subscription) {
+      nextAmount = typeof upcoming?.amount_due === "number" ? upcoming.amount_due : priceAmount;
+      const nextDate =
+        upcoming?.next_payment_attempt ||
+        upcoming?.period_end ||
+        subscription?.current_period_end ||
+        null;
+      nextDateText = nextDate ? `Forfalder ${formatBillingDate(nextDate)}` : "—";
+    }
   }
 
   if (elements.billingPlan) {
@@ -3593,7 +3625,9 @@ function updateBillingUI() {
   }
   if (elements.billingPlanMeta) {
     let meta = "Ingen aktiv plan";
-    if (price?.recurring) {
+    if (isLifetime) {
+      meta = "Livstidsadgang";
+    } else if (price?.recurring) {
       meta = planInterval;
     } else if (subscription) {
       meta = "Aktiv plan";
@@ -3613,7 +3647,9 @@ function updateBillingUI() {
   }
   if (elements.billingPlanCycle) {
     let cycle = "—";
-    if (price?.recurring) {
+    if (isLifetime) {
+      cycle = "Engangsbetaling";
+    } else if (price?.recurring) {
       cycle = planInterval;
     } else if (price) {
       cycle = "Engangsbetaling";
@@ -3632,7 +3668,9 @@ function updateBillingUI() {
   }
   if (elements.billingStatusMeta) {
     let meta = "Ingen aktiv betaling endnu.";
-    if (subscription?.cancel_at_period_end) {
+    if (isLifetime) {
+      meta = "Livstidsadgang uden fornyelser.";
+    } else if (subscription?.cancel_at_period_end) {
       meta = `Opsagt pr. ${formatBillingDate(subscription.current_period_end)}`;
     } else if (subscription?.current_period_end) {
       meta = `Fornyes ${formatBillingDate(subscription.current_period_end)}`;
@@ -3666,9 +3704,11 @@ function updateBillingUI() {
   }
 
   if (elements.billingHeroHint) {
-    let hint = "Du kan altid ændre eller opsige dit abonnement.";
-    if (!subscription) {
-      hint = "Aktivér Pro for at komme i gang med betaling og fakturaer.";
+    let hint = "Aktivér Pro med engangsbetaling for livstidsadgang.";
+    if (isLifetime) {
+      hint = "Du har livstidsadgang. Ingen abonnement eller fornyelser.";
+    } else if (!subscription) {
+      hint = "Aktivér Pro med engangsbetaling for livstidsadgang.";
     } else if (subscription.cancel_at_period_end) {
       hint = `Opsagt. Adgangen udløber ${formatBillingDate(subscription.current_period_end)}.`;
     } else if (["past_due", "unpaid"].includes(String(subscription.status || "").toLowerCase())) {
@@ -3696,14 +3736,15 @@ function updateBillingUI() {
       : "Opsig abonnement";
   }
   if (elements.billingUpgradeBtn) {
-    setElementVisible(elements.billingUpgradeBtn, !hasSubscription);
-    elements.billingUpgradeBtn.disabled = !stripeCheckoutReady;
+    const showUpgrade = !hasSubscription && !isLifetime;
+    setElementVisible(elements.billingUpgradeBtn, showUpgrade);
+    elements.billingUpgradeBtn.disabled = !stripeCheckoutReady || !showUpgrade;
   }
   if (!hasSubscription) {
     setBillingUpdatePanelVisible(false);
   }
 
-  renderBillingTimeline(subscription, upcoming);
+  renderBillingTimeline(subscription, upcoming, state.profile?.plan);
   renderBillingInvoices(data.invoices);
   renderBillingMethodTags(data.paymentMethodTypes);
 }
@@ -5033,7 +5074,11 @@ async function createSubscriptionIntent() {
       if (errorCode === "payment_not_configured") {
         message = "Betaling er ikke sat op endnu.";
       } else if (errorCode === "subscription_active") {
-        message = "Du har allerede et aktivt abonnement.";
+        message = "Du har allerede Pro.";
+      } else if (errorCode === "price_recurring") {
+        message = "Prisen er sat som abonnement. Opret en engangspris i Stripe.";
+      } else if (errorCode === "price_amount_missing") {
+        message = "Prisen mangler et beløb i Stripe.";
       } else if (errorCode === "unauthenticated") {
         message = "Log ind for at fortsætte.";
       } else if (errorCode === "rate_limited") {
@@ -5048,8 +5093,8 @@ async function createSubscriptionIntent() {
         } else {
           message = "Stripe kunne ikke starte betalingen.";
         }
-      } else if (errorCode === "could not create subscription") {
-        message = "Stripe kunne ikke oprette abonnementet.";
+      } else if (errorCode === "could not create payment intent") {
+        message = "Stripe kunne ikke starte betalingen.";
       }
     } catch (error) {
       // Ignore JSON parse errors.
@@ -5100,6 +5145,12 @@ async function openHostedCheckout() {
         const errorCode = String(data?.error || "").toLowerCase();
         if (errorCode === "payment_not_configured") {
           message = "Betaling er ikke sat op endnu.";
+        } else if (errorCode === "subscription_active") {
+          message = "Du har allerede Pro.";
+        } else if (errorCode === "price_recurring") {
+          message = "Prisen er sat som abonnement. Opret en engangspris i Stripe.";
+        } else if (errorCode === "price_amount_missing") {
+          message = "Prisen mangler et beløb i Stripe.";
         } else if (errorCode === "unauthenticated") {
           message = "Log ind for at fortsætte.";
         } else if (errorCode === "rate_limited") {
@@ -5235,7 +5286,7 @@ async function setupExpressCheckout(price) {
       paymentRequest,
       style: {
         paymentRequestButton: {
-          type: "subscribe",
+          type: "buy",
           theme: "dark",
           height: "48px",
         },
@@ -5435,7 +5486,7 @@ async function loadBillingOverview({ notify = false } = {}) {
 async function openBillingUpdatePanel() {
   if (!requireAuthGuard()) return;
   if (!state.billing.data?.subscription) {
-    setBillingStatus("Ingen aktivt abonnement at opdatere.", true);
+    setBillingStatus("Ingen aktiv betaling at opdatere.", true);
     return;
   }
   if (!state.config?.stripePublishableKey) {
@@ -5534,7 +5585,7 @@ async function handleBillingToggleCancel() {
   if (!requireAuthGuard()) return;
   const subscription = state.billing.data?.subscription || null;
   if (!subscription) {
-    setBillingStatus("Ingen aktivt abonnement at opdatere.", true);
+    setBillingStatus("Ingen aktiv betaling at opdatere.", true);
     return;
   }
   const cancelAtPeriodEnd = !subscription.cancel_at_period_end;
@@ -5559,7 +5610,7 @@ async function handleBillingToggleCancel() {
         const data = await res.json();
         const errorCode = String(data?.error || "").toLowerCase();
         if (errorCode === "subscription_missing") {
-          message = "Ingen aktivt abonnement at opdatere.";
+          message = "Ingen aktiv betaling at opdatere.";
         } else if (errorCode === "payment_not_configured") {
           message = "Betaling er ikke sat op endnu.";
         }
@@ -5601,7 +5652,7 @@ function hasPaidPlan() {
     return accessPolicy.hasPaidPlan({ plan: state.profile?.plan });
   }
   const plan = String(state.profile?.plan || "").toLowerCase();
-  return plan === "paid" || plan === "trial";
+  return plan === "paid" || plan === "trial" || plan === "lifetime";
 }
 
 function hasPaidAccess() {

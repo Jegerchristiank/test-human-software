@@ -24,7 +24,7 @@ function resolveAiAccess({
   }
 
   const normalizedPlan = typeof plan === "string" ? plan.toLowerCase() : "free";
-  if (normalizedPlan === "paid" || normalizedPlan === "trial") {
+  if (normalizedPlan === "paid" || normalizedPlan === "trial" || normalizedPlan === "lifetime") {
     if (typeof serverKey === "string" && serverKey.trim()) {
       return {
         allowed: true,

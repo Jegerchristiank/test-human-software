@@ -3,11 +3,30 @@ const { readJsonAllowEmpty } = require("../_lib/body");
 const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest, getProfileForUser, getActiveSubscription } = require("../_lib/auth");
 const { getSupabaseAdmin } = require("../_lib/supabase");
-const { getBaseUrl } = require("../_lib/url");
 const { enforceRateLimit } = require("../_lib/rateLimit");
-const { resolveSubscriptionPaymentMethodTypes } = require("../_lib/stripe");
+const { resolveOneTimePaymentMethodTypes } = require("../_lib/stripe");
 const { validatePayload } = require("../_lib/validate");
 const { logAuditEvent } = require("../_lib/audit");
+
+const PAID_PLANS = new Set(["paid", "trial", "lifetime"]);
+
+function normalizePlan(plan) {
+  return typeof plan === "string" ? plan.toLowerCase() : "free";
+}
+
+function resolveUnitAmount(price) {
+  if (!price) return null;
+  if (typeof price.unit_amount === "number" && Number.isFinite(price.unit_amount)) {
+    return price.unit_amount;
+  }
+  if (typeof price.unit_amount_decimal === "string") {
+    const parsed = Number(price.unit_amount_decimal);
+    if (Number.isFinite(parsed)) {
+      return Math.round(parsed);
+    }
+  }
+  return null;
+}
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -45,22 +64,22 @@ module.exports = async function handler(req, res) {
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
   const priceId = process.env.STRIPE_PRICE_ID;
-  const baseUrl = getBaseUrl(req);
   const missing = [];
   if (!secretKey) missing.push("secret");
   if (!priceId) missing.push("price");
-  if (!baseUrl) missing.push("base_url");
   if (missing.length) {
     return sendError(res, 500, "payment_not_configured", { missing });
   }
 
+  const stripe = new Stripe(secretKey, { apiVersion: "2024-06-20" });
+  const profile = await getProfileForUser(user.id, { createIfMissing: true, userData: user });
+  if (PAID_PLANS.has(normalizePlan(profile?.plan))) {
+    return sendError(res, 409, "subscription_active");
+  }
   const existing = await getActiveSubscription(user.id);
   if (existing) {
     return sendError(res, 409, "subscription_active");
   }
-
-  const stripe = new Stripe(secretKey, { apiVersion: "2024-06-20" });
-  const profile = await getProfileForUser(user.id, { createIfMissing: true, userData: user });
 
   try {
     let customerId = profile?.stripe_customer_id || null;
@@ -79,38 +98,42 @@ module.exports = async function handler(req, res) {
     }
 
     const price = await stripe.prices.retrieve(priceId, { expand: ["product"] });
-    const paymentMethodTypes = resolveSubscriptionPaymentMethodTypes();
-    const paymentSettings = {
-      save_default_payment_method: "on_subscription",
-      ...(paymentMethodTypes.length ? { payment_method_types: paymentMethodTypes } : {}),
-    };
-
-    const subscription = await stripe.subscriptions.create({
+    if (price?.recurring) {
+      return sendError(res, 400, "price_recurring");
+    }
+    const amount = resolveUnitAmount(price);
+    if (!amount) {
+      return sendError(res, 500, "price_amount_missing");
+    }
+    const paymentMethodTypes = resolveOneTimePaymentMethodTypes();
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: price.currency,
       customer: customerId,
-      items: [{ price: priceId }],
-      payment_behavior: "default_incomplete",
-      payment_settings: paymentSettings,
-      metadata: { user_id: user.id },
-      expand: ["latest_invoice.payment_intent"],
+      metadata: {
+        user_id: user.id,
+        purchase_type: "lifetime",
+      },
+      ...(paymentMethodTypes.length
+        ? { payment_method_types: paymentMethodTypes }
+        : { automatic_payment_methods: { enabled: true } }),
     });
-
-    const paymentIntent = subscription.latest_invoice?.payment_intent;
     if (!paymentIntent?.client_secret) {
       return sendError(res, 500, "Could not create payment intent");
     }
 
     await logAuditEvent({
-      eventType: "stripe_subscription_created",
+      eventType: "stripe_payment_intent_created",
       userId: user.id,
       status: "success",
       req,
-      targetType: "stripe_subscription",
-      targetId: subscription.id,
+      targetType: "stripe_payment_intent",
+      targetId: paymentIntent.id,
     });
 
     return sendJson(res, 200, {
       clientSecret: paymentIntent.client_secret,
-      subscriptionId: subscription.id,
+      intentId: paymentIntent.id,
       customerId,
       price: {
         unit_amount: price.unit_amount,
@@ -133,12 +156,12 @@ module.exports = async function handler(req, res) {
   } catch (err) {
     const message = err?.message ? String(err.message) : "";
     const code = err?.code || err?.decline_code || err?.type;
-    console.error("stripe_subscription_error", {
+    console.error("stripe_payment_intent_error", {
       message,
       code,
     });
     await logAuditEvent({
-      eventType: "stripe_subscription_created",
+      eventType: "stripe_payment_intent_created",
       userId: user.id,
       status: "failure",
       req,

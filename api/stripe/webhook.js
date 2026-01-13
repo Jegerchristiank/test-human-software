@@ -7,6 +7,7 @@ const { validatePayload } = require("../_lib/validate");
 const { logAuditEvent } = require("../_lib/audit");
 
 const ACTIVE_STATUSES = new Set(["trialing", "active"]);
+const LIFETIME_PLAN = "lifetime";
 const MAX_ID_LENGTH = 200;
 const STRIPE_EVENT_STATUSES = {
   RECEIVED: "received",
@@ -38,6 +39,14 @@ function normalizeString(value, maxLen = MAX_ID_LENGTH) {
   if (!trimmed) return "";
   if (trimmed.length > maxLen) return "";
   return trimmed;
+}
+
+function normalizePlan(value) {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function isLifetimePlan(value) {
+  return normalizePlan(value) === LIFETIME_PLAN;
 }
 
 function resolveWebhookSecrets(value) {
@@ -118,6 +127,10 @@ function resolveUserIdFromEvent(event) {
     const session = event.data?.object;
     return normalizeString(session?.client_reference_id || session?.metadata?.user_id);
   }
+  if (event.type === "payment_intent.succeeded") {
+    const intent = event.data?.object;
+    return normalizeString(intent?.metadata?.user_id);
+  }
   if (event.type.startsWith("customer.subscription.")) {
     const subscription = event.data?.object;
     return normalizeString(subscription?.metadata?.user_id);
@@ -167,8 +180,23 @@ async function upsertSubscription({
     { onConflict: "stripe_subscription_id" }
   );
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", userId)
+    .maybeSingle();
+  if (isLifetimePlan(profile?.plan)) {
+    return;
+  }
+
   const nextPlan = ACTIVE_STATUSES.has(subscription.status) ? "paid" : "free";
   await supabase.from("profiles").update({ plan: nextPlan }).eq("id", userId);
+}
+
+async function setLifetimePlan(userId) {
+  if (!userId) return;
+  const supabase = getSupabaseAdmin();
+  await supabase.from("profiles").update({ plan: LIFETIME_PLAN }).eq("id", userId);
 }
 
 async function syncProfileCustomer({ userId, stripeCustomerId }) {
@@ -291,6 +319,25 @@ module.exports = async function handler(req, res) {
             userId,
             stripeCustomerId: customerId,
           });
+        }
+        if (session?.mode === "payment" && session?.payment_status === "paid" && userId) {
+          await setLifetimePlan(userId);
+        }
+        break;
+      }
+      case "payment_intent.succeeded": {
+        const intent = event.data.object;
+        const userId = normalizeString(intent?.metadata?.user_id);
+        const purchaseType = normalizeString(intent?.metadata?.purchase_type);
+        if (userId && purchaseType === "lifetime") {
+          const customerId = normalizeString(intent?.customer);
+          if (customerId) {
+            await syncProfileCustomer({
+              userId,
+              stripeCustomerId: customerId,
+            });
+          }
+          await setLifetimePlan(userId);
         }
         break;
       }

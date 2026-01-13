@@ -50,7 +50,7 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
    - If SQL Editor limits apply, run `python3 scripts/build_studio_pipeline.py --chunk-size 200` and paste chunk files from `supabase/studio_pipeline_chunks/` in order.
    - If you already ran the old schema file, rerun `supabase/schema.sql` to ensure `user_state` and `rate_limits` exist.
 2. Stripe:
-   - Opret et produkt og en price (subscription).
+   - Opret et produkt og en price (engangsbetaling).
    - Tilføj webhook til `/api/stripe/webhook`.
 3. Vercel:
    - Tilføj miljøvariabler fra `.env` i Vercel Dashboard.
@@ -77,7 +77,7 @@ Minimum for online drift:
 - `TRUST_PROXY_HEADERS` (valgfri, kommasepareret liste, default `x-forwarded-for`)
 
 Stripe nøgler:
-- `STRIPE_PRICE_ID` findes i Stripe Dashboard → Products → Price (starter med `price_`).
+- `STRIPE_PRICE_ID` findes i Stripe Dashboard → Products → Price (starter med `price_`). Brug en engangspris (ikke recurring).
 - `STRIPE_WEBHOOK_SECRET` findes i Stripe Dashboard → Developers → Webhooks (starter med `whsec_`).
 - `STRIPE_BASE_URL` er påkrævet og skal være din app-URL (bruges til success/cancel).
 - `STRIPE_PORTAL_CONFIGURATION_ID` er valgfri og bruges til Stripe Customer Portal.

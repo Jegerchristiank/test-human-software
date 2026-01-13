@@ -8,7 +8,7 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
 
-  const PAID_PLANS = new Set(["paid", "trial"]);
+  const PAID_PLANS = new Set(["paid", "trial", "lifetime"]);
   const ACTIVE_SUBSCRIPTION_STATUSES = new Set([
     "trialing",
     "active",

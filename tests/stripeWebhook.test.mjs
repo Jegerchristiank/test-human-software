@@ -215,4 +215,65 @@ describe("stripe webhook", () => {
     expect(calls.profileUpdates[0]).toEqual({ stripe_customer_id: "cus_456" });
     expect(calls.eventUpdates.some((update) => update.status === "processed")).toBe(true);
   });
+
+  it("marks lifetime plan on payment intent success", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test";
+    process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
+
+    const calls = { profileUpdates: [], eventUpdates: [] };
+    const supabaseMock = {
+      from: (table) => {
+        if (table === "stripe_webhook_events") {
+          return {
+            insert: async () => ({ error: null }),
+            update: (payload) => {
+              calls.eventUpdates.push(payload);
+              return { eq: async () => ({ data: null, error: null }) };
+            },
+          };
+        }
+        if (table === "profiles") {
+          return {
+            update: (payload) => {
+              calls.profileUpdates.push(payload);
+              return { eq: async () => ({ data: null, error: null }) };
+            },
+          };
+        }
+        return {};
+      },
+    };
+
+    const event = {
+      id: "evt_789",
+      type: "payment_intent.succeeded",
+      object: "event",
+      livemode: false,
+      data: {
+        object: {
+          metadata: {
+            user_id: "user-9",
+            purchase_type: "lifetime",
+          },
+          customer: "cus_789",
+        },
+      },
+    };
+
+    const handler = await loadHandler({
+      constructEventImpl: () => event,
+      supabaseMock,
+    });
+    const req = createReq(event, { headers: { "stripe-signature": "sig" } });
+    const res = createRes();
+
+    await handler(req, res);
+
+    const payload = JSON.parse(res.body);
+    expect(res.statusCode).toBe(200);
+    expect(payload.received).toBe(true);
+    expect(calls.profileUpdates).toContainEqual({ stripe_customer_id: "cus_789" });
+    expect(calls.profileUpdates).toContainEqual({ plan: "lifetime" });
+    expect(calls.eventUpdates.some((update) => update.status === "processed")).toBe(true);
+  });
 });

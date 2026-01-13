@@ -7,12 +7,14 @@ describe("access policy", () => {
   it("treats paid plans as paid without subscriptions", () => {
     expect(hasPaidPlan({ plan: "paid" })).toBe(true);
     expect(hasPaidPlan({ plan: "trial" })).toBe(true);
+    expect(hasPaidPlan({ plan: "lifetime" })).toBe(true);
     expect(hasPaidPlan({ plan: "free" })).toBe(false);
   });
 
   it("treats paid plans as access", () => {
     expect(hasPaidAccess({ plan: "paid" })).toBe(true);
     expect(hasPaidAccess({ plan: "trial" })).toBe(true);
+    expect(hasPaidAccess({ plan: "lifetime" })).toBe(true);
     expect(hasPaidAccess({ plan: "free" })).toBe(false);
   });
 

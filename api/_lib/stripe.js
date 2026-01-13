@@ -49,6 +49,8 @@ const SETUP_PAYMENT_METHODS = new Set([
   "us_bank_account",
 ]);
 
+const ONE_TIME_PAYMENT_METHODS = new Set([...SUBSCRIPTION_PAYMENT_METHODS]);
+
 function resolvePaymentMethodTypes(rawValue, supported, options = {}) {
   const { ensureCard = false, fallbackToCard = false } = options;
   const raw = String(rawValue || "")
@@ -79,7 +81,15 @@ function resolveSetupPaymentMethodTypes() {
   });
 }
 
+function resolveOneTimePaymentMethodTypes() {
+  return resolvePaymentMethodTypes(process.env.STRIPE_PAYMENT_METHOD_TYPES, ONE_TIME_PAYMENT_METHODS, {
+    ensureCard: true,
+    fallbackToCard: false,
+  });
+}
+
 module.exports = {
   resolveSubscriptionPaymentMethodTypes,
   resolveSetupPaymentMethodTypes,
+  resolveOneTimePaymentMethodTypes,
 };

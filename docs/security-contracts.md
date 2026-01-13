@@ -23,10 +23,10 @@
 - `POST /api/vision` (auth + AI access): vision tasks (figure/sketch).
 - `POST /api/transcribe` (auth + AI access): audio transcription.
 - `POST /api/tts` (auth + AI access): text-to-speech.
-- `POST /api/stripe/create-checkout-session` (auth): Stripe checkout session.
+- `POST /api/stripe/create-checkout-session` (auth): Stripe one-time checkout session.
 - `POST /api/stripe/create-setup-intent` (auth): payment method setup intent.
 - `POST /api/stripe/create-portal-session` (auth): Stripe customer portal.
-- `POST /api/stripe/create-subscription` (auth): create subscription.
+- `POST /api/stripe/create-subscription` (auth): create one-time payment intent.
 - `GET /api/stripe/billing-overview` (auth): billing status overview.
 - `POST /api/stripe/set-default-payment-method` (auth): set default payment method.
 - `POST /api/stripe/update-subscription` (auth): cancel at period end toggle.

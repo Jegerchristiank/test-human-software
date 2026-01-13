@@ -91,10 +91,10 @@
                 <button id="auth-demo-btn" data-testid="auth-demo-btn" class="btn ghost" type="button">Se demo</button>
               </div>
               <div class="auth-note" id="auth-note" data-testid="auth-note">
-                Demo gemmer kun lokalt og giver ikke adgang til abonnement.
+                Demo gemmer kun lokalt og giver ikke adgang til Pro.
               </div>
               <div class="sales-price" data-testid="auth-hero-price">
-                <div class="price-pill" data-testid="index__auth-hero-copy--auth-hero-price__price-pill">Pro 179 kr/md</div>
+                <div class="price-pill" data-testid="index__auth-hero-copy--auth-hero-price__price-pill">Pro 1.500 kr</div>
                 <div class="price-note" data-testid="index__auth-hero-copy--auth-hero-price__price-note">Gratis plan med egen nøgle</div>
               </div>
               <div class="trust-row" data-testid="auth-hero-trust">
@@ -271,7 +271,7 @@
           <section class="sales-section pricing-section reveal" data-testid="pricing-section" style="--delay: 0.15s">
             <div class="section-header" data-testid="pricing-section-header">
               <h2>Vælg din adgang</h2>
-              <p>Start gratis med egen nøgle eller vælg Pro med alt inkluderet.</p>
+              <p>Start gratis med egen nøgle eller vælg Pro som engangsbetaling.</p>
             </div>
             <div class="pricing-grid" data-testid="pricing-grid">
               <div class="pricing-card" data-testid="pricing-card-free">
@@ -286,13 +286,13 @@
               </div>
               <div class="pricing-card highlight" data-testid="pricing-card-pro">
                 <div class="pricing-title" data-testid="index__pricing-grid--pricing-card-pro__pricing-title">Pro</div>
-                <div class="pricing-price" data-testid="index__pricing-grid--pricing-card-pro__pricing-price">179 kr/md</div>
+                <div class="pricing-price" data-testid="index__pricing-grid--pricing-card-pro__pricing-price">1.500 kr</div>
                 <ul>
                   <li>AI-hints og auto-bedømmelse</li>
                   <li>Oplæsning og figurbeskrivelser</li>
                   <li>Prioritering af svage områder</li>
                 </ul>
-                <div class="pricing-note" data-testid="index__pricing-grid--pricing-card-pro__pricing-note">Skift eller opsig når som helst.</div>
+                <div class="pricing-note" data-testid="index__pricing-grid--pricing-card-pro__pricing-note">Engangsbetaling · livstidsadgang.</div>
               </div>
             </div>
           </section>
@@ -1288,9 +1288,9 @@
               </div>
               <div class="account-actions" data-testid="index__account-hero--account-hero-card__account-actions">
                 <button id="upgrade-btn" data-testid="upgrade-btn" class="btn primary" type="button">Aktivér Pro</button>
-                <button id="portal-btn" data-testid="portal-btn" class="btn ghost" type="button">Administrer abonnement</button>
+                <button id="portal-btn" data-testid="portal-btn" class="btn ghost" type="button">Se betalinger</button>
               </div>
-              <div class="field-hint" data-testid="index__account-hero--account-hero-card__field-hint">Du kan altid ændre eller opsige dit abonnement.</div>
+              <div class="field-hint" data-testid="index__account-hero--account-hero-card__field-hint">Engangsbetaling giver livstidsadgang til Pro.</div>
             </div>
           </header>
           <div class="account-status" id="account-status" data-testid="account-status"></div>
@@ -1439,8 +1439,8 @@
           <header class="billing-hero reveal" data-testid="billing-hero" style="--delay: 0s">
             <div class="billing-hero-head" data-testid="index__billing-shell--billing-hero__billing-hero-head">
               <div data-testid="index__billing-hero--billing-hero-head__div">
-                <div class="eyebrow" data-testid="index__billing-hero--billing-hero-head__eyebrow">Abonnement</div>
-                <h1>Administrer Pro</h1>
+                <div class="eyebrow" data-testid="index__billing-hero--billing-hero-head__eyebrow">Betaling</div>
+                <h1>Betalingsoversigt</h1>
                 <p>Følg betalinger, metode og fakturaer direkte i appen.</p>
               </div>
               <button id="billing-back-btn" data-testid="billing-back-btn" class="btn ghost" type="button">Tilbage til konto</button>
@@ -1489,7 +1489,7 @@
             <section class="panel billing-panel wide reveal" data-testid="billing-panel-method" style="--delay: 0.05s">
               <div class="panel-header" data-testid="index__billing-grid--billing-panel-method__panel-header">
                 <h2>Betalingsmetode</h2>
-                <p>Skift kort eller wallet uden at forlade appen.</p>
+                <p>Skift betalingsmetode uden at forlade appen.</p>
               </div>
               <div class="billing-method-card" id="billing-method-card" data-testid="billing-method-card">
                 <div data-testid="index__billing-panel-method--billing-method-card__div">
@@ -1502,7 +1502,7 @@
                 <div class="billing-update-head" data-testid="index__billing-panel-method--billing-update-panel__billing-update-head">
                   <div data-testid="index__billing-update-panel--billing-update-head__div">
                     <h3>Ny betalingsmetode</h3>
-                    <p>Gem en ny metode, så Pro aldrig stopper midt i flowet.</p>
+                    <p>Gem en ny metode til fremtidige betalinger.</p>
                   </div>
                   <button id="billing-update-close-btn" data-testid="billing-update-close-btn" class="icon-btn" type="button">Luk</button>
                 </div>
@@ -1522,8 +1522,8 @@
 
             <section class="panel billing-panel reveal" data-testid="billing-panel-plan" style="--delay: 0.1s">
               <div class="panel-header" data-testid="index__billing-grid--billing-panel-plan__panel-header">
-                <h2>Plan &amp; fornyelse</h2>
-                <p>Overblik over plan, cyklus og næste skridt.</p>
+                <h2>Plan &amp; betaling</h2>
+                <p>Overblik over plan, cyklus og betaling.</p>
               </div>
               <div class="billing-plan-card" data-testid="index__billing-grid--billing-panel-plan__billing-plan-card">
                 <div data-testid="index__billing-panel-plan--billing-plan-card__div">
@@ -1553,7 +1553,7 @@
               <div class="billing-security" data-testid="index__billing-grid--billing-panel-methods__billing-security">
                 <div class="billing-security-item" data-testid="index__billing-panel-methods--billing-security__billing-security-item">PCI-sikret håndtering</div>
                 <div class="billing-security-item" data-testid="index__billing-panel-methods--billing-security__billing-security-item--2">Kvitteringer sendes til din e-mail</div>
-                <div class="billing-security-item" data-testid="index__billing-panel-methods--billing-security__billing-security-item--3">Opsig når du vil</div>
+                <div class="billing-security-item" data-testid="index__billing-panel-methods--billing-security__billing-security-item--3">Engangsbetaling · ingen abonnement</div>
               </div>
             </section>
           </div>
@@ -1589,7 +1589,7 @@
                   <button id="checkout-hosted-btn" data-testid="checkout-hosted-btn" class="btn ghost" type="button">Åbn Stripe Checkout</button>
                 </div>
               </form>
-              <div class="field-hint" data-testid="index__checkout-grid--checkout-payment-panel__field-hint">Du kan altid opsige eller ændre abonnementet bagefter.</div>
+              <div class="field-hint" data-testid="index__checkout-grid--checkout-payment-panel__field-hint">Engangsbetaling giver livstidsadgang. Ingen abonnement.</div>
             </section>
             <section class="panel checkout-summary" data-testid="checkout-summary-panel">
               <div class="panel-header" data-testid="index__checkout-grid--checkout-summary-panel__panel-header">
@@ -1602,9 +1602,10 @@
               </div>
               <div class="checkout-price" data-testid="index__checkout-grid--checkout-summary-panel__checkout-price">
                 <div class="checkout-price-amount" id="checkout-price" data-testid="checkout-price">—</div>
-                <div class="checkout-price-interval" id="checkout-interval" data-testid="checkout-interval">Pr. måned</div>
+                <div class="checkout-price-interval" id="checkout-interval" data-testid="checkout-interval">Engangsbetaling</div>
               </div>
               <ul class="checkout-features" data-testid="checkout-features">
+                <li>Livstidsadgang til Pro med én betaling.</li>
                 <li>AI-hjælp til MCQ og kortsvar, når du går i stå.</li>
                 <li>Forklaringer på fejl, så du lærer af hver runde.</li>
                 <li>Oplæsning med stemmevalg og tempo.</li>
@@ -1615,7 +1616,7 @@
                 <span>Beløb i dag</span>
                 <strong id="checkout-total" data-testid="checkout-total">—</strong>
               </div>
-              <div class="checkout-trust" data-testid="index__checkout-grid--checkout-summary-panel__checkout-trust">Betal med kort, Apple Pay eller Google Pay (hvis tilgængeligt).</div>
+              <div class="checkout-trust" data-testid="index__checkout-grid--checkout-summary-panel__checkout-trust">Betal med kort, Apple Pay, Google Pay eller MobilePay (hvis tilgængeligt).</div>
             </section>
           </div>
         </div>

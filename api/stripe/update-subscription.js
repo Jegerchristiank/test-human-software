@@ -8,8 +8,17 @@ const { validatePayload } = require("../_lib/validate");
 const { logAuditEvent } = require("../_lib/audit");
 
 const ACTIVE_STATUSES = new Set(["trialing", "active"]);
+const LIFETIME_PLAN = "lifetime";
 
-async function syncSubscription({ userId, stripeCustomerId, subscription }) {
+function normalizePlan(plan) {
+  return typeof plan === "string" ? plan.toLowerCase() : "";
+}
+
+function isLifetimePlan(plan) {
+  return normalizePlan(plan) === LIFETIME_PLAN;
+}
+
+async function syncSubscription({ userId, stripeCustomerId, subscription, currentPlan }) {
   if (!userId || !subscription) return;
   const supabase = getSupabaseAdmin();
   const priceId = subscription.items?.data?.[0]?.price?.id || null;
@@ -29,6 +38,10 @@ async function syncSubscription({ userId, stripeCustomerId, subscription }) {
     },
     { onConflict: "stripe_subscription_id" }
   );
+
+  if (isLifetimePlan(currentPlan)) {
+    return;
+  }
 
   const nextPlan = ACTIVE_STATUSES.has(subscription.status) ? "paid" : "free";
   await supabase.from("profiles").update({ plan: nextPlan }).eq("id", userId);
@@ -102,6 +115,7 @@ module.exports = async function handler(req, res) {
       userId: user.id,
       stripeCustomerId: profile?.stripe_customer_id || null,
       subscription: updated,
+      currentPlan: profile?.plan || null,
     });
 
     const priceId = updated.items?.data?.[0]?.price?.id || null;

@@ -2,7 +2,7 @@ const Stripe = require("stripe");
 const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest, getProfileForUser, getActiveSubscription } = require("../_lib/auth");
 const { enforceRateLimit } = require("../_lib/rateLimit");
-const { resolveSubscriptionPaymentMethodTypes } = require("../_lib/stripe");
+const { resolveOneTimePaymentMethodTypes } = require("../_lib/stripe");
 
 function toIsoSeconds(value) {
   if (!value) return null;
@@ -126,7 +126,7 @@ module.exports = async function handler(req, res) {
     }
 
     const normalizedSubscription = normalizeSubscription({ stripeSubscription, dbSubscription });
-    const priceId = normalizedSubscription?.price_id || null;
+    const priceId = normalizedSubscription?.price_id || process.env.STRIPE_PRICE_ID || null;
 
     let price = null;
     if (priceId) {
@@ -189,7 +189,7 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    const paymentMethodTypes = resolveSubscriptionPaymentMethodTypes();
+    const paymentMethodTypes = resolveOneTimePaymentMethodTypes();
 
     return sendJson(res, 200, {
       subscription: normalizedSubscription,
