@@ -4412,6 +4412,9 @@ function updateAuthUI() {
   const hasUser = Boolean(state.session?.user);
   if (document.body) {
     document.body.dataset.authenticated = hasUser ? "true" : "false";
+    if (!hasUser) {
+      document.body.dataset.course = DEFAULT_COURSE;
+    }
   }
   if (hasUser) {
     state.demoMode = false;
