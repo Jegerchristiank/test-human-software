@@ -3998,7 +3998,8 @@ function setBillingControlsEnabled(enabled) {
 }
 
 function normalizePlanValue(plan) {
-  return typeof plan === "string" ? plan.trim().toLowerCase() : "free";
+  const normalized = typeof plan === "string" ? plan.trim().toLowerCase() : "free";
+  return normalized === "pro" ? "paid" : normalized;
 }
 
 function formatPlanLabel(plan) {
@@ -6638,7 +6639,7 @@ function hasPaidPlan() {
   if (accessPolicy?.hasPaidPlan) {
     return accessPolicy.hasPaidPlan({ plan: state.profile?.plan });
   }
-  const plan = String(state.profile?.plan || "").toLowerCase();
+  const plan = normalizePlanValue(state.profile?.plan);
   return plan === "paid" || plan === "trial" || plan === "lifetime";
 }
 

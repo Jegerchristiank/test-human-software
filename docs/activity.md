@@ -1,6 +1,13 @@
 # Activity Log
 
 ## 2026-01-13
+- Purpose: treat "pro" plan values as paid for AI access and billing gating; extend paid-plan tests.
+- Files: api/_lib/aiAccess.js, access-policy.js, app.js, api/stripe/create-checkout-session.js, api/stripe/create-subscription.js, tests/aiAccess.test.mjs, tests/accessPolicy.test.mjs, docs/activity.md.
+- Commands: rg --files; sed -n '1,200p' docs/activity.md; rg -n "ai-status-pill|Hjælp er ikke klar" -S app.js index.html styles.css api; sed -n '15760,15940p' app.js; sed -n '1,240p' api/health.js; sed -n '1,220p' api/_lib/aiAccess.js; sed -n '3970,4080p' app.js; sed -n '6615,6675p' app.js; sed -n '1,240p' access-policy.js; sed -n '1,220p' tests/aiAccess.test.mjs; sed -n '1,220p' tests/accessPolicy.test.mjs; apply_patch (multiple files); npm test -- tests/aiAccess.test.mjs tests/accessPolicy.test.mjs; date +%F.
+- Security: paid-plan alias only; no new endpoints or data exposure.
+- Follow-ups: consider normalizing any legacy "pro" profiles to "paid" before applying strict plan constraints.
+
+## 2026-01-13
 - Purpose: fix /api/me integration test by stubbing `userOpenAiKey` in routing/auth integration tests.
 - Files: tests/routingAuth.integration.test.mjs, docs/activity.md.
 - Commands: sed -n '1,200p' tests/routingAuth.integration.test.mjs; sed -n '1,200p' api/me.js; sed -n '1,200p' api/_lib/userOpenAiKey.js; apply_patch (tests/routingAuth.integration.test.mjs); npm test -- tests/routingAuth.integration.test.mjs.

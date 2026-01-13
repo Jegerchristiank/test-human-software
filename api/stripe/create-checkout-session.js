@@ -9,7 +9,7 @@ const { resolveOneTimePaymentMethodTypes } = require("../_lib/stripe");
 const { validatePayload } = require("../_lib/validate");
 const { logAuditEvent } = require("../_lib/audit");
 
-const PAID_PLANS = new Set(["paid", "trial", "lifetime"]);
+const PAID_PLANS = new Set(["paid", "pro", "trial", "lifetime"]);
 const PLAN_TYPES = new Set(["subscription", "lifetime"]);
 
 function normalizePlan(plan) {

@@ -23,8 +23,13 @@ function resolveAiAccess({
     };
   }
 
-  const normalizedPlan = typeof plan === "string" ? plan.toLowerCase() : "free";
-  if (normalizedPlan === "paid" || normalizedPlan === "trial" || normalizedPlan === "lifetime") {
+  const normalizedPlan = typeof plan === "string" ? plan.trim().toLowerCase() : "free";
+  const paidPlan =
+    normalizedPlan === "paid" ||
+    normalizedPlan === "pro" ||
+    normalizedPlan === "trial" ||
+    normalizedPlan === "lifetime";
+  if (paidPlan) {
     if (typeof serverKey === "string" && serverKey.trim()) {
       return {
         allowed: true,
