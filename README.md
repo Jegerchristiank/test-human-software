@@ -102,10 +102,12 @@ Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 
 ## Tests
 - Kør `npm test` for unit tests.
+- Kør `python3 -m unittest tests/test_convert_headers.py` for at sikre, at år/sæt-headere med eller uden bindestreg fremdeles parse's korrekt.
 
 ## Data
 - MCQ rådata ligger i `rawdata-mc` (legacy fallback: `rawdata`).
 - Kortsvar rådata ligger i `rawdata-kortsvar`.
+- Årsoverskrifter i rådata må adskille sessionsetiketten med enten et mellemrum eller en bindestreg (fx `2026 Ordinær` eller `2026 - Ordinær`), så importer scripts bevarer session metadata.
 - Kør `python3 scripts/convert_rawdata.py` for at regenerere `data/questions.json`.
 - Kør `python3 scripts/convert_kortsvar.py` for at regenerere `data/kortsvar.json`.
 - Sygdomslære pensum ligger i `rawdata-sygdomslaere.txt` (bruges af Sygdomslære Studio).

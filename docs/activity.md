@@ -540,3 +540,10 @@
 - Commands: npm test -- tests/apiValidation.test.mjs; date +%F.
 - Security: validation still rejects unknown fields while now explicitly permitting short reference strings, so payload correctness improves without broadening the surface.
 - Follow-ups: monitor grade-related errors in production to catch any additional rejected fields.
+
+## 2026-01-14
+- Purpose: make the raw MCQ/kortsvar converters tolerate year headers like `2026 Ordinær` even when contributors forget the dash, so the imported session metadata stays in sync and the year filters do not split a single exam range into two chips.
+- Files: scripts/convert_rawdata.py, scripts/convert_kortsvar.py, tests/test_convert_headers.py, README.md, docs/activity.md.
+- Commands: python3 -m unittest tests/test_convert_headers.py; date +%F.
+- Security: parser docs/tests only; no runtime surface changes.
+- Follow-ups: keep using the new header form when adding datasets and rerun the unittest after editing the raw files.

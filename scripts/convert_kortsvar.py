@@ -12,7 +12,10 @@ RAW_PATH = ROOT_PATH / "rawdata-kortsvar"
 OUTPUT_PATH = ROOT_PATH / "data" / "kortsvar.json"
 IMAGES_PATH = ROOT_PATH / "billeder" / "opgaver"
 
-YEAR_RE = re.compile(r"^(?P<year>\d{4})(?:\s*[-–]\s*(?P<session>.*))?$", re.IGNORECASE)
+YEAR_RE = re.compile(
+    r"^(?P<year>\d{4})(?:\s*(?:[-–]\s*|\s+)(?P<session>.*\S.*))?\s*$",
+    re.IGNORECASE,
+)
 OPGAVE_RE = re.compile(r"^Opgave\s+(?P<number>\d+)\.?\s*(?P<title>.*)$", re.IGNORECASE)
 HOVEDEMN_RE = re.compile(r"^Hovedemne\s+(?P<number>\d+)\s*[:–-]\s*(?P<title>.*)$", re.IGNORECASE)
 SUBQ_RE = re.compile(r"^(?P<label>[A-Za-z])\)\s*(?P<text>.*)$")

@@ -38,16 +38,17 @@ class Question:
         raise ValueError(f"No correct option found for question {self.number} ({self.category})")
 
 
+QUESTION_HEADER_RE = re.compile(r"^Spørgsmål\s+(\d+)\s+[-–]\s+(.*)$", re.IGNORECASE)
+YEAR_HEADER_RE = re.compile(r"^(\d{4})(?:\s*(?:[-–]\s*|\s+)(.*\S.*))?\s*$")
+CORRECT_RE = re.compile(r"\(korrekt\)", re.IGNORECASE)
+
+
 def parse_raw_data(raw_text: str) -> List[Question]:
     lines = [line.rstrip("\n") for line in raw_text.splitlines()]
     questions: List[Question] = []
     current_year: Optional[int] = None
     current_session: Optional[str] = None
     i = 0
-
-    question_header_re = re.compile(r"^Spørgsmål\s+(\d+)\s+[-–]\s+(.*)$", re.IGNORECASE)
-    year_header_re = re.compile(r"^(\d{4})(?:\s*[-–]\s*(.*))?$")
-    correct_re = re.compile(r"\(korrekt\)", re.IGNORECASE)
 
     def normalize_session(label: str) -> Optional[str]:
         cleaned = label.strip().lower()
@@ -66,14 +67,14 @@ def parse_raw_data(raw_text: str) -> List[Question]:
             i += 1
             continue
 
-        year_match = year_header_re.match(line)
+        year_match = YEAR_HEADER_RE.match(line)
         if year_match:
             current_year = int(year_match.group(1))
             current_session = normalize_session(year_match.group(2) or "")
             i += 1
             continue
 
-        header_match = question_header_re.match(line)
+        header_match = QUESTION_HEADER_RE.match(line)
         if header_match:
             if current_year is None:
                 raise ValueError("Encountered a question header before a year header")
@@ -105,8 +106,8 @@ def parse_raw_data(raw_text: str) -> List[Question]:
                     raise ValueError(f"Unexpected option format near question {number}: '{option_line}'")
 
                 option_text = option_match.group(1).strip()
-                is_correct = bool(correct_re.search(option_text))
-                option_text = correct_re.sub("", option_text).strip()
+                is_correct = bool(CORRECT_RE.search(option_text))
+                option_text = CORRECT_RE.sub("", option_text).strip()
                 options.append(Option(label=expected_label, text=option_text, is_correct=is_correct))
                 correct_found = correct_found or is_correct
                 i += 1
