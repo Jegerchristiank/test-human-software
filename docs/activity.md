@@ -323,3 +323,17 @@
 - Commands: python3 - <<'PY' ...; apply_patch (.env); apply_patch (scripts/.env.local); date +%F.
 - Security: live Stripe keys now live in local env files (gitignored); webhook secret left empty until configured; avoid sharing keys and rotate if exposed.
 - Follow-ups: set STRIPE_WEBHOOK_SECRET from the live webhook endpoint; mirror live values in Vercel Environment Variables; consider removing live keys from local env when production-only.
+
+## 2026-01-12
+- Purpose: add Stripe webhook idempotency tracking, user-aware rate limiting, and secret-rotation support; add tests.
+- Files: api/stripe/webhook.js, supabase/schema.sql, docs/security-contracts.md, tests/stripeWebhook.test.mjs, docs/activity.md.
+- Commands: rg --files; cat docs/activity.md; cat agents.md; sed -n '1,260p' api/stripe/webhook.js; sed -n '1,240p' api/_lib/audit.js; sed -n '140,220p' supabase/schema.sql; rg -n "stripe|webhook" docs/security-contracts.md; apply_patch (api/stripe/webhook.js, supabase/schema.sql, docs/security-contracts.md, tests/stripeWebhook.test.mjs); npm test -- tests/stripeWebhook.test.mjs; date +%F.
+- Security: webhook signatures now support secret rotation; event IDs are recorded server-side to prevent duplicate processing; user-based rate limiting is applied when a user ID is available.
+- Follow-ups: apply supabase/schema.sql to create stripe_webhook_events in Supabase.
+
+## 2026-01-13
+- Purpose: avoid false "already Pro" gating on upgrade by checking paid plan explicitly; add access-policy helper + test.
+- Files: access-policy.js, app.js, tests/accessPolicy.test.mjs, docs/activity.md.
+- Commands: npm test -- tests/accessPolicy.test.mjs; date +%F.
+- Security: upgrade gating now relies on the profile plan; server-side subscription checks still prevent duplicate subscriptions.
+- Follow-ups: verify in UI that free accounts can start checkout; if backend still reports an active subscription, inspect Stripe/Supabase subscription records.

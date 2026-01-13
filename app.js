@@ -5298,7 +5298,7 @@ async function mountBillingPaymentElement(clientSecret) {
 
 async function openCheckout() {
   if (!requireAuthGuard()) return;
-  if (hasPaidAccess()) {
+  if (hasPaidPlan()) {
     setAccountStatus("Du har allerede Pro.", true);
     return;
   }
@@ -5596,6 +5596,14 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function hasPaidPlan() {
+  if (accessPolicy?.hasPaidPlan) {
+    return accessPolicy.hasPaidPlan({ plan: state.profile?.plan });
+  }
+  const plan = String(state.profile?.plan || "").toLowerCase();
+  return plan === "paid" || plan === "trial";
+}
+
 function hasPaidAccess() {
   if (accessPolicy?.hasPaidAccess) {
     return accessPolicy.hasPaidAccess({
@@ -5603,7 +5611,7 @@ function hasPaidAccess() {
       subscriptionStatus: state.subscription?.status,
     });
   }
-  if (state.profile?.plan && state.profile.plan !== "free") return true;
+  if (hasPaidPlan()) return true;
   const status = String(state.subscription?.status || "").toLowerCase();
   return ["trialing", "active", "past_due", "unpaid"].includes(status);
 }

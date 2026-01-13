@@ -68,8 +68,8 @@
   `item_parts`, `item_model_answers`, `rubrics`, `rubric_criteria`,
   `item_sources`, `item_assets`, `asset_annotations`, `disease_domains`)
   are read-only for anon/authenticated.
-- System tables (`rate_limits`, `ingest_runs`, `audit_events`) deny all
-  client access; service role only.
+- System tables (`rate_limits`, `ingest_runs`, `audit_events`,
+  `stripe_webhook_events`) deny all client access; service role only.
 
 ## Audit Logging
 - AI usage is logged to `usage_events` with minimal metadata.
@@ -80,3 +80,5 @@
 ## Webhooks
 - Stripe webhooks require signature verification and bounded payload size.
 - Event fields required for processing are validated before use.
+- Stripe webhook event IDs are stored in `stripe_webhook_events` to prevent
+  duplicate processing.

@@ -1,9 +1,15 @@
 import { describe, it, expect } from "vitest";
 import accessPolicy from "../access-policy.js";
 
-const { hasPaidAccess, hasOwnKeyAccess, resolveRoundAccess } = accessPolicy;
+const { hasPaidPlan, hasPaidAccess, hasOwnKeyAccess, resolveRoundAccess } = accessPolicy;
 
 describe("access policy", () => {
+  it("treats paid plans as paid without subscriptions", () => {
+    expect(hasPaidPlan({ plan: "paid" })).toBe(true);
+    expect(hasPaidPlan({ plan: "trial" })).toBe(true);
+    expect(hasPaidPlan({ plan: "free" })).toBe(false);
+  });
+
   it("treats paid plans as access", () => {
     expect(hasPaidAccess({ plan: "paid" })).toBe(true);
     expect(hasPaidAccess({ plan: "trial" })).toBe(true);

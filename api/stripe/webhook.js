@@ -2,18 +2,25 @@ const Stripe = require("stripe");
 const { readRawBody } = require("../_lib/body");
 const { sendJson, sendError } = require("../_lib/response");
 const { getSupabaseAdmin } = require("../_lib/supabase");
-const { enforceRateLimit } = require("../_lib/rateLimit");
+const { enforceRateLimit, checkRateLimit } = require("../_lib/rateLimit");
 const { validatePayload } = require("../_lib/validate");
 const { logAuditEvent } = require("../_lib/audit");
 
 const ACTIVE_STATUSES = new Set(["trialing", "active"]);
 const MAX_ID_LENGTH = 200;
+const STRIPE_EVENT_STATUSES = {
+  RECEIVED: "received",
+  PROCESSED: "processed",
+  FAILED: "failed",
+};
 
 const EVENT_SCHEMA = {
   allowUnknown: true,
   fields: {
     id: { type: "string", required: true, maxLen: MAX_ID_LENGTH },
     type: { type: "string", required: true, maxLen: MAX_ID_LENGTH },
+    object: { type: "string", required: true, maxLen: MAX_ID_LENGTH },
+    livemode: { type: "boolean", required: true },
     data: {
       type: "object",
       required: true,
@@ -33,7 +40,93 @@ function normalizeString(value, maxLen = MAX_ID_LENGTH) {
   return trimmed;
 }
 
+function resolveWebhookSecrets(value) {
+  return String(value || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+async function enforceUserRateLimit(req, res, { userId, scope, limit, windowSeconds }) {
+  if (!userId) return true;
+  const result = await checkRateLimit({
+    req,
+    scope,
+    limit,
+    windowSeconds,
+    userId,
+  });
+  if (result.error) {
+    sendError(res, 503, "rate_limit_unavailable");
+    return false;
+  }
+  if (!result.allowed) {
+    sendError(res, 429, "rate_limited");
+    return false;
+  }
+  return true;
+}
+
+async function recordWebhookEvent({ eventId, eventType, livemode }) {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from("stripe_webhook_events").insert({
+    event_id: eventId,
+    event_type: eventType,
+    livemode: Boolean(livemode),
+    status: STRIPE_EVENT_STATUSES.RECEIVED,
+  });
+  if (!error) return { duplicate: false };
+  if (error.code === "23505") {
+    const { data, error: readError } = await supabase
+      .from("stripe_webhook_events")
+      .select("status")
+      .eq("event_id", eventId)
+      .maybeSingle();
+    if (readError) return { error: readError };
+    if (data?.status === STRIPE_EVENT_STATUSES.PROCESSED) {
+      return { duplicate: true };
+    }
+    return { duplicate: false };
+  }
+  return { error };
+}
+
+async function markWebhookEventProcessed(eventId) {
+  if (!eventId) return;
+  const supabase = getSupabaseAdmin();
+  await supabase
+    .from("stripe_webhook_events")
+    .update({
+      status: STRIPE_EVENT_STATUSES.PROCESSED,
+      processed_at: new Date().toISOString(),
+    })
+    .eq("event_id", eventId);
+}
+
+async function markWebhookEventFailed(eventId) {
+  if (!eventId) return;
+  const supabase = getSupabaseAdmin();
+  await supabase
+    .from("stripe_webhook_events")
+    .update({ status: STRIPE_EVENT_STATUSES.FAILED })
+    .eq("event_id", eventId);
+}
+
+function resolveUserIdFromEvent(event) {
+  if (!event?.type) return "";
+  if (event.type === "checkout.session.completed") {
+    const session = event.data?.object;
+    return normalizeString(session?.client_reference_id || session?.metadata?.user_id);
+  }
+  if (event.type.startsWith("customer.subscription.")) {
+    const subscription = event.data?.object;
+    return normalizeString(subscription?.metadata?.user_id);
+  }
+  return "";
+}
+
 async function rejectWebhook(res, req, { eventId = null, eventType = null, reason = null } = {}) {
+  await markWebhookEventFailed(eventId);
   await logAuditEvent({
     eventType: "stripe_webhook",
     actorType: "webhook",
@@ -104,19 +197,23 @@ module.exports = async function handler(req, res) {
     return sendError(res, 405, "Method not allowed");
   }
 
+  const rateLimitOptions = {
+    scope: "stripe:webhook",
+    limit: 120,
+    windowSeconds: 60,
+  };
+
   if (
     !(await enforceRateLimit(req, res, {
-      scope: "stripe:webhook",
-      limit: 120,
-      windowSeconds: 60,
+      ...rateLimitOptions,
     }))
   ) {
     return;
   }
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secretKey || !webhookSecret) {
+  const webhookSecrets = resolveWebhookSecrets(process.env.STRIPE_WEBHOOK_SECRET);
+  if (!secretKey || !webhookSecrets.length) {
     return sendError(res, 500, "Stripe not configured");
   }
 
@@ -127,10 +224,25 @@ module.exports = async function handler(req, res) {
   }
 
   let event;
+  let eventId = null;
+  let eventType = null;
+  let rawBody;
   try {
-    const rawBody = await readRawBody(req, 2 * 1024 * 1024);
-    event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    rawBody = await readRawBody(req, 2 * 1024 * 1024);
   } catch (err) {
+    const status = err?.message === "Payload too large" ? 413 : 400;
+    return sendError(res, status, err?.message || "Invalid payload");
+  }
+
+  for (const secret of webhookSecrets) {
+    try {
+      event = stripe.webhooks.constructEvent(rawBody, signature, secret);
+      break;
+    } catch (err) {
+      // Try next secret to support rotation.
+    }
+  }
+  if (!event) {
     return sendError(res, 400, "Webhook signature verification failed");
   }
 
@@ -140,10 +252,33 @@ module.exports = async function handler(req, res) {
       return rejectWebhook(res, req, { reason: "invalid_payload" });
     }
 
-    const eventId = normalizeString(event.id);
-    const eventType = normalizeString(event.type);
+    eventId = normalizeString(event.id);
+    eventType = normalizeString(event.type);
     if (!eventId || !eventType) {
       return rejectWebhook(res, req, { reason: "missing_event_fields" });
+    }
+
+    const record = await recordWebhookEvent({
+      eventId,
+      eventType,
+      livemode: event.livemode,
+    });
+    if (record?.error) {
+      throw record.error;
+    }
+    if (record?.duplicate) {
+      return sendJson(res, 200, { received: true });
+    }
+
+    const rateLimitUserId = resolveUserIdFromEvent(event);
+    if (
+      !(await enforceUserRateLimit(req, res, {
+        ...rateLimitOptions,
+        userId: rateLimitUserId,
+      }))
+    ) {
+      await markWebhookEventFailed(eventId);
+      return;
     }
 
     switch (event.type) {
@@ -169,6 +304,17 @@ module.exports = async function handler(req, res) {
         }
         const userId = await findUserIdByCustomer(stripeCustomerId);
         if (userId) {
+          if (!rateLimitUserId || rateLimitUserId !== userId) {
+            if (
+              !(await enforceUserRateLimit(req, res, {
+                ...rateLimitOptions,
+                userId,
+              }))
+            ) {
+              await markWebhookEventFailed(eventId);
+              return;
+            }
+          }
           await upsertSubscription({
             userId,
             stripeCustomerId,
@@ -191,13 +337,18 @@ module.exports = async function handler(req, res) {
       metadata: { stripe_event_type: eventType },
     });
 
+    await markWebhookEventProcessed(eventId);
+
     return sendJson(res, 200, { received: true });
   } catch (err) {
+    await markWebhookEventFailed(eventId);
     await logAuditEvent({
       eventType: "stripe_webhook",
       actorType: "webhook",
       status: "failure",
       req,
+      targetType: eventId ? "stripe_event" : null,
+      targetId: eventId,
       metadata: { reason: "handler_error" },
     });
     return sendError(res, 500, "Webhook handler failed");

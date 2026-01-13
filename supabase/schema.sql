@@ -190,6 +190,28 @@ create policy "Audit events are not accessible to clients"
 create index if not exists idx_audit_events_user_id on public.audit_events (user_id);
 create index if not exists idx_audit_events_event_type on public.audit_events (event_type);
 
+-- Stripe webhook events (idempotency tracking)
+create table if not exists public.stripe_webhook_events (
+  event_id text primary key,
+  event_type text not null,
+  livemode boolean,
+  status text not null default 'received',
+  received_at timestamptz not null default now(),
+  processed_at timestamptz,
+  check (char_length(event_id) <= 200),
+  check (char_length(event_type) <= 200),
+  check (status in ('received', 'processed', 'failed'))
+);
+
+alter table if exists public.stripe_webhook_events enable row level security;
+
+drop policy if exists "Stripe webhook events are not accessible to clients" on public.stripe_webhook_events;
+create policy "Stripe webhook events are not accessible to clients"
+  on public.stripe_webhook_events
+  for all
+  using (false)
+  with check (false);
+
 -- User state (settings + history sync)
 create table if not exists public.user_state (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -978,4 +1000,3 @@ create policy "Attempt parts are updatable by owner"
 -- Data inserts moved to supabase/studio_pipeline.sql.
 -- Regenerate via: python3 scripts/build_studio_pipeline.py
 -- END STUDIO_PIPELINE_DATA
-

@@ -20,8 +20,12 @@
     return typeof value === "string" ? value.toLowerCase() : "";
   }
 
+  function hasPaidPlan({ plan } = {}) {
+    return PAID_PLANS.has(normalize(plan));
+  }
+
   function hasPaidAccess({ plan, subscriptionStatus } = {}) {
-    if (PAID_PLANS.has(normalize(plan))) return true;
+    if (hasPaidPlan({ plan })) return true;
     return ACTIVE_SUBSCRIPTION_STATUSES.has(normalize(subscriptionStatus));
   }
 
@@ -45,6 +49,7 @@
   }
 
   return {
+    hasPaidPlan,
     hasPaidAccess,
     hasOwnKeyAccess,
     resolveRoundAccess,
