@@ -78,6 +78,9 @@ Minimum for online drift:
 - `TRUST_PROXY` (valgfri, brug `true` hvis din platform sætter sikre forwarded headers)
 - `TRUST_PROXY_HEADERS` (valgfri, kommasepareret liste, default `x-forwarded-for`)
 - `CORS_ALLOW_ORIGINS` (valgfri, kommasepareret liste over fulde origins til API CORS allowlist)
+- `ADMIN_EMAILS` (komma-separeret liste over admin-e-mails)
+- `ADMIN_IMPORT_ENABLED` (sæt til `true` for at aktivere admin-import i API)
+- `PYTHON_BIN` (valgfri, sti til python hvis `python3` ikke er tilgængelig)
 
 Stripe nøgler:
 - `STRIPE_PRICE_ID` findes i Stripe Dashboard → Products → Price (starter med `price_`) og skal være recurring (abonnement).
@@ -105,6 +108,10 @@ Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 - Kør `python3 scripts/convert_kortsvar.py` for at regenerere `data/kortsvar.json`.
 - Sygdomslære pensum ligger i `rawdata-sygdomslaere.txt` (bruges af Sygdomslære Studio).
 - Kør `python3 scripts/convert_sygdomslaere.py` for at regenerere `data/sygdomslaere.json`.
+- Importfiler ligger i `imports/` (én pr. dataset) og bruges af append/replace flowet.
+- Kør `python3 scripts/import_rawdata.py --type <mcq|kortsvar|sygdomslaere> --mode <append|replace>` for at importere et nyt udsnit og regenerere `data/*.json`.
+- Duplicater bevares med vilje (gentagne eksamensspørgsmål skal fremgå).
+- Ved sygdomslære ignoreres header-rækken under append; ved replace tilføjes header automatisk hvis den mangler.
 - Appen loader som standard studiemateriale fra `data/*.json`, så DB-pipeline er valgfri for normal drift.
 - `data/figure_captions.json` er en valgfri cache af AI-figurbeskrivelser.
 - Billeder til kortsvar ligger i `billeder/opgaver` og navngives som `YYYY[-syg]-OO-L[variant].*` (fx `2025-06-a.jpg`).

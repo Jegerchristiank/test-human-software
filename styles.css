@@ -5127,7 +5127,9 @@ body.meta-hidden .question-meta {
   font-size: 13px;
 }
 
-.field input {
+.field input,
+.field select,
+.field textarea {
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid var(--line);
@@ -5136,9 +5138,17 @@ body.meta-hidden .question-meta {
   color: var(--ink);
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
   outline: 2px solid var(--accent-soft);
   border-color: var(--accent-border);
+}
+
+.field textarea {
+  min-height: 160px;
+  resize: vertical;
+  line-height: 1.5;
 }
 
 .field-static {
@@ -5213,6 +5223,43 @@ body.meta-hidden .question-meta {
 .diagnostic-meta {
   font-size: 12px;
   color: var(--muted);
+}
+
+.admin-body {
+  display: grid;
+  gap: 18px;
+  margin-top: 12px;
+}
+
+.admin-section {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-section + .admin-section {
+  border-top: 1px dashed var(--line);
+  padding-top: 16px;
+}
+
+.admin-section-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.admin-section-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.admin-status {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-status.warn {
+  color: var(--accent-warm);
 }
 
 .debug-policy {

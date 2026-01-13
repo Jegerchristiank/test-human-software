@@ -421,3 +421,10 @@
 - Kommandoer: rg -n "Cloudflare R2|R2|Resend|Plausible|analytics|tracking" *.html docs; apply_patch (persondatapolitik.html, privatlivspolitik.html, vilkaar.html); date +%F.
 - Sikkerhedsimplikationer: ingen kodeændringer; juridiske tekster matcher aktuelle leverandører.
 - Opfølgning: opdater igen hvis nye databehandlere tilføjes.
+
+## 2026-01-13
+- Formål: rette landingpage-markup så tema-switch ikke wrapper hele appen og scroll/layout fungerer korrekt på tværs af screens.
+- Berørte filer: index.html, docs/activity.md.
+- Kommandoer: ls; cat docs/activity.md; rg -n "overflow|scroll|no-scroll|noscroll|fixed|height: 100vh|100dvh|svh|vw|vh|position: fixed" styles.css; sed -n '1,140p' styles.css; sed -n '140,220p' styles.css; rg -n "ambient" styles.css; sed -n '220,320p' styles.css; rg -n "landing|auth|shell|page|root|screen|wrapper|hero" styles.css; sed -n '320,520p' styles.css; rg -n "theme-switch" *.html; sed -n '1,200p' index.html; sed -n '1,120p' sign-in.html; sed -n '1,80p' sign-up.html; sed -n '1,80p' consent.html; sed -n '1,80p' privatlivspolitik.html; rg -n "</main>" index.html; tail -n 40 index.html; apply_patch (index.html); date +%F.
+- Sikkerhedsimplikationer: Ingen; markup/layout-fix uden ændring af dataadgang.
+- Opfølgning: Visuel test i browser at landing, auth og legal sider kan scrolle som forventet.
