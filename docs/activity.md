@@ -198,6 +198,13 @@
 - Security: unauthenticated users now redirect to sign-in before protected screens; demo quiz results no longer merge into real history; redirect targets remain same-origin via existing Clerk sanitization.
 - Follow-ups: verify auth redirect flow and demo-only behavior in the browser.
 
+## 2026-01-13
+- Purpose: keep the general CSP headers for every route while using a Vercel-allowed source pattern so `vercel dev` can start locally without the invalid pattern error.
+- Files: vercel.json, docs/activity.md.
+- Commands: `vercel dev` (errored with “invalid route source pattern” before this fix).
+- Security: no runtime change; CSP headers still applied per environment.
+- Follow-ups: rerun `vercel dev` once the new config is deployed to ensure the CLI starts cleanly.
+
 ## 2026-01-11
 - Purpose: implement Studio Engine contracts for Sygdomslære (case_structured), structured hint levels with history-based progression, and capability gating to disable MCQ/drawing.
 - Files: app.js, studio-engine.js, index.html, docs/studio-engine.md, tests/studioEngine.test.mjs, docs/activity.md.

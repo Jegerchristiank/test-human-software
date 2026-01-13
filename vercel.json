@@ -50,7 +50,7 @@
       ]
     },
     {
-      "source": "/:path((?!(consent|consent\\.html)$).*)",
+      "source": "/:path*",
       "headers": [
         {
           "key": "Content-Security-Policy",
