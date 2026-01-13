@@ -112,7 +112,7 @@ function buildContext() {
 
 function loadApp() {
   const script = readFileSync(new URL("../app.js", import.meta.url), "utf8");
-  const harness = `${script}\n;globalThis.__appTest = { state, document, updateAuthUI, getSessionCourse, canSwitchCourse, setActiveCourse };`;
+  const harness = `${script}\n;globalThis.__appTest = { state, document, updateAuthUI, getSessionCourse, canSwitchCourse, setActiveCourse, shouldShowPausedPanel };`;
   const context = buildContext();
   vm.createContext(context);
   vm.runInContext(harness, context);
@@ -149,6 +149,24 @@ describe("studio course switch lock", () => {
     expect(canSwitchCourse("sygdomslaere")).toBe(true);
     setActiveCourse("sygdomslaere");
     expect(state.activeCourse).toBe("sygdomslaere");
+  });
+
+  it("hides the paused panel when the paused session belongs to another course", () => {
+    const { state, shouldShowPausedPanel } = loadApp();
+    state.sessionActive = true;
+    state.sessionPaused = true;
+    state.sessionCourse = "human";
+    state.activeCourse = "sygdomslaere";
+    expect(shouldShowPausedPanel()).toBe(false);
+  });
+
+  it("shows the paused panel when the paused session matches the active course", () => {
+    const { state, shouldShowPausedPanel } = loadApp();
+    state.sessionActive = true;
+    state.sessionPaused = true;
+    state.sessionCourse = "sygdomslaere";
+    state.activeCourse = "sygdomslaere";
+    expect(shouldShowPausedPanel()).toBe(true);
   });
 
   it("infers the session course from active questions when unset", () => {

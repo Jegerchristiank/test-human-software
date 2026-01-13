@@ -495,3 +495,10 @@
 - Commands: ls; ls docs; cat docs/activity.md; rg -n "openai|api key|api_key|openai_key|own key|personal key|key" -S app.js api access-policy.js auth.js index.html; rg -n "own_key|openai|api_key" supabase/schema.sql api app.js; sed -n '1,220p' app.js; sed -n '3600,4300p' app.js; sed -n '5100,6800p' app.js; sed -n '1,220p' api/_lib/aiGate.js; sed -n '1,220p' api/profile.js; sed -n '1,220p' api/me.js; sed -n '1,220p' api/health.js; sed -n '1,220p' supabase/schema.sql; cat .env; apply_patch (multiple files); cat <<'EOF' > api/_lib/userOpenAiKey.js; cat <<'EOF' > api/own-key.js; cat <<'EOF' > tests/ownKey.test.mjs; npm test -- tests/accessPolicy.test.mjs tests/ownKey.test.mjs; git status -s; date +%F.
 - Security: user OpenAI keys are encrypted with a server-side secret and stored in a non-client-accessible table; AI access checks now use stored keys without returning them to clients; added rate-limited endpoint for saving/clearing keys.
 - Follow-ups: apply `supabase/schema.sql` in Supabase; set `OPENAI_KEY_ENCRYPTION_SECRET` in all environments (Vercel + local) before enabling key storage.
+
+## 2026-01-13
+- Purpose: stop the auth hero banner from cropping the logo by letting the brand image scale with its native aspect ratio while keeping a size cap.
+- Files: styles.css, docs/activity.md.
+- Commands: rg -n "brand-banner.hero" styles.css; sed -n '1400,1455p' styles.css; sed -n '4240,4305p' styles.css; apply_patch (styles.css); tail -n 40 docs/activity.md; date +%F.
+- Security: none; styling-only change.
+- Follow-ups: visually confirm the hero logo now shows the full artwork on desktop and narrower breakpoints.

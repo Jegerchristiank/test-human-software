@@ -1435,13 +1435,15 @@ body[data-theme="dark"] .noise-layer {
 }
 
 .brand-banner.hero {
-  width: clamp(160px, 22vw, 240px);
-  height: clamp(160px, 22vw, 240px);
+  width: clamp(170px, 22vw, 260px);
+  height: auto;
+  max-height: clamp(160px, 22vw, 260px);
   border-radius: 16px;
   border: none;
   box-shadow: none;
   background: transparent;
   margin-bottom: 12px;
+  object-fit: contain;
 }
 
 .brand-block .brand-banner {
@@ -4282,9 +4284,11 @@ body.meta-hidden .question-meta {
   }
 
   .brand-banner.hero {
-    width: clamp(120px, 42vw, 180px);
-    height: clamp(120px, 42vw, 180px);
+    width: clamp(140px, 36vw, 220px);
+    height: auto;
+    max-height: clamp(140px, 42vw, 220px);
     border-radius: 14px;
+    object-fit: contain;
   }
 
   .menu-shell,

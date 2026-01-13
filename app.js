@@ -1115,6 +1115,7 @@ const screens = {
   quiz: document.getElementById("quiz-screen"),
   result: document.getElementById("result-screen"),
   account: document.getElementById("account-screen"),
+  admin: document.getElementById("admin-screen"),
   billing: document.getElementById("billing-screen"),
   checkout: document.getElementById("checkout-screen"),
 };
@@ -1270,7 +1271,7 @@ const elements = {
   diagAiMeta: document.getElementById("diag-ai-meta"),
   diagRefreshBtn: document.getElementById("diag-refresh-btn"),
   adminMenuBtn: document.getElementById("admin-menu-btn"),
-  adminPanel: document.getElementById("admin-panel"),
+  adminBackBtn: document.getElementById("admin-back-btn"),
   adminModeToggle: document.getElementById("admin-mode-toggle"),
   adminBody: document.getElementById("admin-body"),
   adminStatus: document.getElementById("admin-status"),
@@ -1984,6 +1985,13 @@ function updateCourseSwitchLock() {
       elements.studioSygdomBtn.removeAttribute("title");
     }
   }
+}
+
+function shouldShowPausedPanel() {
+  if (!state.sessionActive || !state.sessionPaused) return false;
+  const sessionCourse = getSessionCourse();
+  if (!sessionCourse) return true;
+  return sessionCourse === getActiveCourse();
 }
 
 function updateCourseStatsPill(course) {
@@ -2935,6 +2943,7 @@ const AUTH_REQUIRED_SCREENS = new Set([
   "quiz",
   "result",
   "account",
+  "admin",
   "billing",
   "checkout",
   "consent",
@@ -2992,7 +3001,7 @@ function showScreen(target) {
   document.body.classList.toggle("mode-landing", target === "landing");
   document.body.classList.toggle(
     "mode-menu",
-    target === "menu" || target === "account" || target === "billing" || target === "checkout"
+    target === "menu" || target === "account" || target === "admin" || target === "billing" || target === "checkout"
   );
   document.body.classList.toggle("mode-game", target === "quiz");
   document.body.classList.toggle("mode-result", target === "result");
@@ -3534,7 +3543,6 @@ function updateAdminUI() {
     setElementVisible(elements.adminMenuBtn, allowed);
     elements.adminMenuBtn.disabled = !allowed;
   }
-  setElementVisible(elements.adminPanel, allowed);
   if (elements.adminModeToggle) {
     elements.adminModeToggle.checked = Boolean(allowed && state.settings.adminMode);
     elements.adminModeToggle.disabled = !allowed;
@@ -15251,10 +15259,12 @@ function resetCancelRoundConfirm() {
 function updatePausedSessionUI() {
   updateCourseSwitchLock();
   if (!elements.pausedSessionPanel) return;
-  const isPaused = state.sessionActive && state.sessionPaused;
-  elements.pausedSessionPanel.classList.toggle("hidden", !isPaused);
-  if (!isPaused) {
-    resetCancelRoundConfirm();
+  const shouldShowPanel = shouldShowPausedPanel();
+  elements.pausedSessionPanel.classList.toggle("hidden", !shouldShowPanel);
+  if (!shouldShowPanel) {
+    if (!state.sessionPaused) {
+      resetCancelRoundConfirm();
+    }
     return;
   }
   const total = state.activeQuestions.length || 0;
@@ -16169,7 +16179,7 @@ function attachEvents() {
   if (elements.adminMenuBtn) {
     elements.adminMenuBtn.addEventListener("click", () => {
       if (!requireAuthGuard()) return;
-      showScreen("account");
+      showScreen("admin");
       setAdminMode(true);
     });
   }
@@ -16185,6 +16195,11 @@ function attachEvents() {
   }
   if (elements.accountBackBtn) {
     elements.accountBackBtn.addEventListener("click", () =>
+      showScreen(state.lastAppScreen || "menu")
+    );
+  }
+  if (elements.adminBackBtn) {
+    elements.adminBackBtn.addEventListener("click", () =>
       showScreen(state.lastAppScreen || "menu")
     );
   }

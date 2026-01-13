@@ -1296,6 +1296,188 @@
           </div>
         </div>
       </section>
+      <section id="admin-screen" data-testid="admin-screen" class="screen hidden">
+        <div class="menu-shell" data-testid="admin-shell">
+          <header class="menu-header reveal" data-testid="admin-header" style="--delay: 0s">
+            <a class="brand-block brand-action" href="index.html" data-brand-back data-testid="admin-header-brand">
+              <div class="brand-mark" data-testid="admin-header-brand-mark">
+                <img class="brand-logo" src="logo.png" alt="Human Biologi Studio logo" />
+              </div>
+              <div data-testid="admin-header-brand-copy">
+                <div class="eyebrow" data-testid="admin-header-brand-eyebrow">Admin</div>
+                <h1 data-testid="admin-header-brand-title">Admin dashboard</h1>
+                <p data-testid="admin-header-brand-subtitle">Driftsoverblik, import og supportværktøjer.</p>
+              </div>
+            </a>
+            <div class="menu-right" data-testid="admin-header-menu-right">
+              <div class="menu-account" data-testid="admin-header-menu-account">
+                <button id="admin-back-btn" data-testid="admin-back-btn" class="btn ghost" type="button">Tilbage til app</button>
+              </div>
+            </div>
+          </header>
+          <div class="menu-grid" data-testid="admin-menu-grid">
+            <div class="menu-column" data-testid="admin-column">
+              <section class="panel admin-panel reveal" data-testid="admin-panel" style="--delay: 0.05s">
+                <div class="panel-header" data-testid="index__admin-shell--admin-panel__panel-header">
+                  <h2>Admin</h2>
+                  <p>Driftsoverblik og dataimport til eksamenssæt.</p>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="admin-mode-toggle" data-testid="admin-mode-toggle" />
+                  <span>Admin-tilstand</span>
+                  <small>Kun synlig for godkendte admins.</small>
+                </label>
+                <div class="admin-body hidden" id="admin-body" data-testid="admin-body">
+                  <div class="admin-section" data-testid="admin-metrics-section">
+                    <div class="admin-section-header" data-testid="admin-metrics-header">
+                      <h3>Overblik</h3>
+                      <p>Supabase, Stripe og datalag samlet ét sted.</p>
+                    </div>
+                    <div class="diagnostics-grid admin-metrics-grid" data-testid="admin-metrics-grid">
+                      <div class="diagnostic-card" data-testid="admin-card-users">
+                        <div class="diagnostic-label" data-testid="admin-users-label">Brugere</div>
+                        <div class="diagnostic-value" id="admin-users-total" data-testid="admin-users-total">—</div>
+                        <div class="diagnostic-meta" id="admin-users-meta" data-testid="admin-users-meta">—</div>
+                      </div>
+                      <div class="diagnostic-card" data-testid="admin-card-active">
+                        <div class="diagnostic-label" data-testid="admin-active-label">Aktive brugere</div>
+                        <div class="diagnostic-value" id="admin-active-users" data-testid="admin-active-users">—</div>
+                        <div class="diagnostic-meta" id="admin-active-meta" data-testid="admin-active-meta">—</div>
+                      </div>
+                      <div class="diagnostic-card" data-testid="admin-card-plans">
+                        <div class="diagnostic-label" data-testid="admin-plan-label">Planer</div>
+                        <div class="diagnostic-value" id="admin-plan-paid" data-testid="admin-plan-paid">—</div>
+                        <div class="diagnostic-meta" id="admin-plan-meta" data-testid="admin-plan-meta">—</div>
+                      </div>
+                      <div class="diagnostic-card" data-testid="admin-card-subscriptions">
+                        <div class="diagnostic-label" data-testid="admin-subscriptions-label">Abonnementer</div>
+                        <div class="diagnostic-value" id="admin-subscriptions-active" data-testid="admin-subscriptions-active">—</div>
+                        <div class="diagnostic-meta" id="admin-subscriptions-meta" data-testid="admin-subscriptions-meta">—</div>
+                      </div>
+                      <div class="diagnostic-card" data-testid="admin-card-usage">
+                        <div class="diagnostic-label" data-testid="admin-usage-label">Brug</div>
+                        <div class="diagnostic-value" id="admin-usage-7d" data-testid="admin-usage-7d">—</div>
+                        <div class="diagnostic-meta" id="admin-usage-meta" data-testid="admin-usage-meta">—</div>
+                      </div>
+                      <div class="diagnostic-card" data-testid="admin-card-evals">
+                        <div class="diagnostic-label" data-testid="admin-evals-label">Evalueringer</div>
+                        <div class="diagnostic-value" id="admin-evals-7d" data-testid="admin-evals-7d">—</div>
+                        <div class="diagnostic-meta" id="admin-evals-meta" data-testid="admin-evals-meta">—</div>
+                      </div>
+                      <div class="diagnostic-card" data-testid="admin-card-audit">
+                        <div class="diagnostic-label" data-testid="admin-audit-label">Audit</div>
+                        <div class="diagnostic-value" id="admin-audit-7d" data-testid="admin-audit-7d">—</div>
+                        <div class="diagnostic-meta" id="admin-audit-meta" data-testid="admin-audit-meta">—</div>
+                      </div>
+                      <div class="diagnostic-card" data-testid="admin-card-data">
+                        <div class="diagnostic-label" data-testid="admin-data-label">Data</div>
+                        <div class="diagnostic-value" id="admin-data-mcq" data-testid="admin-data-mcq">—</div>
+                        <div class="diagnostic-meta" id="admin-data-meta" data-testid="admin-data-meta">—</div>
+                      </div>
+                      <div class="diagnostic-card" data-testid="admin-card-stripe">
+                        <div class="diagnostic-label" data-testid="admin-stripe-label">Stripe saldo</div>
+                        <div class="diagnostic-value" id="admin-stripe-available" data-testid="admin-stripe-available">—</div>
+                        <div class="diagnostic-meta" id="admin-stripe-meta" data-testid="admin-stripe-meta">—</div>
+                      </div>
+                      <div class="diagnostic-card" data-testid="admin-card-rawdata">
+                        <div class="diagnostic-label" data-testid="admin-rawdata-label">Rawdata</div>
+                        <div class="diagnostic-value" id="admin-rawdata-updated" data-testid="admin-rawdata-updated">—</div>
+                        <div class="diagnostic-meta" id="admin-rawdata-meta" data-testid="admin-rawdata-meta">—</div>
+                      </div>
+                      <div class="diagnostic-card" data-testid="admin-card-imports">
+                        <div class="diagnostic-label" data-testid="admin-imports-label">Importer</div>
+                        <div class="diagnostic-value" id="admin-imports-updated" data-testid="admin-imports-updated">—</div>
+                        <div class="diagnostic-meta" id="admin-imports-meta" data-testid="admin-imports-meta">—</div>
+                      </div>
+                    </div>
+                    <div class="account-actions" data-testid="admin-metrics-actions">
+                      <button id="admin-refresh-btn" data-testid="admin-refresh-btn" class="btn ghost" type="button">Opdatér admin data</button>
+                    </div>
+                    <div class="field-hint" data-testid="admin-metrics-hint">Tallene er aggregerede og viser ikke persondata.</div>
+                  </div>
+
+                  <div class="admin-section" data-testid="admin-analytics-section">
+                    <div class="admin-section-header" data-testid="admin-analytics-header">
+                      <h3>Analytics</h3>
+                      <p>Vercel-trafik og samlet app health.</p>
+                    </div>
+                    <div class="diagnostics-grid admin-analytics-grid" data-testid="admin-analytics-grid">
+                      <div class="diagnostic-card" data-testid="admin-card-vercel">
+                        <div class="diagnostic-label" data-testid="admin-vercel-label">Vercel</div>
+                        <div class="diagnostic-value" id="admin-vercel-traffic" data-testid="admin-vercel-traffic">—</div>
+                        <div class="diagnostic-meta" id="admin-vercel-meta" data-testid="admin-vercel-meta">—</div>
+                      </div>
+                      <div class="diagnostic-card" data-testid="admin-card-health">
+                        <div class="diagnostic-label" data-testid="admin-health-label">App health</div>
+                        <div class="diagnostic-value" id="admin-health-status" data-testid="admin-health-status">—</div>
+                        <div class="diagnostic-meta" id="admin-health-meta" data-testid="admin-health-meta">—</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="admin-section" data-testid="admin-lookup-section">
+                    <div class="admin-section-header" data-testid="admin-lookup-header">
+                      <h3>Profilopslag</h3>
+                      <p>Slå en bruger op og se aktivitet, plan og logning.</p>
+                    </div>
+                    <div class="field" data-testid="admin-lookup-mode-field">
+                      <label for="admin-lookup-mode">Slå op på</label>
+                      <select id="admin-lookup-mode" data-testid="admin-lookup-mode">
+                        <option value="email">Email</option>
+                        <option value="user_id">Bruger-id</option>
+                        <option value="stripe_customer_id">Stripe customer id</option>
+                        <option value="stripe_subscription_id">Stripe subscription id</option>
+                      </select>
+                    </div>
+                    <div class="field" data-testid="admin-lookup-query-field">
+                      <label for="admin-lookup-query">Søgetekst</label>
+                      <input id="admin-lookup-query" data-testid="admin-lookup-query" type="text" placeholder="Indtast email eller id" />
+                    </div>
+                    <div class="account-actions" data-testid="admin-lookup-actions">
+                      <button id="admin-lookup-btn" data-testid="admin-lookup-btn" class="btn ghost" type="button">Slå op</button>
+                    </div>
+                    <div class="field-hint" data-testid="admin-lookup-hint">Resultatet viser alle tilgængelige profiler og aktivitetstabeller.</div>
+                    <div class="admin-status hidden" id="admin-lookup-status" data-testid="admin-lookup-status" role="status" aria-live="polite"></div>
+                    <pre class="admin-result hidden" id="admin-lookup-result" data-testid="admin-lookup-result"></pre>
+                  </div>
+
+                  <div class="admin-section" data-testid="admin-import-section">
+                    <div class="admin-section-header" data-testid="admin-import-header">
+                      <h3>Import</h3>
+                      <p>Indsæt et udsnit af et eksamenssæt og vælg append eller replace.</p>
+                    </div>
+                    <div class="field" data-testid="admin-import-type-field">
+                      <label for="admin-import-type">Importtype</label>
+                      <select id="admin-import-type" data-testid="admin-import-type">
+                        <option value="mcq">MCQ</option>
+                        <option value="kortsvar">Kortsvar</option>
+                        <option value="sygdomslaere">Sygdomslære</option>
+                      </select>
+                    </div>
+                    <div class="field" data-testid="admin-import-mode-field">
+                      <label for="admin-import-mode">Importmode</label>
+                      <select id="admin-import-mode" data-testid="admin-import-mode">
+                        <option value="append">Tilføj (append)</option>
+                        <option value="replace">Erstat alt (replace)</option>
+                      </select>
+                    </div>
+                    <div class="field" data-testid="admin-import-content-field">
+                      <label for="admin-import-content">Indsæt rådata</label>
+                      <textarea id="admin-import-content" data-testid="admin-import-content" rows="10" placeholder="Indsæt rådata i samme format som rawdata-filerne."></textarea>
+                    </div>
+                    <div class="account-actions" data-testid="admin-import-actions">
+                      <button id="admin-import-btn" data-testid="admin-import-btn" class="btn primary" type="button">Importer</button>
+                    </div>
+                    <div class="field-hint" data-testid="admin-import-hint">Importen opdaterer datasættet i databasen.</div>
+                    <div class="admin-status hidden" id="admin-import-status" data-testid="admin-import-status" role="status" aria-live="polite"></div>
+                  </div>
+                </div>
+                <div class="admin-status hidden" id="admin-status" data-testid="admin-status" role="status" aria-live="polite"></div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
       <section id="account-screen" data-testid="account-screen" class="screen hidden">
         <div class="account-shell" data-testid="account-shell">
           <header class="account-hero reveal" data-testid="account-hero" style="--delay: 0s">
@@ -1438,164 +1620,6 @@
                 <button id="diag-refresh-btn" data-testid="diag-refresh-btn" class="btn ghost" type="button">Opdatér status</button>
               </div>
               <div class="field-hint" data-testid="index__account-grid--account-panel-diagnostics__field-hint">Nogle checks kræver login for at vise fuld status.</div>
-            </section>
-
-            <section class="panel account-panel admin-panel hidden" id="admin-panel" data-testid="admin-panel" style="--delay: 0.35s">
-              <div class="panel-header" data-testid="index__account-grid--admin-panel__panel-header">
-                <h2>Admin</h2>
-                <p>Driftsoverblik og dataimport til eksamenssæt.</p>
-              </div>
-              <label class="toggle">
-                <input type="checkbox" id="admin-mode-toggle" data-testid="admin-mode-toggle" />
-                <span>Admin-tilstand</span>
-                <small>Kun synlig for godkendte admins.</small>
-              </label>
-              <div class="admin-body hidden" id="admin-body" data-testid="admin-body">
-                <div class="admin-section" data-testid="admin-metrics-section">
-                  <div class="admin-section-header" data-testid="admin-metrics-header">
-                    <h3>Overblik</h3>
-                    <p>Supabase, Stripe og datalag samlet ét sted.</p>
-                  </div>
-                  <div class="diagnostics-grid admin-metrics-grid" data-testid="admin-metrics-grid">
-                    <div class="diagnostic-card" data-testid="admin-card-users">
-                      <div class="diagnostic-label" data-testid="admin-users-label">Brugere</div>
-                      <div class="diagnostic-value" id="admin-users-total" data-testid="admin-users-total">—</div>
-                      <div class="diagnostic-meta" id="admin-users-meta" data-testid="admin-users-meta">—</div>
-                    </div>
-                    <div class="diagnostic-card" data-testid="admin-card-active">
-                      <div class="diagnostic-label" data-testid="admin-active-label">Aktive brugere</div>
-                      <div class="diagnostic-value" id="admin-active-users" data-testid="admin-active-users">—</div>
-                      <div class="diagnostic-meta" id="admin-active-meta" data-testid="admin-active-meta">—</div>
-                    </div>
-                    <div class="diagnostic-card" data-testid="admin-card-plans">
-                      <div class="diagnostic-label" data-testid="admin-plan-label">Planer</div>
-                      <div class="diagnostic-value" id="admin-plan-paid" data-testid="admin-plan-paid">—</div>
-                      <div class="diagnostic-meta" id="admin-plan-meta" data-testid="admin-plan-meta">—</div>
-                    </div>
-                    <div class="diagnostic-card" data-testid="admin-card-subscriptions">
-                      <div class="diagnostic-label" data-testid="admin-subscriptions-label">Abonnementer</div>
-                      <div class="diagnostic-value" id="admin-subscriptions-active" data-testid="admin-subscriptions-active">—</div>
-                      <div class="diagnostic-meta" id="admin-subscriptions-meta" data-testid="admin-subscriptions-meta">—</div>
-                    </div>
-                    <div class="diagnostic-card" data-testid="admin-card-usage">
-                      <div class="diagnostic-label" data-testid="admin-usage-label">Brug</div>
-                      <div class="diagnostic-value" id="admin-usage-7d" data-testid="admin-usage-7d">—</div>
-                      <div class="diagnostic-meta" id="admin-usage-meta" data-testid="admin-usage-meta">—</div>
-                    </div>
-                    <div class="diagnostic-card" data-testid="admin-card-evals">
-                      <div class="diagnostic-label" data-testid="admin-evals-label">Evalueringer</div>
-                      <div class="diagnostic-value" id="admin-evals-7d" data-testid="admin-evals-7d">—</div>
-                      <div class="diagnostic-meta" id="admin-evals-meta" data-testid="admin-evals-meta">—</div>
-                    </div>
-                    <div class="diagnostic-card" data-testid="admin-card-audit">
-                      <div class="diagnostic-label" data-testid="admin-audit-label">Audit</div>
-                      <div class="diagnostic-value" id="admin-audit-7d" data-testid="admin-audit-7d">—</div>
-                      <div class="diagnostic-meta" id="admin-audit-meta" data-testid="admin-audit-meta">—</div>
-                    </div>
-                    <div class="diagnostic-card" data-testid="admin-card-data">
-                      <div class="diagnostic-label" data-testid="admin-data-label">Data</div>
-                      <div class="diagnostic-value" id="admin-data-mcq" data-testid="admin-data-mcq">—</div>
-                      <div class="diagnostic-meta" id="admin-data-meta" data-testid="admin-data-meta">—</div>
-                    </div>
-                    <div class="diagnostic-card" data-testid="admin-card-stripe">
-                      <div class="diagnostic-label" data-testid="admin-stripe-label">Stripe saldo</div>
-                      <div class="diagnostic-value" id="admin-stripe-available" data-testid="admin-stripe-available">—</div>
-                      <div class="diagnostic-meta" id="admin-stripe-meta" data-testid="admin-stripe-meta">—</div>
-                    </div>
-                    <div class="diagnostic-card" data-testid="admin-card-rawdata">
-                      <div class="diagnostic-label" data-testid="admin-rawdata-label">Rawdata</div>
-                      <div class="diagnostic-value" id="admin-rawdata-updated" data-testid="admin-rawdata-updated">—</div>
-                      <div class="diagnostic-meta" id="admin-rawdata-meta" data-testid="admin-rawdata-meta">—</div>
-                    </div>
-                    <div class="diagnostic-card" data-testid="admin-card-imports">
-                      <div class="diagnostic-label" data-testid="admin-imports-label">Importer</div>
-                      <div class="diagnostic-value" id="admin-imports-updated" data-testid="admin-imports-updated">—</div>
-                      <div class="diagnostic-meta" id="admin-imports-meta" data-testid="admin-imports-meta">—</div>
-                    </div>
-                  </div>
-                  <div class="account-actions" data-testid="admin-metrics-actions">
-                    <button id="admin-refresh-btn" data-testid="admin-refresh-btn" class="btn ghost" type="button">Opdatér admin data</button>
-                  </div>
-                  <div class="field-hint" data-testid="admin-metrics-hint">Tallene er aggregerede og viser ikke persondata.</div>
-                </div>
-
-                <div class="admin-section" data-testid="admin-analytics-section">
-                  <div class="admin-section-header" data-testid="admin-analytics-header">
-                    <h3>Analytics</h3>
-                    <p>Vercel-trafik og samlet app health.</p>
-                  </div>
-                  <div class="diagnostics-grid admin-analytics-grid" data-testid="admin-analytics-grid">
-                    <div class="diagnostic-card" data-testid="admin-card-vercel">
-                      <div class="diagnostic-label" data-testid="admin-vercel-label">Vercel</div>
-                      <div class="diagnostic-value" id="admin-vercel-traffic" data-testid="admin-vercel-traffic">—</div>
-                      <div class="diagnostic-meta" id="admin-vercel-meta" data-testid="admin-vercel-meta">—</div>
-                    </div>
-                    <div class="diagnostic-card" data-testid="admin-card-health">
-                      <div class="diagnostic-label" data-testid="admin-health-label">App health</div>
-                      <div class="diagnostic-value" id="admin-health-status" data-testid="admin-health-status">—</div>
-                      <div class="diagnostic-meta" id="admin-health-meta" data-testid="admin-health-meta">—</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="admin-section" data-testid="admin-lookup-section">
-                  <div class="admin-section-header" data-testid="admin-lookup-header">
-                    <h3>Profilopslag</h3>
-                    <p>Slå en bruger op og se aktivitet, plan og logning.</p>
-                  </div>
-                  <div class="field" data-testid="admin-lookup-mode-field">
-                    <label for="admin-lookup-mode">Slå op på</label>
-                    <select id="admin-lookup-mode" data-testid="admin-lookup-mode">
-                      <option value="email">Email</option>
-                      <option value="user_id">Bruger-id</option>
-                      <option value="stripe_customer_id">Stripe customer id</option>
-                      <option value="stripe_subscription_id">Stripe subscription id</option>
-                    </select>
-                  </div>
-                  <div class="field" data-testid="admin-lookup-query-field">
-                    <label for="admin-lookup-query">Søgetekst</label>
-                    <input id="admin-lookup-query" data-testid="admin-lookup-query" type="text" placeholder="Indtast email eller id" />
-                  </div>
-                  <div class="account-actions" data-testid="admin-lookup-actions">
-                    <button id="admin-lookup-btn" data-testid="admin-lookup-btn" class="btn ghost" type="button">Slå op</button>
-                  </div>
-                  <div class="field-hint" data-testid="admin-lookup-hint">Resultatet viser alle tilgængelige profiler og aktivitetstabeller.</div>
-                  <div class="admin-status hidden" id="admin-lookup-status" data-testid="admin-lookup-status" role="status" aria-live="polite"></div>
-                  <pre class="admin-result hidden" id="admin-lookup-result" data-testid="admin-lookup-result"></pre>
-                </div>
-
-                <div class="admin-section" data-testid="admin-import-section">
-                  <div class="admin-section-header" data-testid="admin-import-header">
-                    <h3>Import</h3>
-                    <p>Indsæt et udsnit af et eksamenssæt og vælg append eller replace.</p>
-                  </div>
-                  <div class="field" data-testid="admin-import-type-field">
-                    <label for="admin-import-type">Importtype</label>
-                    <select id="admin-import-type" data-testid="admin-import-type">
-                      <option value="mcq">MCQ</option>
-                      <option value="kortsvar">Kortsvar</option>
-                      <option value="sygdomslaere">Sygdomslære</option>
-                    </select>
-                  </div>
-                  <div class="field" data-testid="admin-import-mode-field">
-                    <label for="admin-import-mode">Importmode</label>
-                    <select id="admin-import-mode" data-testid="admin-import-mode">
-                      <option value="append">Tilføj (append)</option>
-                      <option value="replace">Erstat alt (replace)</option>
-                    </select>
-                  </div>
-                  <div class="field" data-testid="admin-import-content-field">
-                    <label for="admin-import-content">Indsæt rådata</label>
-                    <textarea id="admin-import-content" data-testid="admin-import-content" rows="10" placeholder="Indsæt rådata i samme format som rawdata-filerne."></textarea>
-                  </div>
-                  <div class="account-actions" data-testid="admin-import-actions">
-                    <button id="admin-import-btn" data-testid="admin-import-btn" class="btn primary" type="button">Importer</button>
-                  </div>
-                  <div class="field-hint" data-testid="admin-import-hint">Importen opdaterer datasættet i databasen.</div>
-                  <div class="admin-status hidden" id="admin-import-status" data-testid="admin-import-status" role="status" aria-live="polite"></div>
-                </div>
-              </div>
-              <div class="admin-status hidden" id="admin-status" data-testid="admin-status" role="status" aria-live="polite"></div>
             </section>
 
             <section class="panel account-panel debug-panel hidden" id="debug-panel" data-testid="debug-panel" style="--delay: 0.35s">
