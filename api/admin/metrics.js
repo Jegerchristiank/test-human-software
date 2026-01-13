@@ -91,7 +91,12 @@ module.exports = async function handler(req, res) {
     return sendError(res, 403, "forbidden");
   }
 
-  const supabase = getSupabaseAdmin();
+  let supabase;
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (error) {
+    return sendError(res, 500, "supabase_not_configured");
+  }
   const now = Date.now();
   const since7d = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
   const since30d = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();

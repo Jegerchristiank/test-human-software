@@ -53,6 +53,7 @@ const DEFAULT_SETTINGS = {
   ttsCollapsed: false,
   autoFigureCaptions: true,
   assistantCollapsed: false,
+  adminMode: false,
 };
 const COURSE_DEFAULT_SETTINGS = {
   human: {},
@@ -944,6 +945,14 @@ const state = {
     isUpdating: false,
     setupClientSecret: null,
   },
+  admin: {
+    allowed: false,
+    importEnabled: false,
+    checkedUserId: null,
+    metrics: null,
+    loading: false,
+    importing: false,
+  },
   billingElements: null,
   billingPaymentElement: null,
   lastPreset: null,
@@ -1255,6 +1264,38 @@ const elements = {
   diagAi: document.getElementById("diag-ai"),
   diagAiMeta: document.getElementById("diag-ai-meta"),
   diagRefreshBtn: document.getElementById("diag-refresh-btn"),
+  adminPanel: document.getElementById("admin-panel"),
+  adminModeToggle: document.getElementById("admin-mode-toggle"),
+  adminBody: document.getElementById("admin-body"),
+  adminStatus: document.getElementById("admin-status"),
+  adminRefreshBtn: document.getElementById("admin-refresh-btn"),
+  adminUsersTotal: document.getElementById("admin-users-total"),
+  adminUsersMeta: document.getElementById("admin-users-meta"),
+  adminActiveUsers: document.getElementById("admin-active-users"),
+  adminActiveMeta: document.getElementById("admin-active-meta"),
+  adminPlanPaid: document.getElementById("admin-plan-paid"),
+  adminPlanMeta: document.getElementById("admin-plan-meta"),
+  adminSubscriptionsActive: document.getElementById("admin-subscriptions-active"),
+  adminSubscriptionsMeta: document.getElementById("admin-subscriptions-meta"),
+  adminUsage7d: document.getElementById("admin-usage-7d"),
+  adminUsageMeta: document.getElementById("admin-usage-meta"),
+  adminEvals7d: document.getElementById("admin-evals-7d"),
+  adminEvalsMeta: document.getElementById("admin-evals-meta"),
+  adminAudit7d: document.getElementById("admin-audit-7d"),
+  adminAuditMeta: document.getElementById("admin-audit-meta"),
+  adminDataMcq: document.getElementById("admin-data-mcq"),
+  adminDataMeta: document.getElementById("admin-data-meta"),
+  adminStripeAvailable: document.getElementById("admin-stripe-available"),
+  adminStripeMeta: document.getElementById("admin-stripe-meta"),
+  adminRawdataUpdated: document.getElementById("admin-rawdata-updated"),
+  adminRawdataMeta: document.getElementById("admin-rawdata-meta"),
+  adminImportsUpdated: document.getElementById("admin-imports-updated"),
+  adminImportsMeta: document.getElementById("admin-imports-meta"),
+  adminImportType: document.getElementById("admin-import-type"),
+  adminImportMode: document.getElementById("admin-import-mode"),
+  adminImportContent: document.getElementById("admin-import-content"),
+  adminImportBtn: document.getElementById("admin-import-btn"),
+  adminImportStatus: document.getElementById("admin-import-status"),
   debugPanel: document.getElementById("debug-panel"),
   debugStudioType: document.getElementById("debug-studio-type"),
   debugPolicy: document.getElementById("debug-policy"),
@@ -3183,6 +3224,374 @@ function setBillingUpdateStatus(message, isWarn = false) {
   setElementVisible(elements.billingUpdateStatus, Boolean(text));
 }
 
+function setAdminStatus(message, isWarn = false) {
+  if (!elements.adminStatus) return;
+  const text = String(message || "").trim();
+  elements.adminStatus.textContent = text;
+  elements.adminStatus.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.adminStatus, Boolean(text));
+}
+
+function setAdminImportStatus(message, isWarn = false) {
+  if (!elements.adminImportStatus) return;
+  const text = String(message || "").trim();
+  elements.adminImportStatus.textContent = text;
+  elements.adminImportStatus.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.adminImportStatus, Boolean(text));
+}
+
+function formatAdminCount(value) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  return new Intl.NumberFormat("da-DK").format(value);
+}
+
+function formatAdminDate(value) {
+  if (!value) return "—";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  const date = parsed.toLocaleDateString("da-DK", { day: "2-digit", month: "short" });
+  const time = parsed.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+  return `${date} ${time}`;
+}
+
+function formatAdminMeta(parts) {
+  const clean = parts.map((part) => String(part || "").trim()).filter(Boolean);
+  return clean.length ? clean.join(" · ") : "—";
+}
+
+function formatCurrencyMap(values) {
+  if (!values || typeof values !== "object") return "—";
+  const entries = Object.entries(values);
+  if (!entries.length) return "—";
+  return (
+    entries
+      .map(([currency, amount]) => formatCurrency(amount, currency))
+      .filter((entry) => entry && entry !== "—")
+      .join(" · ") || "—"
+  );
+}
+
+function resolveLatestUpdate(info) {
+  const timestamps = Object.values(info || {})
+    .map((entry) => Date.parse(entry?.updatedAt || ""))
+    .filter((value) => Number.isFinite(value));
+  if (!timestamps.length) return null;
+  return new Date(Math.max(...timestamps)).toISOString();
+}
+
+function renderAdminMetrics(metrics) {
+  const profiles = metrics?.supabase?.profiles || {};
+  const subscriptions = metrics?.supabase?.subscriptions || {};
+  const userState = metrics?.supabase?.user_state || {};
+  const usage = metrics?.supabase?.usage_events || {};
+  const evals = metrics?.supabase?.evaluation_logs || {};
+  const audits = metrics?.supabase?.audit_events || {};
+  const data = metrics?.data || {};
+  const rawdata = metrics?.rawdata || {};
+  const imports = metrics?.imports || {};
+  const stripe = metrics?.stripe || null;
+
+  if (elements.adminUsersTotal) {
+    elements.adminUsersTotal.textContent = formatAdminCount(profiles.total);
+  }
+  if (elements.adminUsersMeta) {
+    const new7d = formatAdminCount(profiles.new7d);
+    const new30d = formatAdminCount(profiles.new30d);
+    elements.adminUsersMeta.textContent = formatAdminMeta([
+      new7d !== "—" ? `+${new7d} sidste 7 dage` : null,
+      new30d !== "—" ? `+${new30d} sidste 30 dage` : null,
+    ]);
+  }
+
+  if (elements.adminActiveUsers) {
+    elements.adminActiveUsers.textContent = formatAdminCount(userState.active7d);
+  }
+  if (elements.adminActiveMeta) {
+    const total = formatAdminCount(userState.total);
+    elements.adminActiveMeta.textContent = formatAdminMeta([
+      total !== "—" ? `Synk total ${total}` : null,
+    ]);
+  }
+
+  if (elements.adminPlanPaid) {
+    elements.adminPlanPaid.textContent = formatAdminCount(profiles.plans?.paid);
+  }
+  if (elements.adminPlanMeta) {
+    elements.adminPlanMeta.textContent = formatAdminMeta([
+      `Free ${formatAdminCount(profiles.plans?.free)}`,
+      `Trial ${formatAdminCount(profiles.plans?.trial)}`,
+      `Lifetime ${formatAdminCount(profiles.plans?.lifetime)}`,
+    ]);
+  }
+
+  if (elements.adminSubscriptionsActive) {
+    elements.adminSubscriptionsActive.textContent = formatAdminCount(subscriptions.active);
+  }
+  if (elements.adminSubscriptionsMeta) {
+    elements.adminSubscriptionsMeta.textContent = formatAdminMeta([
+      `Total ${formatAdminCount(subscriptions.total)}`,
+      `Restance ${formatAdminCount(subscriptions.past_due)}`,
+      `Opsagt ${formatAdminCount(subscriptions.canceled)}`,
+    ]);
+  }
+
+  if (elements.adminUsage7d) {
+    elements.adminUsage7d.textContent = formatAdminCount(usage.last7d);
+  }
+  if (elements.adminUsageMeta) {
+    elements.adminUsageMeta.textContent = formatAdminMeta([
+      `Total ${formatAdminCount(usage.total)}`,
+    ]);
+  }
+
+  if (elements.adminEvals7d) {
+    elements.adminEvals7d.textContent = formatAdminCount(evals.last7d);
+  }
+  if (elements.adminEvalsMeta) {
+    elements.adminEvalsMeta.textContent = formatAdminMeta([
+      `Total ${formatAdminCount(evals.total)}`,
+    ]);
+  }
+
+  if (elements.adminAudit7d) {
+    elements.adminAudit7d.textContent = formatAdminCount(audits.last7d);
+  }
+  if (elements.adminAuditMeta) {
+    elements.adminAuditMeta.textContent = formatAdminMeta([
+      `Total ${formatAdminCount(audits.total)}`,
+    ]);
+  }
+
+  if (elements.adminDataMcq) {
+    elements.adminDataMcq.textContent = formatAdminCount(data.mcq);
+  }
+  if (elements.adminDataMeta) {
+    elements.adminDataMeta.textContent = formatAdminMeta([
+      `Kortsvar ${formatAdminCount(data.kortsvar)}`,
+      `Sygdomslære ${formatAdminCount(data.sygdomslaere)}`,
+    ]);
+  }
+
+  if (elements.adminStripeAvailable) {
+    if (!stripe || stripe.configured === false) {
+      elements.adminStripeAvailable.textContent = "Ikke sat op";
+    } else if (!stripe.balance) {
+      elements.adminStripeAvailable.textContent = "Utilgængelig";
+    } else {
+      elements.adminStripeAvailable.textContent = formatCurrencyMap(stripe.balance.available);
+    }
+  }
+  if (elements.adminStripeMeta) {
+    if (stripe?.balance) {
+      elements.adminStripeMeta.textContent = formatAdminMeta([
+        `Afventer ${formatCurrencyMap(stripe.balance.pending)}`,
+      ]);
+    } else {
+      elements.adminStripeMeta.textContent = "—";
+    }
+  }
+
+  if (elements.adminRawdataUpdated) {
+    elements.adminRawdataUpdated.textContent = formatAdminDate(resolveLatestUpdate(rawdata));
+  }
+  if (elements.adminRawdataMeta) {
+    elements.adminRawdataMeta.textContent = formatAdminMeta([
+      `MCQ ${formatAdminDate(rawdata.mcq?.updatedAt)}`,
+      `Kortsvar ${formatAdminDate(rawdata.kortsvar?.updatedAt)}`,
+      `Sygdomslære ${formatAdminDate(rawdata.sygdomslaere?.updatedAt)}`,
+    ]);
+  }
+
+  if (elements.adminImportsUpdated) {
+    elements.adminImportsUpdated.textContent = formatAdminDate(resolveLatestUpdate(imports));
+  }
+  if (elements.adminImportsMeta) {
+    elements.adminImportsMeta.textContent = formatAdminMeta([
+      `MCQ ${formatAdminDate(imports.mcq?.updatedAt)}`,
+      `Kortsvar ${formatAdminDate(imports.kortsvar?.updatedAt)}`,
+      `Sygdomslære ${formatAdminDate(imports.sygdomslaere?.updatedAt)}`,
+    ]);
+  }
+}
+
+function updateAdminUI() {
+  const allowed = Boolean(state.admin.allowed && state.session?.user);
+  if (!allowed && state.settings.adminMode) {
+    state.settings.adminMode = false;
+    saveSettings();
+  }
+
+  setElementVisible(elements.adminPanel, allowed);
+  if (elements.adminModeToggle) {
+    elements.adminModeToggle.checked = Boolean(allowed && state.settings.adminMode);
+    elements.adminModeToggle.disabled = !allowed;
+  }
+  const showBody = allowed && state.settings.adminMode;
+  setElementVisible(elements.adminBody, showBody);
+
+  if (elements.adminRefreshBtn) {
+    elements.adminRefreshBtn.disabled = !showBody || state.admin.loading;
+  }
+
+  const importEnabled = Boolean(state.admin.importEnabled);
+  if (elements.adminImportBtn) {
+    elements.adminImportBtn.disabled = !showBody || !importEnabled || state.admin.importing;
+  }
+  if (elements.adminImportContent) {
+    elements.adminImportContent.disabled = !showBody || !importEnabled || state.admin.importing;
+  }
+  if (elements.adminImportType) {
+    elements.adminImportType.disabled = !showBody || !importEnabled || state.admin.importing;
+  }
+  if (elements.adminImportMode) {
+    elements.adminImportMode.disabled = !showBody || !importEnabled || state.admin.importing;
+  }
+
+  renderAdminMetrics(showBody ? state.admin.metrics : null);
+  if (!showBody) {
+    setAdminStatus(allowed ? "Slå admin-tilstand til for at se data." : "");
+  }
+}
+
+function resetAdminState() {
+  state.admin.allowed = false;
+  state.admin.importEnabled = false;
+  state.admin.checkedUserId = null;
+  state.admin.metrics = null;
+  state.admin.loading = false;
+  state.admin.importing = false;
+  if (state.settings.adminMode) {
+    state.settings.adminMode = false;
+    saveSettings();
+  }
+  setAdminStatus("");
+  setAdminImportStatus("");
+  updateAdminUI();
+}
+
+async function checkAdminStatus({ force = false } = {}) {
+  if (!state.session?.user) {
+    resetAdminState();
+    return;
+  }
+  const userId = state.session.user.id;
+  if (!force && state.admin.checkedUserId === userId) return;
+  state.admin.checkedUserId = userId;
+  try {
+    const res = await apiFetch("/api/admin/status", {
+      method: "GET",
+      timeoutMs: 8000,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      state.admin.allowed = Boolean(data.admin);
+      state.admin.importEnabled = Boolean(data.importEnabled);
+    } else {
+      state.admin.allowed = false;
+      state.admin.importEnabled = false;
+    }
+  } catch (error) {
+    state.admin.allowed = false;
+    state.admin.importEnabled = false;
+  }
+  updateAdminUI();
+}
+
+async function refreshAdminMetrics({ silent = false } = {}) {
+  if (!state.session?.user) return;
+  state.admin.loading = true;
+  if (!silent) {
+    setAdminStatus("Henter admin data …");
+  }
+  updateAdminUI();
+  try {
+    const res = await apiFetch("/api/admin/metrics", {
+      method: "GET",
+      timeoutMs: 20000,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      state.admin.allowed = true;
+      state.admin.metrics = data;
+      state.admin.importEnabled = Boolean(data?.admin?.importEnabled);
+      if (!silent) {
+        setAdminStatus("Admin data er opdateret.");
+      }
+    } else if (res.status === 401 || res.status === 403) {
+      state.admin.allowed = false;
+      state.admin.importEnabled = false;
+      state.admin.metrics = null;
+      setAdminStatus("Admin adgang mangler.", true);
+    } else {
+      setAdminStatus("Kunne ikke hente admin data.", true);
+    }
+  } catch (error) {
+    setAdminStatus("Kunne ikke hente admin data.", true);
+  } finally {
+    state.admin.loading = false;
+    updateAdminUI();
+  }
+}
+
+function setAdminMode(enabled) {
+  if (!state.admin.allowed) {
+    state.settings.adminMode = false;
+    saveSettings();
+    updateAdminUI();
+    return;
+  }
+  state.settings.adminMode = Boolean(enabled);
+  saveSettings();
+  updateAdminUI();
+  if (state.settings.adminMode) {
+    void refreshAdminMetrics({ silent: true });
+  }
+}
+
+async function handleAdminImport() {
+  if (!state.admin.allowed) {
+    setAdminImportStatus("Admin adgang mangler.", true);
+    return;
+  }
+  if (!state.admin.importEnabled) {
+    setAdminImportStatus("Admin import er deaktiveret i miljøet.", true);
+    return;
+  }
+  const content = elements.adminImportContent ? elements.adminImportContent.value : "";
+  if (!content || !content.trim()) {
+    setAdminImportStatus("Indsæt rådata først.", true);
+    return;
+  }
+  const type = elements.adminImportType ? elements.adminImportType.value : "mcq";
+  const mode = elements.adminImportMode ? elements.adminImportMode.value : "append";
+
+  state.admin.importing = true;
+  setAdminImportStatus("Importer …");
+  updateAdminUI();
+
+  try {
+    const res = await apiFetch("/api/admin/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, mode, content }),
+      timeoutMs: 60000,
+    });
+    if (!res.ok) {
+      const data = await safeReadJson(res);
+      const message = data?.error || "Importen fejlede.";
+      setAdminImportStatus(message, true);
+      return;
+    }
+    setAdminImportStatus("Import gennemført. Genindlæs siden for at bruge nye data.");
+    void refreshAdminMetrics({ silent: true });
+  } catch (error) {
+    setAdminImportStatus("Importen fejlede.", true);
+  } finally {
+    state.admin.importing = false;
+    updateAdminUI();
+  }
+}
+
 function setConsentStatus(message, isWarn = false) {
   if (!elements.consentStatus) return;
   const text = String(message || "").trim();
@@ -3615,6 +4024,7 @@ function updateAccountUI() {
   if (state.billing.data) {
     updateBillingUI();
   }
+  updateAdminUI();
 }
 
 function renderBillingMethodTags(methodTypes) {
@@ -4771,6 +5181,15 @@ function buildTraceId() {
   return `trace-${Math.random().toString(16).slice(2)}-${Date.now().toString(16)}`;
 }
 
+async function safeReadJson(res) {
+  if (!res) return null;
+  try {
+    return await res.json();
+  } catch (error) {
+    return null;
+  }
+}
+
 async function apiFetch(url, options = {}) {
   const { timeoutMs, ai, traceId, ...rest } = options;
   const headers = { ...(rest.headers || {}) };
@@ -4921,6 +5340,7 @@ function subscribeToAuthChanges() {
       resetProfileRetry();
       state.profile = null;
       state.subscription = null;
+      resetAdminState();
     }
 
     const shouldShowLoader = hasUser && !state.isLoading && !hadUser;
@@ -4996,6 +5416,7 @@ async function refreshProfile() {
     }
     updateAccountUI();
     updateUserChip();
+    void checkAdminStatus();
     resetProfileRetry();
   } catch (error) {
     // Ignore profile fetch errors for now.
@@ -15492,6 +15913,22 @@ function attachEvents() {
   }
   if (elements.profileSaveBtn) {
     elements.profileSaveBtn.addEventListener("click", handleProfileSave);
+  }
+  if (elements.adminModeToggle) {
+    elements.adminModeToggle.addEventListener("change", (event) => {
+      setAdminMode(event.target.checked);
+    });
+  }
+  if (elements.adminRefreshBtn) {
+    elements.adminRefreshBtn.addEventListener("click", () => {
+      void refreshAdminMetrics();
+    });
+  }
+  if (elements.adminImportBtn) {
+    elements.adminImportBtn.addEventListener("click", handleAdminImport);
+  }
+  if (elements.adminImportContent) {
+    elements.adminImportContent.addEventListener("input", () => setAdminImportStatus(""));
   }
   if (elements.upgradeBtn) {
     elements.upgradeBtn.addEventListener("click", handleCheckout);

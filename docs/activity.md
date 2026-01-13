@@ -1,5 +1,12 @@
 # Activity Log
 
+## 2026-01-13
+- Purpose: add append/replace import pipeline with import files + CLI, plus admin dashboard for metrics/import.
+- Files: imports/README.md, imports/rawdata-mc.txt, imports/rawdata-kortsvar.txt, imports/rawdata-sygdomslaere.txt, scripts/import_rawdata.py, api/_lib/admin.js, api/_lib/importer.js, api/admin/status.js, api/admin/metrics.js, api/admin/import.js, index.html, styles.css, app.js, tests/adminEndpoints.test.mjs, README.md, .env, scripts/.env.local, docs/activity.md.
+- Commands: ls; sed -n '1,200p' docs/activity.md; sed -n '1,260p' scripts/convert_kortsvar.py; sed -n '1,260p' scripts/convert_rawdata.py; sed -n '1,260p' scripts/convert_sygdomslaere.py; rg -n "openai|OpenAI|llm|gpt" -S scripts api data app.js; rg -n "import" scripts app.js api data docs; rg -n "admin" -S .; rg -n "questions.json|kortsvar.json|sygdomslaere.json|rawdata" app.js scripts data; mkdir -p imports; cat <<'EOF' > imports/README.md; apply_patch (multiple files); npm test -- tests/adminEndpoints.test.mjs; date +%F.
+- Security: admin endpoints are auth-gated, rate-limited, and payload-validated; admin import is env-gated and returns aggregated metrics only.
+- Follow-ups: run `npm test`; verify admin panel and import flow in the browser; set `ADMIN_EMAILS`/`ADMIN_IMPORT_ENABLED` in deployment env and ensure `python3` is available for admin import.
+
 ## 2025-02-14
 - Purpose: align API security/validation with agent rules and add stable UI selectors (data-testid) while keeping Supabase auth.
 - Files: api/_lib/response.js, api/_lib/rateLimit.js, api/config.js, api/health.js, api/me.js, api/grade.js, api/explain.js, api/hint.js, api/tts.js, api/transcribe.js, api/vision.js, api/demo-quiz.js, api/profile.js, api/account/delete.js, api/stripe/set-default-payment-method.js, api/stripe/update-subscription.js, api/stripe/webhook.js, index.html, sygdomslaere.html, consent.html, docs/activity.md.
@@ -428,3 +435,24 @@
 - Kommandoer: ls; cat docs/activity.md; rg -n "overflow|scroll|no-scroll|noscroll|fixed|height: 100vh|100dvh|svh|vw|vh|position: fixed" styles.css; sed -n '1,140p' styles.css; sed -n '140,220p' styles.css; rg -n "ambient" styles.css; sed -n '220,320p' styles.css; rg -n "landing|auth|shell|page|root|screen|wrapper|hero" styles.css; sed -n '320,520p' styles.css; rg -n "theme-switch" *.html; sed -n '1,200p' index.html; sed -n '1,120p' sign-in.html; sed -n '1,80p' sign-up.html; sed -n '1,80p' consent.html; sed -n '1,80p' privatlivspolitik.html; rg -n "</main>" index.html; tail -n 40 index.html; apply_patch (index.html); date +%F.
 - Sikkerhedsimplikationer: Ingen; markup/layout-fix uden ændring af dataadgang.
 - Opfølgning: Visuel test i browser at landing, auth og legal sider kan scrolle som forventet.
+
+## 2026-01-13
+- Formål: fjerne redundant banner-logo i header-blokke og centrere logo-crop for et mere roligt udtryk.
+- Berørte filer: styles.css, docs/activity.md.
+- Kommandoer: rg --files; cat docs/activity.md; rg -n "logo|brand" index.html styles.css sygdomslaere.html; sed -n '1240,1465p' styles.css; sed -n '40,140p' index.html; sed -n '360,520p' index.html; rg -n "menu-logo|brand-banner|brand-logo|quiz-logo|result-logo" tests index.html styles.css; rg -n "brand-mark" *.html; sed -n '20,80p' sign-in.html; file Logo.png Banner.png; rg -n "brand-|logo|banner" sygdomslaere.html; sed -n '1,180p' sygdomslaere.html; rg -n "menuLogo|brand-banner|banner" app.js; sed -n '1300,1405p' app.js; rg -n "menuLogo|quizLogo|resultLogo" app.js; sed -n '2020,2105p' app.js; sed -n '340,430p' styles.css; cat agents.md; apply_patch (styles.css); date +%F.
+- Sikkerhedsimplikationer: Ingen; kun UI/styling.
+- Opfølgning: Visuel verifikation i browser på landing, menu samt auth/legal headers.
+
+## 2026-01-13
+- Formål: gøre Apple OAuth-knappen usynlig på sign-in/sign-up indtil loginflowet er klar.
+- Berørte filer: sign-in.html, sign-up.html, docs/activity.md.
+- Kommandoer: ls; cat docs/activity.md; cat AGENTS.md; rg -n "auth-apple-btn" -S .; sed -n '80,140p' sign-in.html; sed -n '80,140p' sign-up.html; rg -n "oauth\\s+apple|auth-apple-btn|apple" styles.css; sed -n '2200,2255p' styles.css; rg -n "appleBtn|auth-apple-btn" auth.js app.js; sed -n '1,140p' auth.js; sed -n '130,190p' auth.js; sed -n '480,540p' auth.js; sed -n '1120,1185p' app.js; rg -n "auth-apple-btn" tests; rg -n "auth-apple-btn" index.html consent.html; date +%F; tail -n 40 docs/activity.md; apply_patch (sign-in.html, sign-up.html, docs/activity.md).
+- Sikkerhedsimplikationer: Ingen; UI-only skjulning uden ændring af auth-flow.
+- Opfølgning: Fjern `hidden` når Apple OAuth er klar.
+
+## 2026-01-13
+- Formål: aktivere MobilePay for livstidsbetaling i Stripe Checkout (hosted) via samme allowlist som embedded betaling.
+- Berørte filer: api/stripe/create-checkout-session.js, tests/stripeCreateCheckoutSession.test.mjs, docs/activity.md.
+- Kommandoer: apply_patch (api/stripe/create-checkout-session.js); apply_patch (tests/stripeCreateCheckoutSession.test.mjs); npm test -- tests/stripeCreateCheckoutSession.test.mjs; date +%F.
+- Sikkerhedsimplikationer: payment_method_types styres fortsat af server-side allowlist; ingen nye secrets eller endpoints.
+- Opfølgning: ingen.

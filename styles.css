@@ -393,7 +393,7 @@ body[data-theme="dark"] .noise-layer {
   height: 56px;
   border-radius: 16px;
   object-fit: cover;
-  object-position: center 16%;
+  object-position: center;
 }
 
 .loading-text {
@@ -1393,7 +1393,7 @@ body[data-theme="dark"] .noise-layer {
   width: 56px;
   height: 56px;
   object-fit: cover;
-  object-position: center 18%;
+  object-position: center;
   display: block;
   border-radius: 16px;
 }
@@ -1406,7 +1406,7 @@ body[data-theme="dark"] .noise-layer {
   border: none;
   background: transparent;
   object-fit: cover;
-  object-position: center 16%;
+  object-position: center;
 }
 
 .brand-banner {
@@ -1434,6 +1434,10 @@ body[data-theme="dark"] .noise-layer {
   height: clamp(160px, 22vw, 240px);
   border-radius: 28px;
   margin-bottom: 12px;
+}
+
+.brand-block .brand-banner {
+  display: none;
 }
 
 .brand-subtitle {

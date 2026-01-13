@@ -5,6 +5,7 @@ const { getUserFromRequest, getProfileForUser, getActiveSubscription } = require
 const { getSupabaseAdmin } = require("../_lib/supabase");
 const { getBaseUrl } = require("../_lib/url");
 const { enforceRateLimit } = require("../_lib/rateLimit");
+const { resolveOneTimePaymentMethodTypes } = require("../_lib/stripe");
 const { validatePayload } = require("../_lib/validate");
 const { logAuditEvent } = require("../_lib/audit");
 
@@ -139,6 +140,10 @@ module.exports = async function handler(req, res) {
           purchase_type: "lifetime",
         },
       };
+      const paymentMethodTypes = resolveOneTimePaymentMethodTypes();
+      if (paymentMethodTypes.length) {
+        sessionPayload.payment_method_types = paymentMethodTypes;
+      }
     }
 
     const session = await stripe.checkout.sessions.create(sessionPayload);
