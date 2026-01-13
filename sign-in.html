@@ -31,7 +31,7 @@
       <header class="global-header" data-testid="global-header">
         <a
           class="brand-block brand-action"
-          href="index.html"
+          href="/"
           data-testid="sign-in__auth-page--global-header__brand-block"
           onclick="if (history.length > 1) { history.back(); return false; }"
         >
@@ -45,10 +45,10 @@
           </div>
         </a>
         <nav class="global-header-links" aria-label="Login links" data-testid="global-header-links">
-          <a class="btn ghost small active" href="sign-in.html" aria-current="page" data-testid="nav-sign-in">Log ind</a>
+          <a class="btn ghost small active" href="/sign-in" aria-current="page" data-testid="nav-sign-in">Log ind</a>
           <a
             class="btn primary small"
-            href="sign-up.html"
+            href="/sign-up"
             data-testid="nav-sign-up"
             data-preserve-redirect="true"
           >Opret konto</a>
@@ -110,9 +110,9 @@
         <div class="auth-status" id="auth-status" data-testid="auth-status" role="status" aria-live="polite" aria-atomic="true">Log ind for at fortsætte.</div>
         <div class="auth-switch" data-testid="auth-switch">
           <span>Har du ikke en konto?</span>
-          <a href="sign-up.html" data-testid="auth-switch-link" data-preserve-redirect="true">Opret konto</a>
+          <a href="/sign-up" data-testid="auth-switch-link" data-preserve-redirect="true">Opret konto</a>
         </div>
-        <a class="btn ghost small" href="index.html" data-testid="auth-back-link">Til forsiden</a>
+        <a class="btn ghost small" href="/" data-testid="auth-back-link">Til forsiden</a>
       </section>
     </main>
 

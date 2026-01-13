@@ -3,11 +3,18 @@ const STORAGE_KEYS = {
   theme: "ku_mcq_theme",
 };
 
-const DEFAULT_REDIRECT = "index.html";
+const DEFAULT_REDIRECT = "/";
 const DEFAULT_BASE_URL = "http://localhost/";
 const MIN_PASSWORD_LENGTH = 6;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const AUTH_REDIRECT_BLOCKLIST = new Set(["/sign-in.html", "/sign-up.html", "/consent.html"]);
+const AUTH_REDIRECT_BLOCKLIST = new Set([
+  "/sign-in",
+  "/sign-up",
+  "/consent",
+  "/sign-in.html",
+  "/sign-up.html",
+  "/consent.html",
+]);
 const canUseDOM = typeof window !== "undefined" && typeof document !== "undefined";
 
 function safeStorageGet(key) {

@@ -113,6 +113,7 @@ Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 ## Admin
 - Admin-adgang styres af `profiles.is_admin` i Supabase (sæt til `true` for din profil).
 - Admin-import opdaterer `dataset_snapshots` i Supabase og bruges af `/api/data/*` endpoints.
+- Admin-import formatterer rådata med OpenAI før lagring (styr model via `OPENAI_IMPORT_MODEL`).
 - Lokale Python scripts er kun til offline/CLI-kørsler.
 - Kør `python3 scripts/convert_sygdomslaere.py` for at regenerere `data/sygdomslaere.json`.
 - Importfiler ligger i `imports/` (én pr. dataset) og bruges af append/replace flowet.
@@ -128,9 +129,10 @@ Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 - Opret `.env` i projektroden og udfyld:
   - `OPENAI_API_KEY=...`
   - `OPENAI_KEY_ENCRYPTION_SECRET=...` (lang, tilfældig nøgle til kryptering af brugernøgler)
-  - `OPENAI_MODEL=gpt-5.2` (kan ændres)
-  - `OPENAI_TTS_MODEL=tts-1` (valgfri, styrer oplæsning)
-  - `OPENAI_VISION_MODEL=gpt-4.1-mini` (valgfri, bruges til figurbeskrivelser/skitse-analyse)
+- `OPENAI_MODEL=gpt-5.2` (kan ændres)
+- `OPENAI_IMPORT_MODEL=gpt-4o-mini` (valgfri, bruges til admin-import formattering)
+- `OPENAI_TTS_MODEL=tts-1` (valgfri, styrer oplæsning)
+- `OPENAI_VISION_MODEL=gpt-4.1-mini` (valgfri, bruges til figurbeskrivelser/skitse-analyse)
 
 ## Figur-audit (valgfri)
 - Kør `python3 scripts/audit_figures.py` for at generere:

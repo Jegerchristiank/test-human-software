@@ -94,7 +94,7 @@ function setControlsEnabled(enabled) {
 function redirectToSignIn() {
   if (!canUseDOM) return;
   const redirectPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  const url = new URL("sign-in.html", window.location.href);
+  const url = new URL("/sign-in", window.location.origin);
   url.searchParams.set("redirect", redirectPath);
   window.location.replace(`${url.pathname}${url.search}${url.hash}`);
 }
@@ -178,7 +178,7 @@ async function hydrateConsent() {
   const termsAccepted = Boolean(profile.terms_accepted_at);
   const privacyAccepted = Boolean(profile.privacy_accepted_at);
   if (termsAccepted && privacyAccepted) {
-    window.location.replace("index.html");
+    window.location.replace("/");
     return;
   }
 
@@ -223,7 +223,7 @@ async function submitConsent() {
     if (!res.ok) {
       throw new Error("Kunne ikke gemme samtykke.");
     }
-    window.location.replace("index.html");
+    window.location.replace("/");
   } catch (error) {
     setStatus(error.message || "Kunne ikke gemme samtykke.", true);
     setControlsEnabled(true);
@@ -236,7 +236,7 @@ async function handleLogout() {
   if (supabase) {
     await supabase.auth.signOut();
   }
-  window.location.replace("index.html");
+  window.location.replace("/");
 }
 
 async function getAccessToken() {

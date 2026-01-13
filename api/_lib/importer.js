@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { getSupabaseAdmin } = require("./supabase");
+const { formatImportContent } = require("./importFormatter");
 const {
   normalizeNewlines,
   stripBom,
@@ -131,12 +132,10 @@ async function saveSnapshot({
 }
 
 async function applyImport({ type, mode, content, userId }) {
+  const formatted = await formatImportContent({ type, content });
   const cleaned = ensureTrailingNewline(
-    normalizeNewlines(stripBom(String(content || "")))
+    normalizeNewlines(stripBom(String(formatted.formattedText || "")))
   );
-  if (!cleaned.trim()) {
-    throw new Error("Import content is empty");
-  }
 
   const snapshot = await getSnapshot(type);
   const existingRaw = snapshot?.raw_text || (await readFallbackRaw(type));
@@ -180,6 +179,14 @@ async function applyImport({ type, mode, content, userId }) {
     itemCount = Array.isArray(payload?.diseases) ? payload.diseases.length : 0;
   } else {
     throw new Error(`Unknown import type: ${type}`);
+  }
+
+  if (formatted.warnings && formatted.warnings.length) {
+    if (warnings && typeof warnings === "object") {
+      warnings = { ...warnings, formatWarnings: formatted.warnings };
+    } else {
+      warnings = { formatWarnings: formatted.warnings };
+    }
   }
 
   return saveSnapshot({

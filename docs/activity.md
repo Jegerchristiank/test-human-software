@@ -1,6 +1,23 @@
 # Activity Log
 
 ## 2026-01-13
+- Purpose: finalize admin dashboard backend for full user management (create/update/ban/delete/subscriptions) and align routes/tests.
+- Files: api/admin/user/create.js, api/admin/user/update.js, api/admin/user/action.js, api/admin/subscription.js, tests/adminUsers.test.mjs, docs/activity.md.
+- Commands: ls; rg --files -g 'api/admin/*.js'; sed -n '1,260p' api/admin/users.js; sed -n '1,260p' api/admin/user/create.js; rg -n "admin-" index.html; rg -n "api/admin" app.js; mkdir -p api/admin/user; mv api/admin/user-create.js api/admin/user/create.js; mv api/admin/user-update.js api/admin/user/update.js; mv api/admin/user-action.js api/admin/user/action.js; npm test -- tests/adminUsers.test.mjs; date +%F.
+- Security: new admin endpoints are auth-gated, rate-limited, schema-validated with unknown-field rejection, and audit-logged; hard deletes cancel Stripe subs when configured and return warnings if auth deletion fails.
+- Follow-ups: verify admin user edit/ban/delete + subscription flows in the UI and confirm Stripe secret is set where hard deletes should cancel billing.
+- Purpose: add AI-based formatting before admin imports, expose progress feedback in the admin UI, and document the faster import model option.
+- Files: api/_lib/importFormatter.js, api/_lib/importer.js, api/admin/import.js, app.js, index.html, styles.css, README.md, tests/importFormatter.test.mjs, docs/activity.md.
+- Commands: ls; rg -n "admin-import|openai|model" -S index.html app.js api scripts docs; sed -n '1,240p' api/admin/import.js; sed -n '1,240p' api/_lib/importer.js; sed -n '1,240p' api/_lib/rawdataParser.js; sed -n '720,820p' api/_lib/rawdataParser.js; sed -n '1688,1755p' index.html; sed -n '5220,5325p' styles.css; sed -n '3320,3385p' app.js; sed -n '4605,4705p' app.js; wc -c rawdata-mc rawdata-kortsvar rawdata-sygdomslaere.txt; apply_patch (multiple files); npm test -- tests/importFormatter.test.mjs; date +%F.
+- Security: admin imports now require server-side AI formatting with strict schema validation; no new endpoints added.
+- Follow-ups: set `OPENAI_IMPORT_MODEL` in env if you want a different fast model; verify admin import flow in the UI with a messy input sample.
+- Purpose: add clean slugs via Vercel redirects/rewrites and update in-app links; make AI health checks treat active subscriptions as paid and surface clearer error states; add /api/health tests.
+- Files: vercel.json, app.js, auth.js, consent.js, index.html, sign-in.html, sign-up.html, consent.html, sygdomslaere.html, vilkaar.html, privatlivspolitik.html, persondatapolitik.html, handelsbetingelser.html, api/health.js, tests/health.test.mjs, docs/activity.md.
+- Commands: sed -n '1,120p' docs/activity.md; cat vercel.json; rg --pcre2 -n "<script(?!\\s+src)" *.html; rg -n "\\.html" app.js auth.js consent.js; sed -n '1,40p' sygdomslaere.html; sed -n '40,110p' index.html; sed -n '30,90p' sign-in.html; apply_patch (vercel.json, app.js, consent.js, auth.js, api/health.js, app.js, tests/health.test.mjs); python3 - <<'PY' ...; npm test -- tests/health.test.mjs; date +%F.
+- Security: /api/health remains auth-gated and rate-limited; now also checks active subscriptions for paid access; clean slugs add redirects/rewrites without relaxing CSP.
+- Follow-ups: verify clean URLs and consent CSP in the browser; if ai-status-pill still shows "Hjælp er ikke klar lige nu.", capture `/api/health` response status/body to pinpoint the remaining cause.
+
+## 2026-01-13
 - Purpose: treat "pro" plan values as paid for AI access and billing gating; extend paid-plan tests.
 - Files: api/_lib/aiAccess.js, access-policy.js, app.js, api/stripe/create-checkout-session.js, api/stripe/create-subscription.js, tests/aiAccess.test.mjs, tests/accessPolicy.test.mjs, docs/activity.md.
 - Commands: rg --files; sed -n '1,200p' docs/activity.md; rg -n "ai-status-pill|Hjælp er ikke klar" -S app.js index.html styles.css api; sed -n '15760,15940p' app.js; sed -n '1,240p' api/health.js; sed -n '1,220p' api/_lib/aiAccess.js; sed -n '3970,4080p' app.js; sed -n '6615,6675p' app.js; sed -n '1,240p' access-policy.js; sed -n '1,220p' tests/aiAccess.test.mjs; sed -n '1,220p' tests/accessPolicy.test.mjs; apply_patch (multiple files); npm test -- tests/aiAccess.test.mjs tests/accessPolicy.test.mjs; date +%F.

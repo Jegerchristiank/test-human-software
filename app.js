@@ -17,12 +17,12 @@ const STORAGE_KEYS = {
 const CURRENT_STUDIO = "human";
 const STUDIO_PARAM = "studio";
 const STUDIO_PATHS = {
-  human: "index.html",
-  sygdomslaere: "sygdomslaere.html",
+  human: "/",
+  sygdomslaere: "/sygdomslaere",
 };
 const AUTH_ROUTES = {
-  signIn: "sign-in.html",
-  signUp: "sign-up.html",
+  signIn: "/sign-in",
+  signUp: "/sign-up",
 };
 
 const DEFAULT_SETTINGS = {
@@ -53,7 +53,6 @@ const DEFAULT_SETTINGS = {
   ttsCollapsed: false,
   autoFigureCaptions: true,
   assistantCollapsed: false,
-  adminMode: false,
 };
 const COURSE_DEFAULT_SETTINGS = {
   human: {},
@@ -953,9 +952,27 @@ const state = {
     metrics: null,
     loading: false,
     importing: false,
-    lookup: {
+    importProgress: {
+      value: 0,
+      label: "",
+      startedAt: null,
+    },
+    importProgressTimer: null,
+    users: {
       loading: false,
-      result: null,
+      items: [],
+      page: 1,
+      perPage: 20,
+      total: 0,
+      query: "",
+      mode: "email",
+      plan: "all",
+      status: "all",
+    },
+    selected: {
+      id: null,
+      loading: false,
+      detail: null,
     },
   },
   billingElements: null,
@@ -1272,10 +1289,75 @@ const elements = {
   diagRefreshBtn: document.getElementById("diag-refresh-btn"),
   adminMenuBtn: document.getElementById("admin-menu-btn"),
   adminBackBtn: document.getElementById("admin-back-btn"),
-  adminModeToggle: document.getElementById("admin-mode-toggle"),
-  adminBody: document.getElementById("admin-body"),
   adminStatus: document.getElementById("admin-status"),
   adminRefreshBtn: document.getElementById("admin-refresh-btn"),
+  adminUserSearch: document.getElementById("admin-user-search"),
+  adminUserSearchMode: document.getElementById("admin-user-search-mode"),
+  adminUserPlanFilter: document.getElementById("admin-user-plan-filter"),
+  adminUserStatusFilter: document.getElementById("admin-user-status-filter"),
+  adminUserSearchBtn: document.getElementById("admin-user-search-btn"),
+  adminUserRefreshBtn: document.getElementById("admin-user-refresh-btn"),
+  adminUserList: document.getElementById("admin-user-list"),
+  adminUserEmpty: document.getElementById("admin-user-empty"),
+  adminUserCount: document.getElementById("admin-user-count"),
+  adminUserPrevBtn: document.getElementById("admin-user-prev-btn"),
+  adminUserNextBtn: document.getElementById("admin-user-next-btn"),
+  adminUserPage: document.getElementById("admin-user-page"),
+  adminUserStatus: document.getElementById("admin-user-status"),
+  adminUserDetailEmpty: document.getElementById("admin-user-detail-empty"),
+  adminUserDetail: document.getElementById("admin-user-detail"),
+  adminDetailTitle: document.getElementById("admin-detail-title"),
+  adminDetailEmail: document.getElementById("admin-detail-email"),
+  adminDetailId: document.getElementById("admin-detail-id"),
+  adminDetailTags: document.getElementById("admin-detail-tags"),
+  adminDetailNameInput: document.getElementById("admin-detail-name"),
+  adminDetailEmailInput: document.getElementById("admin-detail-email-input"),
+  adminDetailPlan: document.getElementById("admin-detail-plan"),
+  adminDetailIsAdmin: document.getElementById("admin-detail-is-admin"),
+  adminDetailOwnKey: document.getElementById("admin-detail-own-key"),
+  adminDetailStripe: document.getElementById("admin-detail-stripe"),
+  adminDetailNotes: document.getElementById("admin-detail-notes"),
+  adminDetailTerms: document.getElementById("admin-detail-terms"),
+  adminDetailPrivacy: document.getElementById("admin-detail-privacy"),
+  adminUserSaveBtn: document.getElementById("admin-user-save-btn"),
+  adminDetailStatus: document.getElementById("admin-detail-status"),
+  adminDetailPassword: document.getElementById("admin-detail-password"),
+  adminDetailRole: document.getElementById("admin-detail-role"),
+  adminDetailDisableReason: document.getElementById("admin-detail-disable-reason"),
+  adminUserPasswordBtn: document.getElementById("admin-user-password-btn"),
+  adminUserConfirmEmailBtn: document.getElementById("admin-user-confirm-email-btn"),
+  adminUserBanBtn: document.getElementById("admin-user-ban-btn"),
+  adminUserUnbanBtn: document.getElementById("admin-user-unban-btn"),
+  adminDetailAuthMeta: document.getElementById("admin-detail-auth-meta"),
+  adminClearUserStateBtn: document.getElementById("admin-clear-user-state-btn"),
+  adminClearUsageBtn: document.getElementById("admin-clear-usage-btn"),
+  adminClearEvalsBtn: document.getElementById("admin-clear-evals-btn"),
+  adminClearAuditsBtn: document.getElementById("admin-clear-audits-btn"),
+  adminClearOpenAiBtn: document.getElementById("admin-clear-openai-btn"),
+  adminSubscriptionList: document.getElementById("admin-subscription-list"),
+  adminSubscriptionAddBtn: document.getElementById("admin-subscription-add-btn"),
+  adminSubscriptionId: document.getElementById("admin-subscription-id"),
+  adminSubscriptionStripe: document.getElementById("admin-subscription-stripe"),
+  adminSubscriptionStatus: document.getElementById("admin-subscription-status"),
+  adminSubscriptionPrice: document.getElementById("admin-subscription-price"),
+  adminSubscriptionPeriod: document.getElementById("admin-subscription-period"),
+  adminSubscriptionCancel: document.getElementById("admin-subscription-cancel"),
+  adminSubscriptionCancelStripe: document.getElementById("admin-subscription-cancel-stripe"),
+  adminSubscriptionSaveBtn: document.getElementById("admin-subscription-save-btn"),
+  adminSubscriptionDeleteBtn: document.getElementById("admin-subscription-delete-btn"),
+  adminSubscriptionStatusText: document.getElementById("admin-subscription-status-text"),
+  adminUserSoftDeleteBtn: document.getElementById("admin-user-soft-delete-btn"),
+  adminUserHardDeleteBtn: document.getElementById("admin-user-hard-delete-btn"),
+  adminCreateEmail: document.getElementById("admin-create-email"),
+  adminCreateName: document.getElementById("admin-create-name"),
+  adminCreatePassword: document.getElementById("admin-create-password"),
+  adminCreateInvite: document.getElementById("admin-create-invite"),
+  adminCreateConfirm: document.getElementById("admin-create-confirm"),
+  adminCreatePlan: document.getElementById("admin-create-plan"),
+  adminCreateAdmin: document.getElementById("admin-create-admin"),
+  adminCreateNotes: document.getElementById("admin-create-notes"),
+  adminCreateBtn: document.getElementById("admin-create-btn"),
+  adminCreateStatus: document.getElementById("admin-create-status"),
   adminUsersTotal: document.getElementById("admin-users-total"),
   adminUsersMeta: document.getElementById("admin-users-meta"),
   adminActiveUsers: document.getElementById("admin-active-users"),
@@ -1302,16 +1384,16 @@ const elements = {
   adminRawdataMeta: document.getElementById("admin-rawdata-meta"),
   adminImportsUpdated: document.getElementById("admin-imports-updated"),
   adminImportsMeta: document.getElementById("admin-imports-meta"),
-  adminLookupMode: document.getElementById("admin-lookup-mode"),
-  adminLookupQuery: document.getElementById("admin-lookup-query"),
-  adminLookupBtn: document.getElementById("admin-lookup-btn"),
-  adminLookupStatus: document.getElementById("admin-lookup-status"),
-  adminLookupResult: document.getElementById("admin-lookup-result"),
   adminImportType: document.getElementById("admin-import-type"),
   adminImportMode: document.getElementById("admin-import-mode"),
   adminImportContent: document.getElementById("admin-import-content"),
   adminImportBtn: document.getElementById("admin-import-btn"),
   adminImportStatus: document.getElementById("admin-import-status"),
+  adminImportProgress: document.getElementById("admin-import-progress"),
+  adminImportProgressLabel: document.getElementById("admin-import-progress-label"),
+  adminImportProgressValue: document.getElementById("admin-import-progress-value"),
+  adminImportProgressBar: document.getElementById("admin-import-progress-bar"),
+  adminImportProgressFill: document.getElementById("admin-import-progress-fill"),
   debugPanel: document.getElementById("debug-panel"),
   debugStudioType: document.getElementById("debug-studio-type"),
   debugPolicy: document.getElementById("debug-policy"),
@@ -2948,7 +3030,7 @@ const AUTH_REQUIRED_SCREENS = new Set([
   "checkout",
   "consent",
 ]);
-const AUTH_REDIRECT_ROUTE = "sign-in.html";
+const AUTH_REDIRECT_ROUTE = "/sign-in";
 
 function getAuthReturnPath() {
   const url = new URL(window.location.href);
@@ -2976,9 +3058,12 @@ function showScreen(target) {
   ) {
     const path = window.location.pathname || "";
     const onConsentPage =
-      path.endsWith("/consent.html") || path.endsWith("consent.html");
+      path === "/consent" ||
+      path.endsWith("/consent") ||
+      path.endsWith("/consent.html") ||
+      path.endsWith("consent.html");
     if (!onConsentPage) {
-      window.location.replace("consent.html");
+      window.location.replace("/consent");
       return;
     }
     if (!state.consentReturnTo) {
@@ -3265,24 +3350,83 @@ function setAdminImportStatus(message, isWarn = false) {
   setElementVisible(elements.adminImportStatus, Boolean(text));
 }
 
-function setAdminLookupStatus(message, isWarn = false) {
-  if (!elements.adminLookupStatus) return;
-  const text = String(message || "").trim();
-  elements.adminLookupStatus.textContent = text;
-  elements.adminLookupStatus.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.adminLookupStatus, Boolean(text));
+function clearAdminImportProgressTimer() {
+  if (state.admin.importProgressTimer) {
+    clearInterval(state.admin.importProgressTimer);
+    state.admin.importProgressTimer = null;
+  }
 }
 
-function renderAdminLookupResult(result) {
-  if (!elements.adminLookupResult) return;
-  if (!result) {
-    elements.adminLookupResult.textContent = "";
-    setElementVisible(elements.adminLookupResult, false);
-    return;
+function setAdminImportProgress(value, label) {
+  if (!elements.adminImportProgress) return;
+  const numeric = Number.isFinite(value) ? value : 0;
+  const clamped = Math.min(1, Math.max(0, numeric));
+  const percent = Math.round(clamped * 100);
+  state.admin.importProgress.value = clamped;
+  if (label !== undefined) {
+    state.admin.importProgress.label = label;
   }
-  const text = typeof result === "string" ? result : JSON.stringify(result, null, 2);
-  elements.adminLookupResult.textContent = text;
-  setElementVisible(elements.adminLookupResult, true);
+  if (elements.adminImportProgressFill) {
+    elements.adminImportProgressFill.style.width = `${percent}%`;
+  }
+  if (elements.adminImportProgressValue) {
+    elements.adminImportProgressValue.textContent = `${percent}%`;
+  }
+  if (elements.adminImportProgressLabel && label !== undefined) {
+    elements.adminImportProgressLabel.textContent = label;
+  }
+  if (elements.adminImportProgressBar) {
+    elements.adminImportProgressBar.setAttribute("aria-valuenow", String(percent));
+  }
+}
+
+function startAdminImportProgress() {
+  clearAdminImportProgressTimer();
+  state.admin.importProgress.startedAt = Date.now();
+  setAdminImportProgress(0.02, "AI formatterer …");
+  state.admin.importProgressTimer = setInterval(() => {
+    const elapsed = Date.now() - (state.admin.importProgress.startedAt || Date.now());
+    const ramp = Math.min(0.9, 0.02 + (elapsed / 30000) * 0.88);
+    setAdminImportProgress(ramp, "AI formatterer …");
+  }, 250);
+}
+
+function stopAdminImportProgress(label, value) {
+  clearAdminImportProgressTimer();
+  const finalValue = Number.isFinite(value) ? value : 1;
+  setAdminImportProgress(finalValue, label || "Færdig");
+}
+
+function setAdminUserStatus(message, isWarn = false) {
+  if (!elements.adminUserStatus) return;
+  const text = String(message || "").trim();
+  elements.adminUserStatus.textContent = text;
+  elements.adminUserStatus.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.adminUserStatus, Boolean(text));
+}
+
+function setAdminDetailStatus(message, isWarn = false) {
+  if (!elements.adminDetailStatus) return;
+  const text = String(message || "").trim();
+  elements.adminDetailStatus.textContent = text;
+  elements.adminDetailStatus.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.adminDetailStatus, Boolean(text));
+}
+
+function setAdminCreateStatus(message, isWarn = false) {
+  if (!elements.adminCreateStatus) return;
+  const text = String(message || "").trim();
+  elements.adminCreateStatus.textContent = text;
+  elements.adminCreateStatus.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.adminCreateStatus, Boolean(text));
+}
+
+function setAdminSubscriptionStatus(message, isWarn = false) {
+  if (!elements.adminSubscriptionStatusText) return;
+  const text = String(message || "").trim();
+  elements.adminSubscriptionStatusText.textContent = text;
+  elements.adminSubscriptionStatusText.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.adminSubscriptionStatusText, Boolean(text));
 }
 
 function formatAdminCount(value) {
@@ -3534,56 +3678,119 @@ function renderAdminMetrics(metrics) {
 
 function updateAdminUI() {
   const allowed = Boolean(state.admin.allowed && state.session?.user);
-  if (!allowed && state.settings.adminMode) {
-    state.settings.adminMode = false;
-    saveSettings();
-  }
 
   if (elements.adminMenuBtn) {
     setElementVisible(elements.adminMenuBtn, allowed);
     elements.adminMenuBtn.disabled = !allowed;
   }
-  if (elements.adminModeToggle) {
-    elements.adminModeToggle.checked = Boolean(allowed && state.settings.adminMode);
-    elements.adminModeToggle.disabled = !allowed;
-  }
-  const showBody = allowed && state.settings.adminMode;
-  setElementVisible(elements.adminBody, showBody);
-
   if (elements.adminRefreshBtn) {
-    elements.adminRefreshBtn.disabled = !showBody || state.admin.loading;
+    elements.adminRefreshBtn.disabled = !allowed || state.admin.loading;
   }
 
   const importEnabled = Boolean(state.admin.importEnabled);
+  const importReady = allowed && importEnabled && !state.admin.importing;
   if (elements.adminImportBtn) {
-    elements.adminImportBtn.disabled = !showBody || !importEnabled || state.admin.importing;
+    elements.adminImportBtn.disabled = !importReady;
   }
   if (elements.adminImportContent) {
-    elements.adminImportContent.disabled = !showBody || !importEnabled || state.admin.importing;
+    elements.adminImportContent.disabled = !importReady;
   }
   if (elements.adminImportType) {
-    elements.adminImportType.disabled = !showBody || !importEnabled || state.admin.importing;
+    elements.adminImportType.disabled = !importReady;
   }
   if (elements.adminImportMode) {
-    elements.adminImportMode.disabled = !showBody || !importEnabled || state.admin.importing;
+    elements.adminImportMode.disabled = !importReady;
+  }
+  if (elements.adminImportProgress) {
+    setElementVisible(elements.adminImportProgress, allowed && state.admin.importing);
   }
 
-  const lookupEnabled = showBody && !state.admin.lookup.loading;
-  if (elements.adminLookupBtn) {
-    elements.adminLookupBtn.disabled = !lookupEnabled;
+  const userControlsEnabled = allowed && !state.admin.users.loading;
+  const userControls = [
+    elements.adminUserSearch,
+    elements.adminUserSearchMode,
+    elements.adminUserPlanFilter,
+    elements.adminUserStatusFilter,
+    elements.adminUserSearchBtn,
+    elements.adminUserRefreshBtn,
+    elements.adminCreateEmail,
+    elements.adminCreateName,
+    elements.adminCreatePassword,
+    elements.adminCreateInvite,
+    elements.adminCreateConfirm,
+    elements.adminCreatePlan,
+    elements.adminCreateAdmin,
+    elements.adminCreateNotes,
+    elements.adminCreateBtn,
+  ];
+  userControls.forEach((el) => {
+    if (!el) return;
+    el.disabled = !userControlsEnabled;
+  });
+
+  const pagingEnabled = allowed && !state.admin.users.loading;
+  if (elements.adminUserPrevBtn) {
+    elements.adminUserPrevBtn.disabled = !pagingEnabled || state.admin.users.page <= 1;
   }
-  if (elements.adminLookupMode) {
-    elements.adminLookupMode.disabled = !lookupEnabled;
-  }
-  if (elements.adminLookupQuery) {
-    elements.adminLookupQuery.disabled = !lookupEnabled;
+  if (elements.adminUserNextBtn) {
+    const totalPages = Math.max(
+      1,
+      Math.ceil((state.admin.users.total || 0) / state.admin.users.perPage)
+    );
+    elements.adminUserNextBtn.disabled = !pagingEnabled || state.admin.users.page >= totalPages;
   }
 
-  renderAdminMetrics(showBody ? state.admin.metrics : null);
-  if (!showBody) {
-    setAdminStatus(allowed ? "Slå admin-tilstand til for at se data." : "");
-    setAdminLookupStatus("");
-    renderAdminLookupResult(null);
+  const detailEnabled = allowed && Boolean(state.admin.selected.detail) && !state.admin.selected.loading;
+  const detailControls = [
+    elements.adminDetailNameInput,
+    elements.adminDetailEmailInput,
+    elements.adminDetailPlan,
+    elements.adminDetailIsAdmin,
+    elements.adminDetailOwnKey,
+    elements.adminDetailStripe,
+    elements.adminDetailNotes,
+    elements.adminDetailTerms,
+    elements.adminDetailPrivacy,
+    elements.adminDetailPassword,
+    elements.adminDetailRole,
+    elements.adminDetailDisableReason,
+    elements.adminUserSaveBtn,
+    elements.adminUserPasswordBtn,
+    elements.adminUserConfirmEmailBtn,
+    elements.adminUserBanBtn,
+    elements.adminUserUnbanBtn,
+    elements.adminClearUserStateBtn,
+    elements.adminClearUsageBtn,
+    elements.adminClearEvalsBtn,
+    elements.adminClearAuditsBtn,
+    elements.adminClearOpenAiBtn,
+    elements.adminSubscriptionAddBtn,
+    elements.adminSubscriptionSaveBtn,
+    elements.adminSubscriptionDeleteBtn,
+    elements.adminSubscriptionStripe,
+    elements.adminSubscriptionStatus,
+    elements.adminSubscriptionPrice,
+    elements.adminSubscriptionPeriod,
+    elements.adminSubscriptionCancel,
+    elements.adminSubscriptionCancelStripe,
+    elements.adminUserSoftDeleteBtn,
+    elements.adminUserHardDeleteBtn,
+  ];
+  detailControls.forEach((el) => {
+    if (!el) return;
+    el.disabled = !detailEnabled;
+  });
+
+  renderAdminMetrics(allowed ? state.admin.metrics : null);
+  renderAdminUsers();
+  renderAdminUserDetail();
+
+  if (!allowed) {
+    setAdminStatus("Admin adgang mangler.", true);
+    setAdminUserStatus("");
+    setAdminDetailStatus("");
+    setAdminCreateStatus("");
+    setAdminSubscriptionStatus("");
   }
 }
 
@@ -3594,15 +3801,26 @@ function resetAdminState() {
   state.admin.metrics = null;
   state.admin.loading = false;
   state.admin.importing = false;
-  state.admin.lookup = { loading: false, result: null };
-  if (state.settings.adminMode) {
-    state.settings.adminMode = false;
-    saveSettings();
-  }
+  state.admin.importProgress = { value: 0, label: "", startedAt: null };
+  clearAdminImportProgressTimer();
+  state.admin.users = {
+    loading: false,
+    items: [],
+    page: 1,
+    perPage: 20,
+    total: 0,
+    query: "",
+    mode: "email",
+    plan: "all",
+    status: "all",
+  };
+  state.admin.selected = { id: null, loading: false, detail: null };
   setAdminStatus("");
   setAdminImportStatus("");
-  setAdminLookupStatus("");
-  renderAdminLookupResult(null);
+  setAdminUserStatus("");
+  setAdminDetailStatus("");
+  setAdminCreateStatus("");
+  setAdminSubscriptionStatus("");
   updateAdminUI();
 }
 
@@ -3631,7 +3849,22 @@ async function checkAdminStatus({ force = false } = {}) {
     state.admin.allowed = false;
     state.admin.importEnabled = false;
   }
+  if (!state.admin.allowed) {
+    state.admin.users.items = [];
+    state.admin.users.total = 0;
+    state.admin.selected = { id: null, loading: false, detail: null };
+  }
   updateAdminUI();
+}
+
+function openAdminDashboard() {
+  if (!requireAuthGuard()) return;
+  showScreen("admin");
+  void checkAdminStatus({ force: true }).then(() => {
+    if (!state.admin.allowed) return;
+    void refreshAdminMetrics({ silent: true });
+    void loadAdminUsers({ page: 1 });
+  });
 }
 
 async function refreshAdminMetrics({ silent = false } = {}) {
@@ -3670,18 +3903,738 @@ async function refreshAdminMetrics({ silent = false } = {}) {
   }
 }
 
-function setAdminMode(enabled) {
-  if (!state.admin.allowed) {
-    state.settings.adminMode = false;
-    saveSettings();
-    updateAdminUI();
+function formatAdminInputDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (num) => String(num).padStart(2, "0");
+  return [
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+    `${pad(date.getHours())}:${pad(date.getMinutes())}`,
+  ].join("T");
+}
+
+function parseAdminInputDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
+function formatAdminUserTitle(profile) {
+  if (!profile) return "—";
+  return profile.full_name || profile.email || profile.id || "—";
+}
+
+function renderAdminUsers() {
+  if (!elements.adminUserList) return;
+  const { items, total, page, perPage } = state.admin.users;
+  elements.adminUserList.textContent = "";
+
+  if (elements.adminUserCount) {
+    const countText =
+      typeof total === "number" && Number.isFinite(total) ? `${total}` : `${items.length}`;
+    elements.adminUserCount.textContent = countText;
+  }
+  if (elements.adminUserPage) {
+    const totalPages = Math.max(1, Math.ceil((total || 0) / perPage));
+    elements.adminUserPage.textContent = `Side ${page} af ${totalPages}`;
+  }
+
+  if (!items.length) {
+    setElementVisible(elements.adminUserEmpty, true);
     return;
   }
-  state.settings.adminMode = Boolean(enabled);
-  saveSettings();
+  setElementVisible(elements.adminUserEmpty, false);
+
+  items.forEach((user) => {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "admin-user-row";
+    row.dataset.userId = user.id || "";
+    row.setAttribute("data-testid", "admin-user-row");
+    if (user.id && user.id === state.admin.selected.id) {
+      row.classList.add("active");
+      row.setAttribute("aria-pressed", "true");
+    } else {
+      row.setAttribute("aria-pressed", "false");
+    }
+
+    const main = document.createElement("div");
+    main.className = "admin-user-main";
+
+    const title = document.createElement("div");
+    title.className = "admin-user-name";
+    title.textContent = formatAdminUserTitle(user);
+    main.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "admin-user-meta";
+    const email = user.email || user.auth?.email || "";
+    meta.textContent = email || "—";
+    main.appendChild(meta);
+
+    const badges = document.createElement("div");
+    badges.className = "admin-user-badges";
+    const planBadge = document.createElement("span");
+    planBadge.className = "admin-badge";
+    planBadge.textContent = user.plan || "—";
+    badges.appendChild(planBadge);
+
+    if (user.is_admin) {
+      const adminBadge = document.createElement("span");
+      adminBadge.className = "admin-badge accent";
+      adminBadge.textContent = "Admin";
+      badges.appendChild(adminBadge);
+    }
+
+    if (user.disabled_at) {
+      const disabledBadge = document.createElement("span");
+      disabledBadge.className = "admin-badge danger";
+      disabledBadge.textContent = "Deaktiveret";
+      badges.appendChild(disabledBadge);
+    }
+
+    row.appendChild(main);
+    row.appendChild(badges);
+    elements.adminUserList.appendChild(row);
+  });
+}
+
+function renderAdminSubscriptions(subscriptions = []) {
+  if (!elements.adminSubscriptionList) return;
+  elements.adminSubscriptionList.textContent = "";
+  if (!subscriptions.length) {
+    const empty = document.createElement("div");
+    empty.className = "admin-subscription-empty";
+    empty.textContent = "Ingen subscriptions endnu.";
+    elements.adminSubscriptionList.appendChild(empty);
+    return;
+  }
+
+  subscriptions.forEach((sub) => {
+    const card = document.createElement("div");
+    card.className = "admin-subscription-card";
+    card.dataset.subscriptionId = sub.id || "";
+
+    const title = document.createElement("div");
+    title.className = "admin-subscription-title";
+    title.textContent = sub.stripe_subscription_id || sub.id || "Subscription";
+    card.appendChild(title);
+
+    const meta = document.createElement("div");
+    meta.className = "admin-subscription-meta";
+    meta.textContent = `Status: ${sub.status || "—"} · Price: ${sub.price_id || "—"}`;
+    card.appendChild(meta);
+
+    const actions = document.createElement("div");
+    actions.className = "admin-subscription-card-actions";
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "btn ghost small";
+    editBtn.textContent = "Redigér";
+    editBtn.dataset.subscriptionId = sub.id || "";
+    editBtn.setAttribute("data-testid", "admin-subscription-edit-btn");
+    actions.appendChild(editBtn);
+    card.appendChild(actions);
+    elements.adminSubscriptionList.appendChild(card);
+  });
+}
+
+function setAdminSubscriptionEditor(subscription, userId) {
+  if (!elements.adminSubscriptionId) return;
+  elements.adminSubscriptionId.value = subscription?.id || "";
+  if (elements.adminSubscriptionStripe) {
+    elements.adminSubscriptionStripe.value = subscription?.stripe_subscription_id || "";
+  }
+  if (elements.adminSubscriptionStatus) {
+    elements.adminSubscriptionStatus.value = subscription?.status || "active";
+  }
+  if (elements.adminSubscriptionPrice) {
+    elements.adminSubscriptionPrice.value = subscription?.price_id || "";
+  }
+  if (elements.adminSubscriptionPeriod) {
+    elements.adminSubscriptionPeriod.value = formatAdminInputDate(subscription?.current_period_end);
+  }
+  if (elements.adminSubscriptionCancel) {
+    elements.adminSubscriptionCancel.checked = Boolean(subscription?.cancel_at_period_end);
+  }
+  if (elements.adminSubscriptionDeleteBtn) {
+    elements.adminSubscriptionDeleteBtn.disabled = !subscription?.id;
+  }
+  if (elements.adminSubscriptionSaveBtn) {
+    elements.adminSubscriptionSaveBtn.disabled = !userId;
+  }
+}
+
+function renderAdminUserDetail() {
+  const detail = state.admin.selected.detail;
+  const profile = detail?.profile || null;
+  const authUser = detail?.auth_user || null;
+  const subscriptions = Array.isArray(detail?.subscriptions) ? detail.subscriptions : [];
+
+  const hasDetail = Boolean(profile || authUser);
+  setElementVisible(elements.adminUserDetailEmpty, !hasDetail);
+  setElementVisible(elements.adminUserDetail, hasDetail);
+
+  if (!hasDetail) {
+    if (elements.adminDetailTitle) elements.adminDetailTitle.textContent = "—";
+    if (elements.adminDetailEmail) elements.adminDetailEmail.textContent = "—";
+    if (elements.adminDetailId) elements.adminDetailId.textContent = "—";
+    if (elements.adminDetailTags) elements.adminDetailTags.textContent = "";
+    renderAdminSubscriptions([]);
+    return;
+  }
+
+  if (elements.adminDetailTitle) {
+    elements.adminDetailTitle.textContent = formatAdminUserTitle(profile || authUser);
+  }
+  if (elements.adminDetailEmail) {
+    elements.adminDetailEmail.textContent = profile?.email || authUser?.email || "—";
+  }
+  if (elements.adminDetailId) {
+    elements.adminDetailId.textContent = profile?.id || authUser?.id || "—";
+  }
+
+  if (elements.adminDetailTags) {
+    elements.adminDetailTags.textContent = "";
+    const planBadge = document.createElement("span");
+    planBadge.className = "admin-badge";
+    planBadge.textContent = profile?.plan || "—";
+    elements.adminDetailTags.appendChild(planBadge);
+    if (profile?.is_admin) {
+      const adminBadge = document.createElement("span");
+      adminBadge.className = "admin-badge accent";
+      adminBadge.textContent = "Admin";
+      elements.adminDetailTags.appendChild(adminBadge);
+    }
+    if (profile?.disabled_at) {
+      const disabledBadge = document.createElement("span");
+      disabledBadge.className = "admin-badge danger";
+      disabledBadge.textContent = "Deaktiveret";
+      elements.adminDetailTags.appendChild(disabledBadge);
+    }
+  }
+
+  if (elements.adminDetailNameInput) {
+    elements.adminDetailNameInput.value = profile?.full_name || "";
+  }
+  if (elements.adminDetailEmailInput) {
+    elements.adminDetailEmailInput.value = profile?.email || authUser?.email || "";
+  }
+  if (elements.adminDetailPlan) {
+    elements.adminDetailPlan.value = profile?.plan || "free";
+  }
+  if (elements.adminDetailIsAdmin) {
+    elements.adminDetailIsAdmin.checked = Boolean(profile?.is_admin);
+  }
+  if (elements.adminDetailOwnKey) {
+    elements.adminDetailOwnKey.checked = Boolean(profile?.own_key_enabled);
+  }
+  if (elements.adminDetailStripe) {
+    elements.adminDetailStripe.value = profile?.stripe_customer_id || "";
+  }
+  if (elements.adminDetailNotes) {
+    elements.adminDetailNotes.value = profile?.admin_notes || "";
+  }
+  if (elements.adminDetailTerms) {
+    elements.adminDetailTerms.value = formatAdminInputDate(profile?.terms_accepted_at);
+  }
+  if (elements.adminDetailPrivacy) {
+    elements.adminDetailPrivacy.value = formatAdminInputDate(profile?.privacy_accepted_at);
+  }
+  if (elements.adminDetailDisableReason) {
+    elements.adminDetailDisableReason.value = profile?.disabled_reason || "";
+  }
+  if (elements.adminDetailRole) {
+    elements.adminDetailRole.value = authUser?.role || "";
+  }
+  if (elements.adminDetailAuthMeta) {
+    const parts = [];
+    if (authUser?.last_sign_in_at) {
+      parts.push(`Sidst set ${formatAdminDate(authUser.last_sign_in_at)}`);
+    }
+    if (authUser?.created_at) {
+      parts.push(`Oprettet ${formatAdminDate(authUser.created_at)}`);
+    }
+    if (authUser?.banned_until) {
+      parts.push(`Banned til ${formatAdminDate(authUser.banned_until)}`);
+    }
+    elements.adminDetailAuthMeta.textContent = parts.length ? parts.join(" · ") : "—";
+  }
+
+  renderAdminSubscriptions(subscriptions);
+  setAdminSubscriptionEditor(null, profile?.id || authUser?.id || null);
+}
+
+function getAdminSelectedUserId() {
+  return state.admin.selected.id || state.admin.selected.detail?.profile?.id || null;
+}
+
+function syncAdminInviteToggle() {
+  if (!elements.adminCreatePassword || !elements.adminCreateInvite) return;
+  const inviteMode = Boolean(elements.adminCreateInvite.checked);
+  elements.adminCreatePassword.disabled = inviteMode;
+  if (inviteMode) {
+    elements.adminCreatePassword.value = "";
+  }
+}
+
+function updateAdminUserFiltersFromInputs() {
+  if (elements.adminUserSearch) {
+    state.admin.users.query = elements.adminUserSearch.value.trim();
+  }
+  if (elements.adminUserSearchMode) {
+    state.admin.users.mode = elements.adminUserSearchMode.value || "email";
+  }
+  if (elements.adminUserPlanFilter) {
+    state.admin.users.plan = elements.adminUserPlanFilter.value || "all";
+  }
+  if (elements.adminUserStatusFilter) {
+    state.admin.users.status = elements.adminUserStatusFilter.value || "all";
+  }
+}
+
+async function loadAdminUsers({ page } = {}) {
+  if (!state.admin.allowed) return;
+  updateAdminUserFiltersFromInputs();
+  const nextPage = page || state.admin.users.page || 1;
+  state.admin.users.page = nextPage;
+  state.admin.users.loading = true;
+  setAdminUserStatus("Henter brugere …");
   updateAdminUI();
-  if (state.settings.adminMode) {
-    void refreshAdminMetrics({ silent: true });
+
+  try {
+    const params = new URLSearchParams();
+    params.set("page", String(state.admin.users.page));
+    params.set("per_page", String(state.admin.users.perPage));
+    if (state.admin.users.query) params.set("query", state.admin.users.query);
+    if (state.admin.users.mode) params.set("mode", state.admin.users.mode);
+    if (state.admin.users.plan && state.admin.users.plan !== "all") {
+      params.set("plan", state.admin.users.plan);
+    }
+    if (state.admin.users.status && state.admin.users.status !== "all") {
+      params.set("status", state.admin.users.status);
+    }
+
+    const res = await apiFetch(`/api/admin/users?${params.toString()}`, {
+      method: "GET",
+      timeoutMs: 12000,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      state.admin.users.items = Array.isArray(data.users) ? data.users : [];
+      state.admin.users.total =
+        typeof data.total === "number" && Number.isFinite(data.total) ? data.total : data.users?.length || 0;
+      setAdminUserStatus("");
+    } else if (res.status === 401 || res.status === 403) {
+      state.admin.allowed = false;
+      setAdminUserStatus("Admin adgang mangler.", true);
+    } else {
+      setAdminUserStatus("Kunne ikke hente brugere.", true);
+    }
+  } catch (error) {
+    setAdminUserStatus("Kunne ikke hente brugere.", true);
+  } finally {
+    state.admin.users.loading = false;
+    updateAdminUI();
+  }
+}
+
+async function loadAdminUserDetail(userId) {
+  if (!state.admin.allowed || !userId) return;
+  state.admin.selected.id = userId;
+  state.admin.selected.loading = true;
+  setAdminDetailStatus("Henter brugerdata …");
+  updateAdminUI();
+
+  try {
+    const res = await apiFetch("/api/admin/lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "user_id", query: userId }),
+      timeoutMs: 15000,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      state.admin.selected.detail = data;
+      state.admin.selected.id = userId;
+      setAdminDetailStatus("");
+    } else if (res.status === 404) {
+      state.admin.selected.detail = null;
+      setAdminDetailStatus("Bruger ikke fundet.", true);
+    } else if (res.status === 401 || res.status === 403) {
+      state.admin.allowed = false;
+      state.admin.selected.detail = null;
+      setAdminDetailStatus("Admin adgang mangler.", true);
+    } else {
+      setAdminDetailStatus("Kunne ikke hente brugerdata.", true);
+    }
+  } catch (error) {
+    setAdminDetailStatus("Kunne ikke hente brugerdata.", true);
+  } finally {
+    state.admin.selected.loading = false;
+    updateAdminUI();
+  }
+}
+
+async function handleAdminUserSearch() {
+  updateAdminUserFiltersFromInputs();
+  state.admin.users.page = 1;
+  await loadAdminUsers();
+}
+
+async function handleAdminUserSave() {
+  const userId = getAdminSelectedUserId();
+  if (!userId) {
+    setAdminDetailStatus("Vælg en bruger først.", true);
+    return;
+  }
+  const email = elements.adminDetailEmailInput?.value.trim() || "";
+  if (!email) {
+    setAdminDetailStatus("Email kan ikke være tom.", true);
+    return;
+  }
+
+  const profilePatch = {
+    full_name: elements.adminDetailNameInput?.value.trim() || null,
+    plan: elements.adminDetailPlan?.value || "free",
+    is_admin: Boolean(elements.adminDetailIsAdmin?.checked),
+    own_key_enabled: Boolean(elements.adminDetailOwnKey?.checked),
+    stripe_customer_id: elements.adminDetailStripe?.value.trim() || null,
+    admin_notes: elements.adminDetailNotes?.value || null,
+    disabled_reason: elements.adminDetailDisableReason?.value.trim() || null,
+    terms_accepted_at: parseAdminInputDate(elements.adminDetailTerms?.value || ""),
+    privacy_accepted_at: parseAdminInputDate(elements.adminDetailPrivacy?.value || ""),
+  };
+
+  const authPatch = {
+    email,
+  };
+  const roleValue = elements.adminDetailRole?.value.trim();
+  if (roleValue) {
+    authPatch.role = roleValue;
+  }
+
+  setAdminDetailStatus("Gemmer ændringer …");
+  try {
+    const res = await apiFetch("/api/admin/user/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId, profile: profilePatch, auth: authPatch }),
+      timeoutMs: 15000,
+    });
+    if (res.ok) {
+      setAdminDetailStatus("Profilen er opdateret.");
+      await loadAdminUserDetail(userId);
+      await loadAdminUsers({ page: state.admin.users.page });
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setAdminDetailStatus(payload.error || "Kunne ikke gemme ændringer.", true);
+    }
+  } catch (error) {
+    setAdminDetailStatus("Kunne ikke gemme ændringer.", true);
+  }
+}
+
+async function handleAdminUserPassword() {
+  const userId = getAdminSelectedUserId();
+  const password = elements.adminDetailPassword?.value || "";
+  if (!userId) {
+    setAdminDetailStatus("Vælg en bruger først.", true);
+    return;
+  }
+  if (!password || password.length < 8) {
+    setAdminDetailStatus("Kodeord skal være mindst 8 tegn.", true);
+    return;
+  }
+  setAdminDetailStatus("Opdaterer kodeord …");
+  try {
+    const res = await apiFetch("/api/admin/user/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId, auth: { password } }),
+      timeoutMs: 15000,
+    });
+    if (res.ok) {
+      setAdminDetailStatus("Kodeord er opdateret.");
+      if (elements.adminDetailPassword) elements.adminDetailPassword.value = "";
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setAdminDetailStatus(payload.error || "Kunne ikke opdatere kodeord.", true);
+    }
+  } catch (error) {
+    setAdminDetailStatus("Kunne ikke opdatere kodeord.", true);
+  }
+}
+
+async function handleAdminConfirmEmail() {
+  const userId = getAdminSelectedUserId();
+  if (!userId) {
+    setAdminDetailStatus("Vælg en bruger først.", true);
+    return;
+  }
+  setAdminDetailStatus("Bekræfter email …");
+  try {
+    const res = await apiFetch("/api/admin/user/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId, auth: { email_confirm: true } }),
+      timeoutMs: 15000,
+    });
+    if (res.ok) {
+      setAdminDetailStatus("Email er bekræftet.");
+      await loadAdminUserDetail(userId);
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setAdminDetailStatus(payload.error || "Kunne ikke bekræfte email.", true);
+    }
+  } catch (error) {
+    setAdminDetailStatus("Kunne ikke bekræfte email.", true);
+  }
+}
+
+async function handleAdminBanUser() {
+  const userId = getAdminSelectedUserId();
+  if (!userId) {
+    setAdminDetailStatus("Vælg en bruger først.", true);
+    return;
+  }
+  if (!window.confirm("Deaktiver denne bruger?")) return;
+  const reason = elements.adminDetailDisableReason?.value.trim() || null;
+  setAdminDetailStatus("Deaktiverer bruger …");
+  try {
+    const res = await apiFetch("/api/admin/user/action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId, action: "ban", reason }),
+      timeoutMs: 15000,
+    });
+    if (res.ok) {
+      setAdminDetailStatus("Bruger er deaktiveret.");
+      await loadAdminUserDetail(userId);
+      await loadAdminUsers({ page: state.admin.users.page });
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setAdminDetailStatus(payload.error || "Kunne ikke deaktivere bruger.", true);
+    }
+  } catch (error) {
+    setAdminDetailStatus("Kunne ikke deaktivere bruger.", true);
+  }
+}
+
+async function handleAdminUnbanUser() {
+  const userId = getAdminSelectedUserId();
+  if (!userId) {
+    setAdminDetailStatus("Vælg en bruger først.", true);
+    return;
+  }
+  if (!window.confirm("Genaktivér denne bruger?")) return;
+  setAdminDetailStatus("Genaktiverer bruger …");
+  try {
+    const res = await apiFetch("/api/admin/user/action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId, action: "unban" }),
+      timeoutMs: 15000,
+    });
+    if (res.ok) {
+      setAdminDetailStatus("Bruger er genaktiveret.");
+      await loadAdminUserDetail(userId);
+      await loadAdminUsers({ page: state.admin.users.page });
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setAdminDetailStatus(payload.error || "Kunne ikke genaktivere bruger.", true);
+    }
+  } catch (error) {
+    setAdminDetailStatus("Kunne ikke genaktivere bruger.", true);
+  }
+}
+
+async function handleAdminClearUserData(action) {
+  const userId = getAdminSelectedUserId();
+  if (!userId) {
+    setAdminDetailStatus("Vælg en bruger først.", true);
+    return;
+  }
+  if (!window.confirm("Bekræft handlingen. Dette kan ikke fortrydes.")) return;
+  setAdminDetailStatus("Udfører handling …");
+  try {
+    const res = await apiFetch("/api/admin/user/action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId, action }),
+      timeoutMs: 20000,
+    });
+    if (res.ok) {
+      setAdminDetailStatus("Handling gennemført.");
+      await loadAdminUserDetail(userId);
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setAdminDetailStatus(payload.error || "Handling fejlede.", true);
+    }
+  } catch (error) {
+    setAdminDetailStatus("Handling fejlede.", true);
+  }
+}
+
+async function handleAdminUserDelete(mode) {
+  const userId = getAdminSelectedUserId();
+  if (!userId) {
+    setAdminDetailStatus("Vælg en bruger først.", true);
+    return;
+  }
+  const message =
+    mode === "hard"
+      ? "Hard delete sletter auth + data permanent. Fortsæt?"
+      : "Soft delete deaktiverer brugeren. Fortsæt?";
+  if (!window.confirm(message)) return;
+  setAdminDetailStatus("Sletter bruger …");
+  try {
+    const res = await apiFetch("/api/admin/user/action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_id: userId, action: mode === "hard" ? "delete_hard" : "delete_soft" }),
+      timeoutMs: 30000,
+    });
+    if (res.ok) {
+      setAdminDetailStatus("Bruger slettet.");
+      state.admin.selected = { id: null, loading: false, detail: null };
+      await loadAdminUsers({ page: state.admin.users.page });
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setAdminDetailStatus(payload.error || "Kunne ikke slette bruger.", true);
+    }
+  } catch (error) {
+    setAdminDetailStatus("Kunne ikke slette bruger.", true);
+  }
+}
+
+async function handleAdminCreateUser() {
+  if (!state.admin.allowed) return;
+  const email = elements.adminCreateEmail?.value.trim() || "";
+  const name = elements.adminCreateName?.value.trim() || null;
+  const password = elements.adminCreatePassword?.value || "";
+  const invite = Boolean(elements.adminCreateInvite?.checked);
+  const confirm = Boolean(elements.adminCreateConfirm?.checked);
+  const plan = elements.adminCreatePlan?.value || "free";
+  const isAdmin = Boolean(elements.adminCreateAdmin?.checked);
+  const notes = elements.adminCreateNotes?.value || null;
+
+  if (!email) {
+    setAdminCreateStatus("Email er påkrævet.", true);
+    return;
+  }
+  if (!invite && password.length < 8) {
+    setAdminCreateStatus("Kodeord skal være mindst 8 tegn.", true);
+    return;
+  }
+
+  setAdminCreateStatus("Opretter bruger …");
+  try {
+    const res = await apiFetch("/api/admin/user/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        password: invite ? null : password,
+        invite,
+        confirm_email: confirm,
+        profile: { full_name: name, plan, is_admin: isAdmin, admin_notes: notes },
+      }),
+      timeoutMs: 15000,
+    });
+    if (res.ok) {
+      setAdminCreateStatus("Bruger oprettet.");
+      if (elements.adminCreateEmail) elements.adminCreateEmail.value = "";
+      if (elements.adminCreateName) elements.adminCreateName.value = "";
+      if (elements.adminCreatePassword) elements.adminCreatePassword.value = "";
+      if (elements.adminCreateNotes) elements.adminCreateNotes.value = "";
+      if (elements.adminCreateAdmin) elements.adminCreateAdmin.checked = false;
+      await loadAdminUsers({ page: 1 });
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setAdminCreateStatus(payload.error || "Kunne ikke oprette bruger.", true);
+    }
+  } catch (error) {
+    setAdminCreateStatus("Kunne ikke oprette bruger.", true);
+  }
+}
+
+async function handleAdminSubscriptionSave() {
+  const userId = getAdminSelectedUserId();
+  if (!userId) {
+    setAdminSubscriptionStatus("Vælg en bruger først.", true);
+    return;
+  }
+  const subscriptionId = elements.adminSubscriptionId?.value || null;
+  const stripeId = elements.adminSubscriptionStripe?.value.trim() || null;
+  const status = elements.adminSubscriptionStatus?.value || null;
+  const priceId = elements.adminSubscriptionPrice?.value.trim() || null;
+  const periodEnd = parseAdminInputDate(elements.adminSubscriptionPeriod?.value || "");
+  const cancelAtPeriodEnd = Boolean(elements.adminSubscriptionCancel?.checked);
+
+  setAdminSubscriptionStatus("Gemmer subscription …");
+  try {
+    const res = await apiFetch("/api/admin/subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "upsert",
+        subscription_id: subscriptionId,
+        user_id: subscriptionId ? null : userId,
+        stripe_subscription_id: stripeId,
+        status,
+        price_id: priceId,
+        current_period_end: periodEnd,
+        cancel_at_period_end: cancelAtPeriodEnd,
+      }),
+      timeoutMs: 15000,
+    });
+    if (res.ok) {
+      setAdminSubscriptionStatus("Subscription gemt.");
+      await loadAdminUserDetail(userId);
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setAdminSubscriptionStatus(payload.error || "Kunne ikke gemme subscription.", true);
+    }
+  } catch (error) {
+    setAdminSubscriptionStatus("Kunne ikke gemme subscription.", true);
+  }
+}
+
+async function handleAdminSubscriptionDelete() {
+  const userId = getAdminSelectedUserId();
+  const subscriptionId = elements.adminSubscriptionId?.value || null;
+  if (!userId || !subscriptionId) {
+    setAdminSubscriptionStatus("Vælg en subscription først.", true);
+    return;
+  }
+  if (!window.confirm("Slet denne subscription?")) return;
+  const cancelStripe = Boolean(elements.adminSubscriptionCancelStripe?.checked);
+
+  setAdminSubscriptionStatus("Sletter subscription …");
+  try {
+    const res = await apiFetch("/api/admin/subscription", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "delete",
+        subscription_id: subscriptionId,
+        cancel_stripe: cancelStripe,
+      }),
+      timeoutMs: 20000,
+    });
+    if (res.ok) {
+      setAdminSubscriptionStatus("Subscription slettet.");
+      if (elements.adminSubscriptionId) elements.adminSubscriptionId.value = "";
+      await loadAdminUserDetail(userId);
+    } else {
+      const payload = await res.json().catch(() => ({}));
+      setAdminSubscriptionStatus(payload.error || "Kunne ikke slette subscription.", true);
+    }
+  } catch (error) {
+    setAdminSubscriptionStatus("Kunne ikke slette subscription.", true);
   }
 }
 
@@ -3703,9 +4656,11 @@ async function handleAdminImport() {
   const mode = elements.adminImportMode ? elements.adminImportMode.value : "append";
 
   state.admin.importing = true;
-  setAdminImportStatus("Importer …");
+  startAdminImportProgress();
+  setAdminImportStatus("AI formatterer …");
   updateAdminUI();
 
+  let success = false;
   try {
     const res = await apiFetch("/api/admin/import", {
       method: "POST",
@@ -3732,59 +4687,18 @@ async function handleAdminImport() {
     if (warnings?.unmatchedImages?.length) {
       notes.push(`${warnings.unmatchedImages.length} billeder uden match`);
     }
+    if (warnings?.formatWarnings?.length) {
+      notes.push(`${warnings.formatWarnings.length} formatteringsadvarsler`);
+    }
     const detail = notes.length ? ` (${notes.join(" · ")})` : "";
     setAdminImportStatus(`Import gennemført${detail}. Opdatér siden for at bruge nye data.`);
     void refreshAdminMetrics({ silent: true });
+    success = true;
   } catch (error) {
     setAdminImportStatus("Importen fejlede.", true);
   } finally {
+    stopAdminImportProgress(success ? "Færdig" : "Fejl", success ? 1 : state.admin.importProgress.value);
     state.admin.importing = false;
-    updateAdminUI();
-  }
-}
-
-async function handleAdminLookup() {
-  if (!state.admin.allowed) {
-    setAdminLookupStatus("Admin adgang mangler.", true);
-    return;
-  }
-  const mode = elements.adminLookupMode ? elements.adminLookupMode.value : "email";
-  const query = elements.adminLookupQuery ? elements.adminLookupQuery.value.trim() : "";
-  if (!query) {
-    setAdminLookupStatus("Indtast en søgetekst først.", true);
-    return;
-  }
-
-  state.admin.lookup.loading = true;
-  setAdminLookupStatus("Søger …");
-  renderAdminLookupResult(null);
-  updateAdminUI();
-
-  try {
-    const res = await apiFetch("/api/admin/lookup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode, query }),
-      timeoutMs: 20000,
-    });
-    if (!res.ok) {
-      const data = await safeReadJson(res);
-      if (res.status === 404) {
-        setAdminLookupStatus("Ingen match fundet.", true);
-        return;
-      }
-      const message = data?.error || "Profilopslag fejlede.";
-      setAdminLookupStatus(message, true);
-      return;
-    }
-    const data = await res.json();
-    state.admin.lookup.result = data;
-    setAdminLookupStatus("Profil fundet.");
-    renderAdminLookupResult(data);
-  } catch (error) {
-    setAdminLookupStatus("Profilopslag fejlede.", true);
-  } finally {
-    state.admin.lookup.loading = false;
     updateAdminUI();
   }
 }
@@ -15880,17 +16794,27 @@ async function checkAiAvailability() {
 
     const res = await apiFetch("/api/health", { ai: true });
     if (!res.ok) {
+      const data = await safeReadJson(res);
+      const status = String(data?.status || "").toLowerCase();
+      const errorCode = String(data?.error || "").toLowerCase();
+      const code = status || errorCode;
       let aiMessage = "Hjælp er ikke klar lige nu.";
       let ttsMessage = "Oplæsning er ikke klar lige nu.";
-      if (res.status === 401) {
+      if (res.status === 401 || code === "unauthenticated") {
         aiMessage = "Log ind for at bruge hjælpen.";
         ttsMessage = "Log ind for oplæsning.";
-      } else if (res.status === 402) {
+      } else if (res.status === 402 || code === "payment_required") {
         aiMessage = "Kræver adgang eller egen nøgle.";
         ttsMessage = "Kræver adgang eller egen nøgle.";
-      } else if (res.status === 503) {
+      } else if (res.status === 503 || code === "missing_key" || code === "auth_unavailable") {
         aiMessage = "Hjælpen er ikke sat op endnu.";
         ttsMessage = "Oplæsning er ikke sat op endnu.";
+      } else if (res.status === 429 || code === "rate_limited") {
+        aiMessage = "For mange forespørgsler. Prøv igen om lidt.";
+        ttsMessage = "For mange forespørgsler. Prøv igen om lidt.";
+      } else if (res.status >= 500 || code === "health_unavailable") {
+        aiMessage = "Serverfejl. Prøv igen om lidt.";
+        ttsMessage = "Serverfejl. Prøv igen om lidt.";
       }
       setAiStatus({ available: false, model: null, message: aiMessage });
       setTtsStatus({ available: false, model: null, message: ttsMessage });
@@ -16178,11 +17102,7 @@ function attachEvents() {
     });
   }
   if (elements.adminMenuBtn) {
-    elements.adminMenuBtn.addEventListener("click", () => {
-      if (!requireAuthGuard()) return;
-      showScreen("admin");
-      setAdminMode(true);
-    });
+    elements.adminMenuBtn.addEventListener("click", openAdminDashboard);
   }
   if (elements.studioHumanBtn) {
     elements.studioHumanBtn.addEventListener("click", () => {
@@ -16207,14 +17127,154 @@ function attachEvents() {
   if (elements.profileSaveBtn) {
     elements.profileSaveBtn.addEventListener("click", handleProfileSave);
   }
-  if (elements.adminModeToggle) {
-    elements.adminModeToggle.addEventListener("change", (event) => {
-      setAdminMode(event.target.checked);
-    });
-  }
   if (elements.adminRefreshBtn) {
     elements.adminRefreshBtn.addEventListener("click", () => {
       void refreshAdminMetrics();
+      void loadAdminUsers({ page: state.admin.users.page });
+      const selectedId = getAdminSelectedUserId();
+      if (selectedId) {
+        void loadAdminUserDetail(selectedId);
+      }
+    });
+  }
+  if (elements.adminUserSearchBtn) {
+    elements.adminUserSearchBtn.addEventListener("click", handleAdminUserSearch);
+  }
+  if (elements.adminUserRefreshBtn) {
+    elements.adminUserRefreshBtn.addEventListener("click", () => {
+      void loadAdminUsers({ page: state.admin.users.page });
+    });
+  }
+  if (elements.adminUserSearch) {
+    elements.adminUserSearch.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void handleAdminUserSearch();
+      }
+    });
+  }
+  if (elements.adminUserPlanFilter) {
+    elements.adminUserPlanFilter.addEventListener("change", () => {
+      void handleAdminUserSearch();
+    });
+  }
+  if (elements.adminUserStatusFilter) {
+    elements.adminUserStatusFilter.addEventListener("change", () => {
+      void handleAdminUserSearch();
+    });
+  }
+  if (elements.adminUserSearchMode) {
+    elements.adminUserSearchMode.addEventListener("change", () => {
+      void handleAdminUserSearch();
+    });
+  }
+  if (elements.adminUserPrevBtn) {
+    elements.adminUserPrevBtn.addEventListener("click", () => {
+      const nextPage = Math.max(1, state.admin.users.page - 1);
+      void loadAdminUsers({ page: nextPage });
+    });
+  }
+  if (elements.adminUserNextBtn) {
+    elements.adminUserNextBtn.addEventListener("click", () => {
+      const totalPages = Math.max(
+        1,
+        Math.ceil((state.admin.users.total || 0) / state.admin.users.perPage)
+      );
+      const nextPage = Math.min(totalPages, state.admin.users.page + 1);
+      void loadAdminUsers({ page: nextPage });
+    });
+  }
+  if (elements.adminUserList) {
+    elements.adminUserList.addEventListener("click", (event) => {
+      const row = event.target.closest("[data-user-id]");
+      const userId = row?.dataset?.userId;
+      if (!userId) return;
+      void loadAdminUserDetail(userId);
+    });
+  }
+  if (elements.adminUserSaveBtn) {
+    elements.adminUserSaveBtn.addEventListener("click", handleAdminUserSave);
+  }
+  if (elements.adminUserPasswordBtn) {
+    elements.adminUserPasswordBtn.addEventListener("click", handleAdminUserPassword);
+  }
+  if (elements.adminUserConfirmEmailBtn) {
+    elements.adminUserConfirmEmailBtn.addEventListener("click", handleAdminConfirmEmail);
+  }
+  if (elements.adminUserBanBtn) {
+    elements.adminUserBanBtn.addEventListener("click", handleAdminBanUser);
+  }
+  if (elements.adminUserUnbanBtn) {
+    elements.adminUserUnbanBtn.addEventListener("click", handleAdminUnbanUser);
+  }
+  if (elements.adminClearUserStateBtn) {
+    elements.adminClearUserStateBtn.addEventListener("click", () =>
+      handleAdminClearUserData("clear_user_state")
+    );
+  }
+  if (elements.adminClearUsageBtn) {
+    elements.adminClearUsageBtn.addEventListener("click", () =>
+      handleAdminClearUserData("clear_usage")
+    );
+  }
+  if (elements.adminClearEvalsBtn) {
+    elements.adminClearEvalsBtn.addEventListener("click", () =>
+      handleAdminClearUserData("clear_evaluation_logs")
+    );
+  }
+  if (elements.adminClearAuditsBtn) {
+    elements.adminClearAuditsBtn.addEventListener("click", () =>
+      handleAdminClearUserData("clear_audit_events")
+    );
+  }
+  if (elements.adminClearOpenAiBtn) {
+    elements.adminClearOpenAiBtn.addEventListener("click", () =>
+      handleAdminClearUserData("clear_openai_key")
+    );
+  }
+  if (elements.adminUserSoftDeleteBtn) {
+    elements.adminUserSoftDeleteBtn.addEventListener("click", () =>
+      handleAdminUserDelete("soft")
+    );
+  }
+  if (elements.adminUserHardDeleteBtn) {
+    elements.adminUserHardDeleteBtn.addEventListener("click", () =>
+      handleAdminUserDelete("hard")
+    );
+  }
+  if (elements.adminCreateInvite) {
+    elements.adminCreateInvite.addEventListener("change", syncAdminInviteToggle);
+    syncAdminInviteToggle();
+  }
+  if (elements.adminCreateBtn) {
+    elements.adminCreateBtn.addEventListener("click", handleAdminCreateUser);
+  }
+  if (elements.adminSubscriptionAddBtn) {
+    elements.adminSubscriptionAddBtn.addEventListener("click", () => {
+      const userId = getAdminSelectedUserId();
+      if (!userId) {
+        setAdminSubscriptionStatus("Vælg en bruger først.", true);
+        return;
+      }
+      setAdminSubscriptionEditor(null, userId);
+      setAdminSubscriptionStatus("");
+    });
+  }
+  if (elements.adminSubscriptionSaveBtn) {
+    elements.adminSubscriptionSaveBtn.addEventListener("click", handleAdminSubscriptionSave);
+  }
+  if (elements.adminSubscriptionDeleteBtn) {
+    elements.adminSubscriptionDeleteBtn.addEventListener("click", handleAdminSubscriptionDelete);
+  }
+  if (elements.adminSubscriptionList) {
+    elements.adminSubscriptionList.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-subscription-id]");
+      const subId = btn?.dataset?.subscriptionId;
+      if (!subId) return;
+      const detail = state.admin.selected.detail;
+      const subs = Array.isArray(detail?.subscriptions) ? detail.subscriptions : [];
+      const match = subs.find((sub) => sub.id === subId);
+      setAdminSubscriptionEditor(match, getAdminSelectedUserId());
+      setAdminSubscriptionStatus("");
     });
   }
   if (elements.adminImportBtn) {
@@ -16222,18 +17282,6 @@ function attachEvents() {
   }
   if (elements.adminImportContent) {
     elements.adminImportContent.addEventListener("input", () => setAdminImportStatus(""));
-  }
-  if (elements.adminLookupBtn) {
-    elements.adminLookupBtn.addEventListener("click", handleAdminLookup);
-  }
-  if (elements.adminLookupQuery) {
-    elements.adminLookupQuery.addEventListener("input", () => setAdminLookupStatus(""));
-  }
-  if (elements.adminLookupMode) {
-    elements.adminLookupMode.addEventListener("change", () => {
-      setAdminLookupStatus("");
-      renderAdminLookupResult(null);
-    });
   }
   if (elements.upgradeBtn) {
     elements.upgradeBtn.addEventListener("click", handleCheckout);

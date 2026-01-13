@@ -22,6 +22,9 @@ create table if not exists public.profiles (
   stripe_customer_id text unique,
   own_key_enabled boolean not null default false,
   is_admin boolean not null default false,
+  admin_notes text,
+  disabled_at timestamptz,
+  disabled_reason text,
   terms_accepted_at timestamptz,
   privacy_accepted_at timestamptz,
   created_at timestamptz not null default now(),
@@ -30,6 +33,12 @@ create table if not exists public.profiles (
 
 alter table if exists public.profiles
   add column if not exists is_admin boolean not null default false;
+alter table if exists public.profiles
+  add column if not exists admin_notes text;
+alter table if exists public.profiles
+  add column if not exists disabled_at timestamptz;
+alter table if exists public.profiles
+  add column if not exists disabled_reason text;
 
 drop trigger if exists set_profiles_updated_at on public.profiles;
 create trigger set_profiles_updated_at

@@ -108,7 +108,8 @@ module.exports = async function handler(req, res) {
         mode: payload.mode,
       },
     });
+    const status = err && Number.isFinite(err.status) ? err.status : 500;
     const message = err && err.message ? String(err.message).slice(0, 200) : "Import failed";
-    return sendError(res, 500, message);
+    return sendError(res, status, message);
   }
 };

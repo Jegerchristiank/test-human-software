@@ -5278,6 +5278,33 @@ body.meta-hidden .question-meta {
   color: var(--accent-warm);
 }
 
+.admin-progress {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.admin-progress-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-progress-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.admin-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
 .admin-result {
   margin-top: 10px;
   padding: 12px;
@@ -5290,6 +5317,268 @@ body.meta-hidden .question-meta {
   overflow: auto;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.admin-menu-grid {
+  grid-template-columns: minmax(360px, 1.5fr) minmax(300px, 1fr);
+}
+
+.admin-user-toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: end;
+}
+
+.admin-toolbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.admin-drawer {
+  margin: 12px 0 18px;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+}
+
+.admin-drawer summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.admin-drawer summary small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.admin-drawer-body {
+  padding: 0 16px 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.admin-user-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(320px, 1.1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.admin-user-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-user-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.admin-user-list-header h3 {
+  margin: 0;
+}
+
+.admin-user-list-header p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.admin-user-count {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.admin-user-list-body {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-user-row {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+}
+
+.admin-user-row.active {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.admin-user-main {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-user-name {
+  font-weight: 600;
+}
+
+.admin-user-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-user-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-badge {
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+  font-size: 11px;
+  background: var(--pill-bg);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.admin-badge.accent {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.admin-badge.danger {
+  border-color: var(--warning-border);
+  background: var(--danger-soft);
+  color: var(--ink);
+}
+
+.admin-user-detail {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-user-detail-empty {
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  padding: 18px;
+  color: var(--muted);
+  background: var(--panel);
+}
+
+.admin-user-hero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-user-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-detail-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-detail-section {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  background: var(--panel);
+}
+
+.admin-detail-section.admin-danger {
+  border-color: var(--warning-border);
+  background: var(--danger-soft);
+}
+
+.admin-detail-header h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.admin-detail-header p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-user-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-subscription-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-subscription-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.admin-subscription-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.admin-subscription-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-subscription-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-subscription-empty {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-subscription-editor {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+@media (max-width: 1100px) {
+  .admin-menu-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-user-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .debug-policy {
