@@ -21,11 +21,15 @@ create table if not exists public.profiles (
   plan text not null default 'free' check (plan in ('free', 'paid', 'trial', 'lifetime')),
   stripe_customer_id text unique,
   own_key_enabled boolean not null default false,
+  is_admin boolean not null default false,
   terms_accepted_at timestamptz,
   privacy_accepted_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table if exists public.profiles
+  add column if not exists is_admin boolean not null default false;
 
 drop trigger if exists set_profiles_updated_at on public.profiles;
 create trigger set_profiles_updated_at
@@ -70,6 +74,30 @@ grant insert (id, email, full_name, own_key_enabled, terms_accepted_at, privacy_
   on public.profiles to authenticated;
 grant update (email, full_name, own_key_enabled, terms_accepted_at, privacy_accepted_at)
   on public.profiles to authenticated;
+
+-- Stored OpenAI keys (encrypted; service role only)
+create table if not exists public.user_openai_keys (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  key_ciphertext text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (char_length(key_ciphertext) <= 2000)
+);
+
+drop trigger if exists set_user_openai_keys_updated_at on public.user_openai_keys;
+create trigger set_user_openai_keys_updated_at
+before update on public.user_openai_keys
+for each row
+execute function public.set_updated_at();
+
+alter table if exists public.user_openai_keys enable row level security;
+
+drop policy if exists "User OpenAI keys are not accessible to clients" on public.user_openai_keys;
+create policy "User OpenAI keys are not accessible to clients"
+  on public.user_openai_keys
+  for all
+  using (false)
+  with check (false);
 
 -- Subscriptions
 create table if not exists public.subscriptions (
@@ -269,6 +297,34 @@ create policy "User state is updatable by owner"
   to authenticated
   using ((SELECT auth.uid()) = user_id)
   with check ((SELECT auth.uid()) = user_id);
+
+-- Dataset snapshots (admin-managed question data)
+create table if not exists public.dataset_snapshots (
+  dataset text primary key,
+  payload jsonb not null,
+  raw_text text,
+  item_count integer,
+  imported_by uuid references auth.users(id) on delete set null,
+  source text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (dataset in ('mcq', 'kortsvar', 'sygdomslaere'))
+);
+
+drop trigger if exists set_dataset_snapshots_updated_at on public.dataset_snapshots;
+create trigger set_dataset_snapshots_updated_at
+before update on public.dataset_snapshots
+for each row
+execute function public.set_updated_at();
+
+alter table if exists public.dataset_snapshots enable row level security;
+
+drop policy if exists "Dataset snapshots are not accessible to clients" on public.dataset_snapshots;
+create policy "Dataset snapshots are not accessible to clients"
+  on public.dataset_snapshots
+  for all
+  using (false)
+  with check (false);
 
 -- Rate limits
 create table if not exists public.rate_limits (

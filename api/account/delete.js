@@ -146,6 +146,7 @@ module.exports = async function handler(req, res) {
       { table: "usage_events", column: "user_id" },
       { table: "subscriptions", column: "user_id" },
       { table: "user_state", column: "user_id" },
+      { table: "user_openai_keys", column: "user_id" },
       { table: "profiles", column: "id" },
     ];
 

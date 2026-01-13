@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Human Biologi Studio</title>
-    <link rel="icon" href="Logo.png" />
+    <link rel="icon" href="logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -31,7 +31,7 @@
       <section id="loading-screen" data-testid="loading-screen" class="screen active">
         <div class="loading-shell" data-testid="loading-shell">
           <div class="loading-orbit" role="status" aria-live="polite" aria-label="Indlæser" data-testid="index__loading-screen--loading-shell__indlaeser">
-            <img class="loading-logo" src="Logo.png" alt="Human Biologi Studio logo" />
+            <img class="loading-logo" src="logo.png" alt="Human Biologi Studio logo" />
           </div>
           <div class="loading-text" id="loading-status" data-testid="loading-status" role="status" aria-live="polite" aria-atomic="true">Indlæser …</div>
           <div class="loading-detail" id="loading-detail" data-testid="loading-detail" role="status" aria-live="polite" aria-atomic="true">Gør klar til din session</div>
@@ -443,7 +443,7 @@
           <header class="menu-header reveal" data-testid="menu-header" style="--delay: 0s">
             <a class="brand-block brand-action" href="index.html" data-brand-back data-testid="index__menu-shell--menu-header__brand-block">
               <div class="brand-mark" data-testid="index__menu-header--brand-block__brand-mark">
-                <img class="brand-logo" id="menu-logo" data-testid="menu-logo" src="Logo.png" alt="Human Biologi Studio logo" />
+                <img class="brand-logo" id="menu-logo" data-testid="menu-logo" src="logo.png" alt="Human Biologi Studio logo" />
               </div>
                 <div data-testid="index__menu-header--brand-block__div">
                   <img class="brand-banner compact" src="Banner.png" alt="Human Biologi Studio banner" data-testid="index__menu-header--brand-block__brand-banner" />
@@ -467,6 +467,9 @@
                 </button>
                 <button class="btn ghost small" id="studio-sygdom-btn" data-testid="studio-sygdom-btn" type="button">
                   Sygdomslære
+                </button>
+                <button class="btn ghost small hidden" id="admin-menu-btn" data-testid="admin-menu-btn" type="button">
+                  Admin
                 </button>
               </div>
               <div class="menu-account" data-testid="index__menu-header--menu-right__menu-account">
@@ -944,7 +947,7 @@
           <header class="game-header reveal" data-testid="quiz-header" style="--delay: 0s">
             <div class="game-left" data-testid="index__quiz-shell--quiz-header__game-left">
               <a class="brand-action" href="index.html" data-brand-back data-testid="quiz-brand-link">
-                <img class="brand-logo small" id="quiz-logo" data-testid="quiz-logo" src="Logo.png" alt="Human Biologi Studio logo" />
+                <img class="brand-logo small" id="quiz-logo" data-testid="quiz-logo" src="logo.png" alt="Human Biologi Studio logo" />
               </a>
               <div class="session-pill" id="session-pill" data-testid="session-pill">Runde</div>
             </div>
@@ -1189,7 +1192,7 @@
             </div>
             <div class="result-badge" data-testid="index__result-shell--result-header__result-badge">
               <a class="brand-action" href="index.html" data-brand-back data-testid="result-brand-link">
-                <img class="brand-logo small" id="result-logo" data-testid="result-logo" src="Logo.png" alt="Human Biologi Studio logo" />
+                <img class="brand-logo small" id="result-logo" data-testid="result-logo" src="logo.png" alt="Human Biologi Studio logo" />
               </a>
               <div class="pill highlight" id="best-badge" data-testid="best-badge">Ny personlig rekord!</div>
             </div>
@@ -1340,17 +1343,17 @@
             <section class="panel account-panel reveal" data-testid="account-panel-key" style="--delay: 0.15s">
               <div class="panel-header" data-testid="index__account-grid--account-panel-key__panel-header">
                 <h2>Din nøgle</h2>
-                <p>Brug din egen nøgle for gratis adgang til hjælpen.</p>
+                <p>Gem din egen nøgle og få Pro-adgang til hjælpen.</p>
               </div>
               <label class="toggle">
                 <input type="checkbox" id="own-key-toggle" data-testid="own-key-toggle" />
                 <span>Brug min egen nøgle</span>
-                <small>Gemmes ikke mellem sessioner</small>
+                <small>Gemmes på din konto indtil du rydder den</small>
               </label>
               <div class="field" data-testid="index__account-grid--account-panel-key__field">
                 <label for="own-key-input">Din nøgle</label>
                 <input id="own-key-input" data-testid="own-key-input" type="password" placeholder="sk-..." autocomplete="off" />
-                <div class="field-hint" data-testid="index__account-panel-key--field__field-hint">Nøglen bruges kun når du beder om hjælp og gemmes ikke.</div>
+                <div class="field-hint" data-testid="index__account-panel-key--field__field-hint">Nøglen gemmes krypteret og bruges kun til hjælp.</div>
               </div>
               <div class="account-actions" data-testid="index__account-grid--account-panel-key__account-actions">
                 <button id="own-key-save-btn" data-testid="own-key-save-btn" class="btn primary" type="button">Gem nøgle</button>
@@ -1516,6 +1519,51 @@
                   <div class="field-hint" data-testid="admin-metrics-hint">Tallene er aggregerede og viser ikke persondata.</div>
                 </div>
 
+                <div class="admin-section" data-testid="admin-analytics-section">
+                  <div class="admin-section-header" data-testid="admin-analytics-header">
+                    <h3>Analytics</h3>
+                    <p>Vercel-trafik og samlet app health.</p>
+                  </div>
+                  <div class="diagnostics-grid admin-analytics-grid" data-testid="admin-analytics-grid">
+                    <div class="diagnostic-card" data-testid="admin-card-vercel">
+                      <div class="diagnostic-label" data-testid="admin-vercel-label">Vercel</div>
+                      <div class="diagnostic-value" id="admin-vercel-traffic" data-testid="admin-vercel-traffic">—</div>
+                      <div class="diagnostic-meta" id="admin-vercel-meta" data-testid="admin-vercel-meta">—</div>
+                    </div>
+                    <div class="diagnostic-card" data-testid="admin-card-health">
+                      <div class="diagnostic-label" data-testid="admin-health-label">App health</div>
+                      <div class="diagnostic-value" id="admin-health-status" data-testid="admin-health-status">—</div>
+                      <div class="diagnostic-meta" id="admin-health-meta" data-testid="admin-health-meta">—</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="admin-section" data-testid="admin-lookup-section">
+                  <div class="admin-section-header" data-testid="admin-lookup-header">
+                    <h3>Profilopslag</h3>
+                    <p>Slå en bruger op og se aktivitet, plan og logning.</p>
+                  </div>
+                  <div class="field" data-testid="admin-lookup-mode-field">
+                    <label for="admin-lookup-mode">Slå op på</label>
+                    <select id="admin-lookup-mode" data-testid="admin-lookup-mode">
+                      <option value="email">Email</option>
+                      <option value="user_id">Bruger-id</option>
+                      <option value="stripe_customer_id">Stripe customer id</option>
+                      <option value="stripe_subscription_id">Stripe subscription id</option>
+                    </select>
+                  </div>
+                  <div class="field" data-testid="admin-lookup-query-field">
+                    <label for="admin-lookup-query">Søgetekst</label>
+                    <input id="admin-lookup-query" data-testid="admin-lookup-query" type="text" placeholder="Indtast email eller id" />
+                  </div>
+                  <div class="account-actions" data-testid="admin-lookup-actions">
+                    <button id="admin-lookup-btn" data-testid="admin-lookup-btn" class="btn ghost" type="button">Slå op</button>
+                  </div>
+                  <div class="field-hint" data-testid="admin-lookup-hint">Resultatet viser alle tilgængelige profiler og aktivitetstabeller.</div>
+                  <div class="admin-status hidden" id="admin-lookup-status" data-testid="admin-lookup-status" role="status" aria-live="polite"></div>
+                  <pre class="admin-result hidden" id="admin-lookup-result" data-testid="admin-lookup-result"></pre>
+                </div>
+
                 <div class="admin-section" data-testid="admin-import-section">
                   <div class="admin-section-header" data-testid="admin-import-header">
                     <h3>Import</h3>
@@ -1543,7 +1591,7 @@
                   <div class="account-actions" data-testid="admin-import-actions">
                     <button id="admin-import-btn" data-testid="admin-import-btn" class="btn primary" type="button">Importer</button>
                   </div>
-                  <div class="field-hint" data-testid="admin-import-hint">Importen regenererer de matchende datafiler lokalt.</div>
+                  <div class="field-hint" data-testid="admin-import-hint">Importen opdaterer datasættet i databasen.</div>
                   <div class="admin-status hidden" id="admin-import-status" data-testid="admin-import-status" role="status" aria-live="polite"></div>
                 </div>
               </div>

@@ -929,6 +929,7 @@ const state = {
   profileRetryCount: 0,
   useOwnKey: false,
   userOpenAiKey: "",
+  ownKeyStored: false,
   stripeClient: null,
   stripeElements: null,
   stripePaymentElement: null,
@@ -952,6 +953,10 @@ const state = {
     metrics: null,
     loading: false,
     importing: false,
+    lookup: {
+      loading: false,
+      result: null,
+    },
   },
   billingElements: null,
   billingPaymentElement: null,
@@ -1264,6 +1269,7 @@ const elements = {
   diagAi: document.getElementById("diag-ai"),
   diagAiMeta: document.getElementById("diag-ai-meta"),
   diagRefreshBtn: document.getElementById("diag-refresh-btn"),
+  adminMenuBtn: document.getElementById("admin-menu-btn"),
   adminPanel: document.getElementById("admin-panel"),
   adminModeToggle: document.getElementById("admin-mode-toggle"),
   adminBody: document.getElementById("admin-body"),
@@ -1287,10 +1293,19 @@ const elements = {
   adminDataMeta: document.getElementById("admin-data-meta"),
   adminStripeAvailable: document.getElementById("admin-stripe-available"),
   adminStripeMeta: document.getElementById("admin-stripe-meta"),
+  adminVercelTraffic: document.getElementById("admin-vercel-traffic"),
+  adminVercelMeta: document.getElementById("admin-vercel-meta"),
+  adminHealthStatus: document.getElementById("admin-health-status"),
+  adminHealthMeta: document.getElementById("admin-health-meta"),
   adminRawdataUpdated: document.getElementById("admin-rawdata-updated"),
   adminRawdataMeta: document.getElementById("admin-rawdata-meta"),
   adminImportsUpdated: document.getElementById("admin-imports-updated"),
   adminImportsMeta: document.getElementById("admin-imports-meta"),
+  adminLookupMode: document.getElementById("admin-lookup-mode"),
+  adminLookupQuery: document.getElementById("admin-lookup-query"),
+  adminLookupBtn: document.getElementById("admin-lookup-btn"),
+  adminLookupStatus: document.getElementById("admin-lookup-status"),
+  adminLookupResult: document.getElementById("admin-lookup-result"),
   adminImportType: document.getElementById("admin-import-type"),
   adminImportMode: document.getElementById("admin-import-mode"),
   adminImportContent: document.getElementById("admin-import-content"),
@@ -1828,6 +1843,7 @@ function getSessionCourse() {
 function canSwitchCourse(course) {
   const sessionCourse = getSessionCourse();
   if (!sessionCourse) return true;
+  if (state.sessionActive && state.sessionPaused) return true;
   const courseId = normalizeCourse(course || DEFAULT_COURSE);
   return sessionCourse === courseId;
 }
@@ -1932,7 +1948,7 @@ function updateCourseTabs(course) {
 
 function updateCourseSwitchLock() {
   const sessionCourse = getSessionCourse();
-  const isLocked = Boolean(sessionCourse);
+  const isLocked = Boolean(sessionCourse) && state.sessionActive && !state.sessionPaused;
   const lockMessage = "Afslut eller annuller runden for at skifte studio.";
 
   if (elements.switchStudioBtn) {
@@ -3240,6 +3256,26 @@ function setAdminImportStatus(message, isWarn = false) {
   setElementVisible(elements.adminImportStatus, Boolean(text));
 }
 
+function setAdminLookupStatus(message, isWarn = false) {
+  if (!elements.adminLookupStatus) return;
+  const text = String(message || "").trim();
+  elements.adminLookupStatus.textContent = text;
+  elements.adminLookupStatus.classList.toggle("warn", Boolean(text) && isWarn);
+  setElementVisible(elements.adminLookupStatus, Boolean(text));
+}
+
+function renderAdminLookupResult(result) {
+  if (!elements.adminLookupResult) return;
+  if (!result) {
+    elements.adminLookupResult.textContent = "";
+    setElementVisible(elements.adminLookupResult, false);
+    return;
+  }
+  const text = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+  elements.adminLookupResult.textContent = text;
+  setElementVisible(elements.adminLookupResult, true);
+}
+
 function formatAdminCount(value) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   return new Intl.NumberFormat("da-DK").format(value);
@@ -3290,6 +3326,8 @@ function renderAdminMetrics(metrics) {
   const rawdata = metrics?.rawdata || {};
   const imports = metrics?.imports || {};
   const stripe = metrics?.stripe || null;
+  const vercel = metrics?.vercel || null;
+  const health = metrics?.health || null;
 
   if (elements.adminUsersTotal) {
     elements.adminUsersTotal.textContent = formatAdminCount(profiles.total);
@@ -3391,6 +3429,77 @@ function renderAdminMetrics(metrics) {
     }
   }
 
+  if (elements.adminVercelTraffic) {
+    if (!vercel || vercel.configured === false) {
+      elements.adminVercelTraffic.textContent = "Ikke sat op";
+    } else if (!vercel.analytics?.metrics) {
+      elements.adminVercelTraffic.textContent = vercel.project?.name
+        ? "Projekt OK"
+        : "Utilgængelig";
+    } else {
+      const metrics = vercel.analytics.metrics || {};
+      const primary =
+        metrics.pageviews ?? metrics.views ?? metrics.visitors ?? metrics.visits ?? metrics.requests;
+      elements.adminVercelTraffic.textContent =
+        typeof primary === "number" ? formatAdminCount(primary) : "—";
+    }
+  }
+  if (elements.adminVercelMeta) {
+    if (!vercel || vercel.configured === false) {
+      elements.adminVercelMeta.textContent = "—";
+    } else if (vercel.analytics?.metrics) {
+      const metrics = vercel.analytics.metrics || {};
+      const parts = [];
+      if (typeof metrics.visitors === "number") {
+        parts.push(`Besøgende ${formatAdminCount(metrics.visitors)}`);
+      }
+      if (typeof metrics.pageviews === "number") {
+        parts.push(`Sidevisninger ${formatAdminCount(metrics.pageviews)}`);
+      } else if (typeof metrics.views === "number") {
+        parts.push(`Visninger ${formatAdminCount(metrics.views)}`);
+      }
+      if (typeof metrics.requests === "number") {
+        parts.push(`Requests ${formatAdminCount(metrics.requests)}`);
+      }
+      if (vercel.analytics?.period?.from) {
+        parts.push("Seneste 7 dage");
+      }
+      elements.adminVercelMeta.textContent = formatAdminMeta(parts);
+    } else if (vercel.project?.name) {
+      elements.adminVercelMeta.textContent = formatAdminMeta([
+        `Projekt ${vercel.project.name}`,
+        vercel.project.framework ? `Framework ${vercel.project.framework}` : null,
+      ]);
+    } else {
+      elements.adminVercelMeta.textContent = "—";
+    }
+  }
+
+  if (elements.adminHealthStatus) {
+    if (!health) {
+      elements.adminHealthStatus.textContent = "—";
+    } else if (health.status === "ok") {
+      elements.adminHealthStatus.textContent = "OK";
+    } else if (health.status === "partial") {
+      elements.adminHealthStatus.textContent = "Delvis";
+    } else {
+      elements.adminHealthStatus.textContent = "Mangler";
+    }
+  }
+  if (elements.adminHealthMeta) {
+    if (!health) {
+      elements.adminHealthMeta.textContent = "—";
+    } else {
+      const parts = [];
+      if (health.ai?.model) parts.push(`AI ${health.ai.model}`);
+      if (health.tts?.model) parts.push(`TTS ${health.tts.model}`);
+      if (Array.isArray(health.issues) && health.issues.length) {
+        parts.push(`Mangler ${health.issues.join(", ")}`);
+      }
+      elements.adminHealthMeta.textContent = formatAdminMeta(parts);
+    }
+  }
+
   if (elements.adminRawdataUpdated) {
     elements.adminRawdataUpdated.textContent = formatAdminDate(resolveLatestUpdate(rawdata));
   }
@@ -3421,6 +3530,10 @@ function updateAdminUI() {
     saveSettings();
   }
 
+  if (elements.adminMenuBtn) {
+    setElementVisible(elements.adminMenuBtn, allowed);
+    elements.adminMenuBtn.disabled = !allowed;
+  }
   setElementVisible(elements.adminPanel, allowed);
   if (elements.adminModeToggle) {
     elements.adminModeToggle.checked = Boolean(allowed && state.settings.adminMode);
@@ -3447,9 +3560,22 @@ function updateAdminUI() {
     elements.adminImportMode.disabled = !showBody || !importEnabled || state.admin.importing;
   }
 
+  const lookupEnabled = showBody && !state.admin.lookup.loading;
+  if (elements.adminLookupBtn) {
+    elements.adminLookupBtn.disabled = !lookupEnabled;
+  }
+  if (elements.adminLookupMode) {
+    elements.adminLookupMode.disabled = !lookupEnabled;
+  }
+  if (elements.adminLookupQuery) {
+    elements.adminLookupQuery.disabled = !lookupEnabled;
+  }
+
   renderAdminMetrics(showBody ? state.admin.metrics : null);
   if (!showBody) {
     setAdminStatus(allowed ? "Slå admin-tilstand til for at se data." : "");
+    setAdminLookupStatus("");
+    renderAdminLookupResult(null);
   }
 }
 
@@ -3460,12 +3586,15 @@ function resetAdminState() {
   state.admin.metrics = null;
   state.admin.loading = false;
   state.admin.importing = false;
+  state.admin.lookup = { loading: false, result: null };
   if (state.settings.adminMode) {
     state.settings.adminMode = false;
     saveSettings();
   }
   setAdminStatus("");
   setAdminImportStatus("");
+  setAdminLookupStatus("");
+  renderAdminLookupResult(null);
   updateAdminUI();
 }
 
@@ -3582,12 +3711,72 @@ async function handleAdminImport() {
       setAdminImportStatus(message, true);
       return;
     }
-    setAdminImportStatus("Import gennemført. Genindlæs siden for at bruge nye data.");
+    const data = await safeReadJson(res);
+    const itemCount = data?.result?.itemCount;
+    const warnings = data?.result?.warnings;
+    const notes = [];
+    if (typeof itemCount === "number") {
+      notes.push(`${itemCount} rækker`);
+    }
+    if (warnings?.missingImages?.length) {
+      notes.push(`${warnings.missingImages.length} mangler billeder`);
+    }
+    if (warnings?.unmatchedImages?.length) {
+      notes.push(`${warnings.unmatchedImages.length} billeder uden match`);
+    }
+    const detail = notes.length ? ` (${notes.join(" · ")})` : "";
+    setAdminImportStatus(`Import gennemført${detail}. Opdatér siden for at bruge nye data.`);
     void refreshAdminMetrics({ silent: true });
   } catch (error) {
     setAdminImportStatus("Importen fejlede.", true);
   } finally {
     state.admin.importing = false;
+    updateAdminUI();
+  }
+}
+
+async function handleAdminLookup() {
+  if (!state.admin.allowed) {
+    setAdminLookupStatus("Admin adgang mangler.", true);
+    return;
+  }
+  const mode = elements.adminLookupMode ? elements.adminLookupMode.value : "email";
+  const query = elements.adminLookupQuery ? elements.adminLookupQuery.value.trim() : "";
+  if (!query) {
+    setAdminLookupStatus("Indtast en søgetekst først.", true);
+    return;
+  }
+
+  state.admin.lookup.loading = true;
+  setAdminLookupStatus("Søger …");
+  renderAdminLookupResult(null);
+  updateAdminUI();
+
+  try {
+    const res = await apiFetch("/api/admin/lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode, query }),
+      timeoutMs: 20000,
+    });
+    if (!res.ok) {
+      const data = await safeReadJson(res);
+      if (res.status === 404) {
+        setAdminLookupStatus("Ingen match fundet.", true);
+        return;
+      }
+      const message = data?.error || "Profilopslag fejlede.";
+      setAdminLookupStatus(message, true);
+      return;
+    }
+    const data = await res.json();
+    state.admin.lookup.result = data;
+    setAdminLookupStatus("Profil fundet.");
+    renderAdminLookupResult(data);
+  } catch (error) {
+    setAdminLookupStatus("Profilopslag fejlede.", true);
+  } finally {
+    state.admin.lookup.loading = false;
     updateAdminUI();
   }
 }
@@ -5414,6 +5603,7 @@ async function refreshProfile() {
     const data = await res.json();
     state.profile = data.profile || null;
     state.subscription = data.subscription || null;
+    state.ownKeyStored = Boolean(data.profile?.own_key_present);
     if (!state.userOpenAiKey) {
       state.useOwnKey = Boolean(state.profile?.own_key_enabled);
     }
@@ -6463,9 +6653,12 @@ function resolveRoundAccess() {
       subscriptionStatus: state.subscription?.status,
       useOwnKey: state.useOwnKey,
       userKey: state.userOpenAiKey,
+      keyStored: state.ownKeyStored,
     });
   }
-  const hasKey = Boolean(state.useOwnKey && String(state.userOpenAiKey || "").trim());
+  const hasKey = Boolean(
+    state.useOwnKey && (String(state.userOpenAiKey || "").trim() || state.ownKeyStored)
+  );
   if (hasPaidAccess() || hasKey) return { allowed: true, reason: null };
   return {
     allowed: false,
@@ -6551,32 +6744,101 @@ function clearStoredOwnKey() {
 }
 
 function setOwnKeyEnabled(enabled) {
-  state.useOwnKey = Boolean(enabled);
-  clearStoredOwnKey();
-  updateAccountUI();
-  checkAiAvailability();
-  syncOwnKeyPreference();
-}
-
-function saveOwnKey() {
-  const key = elements.ownKeyInput ? elements.ownKeyInput.value.trim() : "";
-  state.userOpenAiKey = key;
-  if (key) {
-    state.useOwnKey = true;
+  const next = Boolean(enabled);
+  if (next && !state.userOpenAiKey && !state.ownKeyStored) {
+    setAccountStatus("Gem din nøgle først.", true);
+    state.useOwnKey = false;
+    updateAccountUI();
+    return;
   }
+  state.useOwnKey = next;
   clearStoredOwnKey();
   updateAccountUI();
   checkAiAvailability();
   syncOwnKeyPreference();
 }
 
-function clearOwnKey() {
-  state.userOpenAiKey = "";
-  state.useOwnKey = false;
-  clearStoredOwnKey();
-  updateAccountUI();
-  checkAiAvailability();
-  syncOwnKeyPreference();
+async function saveOwnKey() {
+  if (!requireAuthGuard()) return;
+  const key = elements.ownKeyInput ? elements.ownKeyInput.value.trim() : "";
+  if (!key) {
+    setAccountStatus("Indtast din nøgle først.", true);
+    return;
+  }
+  setAccountStatus("Gemmer nøgle …");
+  try {
+    const res = await apiFetch("/api/own-key", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ openAiKey: key }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const errorCode = String(data?.error || "").toLowerCase();
+      let message = "Kunne ikke gemme nøgle.";
+      if (res.status === 401 || errorCode === "unauthenticated") {
+        message = "Log ind for at gemme nøgle.";
+      } else if (res.status === 400) {
+        message = "Nøglen er ugyldig.";
+      } else if (res.status === 413) {
+        message = "Nøglen er for lang.";
+      } else if (res.status === 429 || errorCode === "rate_limited") {
+        message = "For mange forsøg. Prøv igen om lidt.";
+      } else if (errorCode === "key_storage_unavailable") {
+        message = "Nøglelagring er ikke sat op endnu.";
+      }
+      setAccountStatus(message, true);
+      return;
+    }
+    const data = await res.json().catch(() => ({}));
+    const storedFlag = data?.profile?.own_key_present;
+    state.ownKeyStored = typeof storedFlag === "boolean" ? storedFlag : true;
+    state.profile = data.profile || state.profile;
+    state.useOwnKey = true;
+    state.userOpenAiKey = "";
+    clearStoredOwnKey();
+    if (elements.ownKeyInput) {
+      elements.ownKeyInput.value = "";
+    }
+    updateAccountUI();
+    updateUserChip();
+    setAccountStatus("Nøglen er gemt.");
+    checkAiAvailability();
+  } catch (error) {
+    setAccountStatus("Kunne ikke gemme nøgle.", true);
+  }
+}
+
+async function clearOwnKey() {
+  if (!requireAuthGuard()) return;
+  setAccountStatus("Fjerner nøgle …");
+  try {
+    const res = await apiFetch("/api/own-key", { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const errorCode = String(data?.error || "").toLowerCase();
+      let message = "Kunne ikke fjerne nøgle.";
+      if (res.status === 401 || errorCode === "unauthenticated") {
+        message = "Log ind for at fjerne nøgle.";
+      } else if (res.status === 429 || errorCode === "rate_limited") {
+        message = "For mange forsøg. Prøv igen om lidt.";
+      }
+      setAccountStatus(message, true);
+      return;
+    }
+    const data = await res.json().catch(() => ({}));
+    state.profile = data.profile || state.profile;
+    state.userOpenAiKey = "";
+    state.useOwnKey = false;
+    state.ownKeyStored = false;
+    clearStoredOwnKey();
+    updateAccountUI();
+    updateUserChip();
+    setAccountStatus("Nøglen er fjernet.");
+    checkAiAvailability();
+  } catch (error) {
+    setAccountStatus("Kunne ikke fjerne nøgle.", true);
+  }
 }
 
 async function syncOwnKeyPreference() {
@@ -6674,6 +6936,7 @@ async function handleLogout() {
   state.demoMode = false;
   state.useOwnKey = false;
   state.userOpenAiKey = "";
+  state.ownKeyStored = false;
   clearStoredOwnKey();
   state.consentReturnTo = null;
   setBillingStatus("");
@@ -15052,6 +15315,10 @@ function pauseSession() {
 
 function resumeSession() {
   if (!state.sessionActive || !state.sessionPaused) return;
+  const sessionCourse = getSessionCourse();
+  if (sessionCourse && sessionCourse !== getActiveCourse()) {
+    setActiveCourse(sessionCourse);
+  }
   const completed = getCompletedQuestionKeySet(state.results);
   const hasIncomplete = state.activeQuestions.some(
     (question) => question?.key && !completed.has(question.key)
@@ -15585,7 +15852,7 @@ async function checkAiAvailability() {
       updateDiagnosticsUI();
       return;
     }
-    if (state.useOwnKey && !state.userOpenAiKey) {
+    if (state.useOwnKey && !state.userOpenAiKey && !state.ownKeyStored) {
       setAiStatus({
         available: false,
         model: null,
@@ -15899,6 +16166,13 @@ function attachEvents() {
       showScreen("account");
     });
   }
+  if (elements.adminMenuBtn) {
+    elements.adminMenuBtn.addEventListener("click", () => {
+      if (!requireAuthGuard()) return;
+      showScreen("account");
+      setAdminMode(true);
+    });
+  }
   if (elements.studioHumanBtn) {
     elements.studioHumanBtn.addEventListener("click", () => {
       void navigateToStudio(DEFAULT_COURSE);
@@ -15932,6 +16206,18 @@ function attachEvents() {
   }
   if (elements.adminImportContent) {
     elements.adminImportContent.addEventListener("input", () => setAdminImportStatus(""));
+  }
+  if (elements.adminLookupBtn) {
+    elements.adminLookupBtn.addEventListener("click", handleAdminLookup);
+  }
+  if (elements.adminLookupQuery) {
+    elements.adminLookupQuery.addEventListener("input", () => setAdminLookupStatus(""));
+  }
+  if (elements.adminLookupMode) {
+    elements.adminLookupMode.addEventListener("change", () => {
+      setAdminLookupStatus("");
+      renderAdminLookupResult(null);
+    });
   }
   if (elements.upgradeBtn) {
     elements.upgradeBtn.addEventListener("click", handleCheckout);
@@ -16567,20 +16853,41 @@ async function ensureQuestionsLoaded() {
 
 async function loadQuestions() {
   const fetchOptions = { cache: "no-store" };
-  const [mcqRes, shortRes, captionsRes, bookRes, auditRes, diseaseRes] = await Promise.all([
-    fetch("data/questions.json", fetchOptions),
-    fetch("data/kortsvar.json", fetchOptions),
-    fetch("data/figure_captions.json", fetchOptions),
-    fetch("data/book_captions.json", fetchOptions),
-    fetch("data/figure_audit.json", fetchOptions),
-    fetch("data/sygdomslaere.json", fetchOptions),
+  const fetchJson = async (url, fallback) => {
+    try {
+      const res = await fetch(url, fetchOptions);
+      if (!res.ok) return fallback;
+      return await res.json();
+    } catch (error) {
+      return fallback;
+    }
+  };
+  const fetchDataset = async (apiUrl, fallbackUrl, fallbackValue) => {
+    try {
+      const res = await apiFetch(apiUrl, { method: "GET", timeoutMs: 20000 });
+      if (res?.ok) {
+        return await res.json();
+      }
+    } catch (error) {
+      // Fall back to bundled data.
+    }
+    return fetchJson(fallbackUrl, fallbackValue);
+  };
+  const [
+    mcqData,
+    shortData,
+    diseaseData,
+    captionData,
+    bookData,
+    auditData,
+  ] = await Promise.all([
+    fetchDataset("/api/data/questions", "data/questions.json", []),
+    fetchDataset("/api/data/kortsvar", "data/kortsvar.json", []),
+    fetchDataset("/api/data/sygdomslaere", "data/sygdomslaere.json", {}),
+    fetchJson("data/figure_captions.json", {}),
+    fetchJson("data/book_captions.json", {}),
+    fetchJson("data/figure_audit.json", []),
   ]);
-  const mcqData = await mcqRes.json();
-  const shortData = shortRes.ok ? await shortRes.json() : [];
-  const captionData = captionsRes.ok ? await captionsRes.json() : {};
-  const bookData = bookRes.ok ? await bookRes.json() : {};
-  const auditData = auditRes.ok ? await auditRes.json() : [];
-  const diseaseData = diseaseRes.ok ? await diseaseRes.json() : {};
   state.figureCaptionLibrary =
     captionData && typeof captionData === "object" ? captionData : {};
   state.figureAuditIndex = buildFigureAuditIndex(auditData);
@@ -16588,7 +16895,10 @@ async function loadQuestions() {
     bookData && typeof bookData === "object" ? bookData : {};
   state.bookCaptionIndex = buildBookCaptionIndex(state.bookCaptionLibrary);
 
-  const mcqQuestions = mcqData
+  const mcqItems = Array.isArray(mcqData) ? mcqData : [];
+  const shortItems = Array.isArray(shortData) ? shortData : [];
+
+  const mcqQuestions = mcqItems
     .map((question) => {
       const normalizedCategory = normalizeCategory(question.category);
       if (!normalizedCategory) return null;
@@ -16617,7 +16927,7 @@ async function loadQuestions() {
     .filter(Boolean);
   buildMcqDuplicateGroups(mcqQuestions);
 
-  const shortParts = shortData
+  const shortParts = shortItems
     .map((question) => {
       const normalizedCategory = normalizeCategory(question.category);
       if (!normalizedCategory) return null;

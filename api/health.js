@@ -2,7 +2,8 @@ const { sendJson, sendError } = require("./_lib/response");
 const { optionalEnv } = require("./_lib/env");
 const { getUserFromRequest, getProfileForUser } = require("./_lib/auth");
 const { enforceRateLimit } = require("./_lib/rateLimit");
-const { resolveAiAccess } = require("./_lib/aiAccess");
+const { isLikelyOpenAiKey, resolveAiAccess } = require("./_lib/aiAccess");
+const { fetchUserOpenAiKey } = require("./_lib/userOpenAiKey");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -12,12 +13,14 @@ module.exports = async function handler(req, res) {
 
   const model = optionalEnv("OPENAI_MODEL", "gpt-5.2");
   const ttsModel = optionalEnv("OPENAI_TTS_MODEL", "tts-1");
-  const userKey = req.headers["x-user-openai-key"] || req.headers["x-openai-key"] || "";
+  const headerKey = req.headers["x-user-openai-key"] || req.headers["x-openai-key"] || "";
+  let userKey = typeof headerKey === "string" ? headerKey : "";
 
   let plan = "free";
   let user = null;
   let authError = null;
-  if (!userKey) {
+  let profile = null;
+  if (!isLikelyOpenAiKey(userKey)) {
     const auth = await getUserFromRequest(req);
     user = auth.user;
     authError = auth.error;
@@ -34,7 +37,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  if (!userKey) {
+  if (!isLikelyOpenAiKey(userKey)) {
     if (authError || !user) {
       return sendJson(res, 401, {
         status: "unauthenticated",
@@ -42,8 +45,18 @@ module.exports = async function handler(req, res) {
         tts_model: ttsModel,
       });
     }
-    const profile = await getProfileForUser(user.id, { createIfMissing: true, userData: user });
+    profile = await getProfileForUser(user.id, { createIfMissing: true, userData: user });
     plan = profile?.plan || "free";
+    if (profile?.own_key_enabled) {
+      try {
+        const storedKey = await fetchUserOpenAiKey(user.id);
+        if (storedKey) {
+          userKey = storedKey;
+        }
+      } catch (error) {
+        userKey = \"\";
+      }
+    }
   }
 
   const access = resolveAiAccess({
@@ -53,7 +66,10 @@ module.exports = async function handler(req, res) {
   });
 
   if (!access.allowed) {
-    const status = access.reason || "unavailable";
+    let status = access.reason || "unavailable";
+    if (profile?.own_key_enabled && !isLikelyOpenAiKey(userKey)) {
+      status = "missing_key";
+    }
     const httpStatus = status === "missing_key" ? 503 : 402;
     return sendJson(res, httpStatus, {
       status,

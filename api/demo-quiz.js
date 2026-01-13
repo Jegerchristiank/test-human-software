@@ -1,9 +1,8 @@
-const fs = require("fs");
-const path = require("path");
 const { readJson } = require("./_lib/body");
 const { sendJson, sendError } = require("./_lib/response");
 const { enforceRateLimit } = require("./_lib/rateLimit");
 const { validatePayload } = require("./_lib/validate");
+const { getDatasetPayload } = require("./_lib/datasets");
 
 const MCQ_COUNT = 5;
 const OPTIONS_COUNT = 4;
@@ -15,12 +14,6 @@ const SHORT_LABEL_INDEX = new Map(SHORT_LABEL_ORDER.map((label, index) => [label
 
 function cleanText(value) {
   return String(value || "").trim();
-}
-
-function readJsonFile(relativePath) {
-  const filePath = path.join(process.cwd(), relativePath);
-  const raw = fs.readFileSync(filePath, "utf8");
-  return JSON.parse(raw);
 }
 
 function shuffle(values) {
@@ -214,8 +207,8 @@ module.exports = async function handler(req, res) {
   let mcqData = [];
   let shortData = [];
   try {
-    mcqData = readJsonFile("data/questions.json");
-    shortData = readJsonFile("data/kortsvar.json");
+    mcqData = await getDatasetPayload("mcq");
+    shortData = await getDatasetPayload("kortsvar");
   } catch (error) {
     return sendError(res, 500, "data_missing");
   }

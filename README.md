@@ -73,14 +73,16 @@ Minimum for online drift:
 - `STRIPE_PRICE_ID`
 - `STRIPE_LIFETIME_PRICE_ID`
 - `OPENAI_API_KEY`
+- `OPENAI_KEY_ENCRYPTION_SECRET` (bruges til at kryptere brugernes egne OpenAI nøgler)
 - `STRIPE_BASE_URL` (påkrævet hvis Stripe er aktiveret)
 - `STRIPE_PORTAL_CONFIGURATION_ID` (valgfri)
 - `TRUST_PROXY` (valgfri, brug `true` hvis din platform sætter sikre forwarded headers)
 - `TRUST_PROXY_HEADERS` (valgfri, kommasepareret liste, default `x-forwarded-for`)
 - `CORS_ALLOW_ORIGINS` (valgfri, kommasepareret liste over fulde origins til API CORS allowlist)
-- `ADMIN_EMAILS` (komma-separeret liste over admin-e-mails)
 - `ADMIN_IMPORT_ENABLED` (sæt til `true` for at aktivere admin-import i API)
-- `PYTHON_BIN` (valgfri, sti til python hvis `python3` ikke er tilgængelig)
+- `VERCEL_TOKEN` (valgfri, kræves for admin analytics fra Vercel)
+- `VERCEL_PROJECT_ID` (valgfri, kræves for admin analytics fra Vercel)
+- `VERCEL_TEAM_ID` (valgfri, team scope til Vercel API)
 
 Stripe nøgler:
 - `STRIPE_PRICE_ID` findes i Stripe Dashboard → Products → Price (starter med `price_`) og skal være recurring (abonnement).
@@ -107,6 +109,11 @@ Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 - Kør `python3 scripts/convert_rawdata.py` for at regenerere `data/questions.json`.
 - Kør `python3 scripts/convert_kortsvar.py` for at regenerere `data/kortsvar.json`.
 - Sygdomslære pensum ligger i `rawdata-sygdomslaere.txt` (bruges af Sygdomslære Studio).
+
+## Admin
+- Admin-adgang styres af `profiles.is_admin` i Supabase (sæt til `true` for din profil).
+- Admin-import opdaterer `dataset_snapshots` i Supabase og bruges af `/api/data/*` endpoints.
+- Lokale Python scripts er kun til offline/CLI-kørsler.
 - Kør `python3 scripts/convert_sygdomslaere.py` for at regenerere `data/sygdomslaere.json`.
 - Importfiler ligger i `imports/` (én pr. dataset) og bruges af append/replace flowet.
 - Kør `python3 scripts/import_rawdata.py --type <mcq|kortsvar|sygdomslaere> --mode <append|replace>` for at importere et nyt udsnit og regenerere `data/*.json`.
@@ -120,6 +127,7 @@ Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 - AI-kald går gennem `/api/*` serverless endpoints (Vercel).
 - Opret `.env` i projektroden og udfyld:
   - `OPENAI_API_KEY=...`
+  - `OPENAI_KEY_ENCRYPTION_SECRET=...` (lang, tilfældig nøgle til kryptering af brugernøgler)
   - `OPENAI_MODEL=gpt-5.2` (kan ændres)
   - `OPENAI_TTS_MODEL=tts-1` (valgfri, styrer oplæsning)
   - `OPENAI_VISION_MODEL=gpt-4.1-mini` (valgfri, bruges til figurbeskrivelser/skitse-analyse)

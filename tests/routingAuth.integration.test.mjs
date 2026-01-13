@@ -27,6 +27,9 @@ function setupMocks({
     getProfileForUser: vi.fn(async () => profile),
     getActiveSubscription: vi.fn(async () => subscription),
   });
+  stubModule("../api/_lib/userOpenAiKey.js", {
+    hasUserOpenAiKey: vi.fn(async () => false),
+  });
   stubModule("../api/_lib/rateLimit.js", {
     enforceRateLimit: vi.fn(async () => !rateLimited),
   });

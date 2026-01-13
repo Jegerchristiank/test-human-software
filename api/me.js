@@ -1,5 +1,6 @@
 const { sendJson, sendError } = require("./_lib/response");
 const { getUserFromRequest, getProfileForUser, getActiveSubscription } = require("./_lib/auth");
+const { hasUserOpenAiKey } = require("./_lib/userOpenAiKey");
 const { enforceRateLimit } = require("./_lib/rateLimit");
 
 module.exports = async function handler(req, res) {
@@ -26,6 +27,7 @@ module.exports = async function handler(req, res) {
   try {
     const profile = await getProfileForUser(user.id, { createIfMissing: true, userData: user });
     const subscription = await getActiveSubscription(user.id);
+    const ownKeyPresent = await hasUserOpenAiKey(user.id);
 
     return sendJson(res, 200, {
       user: {
@@ -33,7 +35,7 @@ module.exports = async function handler(req, res) {
         email: user.email || null,
         name: user.user_metadata?.full_name || user.user_metadata?.name || null,
       },
-      profile,
+      profile: profile ? { ...profile, own_key_present: ownKeyPresent } : profile,
       subscription,
     });
   } catch (err) {

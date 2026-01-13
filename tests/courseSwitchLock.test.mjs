@@ -112,7 +112,7 @@ function buildContext() {
 
 function loadApp() {
   const script = readFileSync(new URL("../app.js", import.meta.url), "utf8");
-  const harness = `${script}\n;globalThis.__appTest = { state, getSessionCourse, canSwitchCourse, setActiveCourse };`;
+  const harness = `${script}\n;globalThis.__appTest = { state, document, updateAuthUI, getSessionCourse, canSwitchCourse, setActiveCourse };`;
   const context = buildContext();
   vm.createContext(context);
   vm.runInContext(harness, context);
@@ -131,6 +131,7 @@ describe("studio course switch lock", () => {
   it("blocks switching away from the active session course", () => {
     const { state, canSwitchCourse, setActiveCourse } = loadApp();
     state.sessionActive = true;
+    state.sessionPaused = false;
     state.sessionCourse = "human";
     state.activeCourse = "human";
     expect(canSwitchCourse("sygdomslaere")).toBe(false);
@@ -139,11 +140,31 @@ describe("studio course switch lock", () => {
     expect(state.activeCourse).toBe("human");
   });
 
+  it("allows switching when the session is paused", () => {
+    const { state, canSwitchCourse, setActiveCourse } = loadApp();
+    state.sessionActive = true;
+    state.sessionPaused = true;
+    state.sessionCourse = "human";
+    state.activeCourse = "human";
+    expect(canSwitchCourse("sygdomslaere")).toBe(true);
+    setActiveCourse("sygdomslaere");
+    expect(state.activeCourse).toBe("sygdomslaere");
+  });
+
   it("infers the session course from active questions when unset", () => {
     const { state, getSessionCourse } = loadApp();
     state.sessionActive = true;
     state.sessionCourse = null;
     state.activeQuestions = [{ course: "sygdomslaere" }];
     expect(getSessionCourse()).toBe("sygdomslaere");
+  });
+
+  it("resets the course theme on logout", () => {
+    const { state, document, updateAuthUI } = loadApp();
+    state.isLoading = false;
+    state.authReady = true;
+    state.session = null;
+    updateAuthUI();
+    expect(document.body.dataset.course).toBe("human");
   });
 });

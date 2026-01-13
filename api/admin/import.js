@@ -39,7 +39,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  if (!isAdminUser(user)) {
+  if (!(await isAdminUser(user))) {
     return sendError(res, 403, "forbidden");
   }
   if (!isImportEnabled()) {
@@ -76,6 +76,7 @@ module.exports = async function handler(req, res) {
       type: payload.type,
       mode: payload.mode,
       content: payload.content,
+      userId: user.id,
     });
 
     await logAuditEvent({
@@ -93,6 +94,7 @@ module.exports = async function handler(req, res) {
       ok: true,
       dataset: payload.type,
       mode: payload.mode,
+      result,
       files: result,
     });
   } catch (err) {
@@ -106,6 +108,7 @@ module.exports = async function handler(req, res) {
         mode: payload.mode,
       },
     });
-    return sendError(res, 500, "Import failed");
+    const message = err && err.message ? String(err.message).slice(0, 200) : "Import failed";
+    return sendError(res, 500, message);
   }
 };

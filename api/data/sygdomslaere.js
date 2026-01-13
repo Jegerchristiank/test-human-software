@@ -1,7 +1,7 @@
 const { sendJson, sendError } = require("../_lib/response");
 const { getUserFromRequest } = require("../_lib/auth");
 const { enforceRateLimit } = require("../_lib/rateLimit");
-const { isAdminUser, isImportEnabled } = require("../_lib/admin");
+const { getDatasetPayload } = require("../_lib/datasets");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
@@ -15,8 +15,8 @@ module.exports = async function handler(req, res) {
   }
   if (
     !(await enforceRateLimit(req, res, {
-      scope: "admin:status",
-      limit: 20,
+      scope: "data:sygdomslaere",
+      limit: 60,
       windowSeconds: 300,
       userId: user.id,
     }))
@@ -24,12 +24,13 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  if (!(await isAdminUser(user))) {
-    return sendError(res, 403, "forbidden");
+  try {
+    const payload = await getDatasetPayload("sygdomslaere");
+    if (!payload || typeof payload !== "object") {
+      return sendError(res, 500, "data_missing");
+    }
+    return sendJson(res, 200, payload);
+  } catch (error) {
+    return sendError(res, 500, "data_unavailable");
   }
-
-  return sendJson(res, 200, {
-    admin: true,
-    importEnabled: isImportEnabled(),
-  });
 };

@@ -1,20 +1,19 @@
-const ADMIN_EMAILS = new Set(
-  (process.env.ADMIN_EMAILS || "")
-    .split(",")
-    .map((entry) => entry.trim().toLowerCase())
-    .filter(Boolean)
-);
+const { getSupabaseAdmin } = require("./supabase");
 
-function normalizeEmail(value) {
-  if (!value) return "";
-  return String(value).trim().toLowerCase();
-}
-
-function isAdminUser(user) {
-  if (!user) return false;
-  const email = normalizeEmail(user.email || user.user_metadata?.email || "");
-  if (!email) return false;
-  return ADMIN_EMAILS.has(email);
+async function isAdminUser(user) {
+  if (!user || !user.id) return false;
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (error || !data) return false;
+    return Boolean(data.is_admin);
+  } catch (error) {
+    return false;
+  }
 }
 
 function isImportEnabled() {

@@ -6,6 +6,7 @@ const { getUserFromRequest } = require("../_lib/auth");
 const { enforceRateLimit } = require("../_lib/rateLimit");
 const { isAdminUser, isImportEnabled } = require("../_lib/admin");
 const { getSupabaseAdmin } = require("../_lib/supabase");
+const { DATA_PATHS, getDatasetSnapshot, readJsonFile } = require("../_lib/datasets");
 
 const ROOT_PATH = path.resolve(__dirname, "..", "..");
 const RAW_PATHS = {
@@ -18,26 +19,12 @@ const IMPORT_PATHS = {
   kortsvar: path.join(ROOT_PATH, "imports", "rawdata-kortsvar.txt"),
   sygdomslaere: path.join(ROOT_PATH, "imports", "rawdata-sygdomslaere.txt"),
 };
-const DATA_PATHS = {
-  mcq: path.join(ROOT_PATH, "data", "questions.json"),
-  kortsvar: path.join(ROOT_PATH, "data", "kortsvar.json"),
-  sygdomslaere: path.join(ROOT_PATH, "data", "sygdomslaere.json"),
-};
 
 async function safeCount(queryPromise) {
   try {
     const { count, error } = await queryPromise;
     if (error) return null;
     return typeof count === "number" ? count : 0;
-  } catch (error) {
-    return null;
-  }
-}
-
-async function readJsonFile(filePath) {
-  try {
-    const raw = await fs.promises.readFile(filePath, "utf-8");
-    return JSON.parse(raw);
   } catch (error) {
     return null;
   }
@@ -66,6 +53,149 @@ function sumBalance(entries) {
   return totals;
 }
 
+function normalizeVercelMetrics(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  const source = payload.total || payload.totals || payload.summary || payload.data || payload;
+  if (!source || typeof source !== "object") return null;
+  const metrics = {};
+  const keys = [
+    "visitors",
+    "pageviews",
+    "views",
+    "visits",
+    "requests",
+    "bandwidth",
+    "avgDuration",
+    "avg_duration",
+    "bounceRate",
+    "bounce_rate",
+  ];
+  keys.forEach((key) => {
+    if (typeof source[key] === "number") {
+      metrics[key] = source[key];
+    }
+  });
+  return Object.keys(metrics).length ? metrics : null;
+}
+
+async function fetchVercelAnalytics() {
+  const token = process.env.VERCEL_TOKEN || process.env.VERCEL_API_TOKEN;
+  const projectId = process.env.VERCEL_PROJECT_ID;
+  if (!token || !projectId) {
+    return { configured: false, analytics: null, project: null };
+  }
+
+  const teamId = process.env.VERCEL_TEAM_ID;
+  const now = Date.now();
+  const fromMs = now - 7 * 24 * 60 * 60 * 1000;
+  const fromIso = new Date(fromMs).toISOString();
+  const toIso = new Date(now).toISOString();
+
+  const baseParams = new URLSearchParams({ projectId, from: fromIso, to: toIso });
+  if (teamId) baseParams.set("teamId", teamId);
+
+  const altParams = new URLSearchParams({
+    projectId,
+    from: String(fromMs),
+    to: String(now),
+  });
+  if (teamId) altParams.set("teamId", teamId);
+
+  const projectParams = new URLSearchParams({ from: fromIso, to: toIso });
+  if (teamId) projectParams.set("teamId", teamId);
+
+  const candidates = [
+    `https://api.vercel.com/v1/analytics?${baseParams.toString()}`,
+    `https://api.vercel.com/v1/analytics?${altParams.toString()}`,
+    `https://api.vercel.com/v9/projects/${projectId}/analytics?${projectParams.toString()}`,
+  ];
+
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) continue;
+      const payload = await res.json();
+      const metrics = normalizeVercelMetrics(payload);
+      if (metrics) {
+        return {
+          configured: true,
+          analytics: {
+            metrics,
+            period: { from: fromIso, to: toIso },
+          },
+        };
+      }
+    } catch (error) {
+      // Fall through to next attempt.
+    }
+  }
+
+  try {
+    const projectParams = new URLSearchParams();
+    if (teamId) projectParams.set("teamId", teamId);
+    const projectRes = await fetch(
+      `https://api.vercel.com/v9/projects/${projectId}?${projectParams.toString()}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (projectRes.ok) {
+      const project = await projectRes.json();
+      return {
+        configured: true,
+        analytics: null,
+        project: {
+          name: project?.name || null,
+          framework: project?.framework || null,
+        },
+      };
+    }
+  } catch (error) {
+    // Ignore project fetch errors.
+  }
+
+  return { configured: true, analytics: null, project: null };
+}
+
+async function resolveDatasetStats(type, countFn) {
+  let snapshot = null;
+  try {
+    snapshot = await getDatasetSnapshot(type);
+  } catch (error) {
+    snapshot = null;
+  }
+
+  if (snapshot) {
+    const payloadCount =
+      typeof snapshot.item_count === "number" ? snapshot.item_count : countFn(snapshot.payload);
+    const rawBytes =
+      snapshot.raw_text && typeof snapshot.raw_text === "string"
+        ? Buffer.byteLength(snapshot.raw_text, "utf-8")
+        : null;
+    return {
+      count: payloadCount,
+      dataUpdatedAt: snapshot.updated_at || null,
+      rawInfo: snapshot.updated_at
+        ? { updatedAt: snapshot.updated_at, bytes: rawBytes }
+        : null,
+      importInfo: snapshot.updated_at
+        ? { updatedAt: snapshot.updated_at, bytes: rawBytes }
+        : null,
+      source: "supabase",
+    };
+  }
+
+  const dataPayload = await readJsonFile(DATA_PATHS[type]);
+  const dataInfo = await getFileInfo(DATA_PATHS[type]);
+  return {
+    count: countFn(dataPayload),
+    dataUpdatedAt: dataInfo?.updatedAt || null,
+    rawInfo: await getFileInfo(RAW_PATHS[type]),
+    importInfo: await getFileInfo(IMPORT_PATHS[type]),
+    source: "file",
+  };
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -87,7 +217,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  if (!isAdminUser(user)) {
+  if (!(await isAdminUser(user))) {
     return sendError(res, 403, "forbidden");
   }
 
@@ -196,26 +326,33 @@ module.exports = async function handler(req, res) {
     audit7d,
   ] = counts;
 
-  const [mcqData, shortData, diseaseData] = await Promise.all([
-    readJsonFile(DATA_PATHS.mcq),
-    readJsonFile(DATA_PATHS.kortsvar),
-    readJsonFile(DATA_PATHS.sygdomslaere),
+  const [mcqStats, shortStats, diseaseStats, vercel] = await Promise.all([
+    resolveDatasetStats("mcq", (payload) => (Array.isArray(payload) ? payload.length : null)),
+    resolveDatasetStats("kortsvar", (payload) => (Array.isArray(payload) ? payload.length : null)),
+    resolveDatasetStats(
+      "sygdomslaere",
+      (payload) => (Array.isArray(payload?.diseases) ? payload.diseases.length : null)
+    ),
+    fetchVercelAnalytics(),
   ]);
 
   const dataCounts = {
-    mcq: Array.isArray(mcqData) ? mcqData.length : null,
-    kortsvar: Array.isArray(shortData) ? shortData.length : null,
-    sygdomslaere: Array.isArray(diseaseData?.diseases) ? diseaseData.diseases.length : null,
+    mcq: mcqStats.count,
+    kortsvar: shortStats.count,
+    sygdomslaere: diseaseStats.count,
   };
 
-  const [rawMcq, rawShort, rawDisease, importMcq, importShort, importDisease] = await Promise.all([
-    getFileInfo(RAW_PATHS.mcq),
-    getFileInfo(RAW_PATHS.kortsvar),
-    getFileInfo(RAW_PATHS.sygdomslaere),
-    getFileInfo(IMPORT_PATHS.mcq),
-    getFileInfo(IMPORT_PATHS.kortsvar),
-    getFileInfo(IMPORT_PATHS.sygdomslaere),
-  ]);
+  const rawdata = {
+    mcq: mcqStats.rawInfo,
+    kortsvar: shortStats.rawInfo,
+    sygdomslaere: diseaseStats.rawInfo,
+  };
+
+  const imports = {
+    mcq: mcqStats.importInfo,
+    kortsvar: shortStats.importInfo,
+    sygdomslaere: diseaseStats.importInfo,
+  };
 
   let stripe = { configured: false, balance: null };
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -234,6 +371,29 @@ module.exports = async function handler(req, res) {
       stripe = { configured: true, balance: null };
     }
   }
+
+  const openAiConfigured = Boolean(process.env.OPENAI_API_KEY);
+  const issues = [];
+  if (!openAiConfigured) {
+    issues.push("OpenAI");
+  }
+  if (!secretKey) {
+    issues.push("Stripe");
+  }
+  const health = {
+    status: issues.length ? (issues.length === 1 ? "partial" : "missing") : "ok",
+    issues,
+    ai: {
+      configured: openAiConfigured,
+      model: process.env.OPENAI_MODEL || "gpt-5.2",
+    },
+    tts: {
+      configured: openAiConfigured,
+      model: process.env.OPENAI_TTS_MODEL || "tts-1",
+    },
+    supabase: { configured: true },
+    stripe: { configured: Boolean(secretKey) },
+  };
 
   return sendJson(res, 200, {
     admin: {
@@ -275,16 +435,10 @@ module.exports = async function handler(req, res) {
       },
     },
     stripe,
+    vercel,
+    health,
     data: dataCounts,
-    rawdata: {
-      mcq: rawMcq,
-      kortsvar: rawShort,
-      sygdomslaere: rawDisease,
-    },
-    imports: {
-      mcq: importMcq,
-      kortsvar: importShort,
-      sygdomslaere: importDisease,
-    },
+    rawdata,
+    imports,
   });
 };

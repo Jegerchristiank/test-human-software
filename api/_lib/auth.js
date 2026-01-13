@@ -29,7 +29,9 @@ async function getProfileForUser(userId, { createIfMissing = false, userData = n
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, plan, stripe_customer_id, own_key_enabled, terms_accepted_at, privacy_accepted_at")
+    .select(
+      "id, email, full_name, plan, stripe_customer_id, own_key_enabled, terms_accepted_at, privacy_accepted_at, is_admin"
+    )
     .eq("id", userId)
     .single();
 
@@ -50,7 +52,9 @@ async function getProfileForUser(userId, { createIfMissing = false, userData = n
   const { data: created, error: insertError } = await supabase
     .from("profiles")
     .insert(payload)
-    .select("id, email, full_name, plan, stripe_customer_id, own_key_enabled, terms_accepted_at, privacy_accepted_at")
+    .select(
+      "id, email, full_name, plan, stripe_customer_id, own_key_enabled, terms_accepted_at, privacy_accepted_at, is_admin"
+    )
     .single();
 
   if (insertError) throw insertError;

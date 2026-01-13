@@ -5,6 +5,7 @@ const { getSupabaseAdmin } = require("./_lib/supabase");
 const { enforceRateLimit } = require("./_lib/rateLimit");
 const { validatePayload } = require("./_lib/validate");
 const { logAuditEvent } = require("./_lib/audit");
+const { hasUserOpenAiKey } = require("./_lib/userOpenAiKey");
 
 const FULL_NAME_MAX = 200;
 
@@ -58,6 +59,13 @@ module.exports = async function handler(req, res) {
   if (typeof payload.fullName === "string") {
     updates.full_name = payload.fullName.trim() || null;
   }
+  if (payload.ownKeyEnabled === true) {
+    const hasKey = await hasUserOpenAiKey(user.id);
+    if (!hasKey) {
+      return sendError(res, 400, "missing_key");
+    }
+  }
+
   if (typeof payload.ownKeyEnabled === "boolean") {
     updates.own_key_enabled = payload.ownKeyEnabled;
   }

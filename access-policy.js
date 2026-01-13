@@ -29,17 +29,17 @@
     return ACTIVE_SUBSCRIPTION_STATUSES.has(normalize(subscriptionStatus));
   }
 
-  function hasOwnKeyAccess({ useOwnKey, userKey } = {}) {
+  function hasOwnKeyAccess({ useOwnKey, userKey, keyStored } = {}) {
     if (!useOwnKey) return false;
-    if (typeof userKey !== "string") return false;
-    return Boolean(userKey.trim());
+    if (typeof userKey === "string" && userKey.trim()) return true;
+    return Boolean(keyStored);
   }
 
-  function resolveRoundAccess({ plan, subscriptionStatus, useOwnKey, userKey } = {}) {
+  function resolveRoundAccess({ plan, subscriptionStatus, useOwnKey, userKey, keyStored } = {}) {
     if (hasPaidAccess({ plan, subscriptionStatus })) {
       return { allowed: true, reason: null };
     }
-    if (hasOwnKeyAccess({ useOwnKey, userKey })) {
+    if (hasOwnKeyAccess({ useOwnKey, userKey, keyStored })) {
       return { allowed: true, reason: null };
     }
     if (useOwnKey) {

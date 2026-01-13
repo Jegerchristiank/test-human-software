@@ -28,6 +28,7 @@ describe("access policy", () => {
     expect(
       hasOwnKeyAccess({ useOwnKey: true, userKey: "sk-test-key" })
     ).toBe(true);
+    expect(hasOwnKeyAccess({ useOwnKey: true, userKey: "", keyStored: true })).toBe(true);
     expect(hasOwnKeyAccess({ useOwnKey: true, userKey: "   " })).toBe(false);
     expect(hasOwnKeyAccess({ useOwnKey: false, userKey: "sk-test-key" })).toBe(false);
   });
@@ -47,6 +48,17 @@ describe("access policy", () => {
       plan: "free",
       useOwnKey: true,
       userKey: "sk-test-key",
+    });
+    expect(access.allowed).toBe(true);
+    expect(access.reason).toBe(null);
+  });
+
+  it("allows access with stored key even when input is empty", () => {
+    const access = resolveRoundAccess({
+      plan: "free",
+      useOwnKey: true,
+      userKey: "",
+      keyStored: true,
     });
     expect(access.allowed).toBe(true);
     expect(access.reason).toBe(null);

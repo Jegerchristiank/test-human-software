@@ -1,6 +1,24 @@
 # Activity Log
 
 ## 2026-01-13
+- Purpose: fix /api/me integration test by stubbing `userOpenAiKey` in routing/auth integration tests.
+- Files: tests/routingAuth.integration.test.mjs, docs/activity.md.
+- Commands: sed -n '1,200p' tests/routingAuth.integration.test.mjs; sed -n '1,200p' api/me.js; sed -n '1,200p' api/_lib/userOpenAiKey.js; apply_patch (tests/routingAuth.integration.test.mjs); npm test -- tests/routingAuth.integration.test.mjs.
+- Security: test-only change; no runtime access control changes.
+- Follow-ups: none.
+## 2026-01-13
+- Purpose: move admin access to `profiles.is_admin`, add admin header entry + profile lookup + analytics, switch import to Supabase-backed datasets with JS parsers, add authenticated data endpoints, and update favicon to `logo.png`.
+- Files: api/_lib/admin.js, api/_lib/auth.js, api/_lib/rawdataParser.js, api/_lib/importer.js, api/_lib/datasets.js, api/admin/status.js, api/admin/metrics.js, api/admin/import.js, api/admin/lookup.js, api/data/questions.js, api/data/kortsvar.js, api/data/sygdomslaere.js, api/demo-quiz.js, app.js, index.html, styles.css, supabase/schema.sql, README.md, imports/README.md, consent.html, sign-in.html, sign-up.html, vilkaar.html, privatlivspolitik.html, persondatapolitik.html, handelsbetingelser.html, logo.png, tests/adminLookup.test.mjs, tests/rawdataParser.test.mjs, docs/activity.md.
+- Commands: ls; ls docs; cat docs/activity.md; rg -n "admin" index.html app.js styles.css api scripts; rg -n "menu-header|menu-right|skift-studio" index.html styles.css app.js; sed -n '1180,1560p' index.html; sed -n '1,260p' api/admin/metrics.js; sed -n '1,260p' api/admin/import.js; sed -n '1,260p' api/_lib/importer.js; sed -n '1,220p' scripts/import_rawdata.py; rg -n "Logo.png" *.html; python3 - <<'PY' ...; mv Logo.png logo_tmp.png; mv logo_tmp.png logo.png; rm Logo.png; git show HEAD:Logo.png > logo.png; git mv -f Logo.png logo-case-temp.png; git mv -f logo-case-temp.png logo.png; npm test -- tests/adminEndpoints.test.mjs tests/adminLookup.test.mjs tests/rawdataParser.test.mjs; npm test -- tests/adminEndpoints.test.mjs; date +%F.
+- Security: admin access is now enforced via server-side `profiles.is_admin` checks; admin lookup endpoint is auth-gated, validated, rate-limited and audit-logged; dataset snapshots are stored server-side with RLS deny; new data endpoints require auth + rate limits; imports no longer write to the repo filesystem.
+- Follow-ups: apply `supabase/schema.sql` (adds `profiles.is_admin` + `dataset_snapshots`), set `profiles.is_admin` for your user, and run an admin import to seed Supabase datasets; verify Vercel analytics env vars are set in deployment and confirm admin panels in the browser.
+## 2026-01-13
+- Purpose: remove the visible focus outline on the main content container to avoid distracting highlight on click.
+- Files: styles.css, docs/activity.md.
+- Commands: rg -n "focus|outline|box-shadow|ring" styles.css app.js index.html sygdomslaere.css sygdomslaere.html; rg -n "focus-within|:focus" styles.css; sed -n '1,140p' styles.css; sed -n '1910,2025p' styles.css; apply_patch (styles.css); date +%F.
+- Security: none.
+- Follow-ups: verify the highlight no longer appears when clicking the page or using the hint shortcut.
+
 - Purpose: add append/replace import pipeline with import files + CLI, plus admin dashboard for metrics/import.
 - Files: imports/README.md, imports/rawdata-mc.txt, imports/rawdata-kortsvar.txt, imports/rawdata-sygdomslaere.txt, scripts/import_rawdata.py, api/_lib/admin.js, api/_lib/importer.js, api/admin/status.js, api/admin/metrics.js, api/admin/import.js, index.html, styles.css, app.js, tests/adminEndpoints.test.mjs, README.md, .env, scripts/.env.local, docs/activity.md.
 - Commands: ls; sed -n '1,200p' docs/activity.md; sed -n '1,260p' scripts/convert_kortsvar.py; sed -n '1,260p' scripts/convert_rawdata.py; sed -n '1,260p' scripts/convert_sygdomslaere.py; rg -n "openai|OpenAI|llm|gpt" -S scripts api data app.js; rg -n "import" scripts app.js api data docs; rg -n "admin" -S .; rg -n "questions.json|kortsvar.json|sygdomslaere.json|rawdata" app.js scripts data; mkdir -p imports; cat <<'EOF' > imports/README.md; apply_patch (multiple files); npm test -- tests/adminEndpoints.test.mjs; date +%F.
@@ -456,3 +474,24 @@
 - Kommandoer: apply_patch (api/stripe/create-checkout-session.js); apply_patch (tests/stripeCreateCheckoutSession.test.mjs); npm test -- tests/stripeCreateCheckoutSession.test.mjs; date +%F.
 - Sikkerhedsimplikationer: payment_method_types styres fortsat af server-side allowlist; ingen nye secrets eller endpoints.
 - Opfølgning: ingen.
+
+## 2026-01-13
+- Formål: nulstille kursustema ved logout og tillade studioskift når en runde er pauset uden at blande sessionen.
+- Berørte filer: app.js, tests/courseSwitchLock.test.mjs, docs/activity.md.
+- Kommandoer: ls; cat docs/activity.md; cat AGENTS.md; rg -n "theme|sygdom|disease|studio|course" app.js; rg -n "logout|log out|sign out|signOut|sign-out|signOut" app.js auth.js consent.js; sed -n '6520,6705p' app.js; rg -n "data-course|sygdomslaere" styles.css; sed -n '120,240p' styles.css; rg -n "function updateAuthUI|updateAuthUI\\(" app.js; sed -n '4300,4560p' app.js; rg -n "STORAGE_KEYS|lastStudio|course" app.js; sed -n '1,220p' app.js; sed -n '2120,2190p' app.js; rg -n "activeCourse" app.js; rg -n "updateCourseUI\\(|setActiveCourse\\(|applyTheme\\(|init|bootstrap|loadState|initialize" app.js; sed -n '16680,16880p' app.js; rg -n "studioResolved" app.js; sed -n '5280,5355p' app.js; sed -n '5355,5455p' app.js; rg -n "maybeResolveStudioPreference" app.js; sed -n '2680,2825p' app.js; rg -n "data-course|data-theme|theme-toggle" index.html; rg -n "dataset\\.course|data-course" app.js; sed -n '1,160p' index.html; rg -n "data-authenticated" styles.css; sed -n '1,200p' consent.js; rg -n "auth-demo-btn|demo" app.js; sed -n '5060,5165p' app.js; rg -n "buildDemoQuestions" -n app.js; sed -n '4720,4795p' app.js; rg -n "paused-round-note|switch-studio-btn|course switch|courseSwitch|updateCourseSwitchLock" app.js styles.css index.html; sed -n '1870,2005p' app.js; rg -n "pausedRoundNote|paused-round-note" app.js; sed -n '14960,15080p' app.js; rg -n "getSessionCourse|sessionCourse" app.js; sed -n '1780,1865p' app.js; rg -n "start" app.js | rg -n "disabled|sessionActive|sessionPaused|paused"; rg -n "startButtons|start-btn|start round|start-game|startGame" app.js; sed -n '14680,14790p' app.js; rg -n "paused-session|paused" index.html; sed -n '780,840p' index.html; rg -n "active_session|activeSession" app.js; sed -n '2280,2425p' app.js; sed -n '1,240p' api/user-state.js; rg -n "sessionActive = false" app.js; sed -n '13880,14030p' app.js; sed -n '15090,15180p' app.js; sed -n '2560,2655p' app.js; sed -n '2655,2745p' app.js; sed -n '1,240p' tests/courseSwitchLock.test.mjs; sed -n '1,200p' tests/authClient.test.mjs; apply_patch (app.js); apply_patch (tests/courseSwitchLock.test.mjs); npm test -- tests/courseSwitchLock.test.mjs; date +%F.
+- Sikkerhedsimplikationer: Ingen; UI-tilstand og klient-side tema-/studioskift justeret uden ændring i dataadgang.
+- Opfølgning: afklar om parallelle, persistente pauser pr. studio ønskes (kræver udvidelse af user_state-modellen).
+
+## 2026-01-13
+- Formål: justere auth-hero brand-banner kanter ved at fjerne ramme/skygge og reducere border-radius.
+- Berørte filer: styles.css, docs/activity.md.
+- Kommandoer: rg -n "auth-hero|brand-banner|auth-hero-copy|index__auth-hero-copy" index.html styles.css; sed -n '1380,1505p' styles.css; sed -n '4235,4325p' styles.css; sed -n '40,120p' index.html; view_image Banner.png; apply_patch (styles.css); date +%F.
+- Sikkerhedsimplikationer: Ingen; kun UI/styling.
+- Opfølgning: Visuel tjek af auth-hero banner i desktop og mobil.
+
+## 2026-01-13
+- Purpose: persist user-supplied OpenAI keys server-side (encrypted) to grant Pro access without re-entering, wire AI access checks to stored keys, and update UI copy + tests.
+- Files: supabase/schema.sql, api/_lib/userOpenAiKey.js, api/own-key.js, api/_lib/aiGate.js, api/health.js, api/me.js, api/profile.js, api/account/delete.js, access-policy.js, app.js, index.html, tests/accessPolicy.test.mjs, tests/ownKey.test.mjs, README.md, .env, docs/activity.md.
+- Commands: ls; ls docs; cat docs/activity.md; rg -n "openai|api key|api_key|openai_key|own key|personal key|key" -S app.js api access-policy.js auth.js index.html; rg -n "own_key|openai|api_key" supabase/schema.sql api app.js; sed -n '1,220p' app.js; sed -n '3600,4300p' app.js; sed -n '5100,6800p' app.js; sed -n '1,220p' api/_lib/aiGate.js; sed -n '1,220p' api/profile.js; sed -n '1,220p' api/me.js; sed -n '1,220p' api/health.js; sed -n '1,220p' supabase/schema.sql; cat .env; apply_patch (multiple files); cat <<'EOF' > api/_lib/userOpenAiKey.js; cat <<'EOF' > api/own-key.js; cat <<'EOF' > tests/ownKey.test.mjs; npm test -- tests/accessPolicy.test.mjs tests/ownKey.test.mjs; git status -s; date +%F.
+- Security: user OpenAI keys are encrypted with a server-side secret and stored in a non-client-accessible table; AI access checks now use stored keys without returning them to clients; added rate-limited endpoint for saving/clearing keys.
+- Follow-ups: apply `supabase/schema.sql` in Supabase; set `OPENAI_KEY_ENCRYPTION_SECRET` in all environments (Vercel + local) before enabling key storage.

@@ -1,5 +1,6 @@
 const { getUserFromRequest, getProfileForUser } = require("./auth");
-const { resolveAiAccess } = require("./aiAccess");
+const { isLikelyOpenAiKey, resolveAiAccess } = require("./aiAccess");
+const { fetchUserOpenAiKey } = require("./userOpenAiKey");
 
 async function requireAiAccess(req) {
   const { user, error } = await getUserFromRequest(req);
@@ -9,7 +10,19 @@ async function requireAiAccess(req) {
 
   const profile = await getProfileForUser(user.id, { createIfMissing: true, userData: user });
   const plan = profile?.plan || "free";
-  const userKey = req.headers["x-user-openai-key"] || req.headers["x-openai-key"] || "";
+  const headerKey = req.headers["x-user-openai-key"] || req.headers["x-openai-key"] || "";
+  let userKey = typeof headerKey === "string" ? headerKey : "";
+
+  if (!isLikelyOpenAiKey(userKey) && profile?.own_key_enabled) {
+    try {
+      const storedKey = await fetchUserOpenAiKey(user.id);
+      if (storedKey) {
+        userKey = storedKey;
+      }
+    } catch (error) {
+      userKey = "";
+    }
+  }
 
   const access = resolveAiAccess({
     userKey,
@@ -18,6 +31,9 @@ async function requireAiAccess(req) {
   });
 
   if (!access.allowed) {
+    if (profile?.own_key_enabled && !isLikelyOpenAiKey(userKey)) {
+      return { error: "missing_key", user, profile };
+    }
     return { error: access.reason || "payment_required", user, profile };
   }
 
