@@ -533,3 +533,10 @@
 - Commands: rg -n "brand-banner.hero" styles.css; sed -n '1400,1455p' styles.css; sed -n '4240,4305p' styles.css; apply_patch (styles.css); tail -n 40 docs/activity.md; date +%F.
 - Security: none; styling-only change.
 - Follow-ups: visually confirm the hero logo now shows the full artwork on desktop and narrower breakpoints.
+
+## 2026-01-13
+- Purpose: let the grade endpoint accept the `sources` array that the studio already includes so auto-bedømmelse stops returning 400s.
+- Files: api/grade.js, api/_lib/limits.js, tests/apiValidation.test.mjs, docs/activity.md.
+- Commands: npm test -- tests/apiValidation.test.mjs; date +%F.
+- Security: validation still rejects unknown fields while now explicitly permitting short reference strings, so payload correctness improves without broadening the surface.
+- Follow-ups: monitor grade-related errors in production to catch any additional rejected fields.

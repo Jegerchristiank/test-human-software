@@ -62,6 +62,17 @@ module.exports = async function handler(req, res) {
         maxLenMessage: "User answer too long",
         maxLenStatus: 413,
       },
+      sources: {
+        type: "array",
+        maxItems: LIMITS.maxSourceItems,
+        maxItemsMessage: "Too many sources",
+        item: {
+          type: "string",
+          maxLen: LIMITS.maxSourceTextChars,
+          maxLenMessage: "Source text too long",
+          maxLenStatus: 413,
+        },
+      },
       maxPoints: {
         type: "number",
         coerce: true,

@@ -142,6 +142,36 @@ describe("API validation", () => {
     expect(payload.error).toBe("Invalid studio");
   });
 
+  it("accepts sources array in grade payload", async () => {
+    const handler = await loadHandler("../api/grade.js");
+    const res = await callHandler(handler, {
+      prompt: "Prompt",
+      modelAnswer: "Model",
+      userAnswer: "Answer",
+      maxPoints: 5,
+      language: "da",
+      sources: ["Pensum: Side 1."],
+    });
+    const payload = JSON.parse(res.body);
+    expect(res.statusCode).toBe(200);
+    expect(payload.score).toBe(1);
+  });
+
+  it("rejects non-array sources for grade", async () => {
+    const handler = await loadHandler("../api/grade.js");
+    const res = await callHandler(handler, {
+      prompt: "Prompt",
+      modelAnswer: "Model",
+      userAnswer: "Answer",
+      maxPoints: 5,
+      language: "da",
+      sources: "Pensum: side 1",
+    });
+    const payload = JSON.parse(res.body);
+    expect(res.statusCode).toBe(400);
+    expect(payload.error).toBe("Invalid sources");
+  });
+
   it("rejects negative awardedPoints in hint", async () => {
     const handler = await loadHandler("../api/hint.js");
     const res = await callHandler(handler, {

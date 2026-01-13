@@ -6,6 +6,8 @@ const LIMITS = {
   maxPreviousChars: 2000,
   maxTotalChars: 12000,
   maxPoints: 200,
+  maxSourceItems: 16,
+  maxSourceTextChars: 600,
   maxOptions: 8,
   maxOptionLabelChars: 3,
   maxOptionTextChars: 500,
