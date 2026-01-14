@@ -61,6 +61,7 @@ En designfokuseret webapp til at øve både multiple choice og kortsvar fra tidl
 - Hvis du ser "Backend offline" i produktion, åbn `https://<din-app>/api/config` og læs fejlbeskeden.
 - Sørg for at Vercel har `SUPABASE_URL` + `SUPABASE_ANON_KEY`/`SUPABASE_PUBLISHABLE_KEY` sat i Environment Variables (Production + Preview).
 - Tjek at Vercel "Output Directory" er tom eller `.` så `/api/*` deployes.
+- Hvis konto-status viser "Nøglelagring er ikke sat op endnu" eller `/api/own-key` returnerer 503, skal du definere `OPENAI_KEY_ENCRYPTION_SECRET` som en lang, tilfældig streng (fx `openssl rand -hex 32`), genstarte backend og derefter gemme nøglen igen.
 
 ## Miljøvariabler
 Minimum for online drift:

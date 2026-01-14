@@ -554,3 +554,10 @@
 - Commands: rg -n "buildCounts" app.js; date +%F.
 - Security: UI filter change only with no new surface area.
 - Follow-ups: re-run the import pipeline/QA to verify the updated counts show under a single ordinær chip; update the docs if other filters need similar dedup logic.
+
+## 2026-01-14
+- Purpose: make the account status message and docs explicitly explain how to configure `OPENAI_KEY_ENCRYPTION_SECRET` when key storage reports it is unavailable.
+- Files: app.js, README.md, docs/activity.md.
+- Commands: apply_patch (app.js, README.md); date +%F.
+- Security: message/documentation now call out the required encryption-secret environment variable without exposing any secret values.
+- Follow-ups: none.

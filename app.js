@@ -7708,7 +7708,8 @@ async function saveOwnKey() {
       } else if (res.status === 429 || errorCode === "rate_limited") {
         message = "For mange forsøg. Prøv igen om lidt.";
       } else if (errorCode === "key_storage_unavailable") {
-        message = "Nøglelagring er ikke sat op endnu.";
+        message =
+          "Nøglelagring er ikke sat op endnu — angiv OPENAI_KEY_ENCRYPTION_SECRET i miljøet (se README) og genstart serveren.";
       }
       setAccountStatus(message, true);
       return;
