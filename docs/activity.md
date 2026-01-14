@@ -547,3 +547,10 @@
 - Commands: python3 -m unittest tests/test_convert_headers.py; date +%F.
 - Security: parser docs/tests only; no runtime surface changes.
 - Follow-ups: keep using the new header form when adding datasets and rerun the unittest after editing the raw files.
+
+## 2026-01-14
+- Purpose: deduplicate default-year chips so `2026` merges with `2026 Ordinær` whenever the same year already has ordinær data, preventing blank-session imports from showing twice.
+- Files: app.js, README.md, docs/activity.md.
+- Commands: rg -n "buildCounts" app.js; date +%F.
+- Security: UI filter change only with no new surface area.
+- Follow-ups: re-run the import pipeline/QA to verify the updated counts show under a single ordinær chip; update the docs if other filters need similar dedup logic.

@@ -108,6 +108,7 @@ Tip: I testmode skal du bruge `sk_test_` / `pk_test_` nøgler fra Stripe.
 - MCQ rådata ligger i `rawdata-mc` (legacy fallback: `rawdata`).
 - Kortsvar rådata ligger i `rawdata-kortsvar`.
 - Årsoverskrifter i rådata må adskille sessionsetiketten med enten et mellemrum eller en bindestreg (fx `2026 Ordinær` eller `2026 - Ordinær`), så importer scripts bevarer session metadata.
+- Når et år både har data markeret `ordinær` og poster uden sessions-flag, viser UI dem nu kun én gang under chippen `År · Ordinær`, så `2026` og `2026 Ordinær` ikke vises separat.
 - Kør `python3 scripts/convert_rawdata.py` for at regenerere `data/questions.json`.
 - Kør `python3 scripts/convert_kortsvar.py` for at regenerere `data/kortsvar.json`.
 - Sygdomslære pensum ligger i `rawdata-sygdomslaere.txt` (bruges af Sygdomslære Studio).

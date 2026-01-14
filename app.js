@@ -8175,10 +8175,34 @@ function buildCounts(questions) {
   const sections = new Map();
   const priorities = new Map();
   const types = new Map();
+  const yearSessions = new Map();
+
+  questions.forEach((question) => {
+    const year = question.year;
+    const session = question.session ? question.session.trim().toLowerCase() : "";
+    if (!session) return;
+    const sessions = yearSessions.get(year) || new Set();
+    sessions.add(session);
+    yearSessions.set(year, sessions);
+  });
+
   questions.forEach((question) => {
     const course = normalizeCourse(question.course || DEFAULT_COURSE);
     courses.set(course, (courses.get(course) || 0) + 1);
-    years.set(question.yearLabel, (years.get(question.yearLabel) || 0) + 1);
+    let sessionForYear = question.session;
+    if (
+      course === DEFAULT_COURSE &&
+      !sessionForYear &&
+      yearSessions.get(question.year)?.has("ordinær")
+    ) {
+      sessionForYear = "ordinær";
+    }
+    const { yearLabel } = resolveYearMeta({
+      year: question.year,
+      session: sessionForYear,
+      course,
+    });
+    years.set(yearLabel, (years.get(yearLabel) || 0) + 1);
     categories.set(question.category, (categories.get(question.category) || 0) + 1);
     if (question.section) {
       sections.set(question.section, (sections.get(question.section) || 0) + 1);
