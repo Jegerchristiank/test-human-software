@@ -936,6 +936,7 @@ const state = {
   stripePaymentRequestButton: null,
   checkoutClientSecret: null,
   checkoutSubscriptionId: null,
+  checkoutIntentId: null,
   checkoutPrice: null,
   checkoutPlanType: "subscription",
   checkoutLoading: false,
@@ -1384,6 +1385,7 @@ const elements = {
   adminRawdataMeta: document.getElementById("admin-rawdata-meta"),
   adminImportsUpdated: document.getElementById("admin-imports-updated"),
   adminImportsMeta: document.getElementById("admin-imports-meta"),
+  adminProWelcomeTestBtn: document.getElementById("admin-pro-welcome-test-btn"),
   adminImportType: document.getElementById("admin-import-type"),
   adminImportMode: document.getElementById("admin-import-mode"),
   adminImportContent: document.getElementById("admin-import-content"),
@@ -1401,6 +1403,9 @@ const elements = {
   closeModal: document.getElementById("close-modal"),
   modalClose: document.getElementById("modal-close-btn"),
   modal: document.getElementById("rules-modal"),
+  proWelcomeModal: document.getElementById("pro-welcome-modal"),
+  proWelcomeClose: document.getElementById("pro-welcome-close"),
+  proWelcomeOk: document.getElementById("pro-welcome-ok"),
   sketchModal: document.getElementById("sketch-modal"),
   sketchModalClose: document.getElementById("sketch-modal-close"),
   sketchModalDismiss: document.getElementById("sketch-modal-dismiss"),
@@ -1665,6 +1670,7 @@ function isModalVisible(modal) {
 function isAnyModalOpen() {
   return (
     isModalVisible(elements.modal) ||
+    isModalVisible(elements.proWelcomeModal) ||
     isModalVisible(elements.sketchModal) ||
     isModalVisible(elements.figureModal)
   );
@@ -1738,6 +1744,10 @@ function setModalClosed(modal) {
 }
 
 function closeActiveModal() {
+  if (isModalVisible(elements.proWelcomeModal)) {
+    closeProWelcomeModal();
+    return true;
+  }
   if (isModalVisible(elements.figureModal)) {
     closeFigureModal();
     return true;
@@ -6696,6 +6706,7 @@ function clearCheckoutElement() {
   clearExpressCheckout();
   state.checkoutClientSecret = null;
   state.checkoutSubscriptionId = null;
+  state.checkoutIntentId = null;
   state.checkoutPrice = null;
   if (elements.checkoutPrice) {
     elements.checkoutPrice.textContent = "—";
@@ -6879,6 +6890,7 @@ async function beginCheckout(planType) {
     const data = await createSubscriptionIntent(resolvedPlanType);
     state.checkoutClientSecret = data.clientSecret;
     state.checkoutSubscriptionId = data.subscriptionId || null;
+    state.checkoutIntentId = data.intentId || null;
     state.checkoutPrice = data.price || null;
     updateCheckoutSummary(data.price, resolvedPlanType);
     await setupExpressCheckout(data.price, resolvedPlanType);
@@ -7122,10 +7134,22 @@ async function openStripePortal() {
 
 async function completeCheckoutSuccess() {
   setCheckoutStatus("Betalingen er gennemført. Opdaterer adgang …");
-  await refreshAccessStatus();
+  const updated = await refreshAccessStatus({
+    syncStripe: true,
+    planType: state.checkoutPlanType,
+    subscriptionId: state.checkoutSubscriptionId,
+    paymentIntentId: state.checkoutIntentId,
+  });
   await refreshProfile();
-  setCheckoutStatus("Tak! Din Pro-adgang er klar.");
-  setAccountStatus("Tak! Din Pro-adgang er klar.");
+  const hasAccess = updated || hasPaidAccess();
+  if (hasAccess) {
+    setCheckoutStatus("Tak! Din Pro-adgang er klar.");
+    setAccountStatus("Tak! Din Pro-adgang er klar.");
+    showProWelcomeModal();
+  } else {
+    setCheckoutStatus("Betalingen er gennemført. Adgangen opdateres snart.");
+    setAccountStatus("Betalingen er gennemført. Adgangen opdateres snart.");
+  }
   setTimeout(() => {
     closeCheckout();
   }, 800);
@@ -7611,9 +7635,49 @@ function handleRoundAccessDenied(reason) {
   }
 }
 
-async function refreshAccessStatus({ attempts = 4, delayMs = 1600 } = {}) {
+async function syncStripeAccess({ planType, subscriptionId, paymentIntentId } = {}) {
+  if (!state.session?.user) return { updated: false };
+  if (!state.config?.stripeConfigured) return { updated: false };
+  const payload = {};
+  if (planType) payload.planType = planType;
+  if (subscriptionId) payload.subscriptionId = subscriptionId;
+  if (paymentIntentId) payload.paymentIntentId = paymentIntentId;
+  try {
+    const res = await apiFetch("/api/stripe/sync-access", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return { updated: false };
+    const data = await res.json().catch(() => ({}));
+    if (data?.subscription) {
+      state.subscription = {
+        ...(state.subscription || {}),
+        ...data.subscription,
+      };
+    }
+    if (data?.plan && state.profile) {
+      state.profile = { ...(state.profile || {}), plan: data.plan };
+    }
+    return { updated: Boolean(data?.updated), data };
+  } catch (error) {
+    return { updated: false };
+  }
+}
+
+async function refreshAccessStatus({
+  attempts = 4,
+  delayMs = 1600,
+  syncStripe = false,
+  planType = null,
+  subscriptionId = null,
+  paymentIntentId = null,
+} = {}) {
   if (!state.session?.user) return false;
   for (let i = 0; i < attempts; i += 1) {
+    if (syncStripe) {
+      await syncStripeAccess({ planType, subscriptionId, paymentIntentId });
+    }
     await guardedStep(refreshProfile(), PROFILE_TIMEOUT_MS, "Profil indlæsning tog for lang tid");
     if (hasPaidAccess()) return true;
     await sleep(delayMs);
@@ -7647,9 +7711,10 @@ async function handleReturnParams() {
   }
 
   if (checkout === "success") {
-    const updated = await refreshAccessStatus();
+    const updated = await refreshAccessStatus({ syncStripe: true });
     if (updated) {
       setAccountStatus("Adgang opdateret.");
+      showProWelcomeModal();
     } else {
       setAccountStatus("Betalingen er gennemført. Adgangen opdateres snart.");
     }
@@ -16140,6 +16205,17 @@ function hideRules() {
   setModalClosed(elements.modal);
 }
 
+function showProWelcomeModal() {
+  if (!elements.proWelcomeModal) return;
+  const focusTarget = elements.proWelcomeOk || elements.proWelcomeClose;
+  setModalOpen(elements.proWelcomeModal, { initialFocus: focusTarget });
+}
+
+function closeProWelcomeModal() {
+  if (!elements.proWelcomeModal || elements.proWelcomeModal.classList.contains("hidden")) return;
+  setModalClosed(elements.proWelcomeModal);
+}
+
 function openFigureModal({ src, alt, caption, title } = {}) {
   if (!elements.figureModal || !elements.figureModalImg) return;
   elements.figureModalImg.src = src || "";
@@ -17162,6 +17238,9 @@ function attachEvents() {
       }
     });
   }
+  if (elements.adminProWelcomeTestBtn) {
+    elements.adminProWelcomeTestBtn.addEventListener("click", showProWelcomeModal);
+  }
   if (elements.adminUserSearchBtn) {
     elements.adminUserSearchBtn.addEventListener("click", handleAdminUserSearch);
   }
@@ -17669,6 +17748,19 @@ function attachEvents() {
       hideRules();
     }
   });
+  if (elements.proWelcomeClose) {
+    elements.proWelcomeClose.addEventListener("click", closeProWelcomeModal);
+  }
+  if (elements.proWelcomeOk) {
+    elements.proWelcomeOk.addEventListener("click", closeProWelcomeModal);
+  }
+  if (elements.proWelcomeModal) {
+    elements.proWelcomeModal.addEventListener("click", (evt) => {
+      if (evt.target === elements.proWelcomeModal) {
+        closeProWelcomeModal();
+      }
+    });
+  }
 
   if (elements.sketchModal) {
     elements.sketchModal.addEventListener("click", (evt) => {

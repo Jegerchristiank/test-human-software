@@ -1697,6 +1697,9 @@
                     <div class="diagnostic-meta" id="admin-health-meta" data-testid="admin-health-meta">—</div>
                   </div>
                 </div>
+                <div class="account-actions" data-testid="admin-system-actions">
+                  <button id="admin-pro-welcome-test-btn" data-testid="admin-pro-welcome-test-btn" class="btn ghost" type="button">Test Pro-dialog</button>
+                </div>
               </section>
 
               <section class="panel admin-import-panel reveal" data-testid="admin-import-panel" style="--delay: 0.2s">
@@ -2168,6 +2171,21 @@
         </div>
         <div class="modal-actions" data-testid="index__rules-modal--modal-content__modal-actions">
           <button class="btn ghost" id="modal-close-btn" data-testid="modal-close-btn" type="button">Tilbage</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="pro-welcome-modal" data-testid="pro-welcome-modal" role="dialog" aria-modal="true" aria-labelledby="pro-welcome-title" aria-describedby="pro-welcome-message" aria-hidden="true" tabindex="-1">
+      <div class="modal-content" data-testid="pro-welcome-modal-content">
+        <div class="modal-header" data-testid="pro-welcome-modal-header">
+          <h3 id="pro-welcome-title">Velkommen til Pro</h3>
+          <button class="icon-btn" id="pro-welcome-close" data-testid="pro-welcome-close" type="button">Luk</button>
+        </div>
+        <div class="modal-body" data-testid="pro-welcome-body">
+          <p id="pro-welcome-message" data-testid="pro-welcome-message">velkommen til pro</p>
+        </div>
+        <div class="modal-actions" data-testid="pro-welcome-actions">
+          <button class="btn primary" id="pro-welcome-ok" data-testid="pro-welcome-ok" type="button">OK</button>
         </div>
       </div>
     </div>

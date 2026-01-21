@@ -561,3 +561,10 @@
 - Commands: apply_patch (app.js, README.md); date +%F.
 - Security: message/documentation now call out the required encryption-secret environment variable without exposing any secret values.
 - Follow-ups: none.
+
+## 2026-01-21
+- Purpose: add Stripe access sync fallback after checkout, show Pro welcome modal + admin test button, and add sync endpoint tests.
+- Files: api/stripe/sync-access.js, app.js, index.html, styles.css, tests/stripeSyncAccess.test.mjs, docs/activity.md.
+- Commands: rg -n "stripe" api app.js index.html tests; sed -n '1,240p' api/stripe/webhook.js; sed -n '1,260p' api/stripe/create-subscription.js; sed -n '1,260p' api/stripe/create-checkout-session.js; sed -n '6400,7800p' app.js; sed -n '1300,1760p' index.html; sed -n '2070,2245p' index.html; cat vercel.json; rg -n "modal|dialog" app.js index.html styles.css; npm test -- tests/stripeSyncAccess.test.mjs (failed: vitest missing); npm install; npm test -- tests/stripeSyncAccess.test.mjs; date +%F.
+- Security: sync endpoint validates IDs, enforces auth + dual rate limits, verifies Stripe customer/metadata before updates; UI modal/admin button are client-only.
+- Follow-ups: update Stripe webhook endpoint in the Dashboard to https://biologistudio.dk/api/stripe/webhook and set STRIPE_WEBHOOK_SECRET; verify live checkout upgrade shows the Pro welcome dialog.

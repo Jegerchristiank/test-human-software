@@ -3887,6 +3887,16 @@ select:focus-visible {
   margin-bottom: 16px;
 }
 
+.modal-body {
+  margin-bottom: 16px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.modal-body p {
+  margin: 0;
+}
+
 .modal-actions {
   display: flex;
   gap: 10px;
