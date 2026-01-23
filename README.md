@@ -92,6 +92,14 @@ Stripe nøgler:
 - `STRIPE_BASE_URL` er påkrævet og skal være din app-URL (bruges til success/cancel).
 - `STRIPE_PORTAL_CONFIGURATION_ID` er valgfri og bruges til Stripe Customer Portal.
 
+## Stripe webhook (drift)
+- Live endpoint: `https://biologistudio.dk/api/stripe/webhook` (eller tilsvarende domæne i Produktion).
+- Brug live `STRIPE_SECRET_KEY` + live `STRIPE_WEBHOOK_SECRET` (kommasepareret hvis du roterer nøgler).
+- Lyt mindst på `checkout.session.completed`, `payment_intent.succeeded` og `customer.subscription.{created,updated,deleted}`.
+- Genaktiver webhooken i Stripe Dashboard (Developers → Webhooks → Enable) efter du har opdateret URL og secret.
+- Verificer konfiguration med `GET https://biologistudio.dk/api/stripe/webhook-status` (viser forventet endpoint og config-flag).
+- Peg ikke på domæneroden: `https://biologistudio.dk/` returnerer 404/405 på POST og bliver deaktiveret af Stripe.
+
 ## Sync af settings + historik
 - Appen synkroniserer settings, historik, fejl og performance til `user_state` tabellen i Supabase.
 - Synkronisering sker i baggrunden efter login og ved ændringer i lokal data.

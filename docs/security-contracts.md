@@ -10,6 +10,7 @@
 - `GET /api/config` (public): publishable configuration only.
 - `POST /api/demo-quiz` (public): demo quiz payload.
 - `POST /api/stripe/webhook` (public webhook): Stripe event ingestion.
+- `GET /api/stripe/webhook-status` (public): Stripe webhook config readiness.
 - `GET /api/me` (auth): user + profile + subscription summary.
 - `POST /api/profile` (auth): update profile fields.
 - `GET /api/account/export` (auth): export user data.

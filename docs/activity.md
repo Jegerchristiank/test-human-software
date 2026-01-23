@@ -568,3 +568,10 @@
 - Commands: rg -n "stripe" api app.js index.html tests; sed -n '1,240p' api/stripe/webhook.js; sed -n '1,260p' api/stripe/create-subscription.js; sed -n '1,260p' api/stripe/create-checkout-session.js; sed -n '6400,7800p' app.js; sed -n '1300,1760p' index.html; sed -n '2070,2245p' index.html; cat vercel.json; rg -n "modal|dialog" app.js index.html styles.css; npm test -- tests/stripeSyncAccess.test.mjs (failed: vitest missing); npm install; npm test -- tests/stripeSyncAccess.test.mjs; date +%F.
 - Security: sync endpoint validates IDs, enforces auth + dual rate limits, verifies Stripe customer/metadata before updates; UI modal/admin button are client-only.
 - Follow-ups: update Stripe webhook endpoint in the Dashboard to https://biologistudio.dk/api/stripe/webhook and set STRIPE_WEBHOOK_SECRET; verify live checkout upgrade shows the Pro welcome dialog.
+
+## 2026-01-23
+- Purpose: add Stripe webhook status endpoint and ops docs so mis-pointed webhook URLs can be re-enabled safely.
+- Files: api/stripe/webhook-status.js, tests/stripeWebhookStatus.test.mjs, README.md, docs/security-contracts.md, docs/activity.md.
+- Commands: cat docs/activity.md; sed -n '1,260p' api/stripe/webhook.js; cat vercel.json; sed -n '1,260p' api/stripe/create-checkout-session.js; npm test -- tests/stripeWebhookStatus.test.mjs tests/stripeWebhook.test.mjs; date +%F.
+- Security: new public status endpoint is rate-limited, avoids secrets, and only reports readiness + expected URL; webhook signature verification stays unchanged.
+- Follow-ups: set the Stripe Dashboard webhook URL to https://biologistudio.dk/api/stripe/webhook with the live `STRIPE_WEBHOOK_SECRET`, re-enable deliveries, and fire a test event once enabled.
