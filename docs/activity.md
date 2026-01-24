@@ -1,5 +1,12 @@
 # Activity Log
 
+## 2026-01-25
+- Purpose: tune page-index background colors, fix menu-grid column overlap, and restore original blue for Human Biologi chips.
+- Files: styles.css, docs/activity.md.
+- Commands: sed -n '1,200p' docs/activity.md; rg -n "page-index" -S .; rg -n "menu-grid|menu-column" styles.css index.html; sed -n '1520,1625p' styles.css; sed -n '4180,4305p' styles.css; sed -n '430,560p' index.html; sed -n '940,1090p' index.html; sed -n '1,220p' styles.css; rg -n "\\.chip" styles.css; sed -n '2060,2145p' styles.css; sed -n '2660,2745p' styles.css; rg -n "data-course" styles.css; rg -n "data-theme|theme" app.js; rg -n "data-course|data-studio|course" index.html; rg -n "dataset\\.course|data-course|dataCourse|course" app.js | rg -n "dataset|body|course"; rg -n "DEFAULT_COURSE" app.js | head -n 20; rg -n "glow" styles.css; sed -n '200,270p' styles.css; git status -sb; git log -1 -- styles.css; git show HEAD~1:styles.css | rg -n -- "--accent"; git show HEAD~1:styles.css | rg -n -- "--bg"; git show HEAD~1:styles.css | sed -n '1,130p'; apply_patch (styles.css); date +%F; npm test.
+- Security: no security or access-control changes.
+- Follow-ups: verify the index background colors, chip active color in Human Biologi, and menu-grid layout at desktop widths.
+
 ## 2026-01-24
 - Purpose: fix admin import supabase access reference and prepare SQL to normalize human category labels across snapshots/items.
 - Files: api/_lib/importer.js, supabase/fix_human_categories.sql, docs/activity.md.
@@ -11,6 +18,11 @@
 - Commands: sed -n '1,200p' api/_lib/body.js; sed -n '1,240p' api/_lib/validate.js; npm test -- tests/adminDatasets.test.mjs; date +%F.
 - Security: maintains admin auth and rate limits; validation still rejects unknown top-level payload fields and only allows supported bulk patch keys.
 - Follow-ups: none.
+- Purpose: move the datasets panel into the admin screen and improve dataset UX (summary, selection, QA details, type-aware filters).
+- Files: index.html, styles.css, app.js, docs/activity.md.
+- Commands: sed -n '1,200p' docs/activity.md; rg -n "admin-screen|admin-datasets-panel" index.html; sed -n '1380,1700p' index.html; sed -n '1700,2100p' index.html; rg -n "admin-dataset" styles.css; sed -n '5630,5790p' styles.css; sed -n '820,1020p' index.html; rg -n "admin-users-panel" index.html; sed -n '1320,1800p' index.html; rg -n "admin-human-categories" index.html; sed -n '1410,1475p' app.js; rg -n "renderAdminDatasetItems" app.js; sed -n '4525,4595p' app.js; sed -n '4595,4665p' app.js; sed -n '5040,5145p' app.js; sed -n '5145,5255p' app.js; sed -n '5255,5355p' app.js; sed -n '18370,18480p' app.js; sed -n '18480,18580p' app.js; sed -n '18580,18670p' app.js; sed -n '18670,18760p' app.js; apply_patch (index.html, styles.css, app.js); date +%F.
+- Security: no auth or data-access changes; UI-only improvements.
+- Follow-ups: verify dataset panel layout in admin screen on desktop/mobile; confirm filters and bulk actions behave as expected per dataset type.
 
 ## 2026-01-13
 - Purpose: finalize admin dashboard backend for full user management (create/update/ban/delete/subscriptions) and align routes/tests.

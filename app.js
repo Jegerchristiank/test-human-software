@@ -1435,6 +1435,15 @@ const elements = {
   adminDatasetNewBtn: document.getElementById("admin-dataset-new-btn"),
   adminDatasetPublishBtn: document.getElementById("admin-dataset-publish-btn"),
   adminDatasetStatus: document.getElementById("admin-dataset-status"),
+  adminDatasetWorkflow: document.getElementById("admin-dataset-workflow"),
+  adminDatasetVersionStatus: document.getElementById("admin-dataset-version-status"),
+  adminDatasetVersionMeta: document.getElementById("admin-dataset-version-meta"),
+  adminDatasetVersionCount: document.getElementById("admin-dataset-version-count"),
+  adminDatasetVersionUpdated: document.getElementById("admin-dataset-version-updated"),
+  adminDatasetVersionPublished: document.getElementById("admin-dataset-version-published"),
+  adminDatasetVersionSource: document.getElementById("admin-dataset-version-source"),
+  adminDatasetQaCount: document.getElementById("admin-dataset-qa-count"),
+  adminDatasetQaMeta: document.getElementById("admin-dataset-qa-meta"),
   adminDatasetSearch: document.getElementById("admin-dataset-search"),
   adminDatasetYear: document.getElementById("admin-dataset-year"),
   adminDatasetSession: document.getElementById("admin-dataset-session"),
@@ -1452,6 +1461,10 @@ const elements = {
   adminDatasetBulkValue: document.getElementById("admin-dataset-bulk-value"),
   adminDatasetBulkApplyBtn: document.getElementById("admin-dataset-bulk-apply-btn"),
   adminDatasetBulkHint: document.getElementById("admin-dataset-bulk-hint"),
+  adminDatasetBulkHelp: document.getElementById("admin-dataset-bulk-help"),
+  adminDatasetSelectAllBtn: document.getElementById("admin-dataset-select-all-btn"),
+  adminDatasetClearSelectionBtn: document.getElementById("admin-dataset-clear-selection-btn"),
+  adminDatasetSelectedCount: document.getElementById("admin-dataset-selected-count"),
   adminDatasetDetailEmpty: document.getElementById("admin-dataset-detail-empty"),
   adminDatasetEditor: document.getElementById("admin-dataset-editor"),
   adminDatasetSaveBtn: document.getElementById("admin-dataset-save-btn"),
@@ -3795,6 +3808,8 @@ function updateAdminUI() {
 
   const datasetEnabled = allowed && !state.admin.datasets.loading;
   const hasVersion = Boolean(state.admin.datasets.selectedVersionId);
+  const hasItems = state.admin.datasets.items.length > 0;
+  const hasSelection = state.admin.datasets.bulkSelection.size > 0;
   const canEditItem =
     datasetEnabled && (state.admin.datasets.editorMode === "new" || state.admin.datasets.selectedItemId);
   const datasetControls = [
@@ -3829,6 +3844,15 @@ function updateAdminUI() {
   }
   if (elements.adminDatasetPublishBtn) {
     elements.adminDatasetPublishBtn.disabled = !datasetEnabled || !hasVersion;
+  }
+  if (elements.adminDatasetBulkApplyBtn) {
+    elements.adminDatasetBulkApplyBtn.disabled = !datasetEnabled || !hasSelection;
+  }
+  if (elements.adminDatasetSelectAllBtn) {
+    elements.adminDatasetSelectAllBtn.disabled = !datasetEnabled || !hasItems;
+  }
+  if (elements.adminDatasetClearSelectionBtn) {
+    elements.adminDatasetClearSelectionBtn.disabled = !datasetEnabled || !hasSelection;
   }
   if (elements.adminDatasetSaveBtn) {
     elements.adminDatasetSaveBtn.disabled = !canEditItem;
@@ -4365,6 +4389,141 @@ function formatDatasetItemMeta(item) {
   return parts.join(" · ") || "—";
 }
 
+function getSelectedDatasetVersion() {
+  const id = state.admin.datasets.selectedVersionId;
+  if (!id) return null;
+  return state.admin.datasets.versions.find((version) => version.id === id) || null;
+}
+
+function formatDatasetStatus(status) {
+  if (status === "published") return "Live";
+  if (status === "draft") return "Kladde";
+  if (status === "archived") return "Arkiv";
+  return "—";
+}
+
+function buildDatasetQaParts(warnings) {
+  const parts = [];
+  if (warnings.missingCorrect?.count) parts.push(`MCQ uden korrekt: ${warnings.missingCorrect.count}`);
+  if (warnings.missingPrompts?.count) parts.push(`Manglende spørgsmål: ${warnings.missingPrompts.count}`);
+  if (warnings.missingAnswers?.count) parts.push(`Manglende svar: ${warnings.missingAnswers.count}`);
+  if (warnings.emptySections?.count) parts.push(`Tomme sektioner: ${warnings.emptySections.count}`);
+  if (warnings.formatWarnings?.count) parts.push(`Formatteringsadvarsler: ${warnings.formatWarnings.count}`);
+  if (warnings.missingImages?.count) parts.push(`Manglende billeder: ${warnings.missingImages.count}`);
+  if (warnings.unmatchedImages?.count) parts.push(`Umatchede billeder: ${warnings.unmatchedImages.count}`);
+  return parts;
+}
+
+function countDatasetQaWarnings(warnings) {
+  if (!warnings || typeof warnings !== "object") return 0;
+  return Object.values(warnings).reduce((sum, entry) => sum + (entry?.count || 0), 0);
+}
+
+function renderAdminDatasetSummary() {
+  const version = getSelectedDatasetVersion();
+  if (elements.adminDatasetVersionStatus) {
+    elements.adminDatasetVersionStatus.textContent = formatDatasetStatus(version?.status);
+  }
+  if (elements.adminDatasetVersionMeta) {
+    elements.adminDatasetVersionMeta.textContent = formatAdminMeta([
+      version?.source ? `Kilde ${version.source}` : null,
+      version?.note ? `Note: ${version.note}` : null,
+    ]);
+  }
+  if (elements.adminDatasetVersionCount) {
+    elements.adminDatasetVersionCount.textContent =
+      typeof version?.item_count === "number" ? `${version.item_count}` : "—";
+  }
+  if (elements.adminDatasetVersionUpdated) {
+    const updated = version?.updated_at || version?.created_at || null;
+    elements.adminDatasetVersionUpdated.textContent = updated
+      ? `Opdateret ${formatAdminDate(updated)}`
+      : "—";
+  }
+  if (elements.adminDatasetVersionPublished) {
+    if (!version) {
+      elements.adminDatasetVersionPublished.textContent = "—";
+    } else {
+      elements.adminDatasetVersionPublished.textContent = version.published_at
+        ? formatAdminDate(version.published_at)
+        : "Ikke publiceret";
+    }
+  }
+  if (elements.adminDatasetVersionSource) {
+    elements.adminDatasetVersionSource.textContent = formatAdminMeta([
+      version?.created_at ? `Oprettet ${formatAdminDate(version.created_at)}` : null,
+      version?.base_version_id ? "Har baseversion" : null,
+    ]);
+  }
+}
+
+function updateAdminDatasetSelectionUi() {
+  const selectedCount = state.admin.datasets.bulkSelection.size;
+  if (elements.adminDatasetSelectedCount) {
+    elements.adminDatasetSelectedCount.textContent = `${selectedCount} valgt`;
+  }
+  if (elements.adminDatasetBulkHint) {
+    elements.adminDatasetBulkHint.textContent = `${selectedCount} valgt`;
+  }
+}
+
+function syncAdminDatasetTypeUi() {
+  const isDisease = state.admin.datasets.type === "sygdomslaere";
+  const yearField = elements.adminDatasetYear?.closest(".field");
+  const sessionField = elements.adminDatasetSession?.closest(".field");
+  const priorityField = elements.adminDatasetPriority?.closest(".field");
+
+  setElementVisible(yearField, !isDisease);
+  setElementVisible(sessionField, !isDisease);
+  setElementVisible(priorityField, isDisease);
+
+  if (isDisease) {
+    if (elements.adminDatasetYear) elements.adminDatasetYear.value = "";
+    if (elements.adminDatasetSession) elements.adminDatasetSession.value = "";
+    state.admin.datasets.filters.year = "";
+    state.admin.datasets.filters.session = "";
+  } else {
+    if (elements.adminDatasetPriority) elements.adminDatasetPriority.value = "";
+    state.admin.datasets.filters.priority = "";
+  }
+
+  const listId = isDisease ? null : "admin-human-categories";
+  if (elements.adminDatasetCategory) {
+    if (listId) {
+      elements.adminDatasetCategory.setAttribute("list", listId);
+    } else {
+      elements.adminDatasetCategory.removeAttribute("list");
+    }
+  }
+  if (elements.adminDatasetBulkValue) {
+    if (listId) {
+      elements.adminDatasetBulkValue.setAttribute("list", listId);
+    } else {
+      elements.adminDatasetBulkValue.removeAttribute("list");
+    }
+  }
+  if (elements.adminDatasetBulkField) {
+    const sessionOption = elements.adminDatasetBulkField.querySelector('option[value="session"]');
+    const priorityOption = elements.adminDatasetBulkField.querySelector('option[value="priority"]');
+    if (sessionOption) {
+      sessionOption.hidden = isDisease;
+      sessionOption.disabled = isDisease;
+    }
+    if (priorityOption) {
+      priorityOption.hidden = !isDisease;
+      priorityOption.disabled = !isDisease;
+    }
+    if (elements.adminDatasetBulkField.selectedOptions[0]?.disabled) {
+      elements.adminDatasetBulkField.value = "category";
+    }
+  }
+  if (elements.adminDatasetBulkHelp) {
+    elements.adminDatasetBulkHelp.textContent = isDisease
+      ? "Brug prioritet: high / medium / low / excluded."
+      : "Session: ordinær eller sygeeksamen. Kategori skal være et fast emne.";
+  }
+}
+
 function renderAdminDatasetVersions() {
   if (!elements.adminDatasetVersion) return;
   const { versions, selectedVersionId } = state.admin.datasets;
@@ -4374,6 +4533,7 @@ function renderAdminDatasetVersions() {
     option.value = "";
     option.textContent = "Ingen versioner";
     elements.adminDatasetVersion.appendChild(option);
+    renderAdminDatasetSummary();
     return;
   }
   versions.forEach((version) => {
@@ -4385,6 +4545,7 @@ function renderAdminDatasetVersions() {
   if (selectedVersionId) {
     elements.adminDatasetVersion.value = selectedVersionId;
   }
+  renderAdminDatasetSummary();
 }
 
 function renderAdminDatasetItems() {
@@ -4404,9 +4565,8 @@ function renderAdminDatasetItems() {
     empty.className = "admin-user-detail-empty";
     empty.textContent = "Ingen items matcher dine filtre.";
     elements.adminDatasetItems.appendChild(empty);
-    if (elements.adminDatasetBulkHint) {
-      elements.adminDatasetBulkHint.textContent = `${bulkSelection.size} valgt`;
-    }
+    updateAdminDatasetSelectionUi();
+    updateAdminUI();
     return;
   }
 
@@ -4430,9 +4590,8 @@ function renderAdminDatasetItems() {
       } else {
         bulkSelection.delete(item.id);
       }
-      if (elements.adminDatasetBulkHint) {
-        elements.adminDatasetBulkHint.textContent = `${bulkSelection.size} valgt`;
-      }
+      updateAdminDatasetSelectionUi();
+      updateAdminUI();
     });
     row.appendChild(checkbox);
 
@@ -4453,9 +4612,8 @@ function renderAdminDatasetItems() {
 
     elements.adminDatasetItems.appendChild(row);
   });
-  if (elements.adminDatasetBulkHint) {
-    elements.adminDatasetBulkHint.textContent = `${bulkSelection.size} valgt`;
-  }
+  updateAdminDatasetSelectionUi();
+  updateAdminUI();
 }
 
 function renderAdminDatasetQa() {
@@ -4463,18 +4621,66 @@ function renderAdminDatasetQa() {
   const qa = state.admin.datasets.qaSummary;
   if (!qa || !qa.warnings) {
     elements.adminDatasetQa.textContent = "QA: —";
+    if (elements.adminDatasetQaCount) {
+      elements.adminDatasetQaCount.textContent = "—";
+    }
+    if (elements.adminDatasetQaMeta) {
+      elements.adminDatasetQaMeta.textContent = "—";
+    }
     return;
   }
   const warnings = qa.warnings || {};
-  const parts = [];
-  if (warnings.missingCorrect?.count) parts.push(`MCQ uden korrekt: ${warnings.missingCorrect.count}`);
-  if (warnings.missingPrompts?.count) parts.push(`Manglende spørgsmål: ${warnings.missingPrompts.count}`);
-  if (warnings.missingAnswers?.count) parts.push(`Manglende svar: ${warnings.missingAnswers.count}`);
-  if (warnings.emptySections?.count) parts.push(`Tomme sektioner: ${warnings.emptySections.count}`);
-  if (warnings.formatWarnings?.count) parts.push(`Formatteringsadvarsler: ${warnings.formatWarnings.count}`);
-  if (warnings.missingImages?.count) parts.push(`Manglende billeder: ${warnings.missingImages.count}`);
-  if (warnings.unmatchedImages?.count) parts.push(`Umatchede billeder: ${warnings.unmatchedImages.count}`);
-  elements.adminDatasetQa.textContent = parts.length ? `QA: ${parts.join(" · ")}` : "QA: Ingen advarsler";
+  const parts = buildDatasetQaParts(warnings);
+  const totalWarnings = countDatasetQaWarnings(warnings);
+  const summaryText = parts.length ? `QA: ${parts.join(" · ")}` : "QA: Ingen advarsler";
+
+  if (elements.adminDatasetQaCount) {
+    elements.adminDatasetQaCount.textContent = totalWarnings ? `${totalWarnings} advarsler` : "Ingen";
+  }
+  if (elements.adminDatasetQaMeta) {
+    elements.adminDatasetQaMeta.textContent = parts.length ? parts.slice(0, 3).join(" · ") : "Ingen advarsler";
+  }
+
+  elements.adminDatasetQa.textContent = "";
+  const summary = document.createElement("div");
+  summary.className = "admin-dataset-qa-summary";
+  summary.textContent = summaryText;
+  elements.adminDatasetQa.appendChild(summary);
+
+  const detailSections = [
+    { key: "missingCorrect", label: "MCQ uden korrekt", sample: warnings.missingCorrect?.sample },
+    { key: "missingPrompts", label: "Manglende spørgsmål", sample: warnings.missingPrompts?.sample },
+    { key: "missingAnswers", label: "Manglende svar", sample: warnings.missingAnswers?.sample },
+    { key: "emptySections", label: "Tomme sektioner", sample: warnings.emptySections?.sample },
+    { key: "formatWarnings", label: "Formatteringsadvarsler", sample: warnings.formatWarnings?.sample },
+    { key: "missingImages", label: "Manglende billeder", sample: warnings.missingImages?.sample },
+    { key: "unmatchedImages", label: "Umatchede billeder", sample: warnings.unmatchedImages?.sample },
+  ];
+
+  const hasSamples = detailSections.some((section) => Array.isArray(section.sample) && section.sample.length);
+  if (!hasSamples) return;
+
+  const details = document.createElement("div");
+  details.className = "admin-dataset-qa-details";
+  detailSections.forEach((section) => {
+    const sampleList = Array.isArray(section.sample) ? section.sample.filter(Boolean) : [];
+    if (!sampleList.length) return;
+    const sectionEl = document.createElement("div");
+    sectionEl.className = "admin-dataset-qa-section";
+    const heading = document.createElement("strong");
+    heading.textContent = section.label;
+    sectionEl.appendChild(heading);
+    const list = document.createElement("ul");
+    list.className = "admin-dataset-qa-list";
+    sampleList.forEach((item) => {
+      const li = document.createElement("li");
+      li.textContent = String(item);
+      list.appendChild(li);
+    });
+    sectionEl.appendChild(list);
+    details.appendChild(sectionEl);
+  });
+  elements.adminDatasetQa.appendChild(details);
 }
 
 function buildAdminField({ label, input, hint }) {
@@ -4557,6 +4763,7 @@ function renderAdminDatasetEditor() {
     const numberField = buildAdminInput({ field: "number", type: "number", value: values.number, placeholder: "1" });
     numberField.inputMode = "numeric";
     const categoryField = buildAdminInput({ field: "category", value: values.category, placeholder: "Hjerte-kredsløb" });
+    categoryField.setAttribute("list", "admin-human-categories");
     const textField = buildAdminTextarea({ field: "text", value: values.text, placeholder: "Spørgsmål" });
 
     elements.adminDatasetEditor.appendChild(buildAdminField({ label: "År", input: yearField }));
@@ -4614,6 +4821,7 @@ function renderAdminDatasetEditor() {
     opgaveField.inputMode = "numeric";
     const labelField = buildAdminInput({ field: "label", value: values.label, placeholder: "a" });
     const categoryField = buildAdminInput({ field: "category", value: values.category, placeholder: "Hjerte-kredsløb" });
+    categoryField.setAttribute("list", "admin-human-categories");
     const opgaveTitleField = buildAdminInput({ field: "opgaveTitle", value: values.opgaveTitle, placeholder: "Hovedemne titel" });
     const opgaveIntroField = buildAdminTextarea({ field: "opgaveIntro", value: values.opgaveIntro, placeholder: "Intro" });
     const promptField = buildAdminTextarea({ field: "prompt", value: values.prompt, placeholder: "Spørgsmål" });
@@ -4798,6 +5006,7 @@ async function loadAdminDatasetVersions({ dataset } = {}) {
     const versions = Array.isArray(data?.versions) ? data.versions : [];
     state.admin.datasets.type = datasetType;
     state.admin.datasets.versions = versions;
+    syncAdminDatasetTypeUi();
     if (elements.adminDatasetType) {
       elements.adminDatasetType.value = datasetType;
     }
@@ -4805,6 +5014,8 @@ async function loadAdminDatasetVersions({ dataset } = {}) {
     const published = versions.find((v) => v.status === "published");
     state.admin.datasets.selectedVersionId =
       selected?.id || published?.id || versions[0]?.id || null;
+    state.admin.datasets.qaSummary = null;
+    renderAdminDatasetQa();
     renderAdminDatasetVersions();
     await loadAdminDatasetItems({ page: 1 });
     await refreshAdminDatasetQa();
@@ -4842,6 +5053,7 @@ async function loadAdminDatasetItems({ page } = {}) {
     state.admin.datasets.items = [];
     state.admin.datasets.total = 0;
     renderAdminDatasetItems();
+    renderAdminDatasetSummary();
     return;
   }
   state.admin.datasets.loading = true;
@@ -4879,6 +5091,7 @@ async function loadAdminDatasetItems({ page } = {}) {
     state.admin.datasets.bulkSelection.clear();
     renderAdminDatasetItems();
     renderAdminDatasetEditor();
+    renderAdminDatasetSummary();
   } catch (error) {
     setAdminDatasetStatus("Kunne ikke hente items.", true);
   } finally {
@@ -5077,6 +5290,20 @@ function handleAdminDatasetNewItem() {
   setAdminDatasetEditorStatus("");
 }
 
+function handleAdminDatasetSelectAll() {
+  const { items, bulkSelection } = state.admin.datasets;
+  bulkSelection.clear();
+  items.forEach((item) => {
+    if (item?.id) bulkSelection.add(item.id);
+  });
+  renderAdminDatasetItems();
+}
+
+function handleAdminDatasetClearSelection() {
+  state.admin.datasets.bulkSelection.clear();
+  renderAdminDatasetItems();
+}
+
 async function handleAdminDatasetBulkApply() {
   const { bulkSelection } = state.admin.datasets;
   if (!state.admin.datasets.selectedVersionId) {
@@ -5108,9 +5335,7 @@ async function handleAdminDatasetBulkApply() {
       return;
     }
     bulkSelection.clear();
-    if (elements.adminDatasetBulkHint) {
-      elements.adminDatasetBulkHint.textContent = "0 valgt";
-    }
+    updateAdminDatasetSelectionUi();
     setAdminDatasetStatus("Bulk update gennemført.");
     await loadAdminDatasetItems({ page: state.admin.datasets.page });
     await refreshAdminDatasetQa();
@@ -5120,12 +5345,13 @@ async function handleAdminDatasetBulkApply() {
 }
 
 function handleAdminDatasetSearch() {
+  const isDisease = state.admin.datasets.type === "sygdomslaere";
   state.admin.datasets.filters = {
     search: elements.adminDatasetSearch?.value.trim() || "",
-    year: elements.adminDatasetYear?.value.trim() || "",
-    session: elements.adminDatasetSession?.value.trim() || "",
+    year: isDisease ? "" : elements.adminDatasetYear?.value.trim() || "",
+    session: isDisease ? "" : elements.adminDatasetSession?.value.trim() || "",
     category: elements.adminDatasetCategory?.value.trim() || "",
-    priority: elements.adminDatasetPriority?.value.trim() || "",
+    priority: isDisease ? elements.adminDatasetPriority?.value.trim() || "" : "",
   };
   void loadAdminDatasetItems({ page: 1 });
 }
@@ -18407,6 +18633,10 @@ function attachEvents() {
       state.admin.datasets.selectedVersionId = null;
       state.admin.datasets.page = 1;
       state.admin.datasets.bulkSelection.clear();
+      state.admin.datasets.qaSummary = null;
+      renderAdminDatasetQa();
+      syncAdminDatasetTypeUi();
+      updateAdminDatasetSelectionUi();
       void loadAdminDatasetVersions({ dataset: state.admin.datasets.type });
     });
   }
@@ -18415,6 +18645,9 @@ function attachEvents() {
       state.admin.datasets.selectedVersionId = elements.adminDatasetVersion.value || null;
       state.admin.datasets.page = 1;
       state.admin.datasets.bulkSelection.clear();
+      state.admin.datasets.qaSummary = null;
+      renderAdminDatasetQa();
+      updateAdminDatasetSelectionUi();
       void loadAdminDatasetItems({ page: 1 });
       void refreshAdminDatasetQa();
     });
@@ -18465,6 +18698,12 @@ function attachEvents() {
   }
   if (elements.adminDatasetEmptyBtn) {
     elements.adminDatasetEmptyBtn.addEventListener("click", handleAdminDatasetEmptyDraft);
+  }
+  if (elements.adminDatasetSelectAllBtn) {
+    elements.adminDatasetSelectAllBtn.addEventListener("click", handleAdminDatasetSelectAll);
+  }
+  if (elements.adminDatasetClearSelectionBtn) {
+    elements.adminDatasetClearSelectionBtn.addEventListener("click", handleAdminDatasetClearSelection);
   }
   if (elements.adminDatasetBulkApplyBtn) {
     elements.adminDatasetBulkApplyBtn.addEventListener("click", handleAdminDatasetBulkApply);

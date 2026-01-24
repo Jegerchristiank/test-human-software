@@ -851,127 +851,6 @@
                 <div class="hint" id="selection-hint" data-testid="selection-hint">Vælg mindst ét emne og ét sæt for at starte.</div>
               </section>
 
-              <section class="panel admin-datasets-panel reveal" data-testid="admin-datasets-panel" style="--delay: 0.12s">
-                <div class="panel-header" data-testid="admin-datasets-header">
-                  <h2>Datasæt</h2>
-                  <p>Gennemse, redigér og publicér MCQ, Kortsvar og Sygdomslære.</p>
-                </div>
-
-                <div class="admin-section" data-testid="admin-dataset-controls">
-                  <div class="admin-dataset-toolbar" data-testid="admin-dataset-toolbar">
-                    <div class="field" data-testid="admin-dataset-type-field">
-                      <label for="admin-dataset-type">Datasæt</label>
-                      <select id="admin-dataset-type" data-testid="admin-dataset-type">
-                        <option value="mcq">MCQ</option>
-                        <option value="kortsvar">Kortsvar</option>
-                        <option value="sygdomslaere">Sygdomslære</option>
-                      </select>
-                    </div>
-                    <div class="field" data-testid="admin-dataset-version-field">
-                      <label for="admin-dataset-version">Version</label>
-                      <select id="admin-dataset-version" data-testid="admin-dataset-version"></select>
-                    </div>
-                    <div class="admin-toolbar-actions" data-testid="admin-dataset-actions">
-                      <button id="admin-dataset-refresh-btn" data-testid="admin-dataset-refresh-btn" class="btn ghost" type="button">Opdatér</button>
-                      <button id="admin-dataset-clone-btn" data-testid="admin-dataset-clone-btn" class="btn ghost" type="button">Klon live</button>
-                      <button id="admin-dataset-empty-btn" data-testid="admin-dataset-empty-btn" class="btn ghost" type="button">Ny tom kladde</button>
-                      <button id="admin-dataset-new-btn" data-testid="admin-dataset-new-btn" class="btn ghost" type="button">Nyt item</button>
-                      <button id="admin-dataset-publish-btn" data-testid="admin-dataset-publish-btn" class="btn primary" type="button">Publicér</button>
-                    </div>
-                  </div>
-                  <div class="admin-status hidden" id="admin-dataset-status" data-testid="admin-dataset-status" role="status" aria-live="polite"></div>
-                </div>
-
-                <div class="admin-section" data-testid="admin-dataset-filters">
-                  <div class="admin-user-toolbar" data-testid="admin-dataset-filter-grid">
-                    <div class="field" data-testid="admin-dataset-search-field">
-                      <label for="admin-dataset-search">Søg</label>
-                      <input id="admin-dataset-search" data-testid="admin-dataset-search" type="search" placeholder="Søg i spørgsmål, svar eller sygdomme" aria-describedby="admin-dataset-status" />
-                    </div>
-                    <div class="field" data-testid="admin-dataset-year-field">
-                      <label for="admin-dataset-year">År</label>
-                      <input id="admin-dataset-year" data-testid="admin-dataset-year" type="number" inputmode="numeric" placeholder="2024" aria-describedby="admin-dataset-status" />
-                    </div>
-                    <div class="field" data-testid="admin-dataset-session-field">
-                      <label for="admin-dataset-session">Session</label>
-                      <select id="admin-dataset-session" data-testid="admin-dataset-session">
-                        <option value="">Alle</option>
-                        <option value="ordinær">Ordinær</option>
-                        <option value="sygeeksamen">Sygeeksamen</option>
-                      </select>
-                    </div>
-                    <div class="field" data-testid="admin-dataset-category-field">
-                      <label for="admin-dataset-category">Kategori</label>
-                      <input id="admin-dataset-category" data-testid="admin-dataset-category" type="text" placeholder="Hjerte-kredsløb" aria-describedby="admin-dataset-status" />
-                    </div>
-                    <div class="field" data-testid="admin-dataset-priority-field">
-                      <label for="admin-dataset-priority">Prioritet</label>
-                      <select id="admin-dataset-priority" data-testid="admin-dataset-priority">
-                        <option value="">Alle</option>
-                        <option value="high">Høj</option>
-                        <option value="medium">Mellem</option>
-                        <option value="low">Lav</option>
-                        <option value="excluded">Ikke pensum</option>
-                      </select>
-                    </div>
-                    <div class="admin-toolbar-actions" data-testid="admin-dataset-filter-actions">
-                      <button id="admin-dataset-search-btn" data-testid="admin-dataset-search-btn" class="btn ghost" type="button">Søg</button>
-                      <button id="admin-dataset-clear-btn" data-testid="admin-dataset-clear-btn" class="btn ghost" type="button">Nulstil</button>
-                    </div>
-                  </div>
-                  <div class="admin-dataset-qa" id="admin-dataset-qa" data-testid="admin-dataset-qa"></div>
-                </div>
-
-                <div class="admin-dataset-grid" data-testid="admin-dataset-grid">
-                  <div class="admin-dataset-list" data-testid="admin-dataset-list">
-                    <div class="admin-user-list-header" data-testid="admin-dataset-list-header">
-                      <div>
-                        <h3>Items</h3>
-                        <p>Vælg et item for at redigere.</p>
-                      </div>
-                      <div class="admin-user-count" id="admin-dataset-count" data-testid="admin-dataset-count">0</div>
-                    </div>
-                    <div class="admin-dataset-list-body" id="admin-dataset-items" data-testid="admin-dataset-items"></div>
-                    <div class="admin-user-pagination" data-testid="admin-dataset-pagination">
-                      <button id="admin-dataset-prev-btn" data-testid="admin-dataset-prev-btn" class="btn ghost small" type="button">Forrige</button>
-                      <span id="admin-dataset-page" data-testid="admin-dataset-page">Side 1</span>
-                      <button id="admin-dataset-next-btn" data-testid="admin-dataset-next-btn" class="btn ghost small" type="button">Næste</button>
-                    </div>
-
-                    <div class="admin-dataset-bulk" data-testid="admin-dataset-bulk">
-                      <div class="field" data-testid="admin-dataset-bulk-field-field">
-                        <label for="admin-dataset-bulk-field">Bulk felt</label>
-                        <select id="admin-dataset-bulk-field" data-testid="admin-dataset-bulk-field">
-                          <option value="">Vælg felt</option>
-                          <option value="category">Kategori</option>
-                          <option value="session">Session</option>
-                          <option value="priority">Prioritet</option>
-                        </select>
-                      </div>
-                      <div class="field" data-testid="admin-dataset-bulk-value-field">
-                        <label for="admin-dataset-bulk-value">Ny værdi</label>
-                      <input id="admin-dataset-bulk-value" data-testid="admin-dataset-bulk-value" type="text" placeholder="Ny værdi" aria-describedby="admin-dataset-status" />
-                      </div>
-                      <div class="admin-toolbar-actions" data-testid="admin-dataset-bulk-actions">
-                        <button id="admin-dataset-bulk-apply-btn" data-testid="admin-dataset-bulk-apply-btn" class="btn ghost" type="button">Anvend på valgte</button>
-                      </div>
-                      <div class="field-hint" id="admin-dataset-bulk-hint" data-testid="admin-dataset-bulk-hint">Marker items i listen for at bruge bulk-redigering.</div>
-                    </div>
-                  </div>
-
-                  <div class="admin-dataset-detail" data-testid="admin-dataset-detail">
-                    <div class="admin-user-detail-empty" id="admin-dataset-detail-empty" data-testid="admin-dataset-detail-empty">
-                      Vælg et item eller opret et nyt for at redigere.
-                    </div>
-                    <div class="admin-dataset-editor hidden" id="admin-dataset-editor" data-testid="admin-dataset-editor"></div>
-                    <div class="account-actions" data-testid="admin-dataset-editor-actions">
-                      <button id="admin-dataset-save-btn" data-testid="admin-dataset-save-btn" class="btn primary" type="button">Gem item</button>
-                      <button id="admin-dataset-delete-btn" data-testid="admin-dataset-delete-btn" class="btn danger" type="button">Slet item permanent</button>
-                    </div>
-                    <div class="admin-status hidden" id="admin-dataset-editor-status" data-testid="admin-dataset-editor-status" role="status" aria-live="polite"></div>
-                  </div>
-                </div>
-              </section>
             </div>
 
             <div class="menu-column" data-testid="index__menu-shell--menu-grid__menu-column--2">
@@ -1058,6 +937,188 @@
                   </div>
                 </div>
                 <div class="history-list" id="history-list" data-testid="history-list"></div>
+              </section>
+
+              <section class="panel admin-datasets-panel reveal" data-testid="admin-datasets-panel" style="--delay: 0.12s">
+                <div class="panel-header" data-testid="admin-datasets-header">
+                  <h2>Datasæt</h2>
+                  <p>Gennemse, redigér og publicér MCQ, Kortsvar og Sygdomslære.</p>
+                </div>
+
+                <div class="admin-section" data-testid="admin-dataset-controls">
+                  <div class="admin-dataset-toolbar" data-testid="admin-dataset-toolbar">
+                    <div class="field" data-testid="admin-dataset-type-field">
+                      <label for="admin-dataset-type">Datasæt</label>
+                      <select id="admin-dataset-type" data-testid="admin-dataset-type">
+                        <option value="mcq">MCQ</option>
+                        <option value="kortsvar">Kortsvar</option>
+                        <option value="sygdomslaere">Sygdomslære</option>
+                      </select>
+                    </div>
+                    <div class="field" data-testid="admin-dataset-version-field">
+                      <label for="admin-dataset-version">Version</label>
+                      <select id="admin-dataset-version" data-testid="admin-dataset-version"></select>
+                    </div>
+                    <div class="admin-toolbar-actions" data-testid="admin-dataset-actions">
+                      <button id="admin-dataset-refresh-btn" data-testid="admin-dataset-refresh-btn" class="btn ghost" type="button">Opdatér</button>
+                      <button id="admin-dataset-clone-btn" data-testid="admin-dataset-clone-btn" class="btn ghost" type="button">Klon live</button>
+                      <button id="admin-dataset-empty-btn" data-testid="admin-dataset-empty-btn" class="btn ghost" type="button">Ny tom kladde</button>
+                      <button id="admin-dataset-new-btn" data-testid="admin-dataset-new-btn" class="btn ghost" type="button">Nyt item</button>
+                      <button id="admin-dataset-publish-btn" data-testid="admin-dataset-publish-btn" class="btn primary" type="button">Publicér</button>
+                    </div>
+                  </div>
+                  <div class="field-hint admin-dataset-workflow" id="admin-dataset-workflow" data-testid="admin-dataset-workflow">
+                    Workflow: Klon live -> redigér i kladde -> publicér når QA er ok.
+                  </div>
+                  <div class="admin-status hidden" id="admin-dataset-status" data-testid="admin-dataset-status" role="status" aria-live="polite"></div>
+                </div>
+
+                <div class="admin-section" data-testid="admin-dataset-summary-section">
+                  <div class="admin-section-header" data-testid="admin-dataset-summary-header">
+                    <h3>Version overblik</h3>
+                    <p>Status, antal og QA for den valgte version.</p>
+                  </div>
+                  <div class="diagnostics-grid admin-dataset-summary" data-testid="admin-dataset-summary">
+                    <div class="diagnostic-card" data-testid="admin-dataset-summary-status">
+                      <div class="diagnostic-label" data-testid="admin-dataset-version-status-label">Version</div>
+                      <div class="diagnostic-value" id="admin-dataset-version-status" data-testid="admin-dataset-version-status">—</div>
+                      <div class="diagnostic-meta" id="admin-dataset-version-meta" data-testid="admin-dataset-version-meta">—</div>
+                    </div>
+                    <div class="diagnostic-card" data-testid="admin-dataset-summary-count">
+                      <div class="diagnostic-label" data-testid="admin-dataset-version-count-label">Items</div>
+                      <div class="diagnostic-value" id="admin-dataset-version-count" data-testid="admin-dataset-version-count">—</div>
+                      <div class="diagnostic-meta" id="admin-dataset-version-updated" data-testid="admin-dataset-version-updated">—</div>
+                    </div>
+                    <div class="diagnostic-card" data-testid="admin-dataset-summary-publish">
+                      <div class="diagnostic-label" data-testid="admin-dataset-version-published-label">Publicering</div>
+                      <div class="diagnostic-value" id="admin-dataset-version-published" data-testid="admin-dataset-version-published">—</div>
+                      <div class="diagnostic-meta" id="admin-dataset-version-source" data-testid="admin-dataset-version-source">—</div>
+                    </div>
+                    <div class="diagnostic-card" data-testid="admin-dataset-summary-qa">
+                      <div class="diagnostic-label" data-testid="admin-dataset-qa-count-label">QA</div>
+                      <div class="diagnostic-value" id="admin-dataset-qa-count" data-testid="admin-dataset-qa-count">—</div>
+                      <div class="diagnostic-meta" id="admin-dataset-qa-meta" data-testid="admin-dataset-qa-meta">—</div>
+                    </div>
+                  </div>
+                  <div class="admin-dataset-qa" id="admin-dataset-qa" data-testid="admin-dataset-qa"></div>
+                </div>
+
+                <div class="admin-section" data-testid="admin-dataset-filters">
+                  <div class="admin-section-header" data-testid="admin-dataset-filter-header">
+                    <h3>Filtre</h3>
+                    <p>Find hurtigt items og hold overblik.</p>
+                  </div>
+                  <div class="admin-user-toolbar" data-testid="admin-dataset-filter-grid">
+                    <div class="field" data-testid="admin-dataset-search-field">
+                      <label for="admin-dataset-search">Søg</label>
+                      <input id="admin-dataset-search" data-testid="admin-dataset-search" type="search" placeholder="Søg i spørgsmål, svar eller sygdomme" />
+                    </div>
+                    <div class="field" data-testid="admin-dataset-year-field">
+                      <label for="admin-dataset-year">År</label>
+                      <input id="admin-dataset-year" data-testid="admin-dataset-year" type="number" inputmode="numeric" placeholder="2024" />
+                    </div>
+                    <div class="field" data-testid="admin-dataset-session-field">
+                      <label for="admin-dataset-session">Session</label>
+                      <select id="admin-dataset-session" data-testid="admin-dataset-session">
+                        <option value="">Alle</option>
+                        <option value="ordinær">Ordinær</option>
+                        <option value="sygeeksamen">Sygeeksamen</option>
+                      </select>
+                    </div>
+                    <div class="field" data-testid="admin-dataset-category-field">
+                      <label for="admin-dataset-category">Kategori</label>
+                      <input id="admin-dataset-category" data-testid="admin-dataset-category" type="text" placeholder="Hjerte-kredsløb" list="admin-human-categories" />
+                    </div>
+                    <div class="field" data-testid="admin-dataset-priority-field">
+                      <label for="admin-dataset-priority">Prioritet</label>
+                      <select id="admin-dataset-priority" data-testid="admin-dataset-priority">
+                        <option value="">Alle</option>
+                        <option value="high">Høj</option>
+                        <option value="medium">Mellem</option>
+                        <option value="low">Lav</option>
+                        <option value="excluded">Ikke pensum</option>
+                      </select>
+                    </div>
+                    <div class="admin-toolbar-actions" data-testid="admin-dataset-filter-actions">
+                      <button id="admin-dataset-search-btn" data-testid="admin-dataset-search-btn" class="btn ghost" type="button">Søg</button>
+                      <button id="admin-dataset-clear-btn" data-testid="admin-dataset-clear-btn" class="btn ghost" type="button">Nulstil</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="admin-dataset-grid" data-testid="admin-dataset-grid">
+                  <div class="admin-dataset-list" data-testid="admin-dataset-list">
+                    <div class="admin-user-list-header" data-testid="admin-dataset-list-header">
+                      <div>
+                        <h3>Items</h3>
+                        <p>Vælg et item for at redigere.</p>
+                      </div>
+                      <div class="admin-user-count" id="admin-dataset-count" data-testid="admin-dataset-count">0</div>
+                    </div>
+                    <div class="admin-dataset-list-actions" data-testid="admin-dataset-list-actions">
+                      <div class="admin-dataset-selected-count" id="admin-dataset-selected-count" data-testid="admin-dataset-selected-count">0 valgt</div>
+                      <button id="admin-dataset-select-all-btn" data-testid="admin-dataset-select-all-btn" class="btn ghost small" type="button">Markér alle på siden</button>
+                      <button id="admin-dataset-clear-selection-btn" data-testid="admin-dataset-clear-selection-btn" class="btn ghost small" type="button">Ryd markering</button>
+                    </div>
+                    <div class="admin-dataset-list-body" id="admin-dataset-items" data-testid="admin-dataset-items"></div>
+                    <div class="admin-user-pagination" data-testid="admin-dataset-pagination">
+                      <button id="admin-dataset-prev-btn" data-testid="admin-dataset-prev-btn" class="btn ghost small" type="button">Forrige</button>
+                      <span id="admin-dataset-page" data-testid="admin-dataset-page">Side 1</span>
+                      <button id="admin-dataset-next-btn" data-testid="admin-dataset-next-btn" class="btn ghost small" type="button">Næste</button>
+                    </div>
+
+                    <div class="admin-dataset-bulk" data-testid="admin-dataset-bulk">
+                      <div class="admin-section-header" data-testid="admin-dataset-bulk-header">
+                        <h3>Bulk redigering</h3>
+                        <p>Opdatér valgte items på én gang.</p>
+                      </div>
+                      <div class="field" data-testid="admin-dataset-bulk-field-field">
+                        <label for="admin-dataset-bulk-field">Bulk felt</label>
+                        <select id="admin-dataset-bulk-field" data-testid="admin-dataset-bulk-field">
+                          <option value="">Vælg felt</option>
+                          <option value="category">Kategori</option>
+                          <option value="session">Session</option>
+                          <option value="priority">Prioritet</option>
+                        </select>
+                      </div>
+                      <div class="field" data-testid="admin-dataset-bulk-value-field">
+                        <label for="admin-dataset-bulk-value">Ny værdi</label>
+                        <input id="admin-dataset-bulk-value" data-testid="admin-dataset-bulk-value" type="text" placeholder="Ny værdi" list="admin-human-categories" />
+                      </div>
+                      <div class="admin-toolbar-actions" data-testid="admin-dataset-bulk-actions">
+                        <button id="admin-dataset-bulk-apply-btn" data-testid="admin-dataset-bulk-apply-btn" class="btn ghost" type="button">Anvend på valgte</button>
+                      </div>
+                      <div class="field-hint" id="admin-dataset-bulk-hint" data-testid="admin-dataset-bulk-hint">0 valgt</div>
+                      <div class="field-hint" id="admin-dataset-bulk-help" data-testid="admin-dataset-bulk-help">Vælg felt og værdi, og anvend på valgte items.</div>
+                    </div>
+                  </div>
+
+                  <div class="admin-dataset-detail" data-testid="admin-dataset-detail">
+                    <div class="admin-user-detail-empty" id="admin-dataset-detail-empty" data-testid="admin-dataset-detail-empty">
+                      Vælg et item eller opret et nyt for at redigere.
+                    </div>
+                    <div class="admin-dataset-editor hidden" id="admin-dataset-editor" data-testid="admin-dataset-editor"></div>
+                    <div class="account-actions" data-testid="admin-dataset-editor-actions">
+                      <button id="admin-dataset-save-btn" data-testid="admin-dataset-save-btn" class="btn primary" type="button">Gem item</button>
+                      <button id="admin-dataset-delete-btn" data-testid="admin-dataset-delete-btn" class="btn danger" type="button">Slet item</button>
+                    </div>
+                    <div class="admin-status hidden" id="admin-dataset-editor-status" data-testid="admin-dataset-editor-status" role="status" aria-live="polite"></div>
+                  </div>
+                </div>
+
+                <datalist id="admin-human-categories" data-testid="admin-human-categories">
+                  <option value="Cellebiologi"></option>
+                  <option value="Metabolisme (energiomsætning og temperaturregulering)"></option>
+                  <option value="Nervesystemet og sanserne"></option>
+                  <option value="Endokrinologi"></option>
+                  <option value="Bevægeapparatet"></option>
+                  <option value="Blodet og immunsystemet"></option>
+                  <option value="Lunger"></option>
+                  <option value="Mave-tarm og lever-galde"></option>
+                  <option value="Reproduktion"></option>
+                  <option value="Hjerte-kredsløb"></option>
+                  <option value="Nyrer"></option>
+                </datalist>
               </section>
             </div>
           </div>

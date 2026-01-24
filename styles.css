@@ -22,7 +22,7 @@
   --radius-pill: 999px;
   --radius: var(--radius-lg);
 
-  --bg: #f6f4f1;
+  --bg: #f5f5f7;
   --surface: #ffffff;
   --panel: #f7f4ef;
   --panel-strong: #ffffff;
@@ -45,6 +45,7 @@
   --pill-bg: rgba(255, 255, 255, 0.86);
   --chip-bg: #ffffff;
   --chip-soft: #f0ede8;
+  --chip-active: #0063d1;
   --progress-track: #ece7e1;
   --summary-bg: #f6f2ed;
   --option-label-bg: #f1ede7;
@@ -121,7 +122,7 @@ body.mode-game {
 }
 
 body.mode-menu {
-  --bg: #f6f4f1;
+  --bg: #f5f5f7;
 }
 
 body.mode-result {
@@ -130,17 +131,23 @@ body.mode-result {
 }
 
 body.mode-landing {
-  --bg: linear-gradient(180deg, #f9f6f1 0%, #f5f3ef 50%, #f1efeb 100%);
-  --glow-1: rgba(31, 111, 139, 0.08);
-  --glow-2: rgba(90, 140, 175, 0.1);
-  --glow-3: rgba(168, 193, 210, 0.12);
+  --bg: radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.95), transparent 55%),
+    radial-gradient(circle at 85% 15%, rgba(203, 223, 255, 0.55), transparent 55%),
+    radial-gradient(circle at 30% 85%, rgba(235, 242, 255, 0.6), transparent 55%),
+    #f5f5f7;
+  --glow-1: rgba(124, 185, 255, 0.28);
+  --glow-2: rgba(190, 220, 255, 0.32);
+  --glow-3: rgba(224, 237, 255, 0.38);
 }
 
 body.mode-auth {
-  --bg: linear-gradient(180deg, #f9f6f1 0%, #f5f3ef 50%, #f1efeb 100%);
-  --glow-1: rgba(31, 111, 139, 0.08);
-  --glow-2: rgba(90, 140, 175, 0.1);
-  --glow-3: rgba(168, 193, 210, 0.12);
+  --bg: radial-gradient(circle at 12% 10%, rgba(255, 255, 255, 0.95), transparent 55%),
+    radial-gradient(circle at 85% 15%, rgba(203, 223, 255, 0.55), transparent 55%),
+    radial-gradient(circle at 30% 85%, rgba(235, 242, 255, 0.6), transparent 55%),
+    #f5f5f7;
+  --glow-1: rgba(124, 185, 255, 0.28);
+  --glow-2: rgba(190, 220, 255, 0.32);
+  --glow-3: rgba(224, 237, 255, 0.38);
 }
 
 body.mode-menu .ambient {
@@ -183,6 +190,7 @@ body[data-theme="dark"] {
   --pill-bg: rgba(22, 25, 28, 0.92);
   --chip-bg: #1b1f22;
   --chip-soft: #242a2e;
+  --chip-active: #1a6ecf;
   --progress-track: #273036;
   --summary-bg: #1c2023;
   --option-label-bg: #252b30;
@@ -218,6 +226,7 @@ body[data-theme="light"][data-course="sygdomslaere"] {
   --line: #e7ddd7;
   --line-strong: #d7cdc7;
   --chip-soft: #f2e9e6;
+  --chip-active: var(--accent-strong);
   --progress-track: #efe3df;
   --summary-bg: #fbf5f3;
   --option-label-bg: #f5ebe8;
@@ -249,6 +258,7 @@ body[data-theme="dark"][data-course="sygdomslaere"] {
   --accent-border: rgba(228, 125, 115, 0.35);
   --accent-shadow: rgba(15, 8, 8, 0.6);
   --danger-soft: rgba(228, 125, 115, 0.22);
+  --chip-active: var(--accent-strong);
   --glow-1: rgba(228, 125, 115, 0.08);
   --glow-2: rgba(200, 110, 100, 0.1);
   --glow-3: rgba(150, 70, 65, 0.12);
@@ -1551,7 +1561,7 @@ body[data-theme="dark"] .noise-layer {
 
 .menu-grid {
   display: grid;
-  grid-template-columns: minmax(320px, 1.05fr) minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
   gap: var(--space-5);
 }
 
@@ -1559,6 +1569,7 @@ body[data-theme="dark"] .noise-layer {
   display: grid;
   gap: var(--space-5);
   align-content: start;
+  min-width: 0;
 }
 
 .panel {
@@ -2103,9 +2114,9 @@ input[type="search"] {
 }
 
 .chip-btn.active {
-  background: var(--accent-strong);
+  background: var(--chip-active);
   color: #fff;
-  border-color: var(--accent-strong);
+  border-color: var(--chip-active);
 }
 
 .chip-btn.active .chip-count {
@@ -5677,6 +5688,11 @@ body.meta-hidden .question-meta {
   align-items: end;
 }
 
+.admin-dataset-workflow {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .admin-dataset-qa {
   border: 1px dashed var(--line);
   border-radius: 14px;
@@ -5685,6 +5701,37 @@ body.meta-hidden .question-meta {
   color: var(--muted);
   background: var(--panel);
   min-height: 42px;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-dataset-qa-summary {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-dataset-qa-details {
+  border-top: 1px dashed var(--line);
+  padding-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-dataset-qa-section {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-dataset-qa-section strong {
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.admin-dataset-qa-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
 }
 
 .admin-dataset-grid {
@@ -5692,6 +5739,20 @@ body.meta-hidden .question-meta {
   grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1.1fr);
   gap: 16px;
   align-items: start;
+}
+
+.admin-dataset-list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 12px;
+}
+
+.admin-dataset-selected-count {
+  font-size: 12px;
+  color: var(--muted);
+  margin-right: auto;
 }
 
 .admin-dataset-list-body {
@@ -5776,6 +5837,10 @@ body.meta-hidden .question-meta {
   }
 
   .admin-user-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-dataset-grid {
     grid-template-columns: 1fr;
   }
 }
