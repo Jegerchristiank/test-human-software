@@ -4566,7 +4566,6 @@ function renderAdminDatasetItems() {
     empty.textContent = "Ingen items matcher dine filtre.";
     elements.adminDatasetItems.appendChild(empty);
     updateAdminDatasetSelectionUi();
-    updateAdminUI();
     return;
   }
 
@@ -4613,7 +4612,6 @@ function renderAdminDatasetItems() {
     elements.adminDatasetItems.appendChild(row);
   });
   updateAdminDatasetSelectionUi();
-  updateAdminUI();
 }
 
 function renderAdminDatasetQa() {

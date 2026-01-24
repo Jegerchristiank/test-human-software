@@ -7,6 +7,12 @@
 - Security: no security or access-control changes.
 - Follow-ups: verify the index background colors, chip active color in Human Biologi, and menu-grid layout at desktop widths.
 
+- Purpose: prevent admin dataset rendering from re-entering `updateAdminUI`, which allows the logout course theme reset test to run without overflowing the stack.
+- Files: app.js, docs/activity.md.
+- Commands: apply_patch (app.js); npm test -- tests/courseSwitchLock.test.mjs; date +%F.
+- Security: no auth/data surface changes; edit is client-side rendering logic.
+- Follow-ups: none.
+
 ## 2026-01-24
 - Purpose: fix admin import supabase access reference and prepare SQL to normalize human category labels across snapshots/items.
 - Files: api/_lib/importer.js, supabase/fix_human_categories.sql, docs/activity.md.
