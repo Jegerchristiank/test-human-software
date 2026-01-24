@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const { getSupabaseAdmin } = require("./supabase");
 const { formatImportContent } = require("./importFormatter");
 const {
   normalizeNewlines,
@@ -9,6 +8,12 @@ const {
   parseKortsvarRawData,
   parseSygdomslaereRawData,
 } = require("./rawdataParser");
+const {
+  buildRowsFromPayload,
+  buildQaSummary,
+  createDraftVersion,
+} = require("./datasetAdmin");
+const { getSupabaseAdmin } = require("./supabase");
 
 const ROOT_PATH = path.resolve(__dirname, "..", "..");
 const RAW_PATHS = {
@@ -96,41 +101,6 @@ async function getSnapshot(type) {
   return data || null;
 }
 
-async function saveSnapshot({
-  type,
-  payload,
-  rawText,
-  itemCount,
-  userId,
-  warnings,
-}) {
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("dataset_snapshots")
-    .upsert(
-      {
-        dataset: type,
-        payload,
-        raw_text: rawText,
-        item_count: itemCount,
-        imported_by: userId || null,
-        source: "admin_import",
-      },
-      { onConflict: "dataset" }
-    )
-    .select("dataset, item_count, updated_at")
-    .single();
-  if (error) {
-    throw error;
-  }
-  return {
-    dataset: data.dataset,
-    itemCount: data.item_count,
-    updatedAt: data.updated_at,
-    warnings,
-  };
-}
-
 async function applyImport({ type, mode, content, userId }) {
   const formatted = await formatImportContent({ type, content });
   const cleaned = ensureTrailingNewline(
@@ -161,22 +131,18 @@ async function applyImport({ type, mode, content, userId }) {
   }
 
   let payload = null;
-  let itemCount = 0;
   let warnings = null;
 
   if (type === "mcq") {
     const parsed = parseMcqRawData(mergedRaw);
     payload = parsed.items;
-    itemCount = Array.isArray(payload) ? payload.length : 0;
   } else if (type === "kortsvar") {
     const parsed = parseKortsvarRawData(mergedRaw);
     payload = parsed.items;
-    itemCount = Array.isArray(payload) ? payload.length : 0;
     warnings = parsed.warnings || null;
   } else if (type === "sygdomslaere") {
     const parsed = parseSygdomslaereRawData(mergedRaw);
     payload = parsed.payload;
-    itemCount = Array.isArray(payload?.diseases) ? payload.diseases.length : 0;
   } else {
     throw new Error(`Unknown import type: ${type}`);
   }
@@ -189,14 +155,24 @@ async function applyImport({ type, mode, content, userId }) {
     }
   }
 
-  return saveSnapshot({
-    type,
-    payload,
+  const rows = buildRowsFromPayload(type, payload);
+  const qaSummary = buildQaSummary(type, rows, warnings || {});
+  const draft = await createDraftVersion({
+    dataset: type,
+    rows,
     rawText: mergedRaw,
-    itemCount,
+    qaSummary,
     userId,
-    warnings,
+    source: "admin_import",
+    note: `${mode} import`,
   });
+  return {
+    dataset: type,
+    itemCount: rows.length,
+    updatedAt: draft.updated_at,
+    draftId: draft.id,
+    warnings: qaSummary.warnings,
+  };
 }
 
 module.exports = {

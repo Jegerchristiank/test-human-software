@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
+from human_categories import normalize_human_category
 
 ROOT_PATH = Path(__file__).resolve().parent.parent
 RAW_PATH = ROOT_PATH / "rawdata-mc"
@@ -80,7 +81,13 @@ def parse_raw_data(raw_text: str) -> List[Question]:
                 raise ValueError("Encountered a question header before a year header")
 
             number = int(header_match.group(1))
-            category = header_match.group(2).strip()
+            raw_category = header_match.group(2).strip()
+            try:
+                category = normalize_human_category(raw_category)
+            except ValueError as exc:
+                raise ValueError(
+                    f"Unknown category '{raw_category}' for question {number}"
+                ) from exc
             i += 1
 
             question_lines: List[str] = []

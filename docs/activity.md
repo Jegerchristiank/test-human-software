@@ -1,5 +1,17 @@
 # Activity Log
 
+## 2026-01-24
+- Purpose: fix admin import supabase access reference and prepare SQL to normalize human category labels across snapshots/items.
+- Files: api/_lib/importer.js, supabase/fix_human_categories.sql, docs/activity.md.
+- Commands: ls; sed -n '1,200p' docs/activity.md; git status -sb; rg -n "dataset_versions|dataset_items|dataset_version_events|published_version_id" supabase/schema.sql; sed -n '300,520p' supabase/schema.sql; rg -n "HUMAN_CATEGORY_LABELS|normalizeHumanCategory" api/_lib/rawdataParser.js; sed -n '1,260p' api/_lib/importer.js; sed -n '1,240p' api/_lib/importFormatter.js; sed -n '1,240p' api/admin/datasets/versions.js; sed -n '1,240p' api/admin/datasets/items.js; sed -n '1,260p' api/admin/datasets/item.js; sed -n '1,240p' api/admin/datasets/bulk.js; sed -n '1,240p' api/admin/datasets/publish.js; sed -n '1,200p' api/admin/datasets/qa.js; sed -n '1,200p' supabase/fix_human_categories.sql; rg -n "adminDataset|datasets" app.js; sed -n '4280,5200p' app.js; rg -n "Datasæt|admin-dataset" index.html; sed -n '820,980p' index.html; date +%F.
+- Security: no access control changes; SQL only normalizes category labels in stored datasets.
+- Follow-ups: run `supabase/fix_human_categories.sql` in Supabase; confirm category chips collapse to canonical labels; optionally run targeted tests (e.g., `npm test -- tests/adminDatasets.test.mjs`).
+- Purpose: allow dataset item payloads/bulk patches through validation and verify admin dataset tests.
+- Files: api/admin/datasets/items.js, api/admin/datasets/item.js, api/admin/datasets/bulk.js, docs/activity.md.
+- Commands: sed -n '1,200p' api/_lib/body.js; sed -n '1,240p' api/_lib/validate.js; npm test -- tests/adminDatasets.test.mjs; date +%F.
+- Security: maintains admin auth and rate limits; validation still rejects unknown top-level payload fields and only allows supported bulk patch keys.
+- Follow-ups: none.
+
 ## 2026-01-13
 - Purpose: finalize admin dashboard backend for full user management (create/update/ban/delete/subscriptions) and align routes/tests.
 - Files: api/admin/user/create.js, api/admin/user/update.js, api/admin/user/action.js, api/admin/subscription.js, tests/adminUsers.test.mjs, docs/activity.md.
@@ -575,3 +587,17 @@
 - Commands: cat docs/activity.md; sed -n '1,260p' api/stripe/webhook.js; cat vercel.json; sed -n '1,260p' api/stripe/create-checkout-session.js; npm test -- tests/stripeWebhookStatus.test.mjs tests/stripeWebhook.test.mjs; date +%F.
 - Security: new public status endpoint is rate-limited, avoids secrets, and only reports readiness + expected URL; webhook signature verification stays unchanged.
 - Follow-ups: set the Stripe Dashboard webhook URL to https://biologistudio.dk/api/stripe/webhook with the live `STRIPE_WEBHOOK_SECRET`, re-enable deliveries, and fire a test event once enabled.
+
+## 2026-01-24
+- Purpose: normalize human biology category aliases across import parsers and UI, and add SQL to fix existing Supabase category labels.
+- Files: app.js, api/_lib/rawdataParser.js, scripts/human_categories.py, scripts/convert_rawdata.py, scripts/convert_kortsvar.py, scripts/build_studio_pipeline.py, tests/rawdataParser.test.mjs, supabase/fix_human_categories.sql, docs/activity.md.
+- Commands: rg -n "category|categories|emner|topic|subject|chip" -S scripts api app.js data supabase docs studio-engine.js; sed -n '1,240p' scripts/import_rawdata.py; sed -n '1,260p' scripts/convert_sygdomslaere.py; sed -n '1,240p' api/_lib/rawdataParser.js; sed -n '540,880p' api/_lib/rawdataParser.js; sed -n '1,240p' scripts/build_studio_pipeline.py; sed -n '300,480p' scripts/build_studio_pipeline.py; sed -n '1,200p' api/data/questions.js; sed -n '7800,8400p' app.js; sed -n '320,700p' app.js; sed -n '1,200p' tests/rawdataParser.test.mjs; npm test -- tests/rawdataParser.test.mjs; date +%F.
+- Security: import parsing now enforces canonical categories to prevent unvetted topics from entering datasets; no secrets added or exposed.
+- Follow-ups: run `supabase/fix_human_categories.sql` in Supabase to normalize existing dataset snapshots and study items, then verify category chips in the UI.
+
+## 2026-01-24
+- Purpose: refactor UI/UX per uiux.csv with new tokens/variants, reduced card styling, clearer microcopy, and stronger a11y/error handling without changing flows.
+- Files: styles.css, index.html, app.js, auth.js, consent.js, sign-in.html, sign-up.html, tests/authClient.test.mjs, docs/activity.md.
+- Commands: rg --files; sed -n (styles.css/index.html/app.js/auth.js/consent.js); python3 - <<'PY' (uiux.csv parse); rg -n (uiux.csv/strings/selectors); npm test (failed in tests/authClient.test.mjs + consentScript focus); npm test (pass); date +%F.
+- Security: no endpoint or auth logic changes; improved aria-live/aria-describedby focus handling and clearer error guidance.
+- Follow-ups: visually QA landing/auth/menu/admin/billing screens for spacing/contrast; confirm focus behavior on errors and mobile tap targets.

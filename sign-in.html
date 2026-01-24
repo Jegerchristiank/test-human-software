@@ -58,7 +58,7 @@
       <section class="panel auth-panel" data-testid="auth-panel">
         <div class="panel-header" data-testid="sign-in__auth-page--auth-panel__panel-header">
           <h1>Log ind</h1>
-          <p>Velkommen tilbage. Log ind for at fortsætte.</p>
+          <p>Velkommen tilbage. Log ind for at fortsætte din træning.</p>
         </div>
         <form class="auth-form" id="auth-form" data-testid="auth-form">
           <div class="field" data-testid="sign-in__auth-panel--auth-form__field">
@@ -69,6 +69,7 @@
               data-testid="auth-email-input"
               autocomplete="email"
               required
+              aria-describedby="auth-status"
             />
           </div>
           <div class="field" data-testid="sign-in__auth-panel--auth-form__field--2">
@@ -79,6 +80,7 @@
               data-testid="auth-password-input"
               autocomplete="current-password"
               required
+              aria-describedby="auth-status"
             />
           </div>
           <button id="auth-login-btn" data-testid="auth-login-btn" class="btn primary" type="submit">
@@ -107,7 +109,7 @@
             <span>Fortsæt med Apple</span>
           </button>
         </div>
-        <div class="auth-status" id="auth-status" data-testid="auth-status" role="status" aria-live="polite" aria-atomic="true">Log ind for at fortsætte.</div>
+        <div class="auth-status" id="auth-status" data-testid="auth-status" role="status" aria-live="polite" aria-atomic="true">Log ind for at fortsætte din træning.</div>
         <div class="auth-switch" data-testid="auth-switch">
           <span>Har du ikke en konto?</span>
           <a href="/sign-up" data-testid="auth-switch-link" data-preserve-redirect="true">Opret konto</a>

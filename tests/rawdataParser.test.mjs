@@ -26,13 +26,13 @@ describe("rawdata parsers", () => {
     const { items } = parseMcqRawData(raw);
     expect(items.length).toBe(1);
     expect(items[0].correctLabel).toBe("A");
-    expect(items[0].category).toBe("Anatomi");
+    expect(items[0].category).toBe("Bevægeapparatet");
   });
 
   it("parses kortsvar raw data", () => {
     const raw = [
       "2023",
-      "Opgave 1 Test",
+      "Opgave 1 Hjertekredsløb",
       "A) Beskriv cellen.",
       "Svar: Den er rund.",
       "",
@@ -42,6 +42,7 @@ describe("rawdata parsers", () => {
     expect(items.length).toBe(1);
     expect(items[0].label).toBe("a");
     expect(items[0].opgave).toBe(1);
+    expect(items[0].category).toBe("Hjerte-kredsløb");
     expect(warnings.missingImages.length).toBe(0);
   });
 

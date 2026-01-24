@@ -22,6 +22,135 @@ function normalizeSpaces(text) {
   return String(text || "").replace(/\s+/g, " ").trim();
 }
 
+const HUMAN_CATEGORY_LABELS = [
+  "Cellebiologi",
+  "Metabolisme (energiomsætning og temperaturregulering)",
+  "Nervesystemet og sanserne",
+  "Endokrinologi",
+  "Bevægeapparatet",
+  "Blodet og immunsystemet",
+  "Lunger",
+  "Mave-tarm og lever-galde",
+  "Reproduktion",
+  "Hjerte-kredsløb",
+  "Nyrer",
+];
+
+const HUMAN_CATEGORY_CANONICAL = new Map(
+  HUMAN_CATEGORY_LABELS.map((label) => [label.toLowerCase(), label])
+);
+
+const HUMAN_CATEGORY_ALIASES = {
+  Anatomi: "Bevægeapparatet",
+  "Bevægeapparatet": "Bevægeapparatet",
+  Skelettet: "Bevægeapparatet",
+  Skeletmuskulatur: "Bevægeapparatet",
+  "Mekaniske egenskaber af tværstribet muskulatur (skeletmuskulatur)":
+    "Bevægeapparatet",
+
+  Cellebiologi: "Cellebiologi",
+  "Cellens byggesten": "Cellebiologi",
+  "Cellulære transportmekanismer": "Cellebiologi",
+  Histologi: "Cellebiologi",
+  "Histologi / anatomi": "Cellebiologi",
+
+  Metabolisme: "Metabolisme (energiomsætning og temperaturregulering)",
+  "Den kemiske basis for liv": "Metabolisme (energiomsætning og temperaturregulering)",
+  Mitokondriet: "Metabolisme (energiomsætning og temperaturregulering)",
+  "Cellebiologi – mitochondriet": "Metabolisme (energiomsætning og temperaturregulering)",
+  "Nedbrydning af glukose": "Metabolisme (energiomsætning og temperaturregulering)",
+  "Grundlæggende kemi og fysik – proteiner":
+    "Metabolisme (energiomsætning og temperaturregulering)",
+  Termoregulering: "Metabolisme (energiomsætning og temperaturregulering)",
+  Temperaturregulering: "Metabolisme (energiomsætning og temperaturregulering)",
+  "Kroppens temperaturregulering":
+    "Metabolisme (energiomsætning og temperaturregulering)",
+  "Negativ feedback og temperaturregulering":
+    "Metabolisme (energiomsætning og temperaturregulering)",
+
+  Nervesystemet: "Nervesystemet og sanserne",
+  Sanserne: "Nervesystemet og sanserne",
+  Lugtesansen: "Nervesystemet og sanserne",
+  Smerte: "Nervesystemet og sanserne",
+
+  Endokrinologi: "Endokrinologi",
+  Hormoner: "Endokrinologi",
+  "Hormoner – hypofysen": "Endokrinologi",
+  Binyren: "Endokrinologi",
+
+  Blodet: "Blodet og immunsystemet",
+  "Blod og immunsystem": "Blodet og immunsystemet",
+  "Blod og immunsystemet": "Blodet og immunsystemet",
+  "Blodet og immunsystemet": "Blodet og immunsystemet",
+  Immunsystemet: "Blodet og immunsystemet",
+  Lymfesystemet: "Blodet og immunsystemet",
+
+  Respiration: "Lunger",
+  Lunger: "Lunger",
+  Lungefysiologi: "Lunger",
+  Respirationsfysiologi: "Lunger",
+  Respirationssystemet: "Lunger",
+  "Det respiratoriske system": "Lunger",
+  Åndedrættet: "Lunger",
+  Ventilation: "Lunger",
+  Respirationsorganerne: "Lunger",
+  "Respirationsorganerne – lungevolumen": "Lunger",
+  "Lungefysiologi – alveolen og den respiratoriske membran": "Lunger",
+
+  Fordøjelse: "Mave-tarm og lever-galde",
+  Fordøjelseskanalen: "Mave-tarm og lever-galde",
+  Fordøjelsessystemet: "Mave-tarm og lever-galde",
+  "Fordøjelsessystemet – leveren": "Mave-tarm og lever-galde",
+  "Mave-tarmkanalen": "Mave-tarm og lever-galde",
+  "Mave-tarmkanalen – tyndtarmen": "Mave-tarm og lever-galde",
+  Tyndtarmen: "Mave-tarm og lever-galde",
+  "Leverens portåresystem": "Mave-tarm og lever-galde",
+  "Lever og kredsløb": "Mave-tarm og lever-galde",
+
+  Reproduktion: "Reproduktion",
+  "Reproduktion (forplantning)": "Reproduktion",
+  "Positiv feedback og generering af veer": "Reproduktion",
+  Mælkeproduktion: "Reproduktion",
+
+  Kredsløb: "Hjerte-kredsløb",
+  Kredsløbet: "Hjerte-kredsløb",
+  "Kredsløb/respiration": "Hjerte-kredsløb",
+  Hjertekredsløb: "Hjerte-kredsløb",
+  "Hjerte og kredsløb": "Hjerte-kredsløb",
+  Hjertet: "Hjerte-kredsløb",
+  "Hjertet og lungerne": "Hjerte-kredsløb",
+  Blodkar: "Hjerte-kredsløb",
+  Blodtryksregulering: "Hjerte-kredsløb",
+
+  Nyrer: "Nyrer",
+  Nyren: "Nyrer",
+  "Nyrer og urinveje": "Nyrer",
+  "Syre-base": "Nyrer",
+  "Syre-base-regulering": "Nyrer",
+};
+
+const HUMAN_CATEGORY_LOOKUP = new Map();
+Object.entries(HUMAN_CATEGORY_ALIASES).forEach(([key, value]) => {
+  HUMAN_CATEGORY_LOOKUP.set(key, value);
+  HUMAN_CATEGORY_LOOKUP.set(key.toLowerCase(), value);
+});
+
+function normalizeHumanCategory(value) {
+  const cleaned = cleanText(value);
+  if (!cleaned) return null;
+  const alias =
+    HUMAN_CATEGORY_LOOKUP.get(cleaned) ||
+    HUMAN_CATEGORY_LOOKUP.get(cleaned.toLowerCase());
+  if (alias) return alias;
+  return HUMAN_CATEGORY_CANONICAL.get(cleaned.toLowerCase()) || null;
+}
+
+function invalidHumanCategory(message) {
+  const error = new Error(message);
+  error.status = 400;
+  return error;
+}
+
 function parseMcqRawData(rawText) {
   const lines = normalizeNewlines(stripBom(rawText))
     .split("\n")
@@ -56,7 +185,13 @@ function parseMcqRawData(rawText) {
         throw new Error("Encountered a question header before a year header");
       }
       const number = Number.parseInt(headerMatch[1], 10);
-      const category = String(headerMatch[2] || "").trim();
+      const rawCategory = String(headerMatch[2] || "").trim();
+      const category = normalizeHumanCategory(rawCategory);
+      if (!category) {
+        throw invalidHumanCategory(
+          `Unknown MCQ category '${rawCategory}' for question ${number}`
+        );
+      }
       i += 1;
 
       const questionLines = [];
@@ -560,7 +695,16 @@ function parseKortsvarRawData(rawText, options = {}) {
     .filter((name) => !usedImages.has(name));
 
   const payload = questions.map((question) => {
-    const category = normalizeSpaces(String(question.opgave_title || "").replace(HOVEDEMN_TITLE_RE, "")) || question.opgave_title || "";
+    const rawCategory =
+      normalizeSpaces(String(question.opgave_title || "").replace(HOVEDEMN_TITLE_RE, "")) ||
+      question.opgave_title ||
+      "";
+    const category = normalizeHumanCategory(rawCategory);
+    if (!category) {
+      throw invalidHumanCategory(
+        `Unknown kortsvar category '${rawCategory}' for ${question.year} opgave ${question.opgave}`
+      );
+    }
     return {
       type: "short",
       year: question.year,
@@ -797,6 +941,8 @@ function parseSygdomslaereRawData(rawText) {
 module.exports = {
   normalizeNewlines,
   stripBom,
+  normalizeHumanCategory,
+  HUMAN_CATEGORY_LABELS,
   parseMcqRawData,
   parseKortsvarRawData,
   parseSygdomslaereRawData,

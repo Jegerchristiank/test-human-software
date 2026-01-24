@@ -25,6 +25,7 @@ function safeStorageSet(key, value) {
 
 const elements = canUseDOM
   ? {
+      shell: document.getElementById("main-content"),
       themeToggle: document.getElementById("theme-toggle"),
       status: document.getElementById("gate-status"),
       email: document.getElementById("gate-email"),
@@ -38,12 +39,29 @@ const elements = canUseDOM
 let supabase = null;
 let activeSession = null;
 
+function focusConsentError() {
+  const target = [elements.terms, elements.privacy].find((el) => el && !el.checked) || null;
+  if (target && typeof target.focus === "function") {
+    target.focus();
+    return;
+  }
+  if (elements.status && typeof elements.status.focus === "function") {
+    elements.status.tabIndex = -1;
+    elements.status.focus();
+  }
+}
+
 function setStatus(message, isWarn = false) {
   if (!elements.status) return;
   const text = String(message || "").trim();
   elements.status.textContent = text;
   elements.status.classList.toggle("warn", Boolean(text) && isWarn);
   elements.status.classList.toggle("hidden", !text);
+  elements.status.setAttribute("aria-live", isWarn ? "assertive" : "polite");
+  elements.status.setAttribute("role", isWarn ? "alert" : "status");
+  if (text && isWarn) {
+    focusConsentError();
+  }
 }
 
 function getInitialTheme() {
@@ -89,6 +107,9 @@ function setControlsEnabled(enabled) {
   if (elements.logoutBtn) {
     elements.logoutBtn.disabled = !enabled;
   }
+  if (elements.shell) {
+    elements.shell.setAttribute("aria-busy", String(!enabled));
+  }
 }
 
 function redirectToSignIn() {
@@ -102,7 +123,7 @@ function redirectToSignIn() {
 async function loadConfig() {
   const res = await fetch("/api/config", { cache: "no-store" });
   if (!res.ok) {
-    let detail = "Serveren svarer ikke lige nu.";
+    let detail = "Serveren svarer ikke lige nu. Prøv igen om lidt.";
     try {
       const data = await res.json();
       if (data?.error) {
@@ -119,7 +140,7 @@ async function loadConfig() {
 async function loadProfile() {
   const token = await getAccessToken();
   if (!token) {
-    throw new Error("Login er ikke klar endnu.");
+    throw new Error("Login er ikke klar endnu. Prøv igen om lidt.");
   }
   const res = await fetch("/api/me", {
     method: "GET",
@@ -133,7 +154,7 @@ async function loadProfile() {
     return null;
   }
   if (!res.ok) {
-    throw new Error("Kunne ikke hente profilen.");
+    throw new Error("Kunne ikke hente profilen. Prøv igen om lidt.");
   }
   const data = await res.json();
   return data.profile || null;
@@ -160,7 +181,7 @@ async function hydrateConsent() {
   const config = await loadConfig();
   initSupabaseClient(config);
   if (!supabase) {
-    throw new Error("Login er ikke klar endnu.");
+    throw new Error("Login er ikke klar endnu. Prøv igen om lidt.");
   }
   const { data, error } = await supabase.auth.getSession();
   activeSession = error ? null : data?.session || null;
@@ -202,7 +223,7 @@ async function submitConsent() {
   const acceptTerms = Boolean(elements.terms?.checked);
   const acceptPrivacy = Boolean(elements.privacy?.checked);
   if (!(acceptTerms && acceptPrivacy)) {
-    setStatus("Du skal acceptere vilkår og privatlivspolitik for at fortsætte.", true);
+    setStatus("Markér begge felter for at fortsætte.", true);
     return;
   }
   setStatus("Gemmer samtykke …");
@@ -210,7 +231,7 @@ async function submitConsent() {
   try {
     const token = await getAccessToken();
     if (!token) {
-      throw new Error("Login er ikke klar endnu.");
+      throw new Error("Login er ikke klar endnu. Prøv igen om lidt.");
     }
     const res = await fetch("/api/profile", {
       method: "POST",
@@ -221,11 +242,11 @@ async function submitConsent() {
       body: JSON.stringify({ acceptTerms, acceptPrivacy }),
     });
     if (!res.ok) {
-      throw new Error("Kunne ikke gemme samtykke.");
+      throw new Error("Kunne ikke gemme samtykke. Prøv igen om lidt.");
     }
     window.location.replace("/");
   } catch (error) {
-    setStatus(error.message || "Kunne ikke gemme samtykke.", true);
+    setStatus(error.message || "Kunne ikke gemme samtykke. Prøv igen om lidt.", true);
     setControlsEnabled(true);
     updateAcceptButton();
   }

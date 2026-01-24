@@ -481,6 +481,7 @@ const CATEGORY_ALIASES = {
   "Binyren": SUBJECT_LABELS.endo,
 
   "Blodet": SUBJECT_LABELS.blood,
+  "Blod og immunsystem": SUBJECT_LABELS.blood,
   "Blod og immunsystemet": SUBJECT_LABELS.blood,
   "Blodet og immunsystemet": SUBJECT_LABELS.blood,
   "Immunsystemet": SUBJECT_LABELS.blood,
@@ -489,6 +490,7 @@ const CATEGORY_ALIASES = {
   "Respiration": SUBJECT_LABELS.lungs,
   "Lunger": SUBJECT_LABELS.lungs,
   "Lungefysiologi": SUBJECT_LABELS.lungs,
+  "Respirationsfysiologi": SUBJECT_LABELS.lungs,
   "Respirationssystemet": SUBJECT_LABELS.lungs,
   "Det respiratoriske system": SUBJECT_LABELS.lungs,
   "Åndedrættet": SUBJECT_LABELS.lungs,
@@ -515,6 +517,7 @@ const CATEGORY_ALIASES = {
   "Kredsløb": SUBJECT_LABELS.cardio,
   "Kredsløbet": SUBJECT_LABELS.cardio,
   "Kredsløb/respiration": SUBJECT_LABELS.cardio,
+  "Hjertekredsløb": SUBJECT_LABELS.cardio,
   "Hjerte og kredsløb": SUBJECT_LABELS.cardio,
   "Hjertet": SUBJECT_LABELS.cardio,
   "Hjertet og lungerne": SUBJECT_LABELS.cardio,
@@ -546,6 +549,12 @@ const CATEGORY_ALIASES = {
   "infektionssygdomme": "Infektionssygdomme",
   "kræftsygdomme": "Kræftsygdomme",
 };
+
+const CATEGORY_ALIAS_LOOKUP = new Map();
+Object.entries(CATEGORY_ALIASES).forEach(([key, value]) => {
+  CATEGORY_ALIAS_LOOKUP.set(key, value);
+  CATEGORY_ALIAS_LOOKUP.set(key.toLowerCase(), value);
+});
 
 const DEPRECATED_CATEGORY = /udgået/i;
 const SESSION_ORDER = {
@@ -975,6 +984,28 @@ const state = {
       loading: false,
       detail: null,
     },
+    datasets: {
+      type: "mcq",
+      versions: [],
+      selectedVersionId: null,
+      loading: false,
+      items: [],
+      total: 0,
+      page: 1,
+      perPage: 20,
+      filters: {
+        search: "",
+        year: "",
+        session: "",
+        category: "",
+        priority: "",
+      },
+      selectedItemId: null,
+      selectedItem: null,
+      editorMode: "view",
+      bulkSelection: new Set(),
+      qaSummary: null,
+    },
   },
   billingElements: null,
   billingPaymentElement: null,
@@ -1396,6 +1427,36 @@ const elements = {
   adminImportProgressValue: document.getElementById("admin-import-progress-value"),
   adminImportProgressBar: document.getElementById("admin-import-progress-bar"),
   adminImportProgressFill: document.getElementById("admin-import-progress-fill"),
+  adminDatasetType: document.getElementById("admin-dataset-type"),
+  adminDatasetVersion: document.getElementById("admin-dataset-version"),
+  adminDatasetRefreshBtn: document.getElementById("admin-dataset-refresh-btn"),
+  adminDatasetCloneBtn: document.getElementById("admin-dataset-clone-btn"),
+  adminDatasetEmptyBtn: document.getElementById("admin-dataset-empty-btn"),
+  adminDatasetNewBtn: document.getElementById("admin-dataset-new-btn"),
+  adminDatasetPublishBtn: document.getElementById("admin-dataset-publish-btn"),
+  adminDatasetStatus: document.getElementById("admin-dataset-status"),
+  adminDatasetSearch: document.getElementById("admin-dataset-search"),
+  adminDatasetYear: document.getElementById("admin-dataset-year"),
+  adminDatasetSession: document.getElementById("admin-dataset-session"),
+  adminDatasetCategory: document.getElementById("admin-dataset-category"),
+  adminDatasetPriority: document.getElementById("admin-dataset-priority"),
+  adminDatasetSearchBtn: document.getElementById("admin-dataset-search-btn"),
+  adminDatasetClearBtn: document.getElementById("admin-dataset-clear-btn"),
+  adminDatasetQa: document.getElementById("admin-dataset-qa"),
+  adminDatasetItems: document.getElementById("admin-dataset-items"),
+  adminDatasetCount: document.getElementById("admin-dataset-count"),
+  adminDatasetPrevBtn: document.getElementById("admin-dataset-prev-btn"),
+  adminDatasetNextBtn: document.getElementById("admin-dataset-next-btn"),
+  adminDatasetPage: document.getElementById("admin-dataset-page"),
+  adminDatasetBulkField: document.getElementById("admin-dataset-bulk-field"),
+  adminDatasetBulkValue: document.getElementById("admin-dataset-bulk-value"),
+  adminDatasetBulkApplyBtn: document.getElementById("admin-dataset-bulk-apply-btn"),
+  adminDatasetBulkHint: document.getElementById("admin-dataset-bulk-hint"),
+  adminDatasetDetailEmpty: document.getElementById("admin-dataset-detail-empty"),
+  adminDatasetEditor: document.getElementById("admin-dataset-editor"),
+  adminDatasetSaveBtn: document.getElementById("admin-dataset-save-btn"),
+  adminDatasetDeleteBtn: document.getElementById("admin-dataset-delete-btn"),
+  adminDatasetEditorStatus: document.getElementById("admin-dataset-editor-status"),
   debugPanel: document.getElementById("debug-panel"),
   debugStudioType: document.getElementById("debug-studio-type"),
   debugPolicy: document.getElementById("debug-policy"),
@@ -3309,10 +3370,43 @@ function setLoadingState(isLoading) {
   }
 }
 
+function updateStatusMessage(element, message, { isWarn = false, autoHide = false, focusOnWarn = false } = {}) {
+  if (!element) return;
+  let text = String(message || "").trim();
+  if (isWarn && text) {
+    const lowered = text.toLowerCase();
+    const hasAction = /(prøv|tjek|kontakt|vent|genindlæs|opdatér|opdater)/.test(lowered);
+    const needsHint =
+      !hasAction &&
+      (lowered.startsWith("kunne ikke") || lowered.includes("fejlede") || lowered.includes("ikke klar"));
+    if (needsHint) {
+      text = `${text} Prøv igen eller tjek forbindelsen.`;
+    }
+  }
+  element.textContent = text;
+  element.classList.toggle("warn", Boolean(text) && isWarn);
+  if (autoHide) {
+    setElementVisible(element, Boolean(text));
+  }
+  element.setAttribute("aria-live", isWarn ? "assertive" : "polite");
+  element.setAttribute("role", isWarn ? "alert" : "status");
+  if (focusOnWarn && isWarn && text) {
+    element.tabIndex = -1;
+    element.focus();
+  }
+}
+
+function setInputInvalid(input, isInvalid) {
+  if (!input) return;
+  if (isInvalid) {
+    input.setAttribute("aria-invalid", "true");
+  } else {
+    input.removeAttribute("aria-invalid");
+  }
+}
+
 function setAuthStatus(message, isWarn = false) {
-  if (!elements.authStatus) return;
-  elements.authStatus.textContent = message || "";
-  elements.authStatus.classList.toggle("warn", isWarn);
+  updateStatusMessage(elements.authStatus, message, { isWarn, autoHide: false, focusOnWarn: true });
 }
 
 function setAuthResendVisible(isVisible) {
@@ -3321,43 +3415,31 @@ function setAuthResendVisible(isVisible) {
 }
 
 function setAccountStatus(message, isWarn = false) {
-  if (!elements.accountStatus) return;
-  const text = String(message || "").trim();
-  elements.accountStatus.textContent = text;
-  elements.accountStatus.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.accountStatus, Boolean(text));
+  updateStatusMessage(elements.accountStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
 function setBillingStatus(message, isWarn = false) {
-  if (!elements.billingStatus) return;
-  const text = String(message || "").trim();
-  elements.billingStatus.textContent = text;
-  elements.billingStatus.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.billingStatus, Boolean(text));
+  updateStatusMessage(elements.billingStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
 function setBillingUpdateStatus(message, isWarn = false) {
-  if (!elements.billingUpdateStatus) return;
-  const text = String(message || "").trim();
-  elements.billingUpdateStatus.textContent = text;
-  elements.billingUpdateStatus.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.billingUpdateStatus, Boolean(text));
+  updateStatusMessage(elements.billingUpdateStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
 function setAdminStatus(message, isWarn = false) {
-  if (!elements.adminStatus) return;
-  const text = String(message || "").trim();
-  elements.adminStatus.textContent = text;
-  elements.adminStatus.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.adminStatus, Boolean(text));
+  updateStatusMessage(elements.adminStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
 function setAdminImportStatus(message, isWarn = false) {
-  if (!elements.adminImportStatus) return;
-  const text = String(message || "").trim();
-  elements.adminImportStatus.textContent = text;
-  elements.adminImportStatus.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.adminImportStatus, Boolean(text));
+  updateStatusMessage(elements.adminImportStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
+}
+
+function setAdminDatasetStatus(message, isWarn = false) {
+  updateStatusMessage(elements.adminDatasetStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
+}
+
+function setAdminDatasetEditorStatus(message, isWarn = false) {
+  updateStatusMessage(elements.adminDatasetEditorStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
 function clearAdminImportProgressTimer() {
@@ -3408,35 +3490,19 @@ function stopAdminImportProgress(label, value) {
 }
 
 function setAdminUserStatus(message, isWarn = false) {
-  if (!elements.adminUserStatus) return;
-  const text = String(message || "").trim();
-  elements.adminUserStatus.textContent = text;
-  elements.adminUserStatus.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.adminUserStatus, Boolean(text));
+  updateStatusMessage(elements.adminUserStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
 function setAdminDetailStatus(message, isWarn = false) {
-  if (!elements.adminDetailStatus) return;
-  const text = String(message || "").trim();
-  elements.adminDetailStatus.textContent = text;
-  elements.adminDetailStatus.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.adminDetailStatus, Boolean(text));
+  updateStatusMessage(elements.adminDetailStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
 function setAdminCreateStatus(message, isWarn = false) {
-  if (!elements.adminCreateStatus) return;
-  const text = String(message || "").trim();
-  elements.adminCreateStatus.textContent = text;
-  elements.adminCreateStatus.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.adminCreateStatus, Boolean(text));
+  updateStatusMessage(elements.adminCreateStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
 function setAdminSubscriptionStatus(message, isWarn = false) {
-  if (!elements.adminSubscriptionStatusText) return;
-  const text = String(message || "").trim();
-  elements.adminSubscriptionStatusText.textContent = text;
-  elements.adminSubscriptionStatusText.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.adminSubscriptionStatusText, Boolean(text));
+  updateStatusMessage(elements.adminSubscriptionStatusText, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
 function formatAdminCount(value) {
@@ -3456,6 +3522,18 @@ function formatAdminDate(value) {
 function formatAdminMeta(parts) {
   const clean = parts.map((part) => String(part || "").trim()).filter(Boolean);
   return clean.length ? clean.join(" · ") : "—";
+}
+
+function formatDatasetVersionLabel(version) {
+  if (!version) return "—";
+  const status = version.status === "published"
+    ? "Live"
+    : version.status === "draft"
+      ? "Kladde"
+      : "Arkiv";
+  const created = formatAdminDate(version.created_at);
+  const count = typeof version.item_count === "number" ? `${version.item_count} items` : "—";
+  return `${status} · ${created} · ${count}`;
 }
 
 function formatCurrencyMap(values) {
@@ -3715,6 +3793,61 @@ function updateAdminUI() {
     setElementVisible(elements.adminImportProgress, allowed && state.admin.importing);
   }
 
+  const datasetEnabled = allowed && !state.admin.datasets.loading;
+  const hasVersion = Boolean(state.admin.datasets.selectedVersionId);
+  const canEditItem =
+    datasetEnabled && (state.admin.datasets.editorMode === "new" || state.admin.datasets.selectedItemId);
+  const datasetControls = [
+    elements.adminDatasetType,
+    elements.adminDatasetVersion,
+    elements.adminDatasetSearch,
+    elements.adminDatasetYear,
+    elements.adminDatasetSession,
+    elements.adminDatasetCategory,
+    elements.adminDatasetPriority,
+    elements.adminDatasetSearchBtn,
+    elements.adminDatasetClearBtn,
+    elements.adminDatasetBulkField,
+    elements.adminDatasetBulkValue,
+    elements.adminDatasetBulkApplyBtn,
+  ];
+  datasetControls.forEach((el) => {
+    if (!el) return;
+    el.disabled = !datasetEnabled;
+  });
+  if (elements.adminDatasetRefreshBtn) {
+    elements.adminDatasetRefreshBtn.disabled = !datasetEnabled;
+  }
+  if (elements.adminDatasetCloneBtn) {
+    elements.adminDatasetCloneBtn.disabled = !datasetEnabled;
+  }
+  if (elements.adminDatasetEmptyBtn) {
+    elements.adminDatasetEmptyBtn.disabled = !datasetEnabled;
+  }
+  if (elements.adminDatasetNewBtn) {
+    elements.adminDatasetNewBtn.disabled = !datasetEnabled || !hasVersion;
+  }
+  if (elements.adminDatasetPublishBtn) {
+    elements.adminDatasetPublishBtn.disabled = !datasetEnabled || !hasVersion;
+  }
+  if (elements.adminDatasetSaveBtn) {
+    elements.adminDatasetSaveBtn.disabled = !canEditItem;
+  }
+  if (elements.adminDatasetDeleteBtn) {
+    elements.adminDatasetDeleteBtn.disabled = !datasetEnabled || !state.admin.datasets.selectedItemId;
+  }
+  if (elements.adminDatasetPrevBtn) {
+    elements.adminDatasetPrevBtn.disabled = !datasetEnabled || state.admin.datasets.page <= 1;
+  }
+  if (elements.adminDatasetNextBtn) {
+    const totalPages = Math.max(
+      1,
+      Math.ceil((state.admin.datasets.total || 0) / state.admin.datasets.perPage)
+    );
+    elements.adminDatasetNextBtn.disabled =
+      !datasetEnabled || state.admin.datasets.page >= totalPages;
+  }
+
   const userControlsEnabled = allowed && !state.admin.users.loading;
   const userControls = [
     elements.adminUserSearch,
@@ -3794,9 +3927,12 @@ function updateAdminUI() {
   renderAdminMetrics(allowed ? state.admin.metrics : null);
   renderAdminUsers();
   renderAdminUserDetail();
+  renderAdminDatasetItems();
+  renderAdminDatasetEditor();
+  renderAdminDatasetQa();
 
   if (!allowed) {
-    setAdminStatus("Admin adgang mangler.", true);
+    setAdminStatus("Admin adgang mangler. Log ind med en admin-konto.", true);
     setAdminUserStatus("");
     setAdminDetailStatus("");
     setAdminCreateStatus("");
@@ -3825,8 +3961,11 @@ function resetAdminState() {
     status: "all",
   };
   state.admin.selected = { id: null, loading: false, detail: null };
+  resetAdminDatasetState();
   setAdminStatus("");
   setAdminImportStatus("");
+  setAdminDatasetStatus("");
+  setAdminDatasetEditorStatus("");
   setAdminUserStatus("");
   setAdminDetailStatus("");
   setAdminCreateStatus("");
@@ -3863,6 +4002,7 @@ async function checkAdminStatus({ force = false } = {}) {
     state.admin.users.items = [];
     state.admin.users.total = 0;
     state.admin.selected = { id: null, loading: false, detail: null };
+    resetAdminDatasetState();
   }
   updateAdminUI();
 }
@@ -3874,6 +4014,7 @@ function openAdminDashboard() {
     if (!state.admin.allowed) return;
     void refreshAdminMetrics({ silent: true });
     void loadAdminUsers({ page: 1 });
+    void loadAdminDatasetVersions();
   });
 }
 
@@ -3901,7 +4042,7 @@ async function refreshAdminMetrics({ silent = false } = {}) {
       state.admin.allowed = false;
       state.admin.importEnabled = false;
       state.admin.metrics = null;
-      setAdminStatus("Admin adgang mangler.", true);
+      setAdminStatus("Admin adgang mangler. Log ind med en admin-konto.", true);
     } else {
       setAdminStatus("Kunne ikke hente admin data.", true);
     }
@@ -3944,7 +4085,7 @@ function renderAdminUsers() {
   if (elements.adminUserCount) {
     const countText =
       typeof total === "number" && Number.isFinite(total) ? `${total}` : `${items.length}`;
-    elements.adminUserCount.textContent = countText;
+    elements.adminUserCount.textContent = `${countText} brugere`;
   }
   if (elements.adminUserPage) {
     const totalPages = Math.max(1, Math.ceil((total || 0) / perPage));
@@ -4177,6 +4318,834 @@ function renderAdminUserDetail() {
   setAdminSubscriptionEditor(null, profile?.id || authUser?.id || null);
 }
 
+function resetAdminDatasetState() {
+  state.admin.datasets = {
+    type: "mcq",
+    versions: [],
+    selectedVersionId: null,
+    loading: false,
+    items: [],
+    total: 0,
+    page: 1,
+    perPage: 20,
+    filters: {
+      search: "",
+      year: "",
+      session: "",
+      category: "",
+      priority: "",
+    },
+    selectedItemId: null,
+    selectedItem: null,
+    editorMode: "view",
+    bulkSelection: new Set(),
+    qaSummary: null,
+  };
+}
+
+function formatDatasetItemTitle(item) {
+  if (!item) return "—";
+  if (item.item_type === "mcq") {
+    return `Spørgsmål ${item.number || "?"} · ${item.category || "Ukendt"}`;
+  }
+  if (item.item_type === "short") {
+    const label = item.label ? String(item.label).toUpperCase() : "";
+    return `Opgave ${item.opgave || "?"}${label ? ` ${label}` : ""} · ${item.category || "Ukendt"}`;
+  }
+  return item.title || item.category || "Sygdom";
+}
+
+function formatDatasetItemMeta(item) {
+  if (!item) return "—";
+  const parts = [];
+  if (item.year) parts.push(item.year);
+  if (item.session) parts.push(item.session);
+  if (item.priority) parts.push(item.priority);
+  if (item.title && item.item_type !== "disease") parts.push(item.title);
+  return parts.join(" · ") || "—";
+}
+
+function renderAdminDatasetVersions() {
+  if (!elements.adminDatasetVersion) return;
+  const { versions, selectedVersionId } = state.admin.datasets;
+  elements.adminDatasetVersion.textContent = "";
+  if (!versions.length) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "Ingen versioner";
+    elements.adminDatasetVersion.appendChild(option);
+    return;
+  }
+  versions.forEach((version) => {
+    const option = document.createElement("option");
+    option.value = version.id;
+    option.textContent = formatDatasetVersionLabel(version);
+    elements.adminDatasetVersion.appendChild(option);
+  });
+  if (selectedVersionId) {
+    elements.adminDatasetVersion.value = selectedVersionId;
+  }
+}
+
+function renderAdminDatasetItems() {
+  if (!elements.adminDatasetItems) return;
+  elements.adminDatasetItems.textContent = "";
+  const { items, total, page, perPage, selectedItemId, bulkSelection } = state.admin.datasets;
+  if (elements.adminDatasetCount) {
+    const countText = typeof total === "number" ? `${total}` : `${items.length}`;
+    elements.adminDatasetCount.textContent = countText;
+  }
+  if (elements.adminDatasetPage) {
+    const totalPages = Math.max(1, Math.ceil((total || 0) / perPage));
+    elements.adminDatasetPage.textContent = `Side ${page} af ${totalPages}`;
+  }
+  if (!items.length) {
+    const empty = document.createElement("div");
+    empty.className = "admin-user-detail-empty";
+    empty.textContent = "Ingen items matcher dine filtre.";
+    elements.adminDatasetItems.appendChild(empty);
+    if (elements.adminDatasetBulkHint) {
+      elements.adminDatasetBulkHint.textContent = `${bulkSelection.size} valgt`;
+    }
+    return;
+  }
+
+  items.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "admin-dataset-row";
+    row.dataset.itemId = item.id || "";
+    row.setAttribute("data-testid", "admin-dataset-row");
+    if (item.id && item.id === selectedItemId) {
+      row.classList.add("active");
+    }
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = bulkSelection.has(item.id);
+    checkbox.addEventListener("click", (event) => event.stopPropagation());
+    checkbox.addEventListener("change", () => {
+      if (!item.id) return;
+      if (checkbox.checked) {
+        bulkSelection.add(item.id);
+      } else {
+        bulkSelection.delete(item.id);
+      }
+      if (elements.adminDatasetBulkHint) {
+        elements.adminDatasetBulkHint.textContent = `${bulkSelection.size} valgt`;
+      }
+    });
+    row.appendChild(checkbox);
+
+    const body = document.createElement("div");
+    const title = document.createElement("div");
+    title.className = "admin-dataset-row-title";
+    title.textContent = formatDatasetItemTitle(item);
+    body.appendChild(title);
+    const meta = document.createElement("div");
+    meta.className = "admin-dataset-row-meta";
+    meta.textContent = formatDatasetItemMeta(item);
+    body.appendChild(meta);
+    row.appendChild(body);
+
+    row.addEventListener("click", () => {
+      void loadAdminDatasetItemDetail(item.id);
+    });
+
+    elements.adminDatasetItems.appendChild(row);
+  });
+  if (elements.adminDatasetBulkHint) {
+    elements.adminDatasetBulkHint.textContent = `${bulkSelection.size} valgt`;
+  }
+}
+
+function renderAdminDatasetQa() {
+  if (!elements.adminDatasetQa) return;
+  const qa = state.admin.datasets.qaSummary;
+  if (!qa || !qa.warnings) {
+    elements.adminDatasetQa.textContent = "QA: —";
+    return;
+  }
+  const warnings = qa.warnings || {};
+  const parts = [];
+  if (warnings.missingCorrect?.count) parts.push(`MCQ uden korrekt: ${warnings.missingCorrect.count}`);
+  if (warnings.missingPrompts?.count) parts.push(`Manglende spørgsmål: ${warnings.missingPrompts.count}`);
+  if (warnings.missingAnswers?.count) parts.push(`Manglende svar: ${warnings.missingAnswers.count}`);
+  if (warnings.emptySections?.count) parts.push(`Tomme sektioner: ${warnings.emptySections.count}`);
+  if (warnings.formatWarnings?.count) parts.push(`Formatteringsadvarsler: ${warnings.formatWarnings.count}`);
+  if (warnings.missingImages?.count) parts.push(`Manglende billeder: ${warnings.missingImages.count}`);
+  if (warnings.unmatchedImages?.count) parts.push(`Umatchede billeder: ${warnings.unmatchedImages.count}`);
+  elements.adminDatasetQa.textContent = parts.length ? `QA: ${parts.join(" · ")}` : "QA: Ingen advarsler";
+}
+
+function buildAdminField({ label, input, hint }) {
+  const field = document.createElement("div");
+  field.className = "field";
+  const labelEl = document.createElement("label");
+  labelEl.textContent = label;
+  field.appendChild(labelEl);
+  field.appendChild(input);
+  if (hint) {
+    const hintEl = document.createElement("div");
+    hintEl.className = "field-hint";
+    hintEl.textContent = hint;
+    field.appendChild(hintEl);
+  }
+  return field;
+}
+
+function buildAdminInput({ field, type = "text", value = "", placeholder = "" }) {
+  const input = document.createElement("input");
+  input.type = type;
+  input.value = value || "";
+  input.placeholder = placeholder;
+  input.dataset.field = field;
+  return input;
+}
+
+function buildAdminTextarea({ field, value = "", placeholder = "" }) {
+  const input = document.createElement("textarea");
+  input.rows = 4;
+  input.value = value || "";
+  input.placeholder = placeholder;
+  input.dataset.field = field;
+  return input;
+}
+
+function buildAdminSelect({ field, value = "", options = [] }) {
+  const select = document.createElement("select");
+  select.dataset.field = field;
+  options.forEach((option) => {
+    const opt = document.createElement("option");
+    opt.value = option.value;
+    opt.textContent = option.label;
+    select.appendChild(opt);
+  });
+  select.value = value || "";
+  return select;
+}
+
+function renderAdminDatasetEditor() {
+  if (!elements.adminDatasetEditor) return;
+  const dataset = state.admin.datasets.type;
+  const item = state.admin.datasets.selectedItem;
+  const mode = state.admin.datasets.editorMode;
+
+  elements.adminDatasetEditor.textContent = "";
+  setElementVisible(elements.adminDatasetDetailEmpty, !item && mode !== "new");
+  setElementVisible(elements.adminDatasetEditor, Boolean(item || mode === "new"));
+
+  if (!item && mode !== "new") return;
+
+  if (dataset === "mcq") {
+    const values = item || {
+      year: "",
+      session: "",
+      number: "",
+      category: "",
+      text: "",
+      options: [
+        { label: "A", text: "" },
+        { label: "B", text: "" },
+        { label: "C", text: "" },
+        { label: "D", text: "" },
+      ],
+      correctLabel: "",
+    };
+    const yearField = buildAdminInput({ field: "year", type: "number", value: values.year, placeholder: "2024" });
+    yearField.inputMode = "numeric";
+    const sessionField = buildAdminInput({ field: "session", value: values.session, placeholder: "ordinær" });
+    const numberField = buildAdminInput({ field: "number", type: "number", value: values.number, placeholder: "1" });
+    numberField.inputMode = "numeric";
+    const categoryField = buildAdminInput({ field: "category", value: values.category, placeholder: "Hjerte-kredsløb" });
+    const textField = buildAdminTextarea({ field: "text", value: values.text, placeholder: "Spørgsmål" });
+
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "År", input: yearField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Session", input: sessionField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Spørgsmålsnummer", input: numberField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Kategori", input: categoryField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Spørgsmål", input: textField }));
+
+    const optionsSection = document.createElement("div");
+    optionsSection.className = "admin-dataset-editor-section";
+    const optionsTitle = document.createElement("div");
+    optionsTitle.className = "admin-dataset-row-title";
+    optionsTitle.textContent = "Svarmuligheder (markér korrekt)";
+    optionsSection.appendChild(optionsTitle);
+    const labels = ["A", "B", "C", "D"];
+    labels.forEach((label) => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "admin-dataset-editor-actions";
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "mcq-correct";
+      radio.value = label;
+      radio.checked = String(values.correctLabel || "").toUpperCase() === label;
+      wrapper.appendChild(radio);
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = `${label}. Svar`;
+      input.value = values.options?.find((opt) => opt.label === label)?.text || "";
+      input.dataset.optionLabel = label;
+      wrapper.appendChild(input);
+      optionsSection.appendChild(wrapper);
+    });
+    elements.adminDatasetEditor.appendChild(optionsSection);
+    return;
+  }
+
+  if (dataset === "kortsvar") {
+    const values = item || {
+      year: "",
+      session: "",
+      opgave: "",
+      label: "",
+      category: "",
+      opgaveTitle: "",
+      opgaveIntro: "",
+      prompt: "",
+      answer: "",
+      sources: [],
+      images: [],
+    };
+    const yearField = buildAdminInput({ field: "year", type: "number", value: values.year, placeholder: "2024" });
+    yearField.inputMode = "numeric";
+    const sessionField = buildAdminInput({ field: "session", value: values.session, placeholder: "ordinær" });
+    const opgaveField = buildAdminInput({ field: "opgave", type: "number", value: values.opgave, placeholder: "1" });
+    opgaveField.inputMode = "numeric";
+    const labelField = buildAdminInput({ field: "label", value: values.label, placeholder: "a" });
+    const categoryField = buildAdminInput({ field: "category", value: values.category, placeholder: "Hjerte-kredsløb" });
+    const opgaveTitleField = buildAdminInput({ field: "opgaveTitle", value: values.opgaveTitle, placeholder: "Hovedemne titel" });
+    const opgaveIntroField = buildAdminTextarea({ field: "opgaveIntro", value: values.opgaveIntro, placeholder: "Intro" });
+    const promptField = buildAdminTextarea({ field: "prompt", value: values.prompt, placeholder: "Spørgsmål" });
+    const answerField = buildAdminTextarea({ field: "answer", value: values.answer, placeholder: "Svar" });
+    const sourcesField = buildAdminTextarea({
+      field: "sources",
+      value: Array.isArray(values.sources) ? values.sources.join("\n") : "",
+      placeholder: "Kilder (én pr. linje)",
+    });
+    const imagesField = buildAdminTextarea({
+      field: "images",
+      value: Array.isArray(values.images) ? values.images.join("\n") : "",
+      placeholder: "Billedstier (én pr. linje)",
+    });
+
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "År", input: yearField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Session", input: sessionField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Opgave", input: opgaveField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Label", input: labelField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Kategori", input: categoryField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Opgavetitel", input: opgaveTitleField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Opgaveintro", input: opgaveIntroField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Prompt", input: promptField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Svar", input: answerField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Kilder", input: sourcesField }));
+    elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Billeder", input: imagesField }));
+    return;
+  }
+
+  const values = item || {
+    id: "",
+    name: "",
+    category: "",
+    weight: "",
+    priority: "medium",
+    sections: [],
+  };
+  const nameField = buildAdminInput({ field: "name", value: values.name, placeholder: "Sygdom" });
+  const categoryField = buildAdminInput({ field: "category", value: values.category, placeholder: "Lungesygdomme" });
+  const weightField = buildAdminInput({ field: "weight", value: values.weight, placeholder: "1" });
+  const priorityField = buildAdminSelect({
+    field: "priority",
+    value: values.priority || "medium",
+    options: [
+      { value: "high", label: "Høj" },
+      { value: "medium", label: "Mellem" },
+      { value: "low", label: "Lav" },
+      { value: "excluded", label: "Ikke pensum" },
+    ],
+  });
+
+  elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Sygdomsnavn", input: nameField }));
+  elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Kategori", input: categoryField }));
+  elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Tyngde", input: weightField }));
+  elements.adminDatasetEditor.appendChild(buildAdminField({ label: "Prioritet", input: priorityField }));
+
+  const sections = Array.isArray(values.sections) ? values.sections : [];
+  const sectionsWrapper = document.createElement("div");
+  sectionsWrapper.className = "admin-dataset-editor-section";
+  const sectionsTitle = document.createElement("div");
+  sectionsTitle.className = "admin-dataset-row-title";
+  sectionsTitle.textContent = "Sektioner";
+  sectionsWrapper.appendChild(sectionsTitle);
+
+  const addSectionBtn = document.createElement("button");
+  addSectionBtn.type = "button";
+  addSectionBtn.className = "btn ghost small";
+  addSectionBtn.textContent = "Tilføj sektion";
+  addSectionBtn.addEventListener("click", () => {
+    sectionsWrapper.appendChild(buildDiseaseSectionRow({ title: "", content: "" }));
+  });
+  sectionsWrapper.appendChild(addSectionBtn);
+
+  sections.forEach((section) => {
+    sectionsWrapper.appendChild(buildDiseaseSectionRow(section));
+  });
+
+  elements.adminDatasetEditor.appendChild(sectionsWrapper);
+}
+
+function buildDiseaseSectionRow(section) {
+  const row = document.createElement("div");
+  row.className = "admin-dataset-editor-section";
+  row.dataset.section = "true";
+  const titleInput = buildAdminInput({ field: "section-title", value: section?.title || "", placeholder: "Titel" });
+  const contentInput = buildAdminTextarea({ field: "section-content", value: section?.content || "", placeholder: "Indhold" });
+  row.appendChild(buildAdminField({ label: "Titel", input: titleInput }));
+  row.appendChild(buildAdminField({ label: "Indhold", input: contentInput }));
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.className = "btn ghost small";
+  removeBtn.textContent = "Fjern";
+  removeBtn.addEventListener("click", () => row.remove());
+  row.appendChild(removeBtn);
+  return row;
+}
+
+function readDatasetEditorValue(field) {
+  return elements.adminDatasetEditor?.querySelector(`[data-field="${field}"]`)?.value || "";
+}
+
+function buildDatasetItemPayloadFromEditor() {
+  const dataset = state.admin.datasets.type;
+  if (dataset === "mcq") {
+    const correctLabel =
+      elements.adminDatasetEditor?.querySelector('input[name="mcq-correct"]:checked')?.value || "";
+    const options = ["A", "B", "C", "D"].map((label) => ({
+      label,
+      text: elements.adminDatasetEditor?.querySelector(`[data-option-label="${label}"]`)?.value || "",
+    }));
+    return {
+      year: readDatasetEditorValue("year"),
+      session: readDatasetEditorValue("session"),
+      number: readDatasetEditorValue("number"),
+      category: readDatasetEditorValue("category"),
+      text: readDatasetEditorValue("text"),
+      options,
+      correctLabel,
+    };
+  }
+  if (dataset === "kortsvar") {
+    const sources = readDatasetEditorValue("sources")
+      .split("\n")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const images = readDatasetEditorValue("images")
+      .split("\n")
+      .map((value) => value.trim())
+      .filter(Boolean);
+    return {
+      year: readDatasetEditorValue("year"),
+      session: readDatasetEditorValue("session"),
+      opgave: readDatasetEditorValue("opgave"),
+      label: readDatasetEditorValue("label"),
+      category: readDatasetEditorValue("category"),
+      opgaveTitle: readDatasetEditorValue("opgaveTitle"),
+      opgaveIntro: readDatasetEditorValue("opgaveIntro"),
+      prompt: readDatasetEditorValue("prompt"),
+      answer: readDatasetEditorValue("answer"),
+      sources,
+      images,
+    };
+  }
+
+  const sections = Array.from(
+    elements.adminDatasetEditor?.querySelectorAll('[data-section="true"]') || []
+  )
+    .map((section) => {
+      const title =
+        section.querySelector('[data-field="section-title"]')?.value || "";
+      const content =
+        section.querySelector('[data-field="section-content"]')?.value || "";
+      return { title, content };
+    })
+    .filter((section) => section.title || section.content);
+
+  return {
+    name: readDatasetEditorValue("name"),
+    category: readDatasetEditorValue("category"),
+    weight: readDatasetEditorValue("weight"),
+    priority: readDatasetEditorValue("priority"),
+    sections,
+  };
+}
+
+async function loadAdminDatasetVersions({ dataset } = {}) {
+  if (!state.admin.allowed) return;
+  const datasetType = dataset || state.admin.datasets.type;
+  state.admin.datasets.loading = true;
+  setAdminDatasetStatus("Henter versioner …");
+  updateAdminUI();
+  try {
+    const res = await apiFetch(`/api/admin/datasets/versions?dataset=${datasetType}`, {
+      method: "GET",
+      timeoutMs: 15000,
+    });
+    if (!res.ok) {
+      setAdminDatasetStatus("Kunne ikke hente versioner.", true);
+      return;
+    }
+    const data = await res.json();
+    const versions = Array.isArray(data?.versions) ? data.versions : [];
+    state.admin.datasets.type = datasetType;
+    state.admin.datasets.versions = versions;
+    if (elements.adminDatasetType) {
+      elements.adminDatasetType.value = datasetType;
+    }
+    const selected = versions.find((v) => v.id === state.admin.datasets.selectedVersionId);
+    const published = versions.find((v) => v.status === "published");
+    state.admin.datasets.selectedVersionId =
+      selected?.id || published?.id || versions[0]?.id || null;
+    renderAdminDatasetVersions();
+    await loadAdminDatasetItems({ page: 1 });
+    await refreshAdminDatasetQa();
+    setAdminDatasetStatus("Versioner opdateret.");
+  } catch (error) {
+    setAdminDatasetStatus("Kunne ikke hente versioner.", true);
+  } finally {
+    state.admin.datasets.loading = false;
+    updateAdminUI();
+  }
+}
+
+async function refreshAdminDatasetQa() {
+  const versionId = state.admin.datasets.selectedVersionId;
+  if (!versionId) return;
+  try {
+    const res = await apiFetch(`/api/admin/datasets/qa?version_id=${versionId}`, {
+      method: "GET",
+      timeoutMs: 15000,
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    state.admin.datasets.qaSummary = data?.qaSummary || null;
+    renderAdminDatasetQa();
+  } catch (error) {
+    // Ignore QA errors.
+  }
+}
+
+async function loadAdminDatasetItems({ page } = {}) {
+  if (!state.admin.allowed) return;
+  const dataset = state.admin.datasets.type;
+  const versionId = state.admin.datasets.selectedVersionId;
+  if (!dataset || !versionId) {
+    state.admin.datasets.items = [];
+    state.admin.datasets.total = 0;
+    renderAdminDatasetItems();
+    return;
+  }
+  state.admin.datasets.loading = true;
+  const targetPage = page || state.admin.datasets.page || 1;
+  const filters = state.admin.datasets.filters;
+  const params = new URLSearchParams({
+    dataset,
+    version_id: versionId,
+    page: String(targetPage),
+    per_page: String(state.admin.datasets.perPage),
+  });
+  if (filters.search) params.set("search", filters.search);
+  if (filters.year) params.set("year", filters.year);
+  if (filters.session) params.set("session", filters.session);
+  if (filters.category) params.set("category", filters.category);
+  if (filters.priority) params.set("priority", filters.priority);
+
+  try {
+    const res = await apiFetch(`/api/admin/datasets/items?${params.toString()}`, {
+      method: "GET",
+      timeoutMs: 20000,
+    });
+    if (!res.ok) {
+      setAdminDatasetStatus("Kunne ikke hente items.", true);
+      return;
+    }
+    const data = await res.json();
+    state.admin.datasets.items = Array.isArray(data?.items) ? data.items : [];
+    state.admin.datasets.total = data?.count || 0;
+    state.admin.datasets.page = data?.page || targetPage;
+    state.admin.datasets.selectedVersionId = data?.versionId || versionId;
+    state.admin.datasets.selectedItemId = null;
+    state.admin.datasets.selectedItem = null;
+    state.admin.datasets.editorMode = "view";
+    state.admin.datasets.bulkSelection.clear();
+    renderAdminDatasetItems();
+    renderAdminDatasetEditor();
+  } catch (error) {
+    setAdminDatasetStatus("Kunne ikke hente items.", true);
+  } finally {
+    state.admin.datasets.loading = false;
+    updateAdminUI();
+  }
+}
+
+async function loadAdminDatasetItemDetail(itemId) {
+  if (!itemId) return;
+  setAdminDatasetEditorStatus("Henter item …");
+  try {
+    const res = await apiFetch(`/api/admin/datasets/item?id=${itemId}`, {
+      method: "GET",
+      timeoutMs: 15000,
+    });
+    if (!res.ok) {
+      setAdminDatasetEditorStatus("Kunne ikke hente item.", true);
+      return;
+    }
+    const data = await res.json();
+    const payload = data?.item?.payload || null;
+    state.admin.datasets.selectedItemId = itemId;
+    state.admin.datasets.selectedItem = payload;
+    state.admin.datasets.editorMode = "view";
+    renderAdminDatasetItems();
+    renderAdminDatasetEditor();
+    setAdminDatasetEditorStatus("");
+  } catch (error) {
+    setAdminDatasetEditorStatus("Kunne ikke hente item.", true);
+  }
+}
+
+async function handleAdminDatasetSave() {
+  if (!state.admin.allowed) return;
+  const dataset = state.admin.datasets.type;
+  const versionId = state.admin.datasets.selectedVersionId;
+  if (!versionId) {
+    setAdminDatasetEditorStatus("Vælg en version først.", true);
+    return;
+  }
+  const payload = buildDatasetItemPayloadFromEditor();
+  setAdminDatasetEditorStatus("Gemmer item …");
+  try {
+    if (state.admin.datasets.editorMode === "new") {
+      const res = await apiFetch("/api/admin/datasets/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dataset, version_id: versionId, item: payload }),
+        timeoutMs: 20000,
+      });
+      if (!res.ok) {
+        const data = await safeReadJson(res);
+        setAdminDatasetEditorStatus(data?.error || "Kunne ikke oprette item.", true);
+        return;
+      }
+      setAdminDatasetEditorStatus("Item oprettet.");
+    } else {
+      const itemId = state.admin.datasets.selectedItemId;
+      if (!itemId) {
+        setAdminDatasetEditorStatus("Vælg et item først.", true);
+        return;
+      }
+      const res = await apiFetch("/api/admin/datasets/item", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: itemId, dataset, item: payload }),
+        timeoutMs: 20000,
+      });
+      if (!res.ok) {
+        const data = await safeReadJson(res);
+        setAdminDatasetEditorStatus(data?.error || "Kunne ikke gemme item.", true);
+        return;
+      }
+      setAdminDatasetEditorStatus("Item gemt.");
+    }
+    await loadAdminDatasetItems({ page: state.admin.datasets.page });
+    await refreshAdminDatasetQa();
+  } catch (error) {
+    setAdminDatasetEditorStatus("Kunne ikke gemme item.", true);
+  }
+}
+
+async function handleAdminDatasetDelete() {
+  const itemId = state.admin.datasets.selectedItemId;
+  if (!itemId) {
+    setAdminDatasetEditorStatus("Vælg et item først.", true);
+    return;
+  }
+  if (!window.confirm("Slet dette item permanent? Dette kan ikke fortrydes.")) return;
+  setAdminDatasetEditorStatus("Sletter item …");
+  try {
+    const res = await apiFetch("/api/admin/datasets/item", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: itemId }),
+      timeoutMs: 15000,
+    });
+    if (!res.ok) {
+      setAdminDatasetEditorStatus("Kunne ikke slette item.", true);
+      return;
+    }
+    state.admin.datasets.selectedItemId = null;
+    state.admin.datasets.selectedItem = null;
+    state.admin.datasets.editorMode = "view";
+    renderAdminDatasetEditor();
+    setAdminDatasetEditorStatus("Item slettet.");
+    await loadAdminDatasetItems({ page: state.admin.datasets.page });
+    await refreshAdminDatasetQa();
+  } catch (error) {
+    setAdminDatasetEditorStatus("Kunne ikke slette item.", true);
+  }
+}
+
+async function handleAdminDatasetPublish() {
+  const versionId = state.admin.datasets.selectedVersionId;
+  if (!versionId) {
+    setAdminDatasetStatus("Vælg en version først.", true);
+    return;
+  }
+  if (!window.confirm("Publicér som live datasæt? Dette overskriver den nuværende live-version.")) return;
+  setAdminDatasetStatus("Publicerer …");
+  try {
+    const res = await apiFetch("/api/admin/datasets/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ version_id: versionId }),
+      timeoutMs: 30000,
+    });
+    if (!res.ok) {
+      const data = await safeReadJson(res);
+      setAdminDatasetStatus(data?.error || "Kunne ikke publicere.", true);
+      return;
+    }
+    setAdminDatasetStatus("Version publiceret.");
+    await loadAdminDatasetVersions();
+  } catch (error) {
+    setAdminDatasetStatus("Kunne ikke publicere.", true);
+  }
+}
+
+async function handleAdminDatasetClone() {
+  const dataset = state.admin.datasets.type;
+  setAdminDatasetStatus("Kloner live datasæt …");
+  try {
+    const res = await apiFetch("/api/admin/datasets/versions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataset, action: "clone" }),
+      timeoutMs: 30000,
+    });
+    if (!res.ok) {
+      const data = await safeReadJson(res);
+      setAdminDatasetStatus(data?.error || "Kunne ikke klone.", true);
+      return;
+    }
+    const data = await safeReadJson(res);
+    state.admin.datasets.selectedVersionId = data?.draftId || null;
+    await loadAdminDatasetVersions();
+    setAdminDatasetStatus("Kladde oprettet.");
+  } catch (error) {
+    setAdminDatasetStatus("Kunne ikke klone.", true);
+  }
+}
+
+async function handleAdminDatasetEmptyDraft() {
+  const dataset = state.admin.datasets.type;
+  setAdminDatasetStatus("Opretter kladde …");
+  try {
+    const res = await apiFetch("/api/admin/datasets/versions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataset, action: "empty" }),
+      timeoutMs: 15000,
+    });
+    if (!res.ok) {
+      const data = await safeReadJson(res);
+      setAdminDatasetStatus(data?.error || "Kunne ikke oprette kladde.", true);
+      return;
+    }
+    const data = await safeReadJson(res);
+    state.admin.datasets.selectedVersionId = data?.draftId || null;
+    await loadAdminDatasetVersions();
+    setAdminDatasetStatus("Kladde oprettet.");
+  } catch (error) {
+    setAdminDatasetStatus("Kunne ikke oprette kladde.", true);
+  }
+}
+
+function handleAdminDatasetNewItem() {
+  state.admin.datasets.selectedItemId = null;
+  state.admin.datasets.selectedItem = null;
+  state.admin.datasets.editorMode = "new";
+  renderAdminDatasetItems();
+  renderAdminDatasetEditor();
+  setAdminDatasetEditorStatus("");
+}
+
+async function handleAdminDatasetBulkApply() {
+  const { bulkSelection } = state.admin.datasets;
+  if (!state.admin.datasets.selectedVersionId) {
+    setAdminDatasetStatus("Vælg en version først.", true);
+    return;
+  }
+  const field = elements.adminDatasetBulkField?.value || "";
+  const value = elements.adminDatasetBulkValue?.value || "";
+  if (!field || !value || !bulkSelection.size) {
+    setAdminDatasetStatus("Vælg felt, værdi og items først.", true);
+    return;
+  }
+  setAdminDatasetStatus("Opdaterer items …");
+  try {
+    const res = await apiFetch("/api/admin/datasets/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        dataset: state.admin.datasets.type,
+        version_id: state.admin.datasets.selectedVersionId,
+        item_ids: Array.from(bulkSelection),
+        patch: { [field]: value },
+      }),
+      timeoutMs: 20000,
+    });
+    if (!res.ok) {
+      const data = await safeReadJson(res);
+      setAdminDatasetStatus(data?.error || "Bulk update fejlede.", true);
+      return;
+    }
+    bulkSelection.clear();
+    if (elements.adminDatasetBulkHint) {
+      elements.adminDatasetBulkHint.textContent = "0 valgt";
+    }
+    setAdminDatasetStatus("Bulk update gennemført.");
+    await loadAdminDatasetItems({ page: state.admin.datasets.page });
+    await refreshAdminDatasetQa();
+  } catch (error) {
+    setAdminDatasetStatus("Bulk update fejlede.", true);
+  }
+}
+
+function handleAdminDatasetSearch() {
+  state.admin.datasets.filters = {
+    search: elements.adminDatasetSearch?.value.trim() || "",
+    year: elements.adminDatasetYear?.value.trim() || "",
+    session: elements.adminDatasetSession?.value.trim() || "",
+    category: elements.adminDatasetCategory?.value.trim() || "",
+    priority: elements.adminDatasetPriority?.value.trim() || "",
+  };
+  void loadAdminDatasetItems({ page: 1 });
+}
+
+function handleAdminDatasetClear() {
+  if (elements.adminDatasetSearch) elements.adminDatasetSearch.value = "";
+  if (elements.adminDatasetYear) elements.adminDatasetYear.value = "";
+  if (elements.adminDatasetSession) elements.adminDatasetSession.value = "";
+  if (elements.adminDatasetCategory) elements.adminDatasetCategory.value = "";
+  if (elements.adminDatasetPriority) elements.adminDatasetPriority.value = "";
+  state.admin.datasets.filters = {
+    search: "",
+    year: "",
+    session: "",
+    category: "",
+    priority: "",
+  };
+  void loadAdminDatasetItems({ page: 1 });
+}
+
 function getAdminSelectedUserId() {
   return state.admin.selected.id || state.admin.selected.detail?.profile?.id || null;
 }
@@ -4239,7 +5208,7 @@ async function loadAdminUsers({ page } = {}) {
       setAdminUserStatus("");
     } else if (res.status === 401 || res.status === 403) {
       state.admin.allowed = false;
-      setAdminUserStatus("Admin adgang mangler.", true);
+      setAdminUserStatus("Admin adgang mangler. Log ind med en admin-konto.", true);
     } else {
       setAdminUserStatus("Kunne ikke hente brugere.", true);
     }
@@ -4272,11 +5241,11 @@ async function loadAdminUserDetail(userId) {
       setAdminDetailStatus("");
     } else if (res.status === 404) {
       state.admin.selected.detail = null;
-      setAdminDetailStatus("Bruger ikke fundet.", true);
+      setAdminDetailStatus("Bruger ikke fundet. Prøv en anden søgning.", true);
     } else if (res.status === 401 || res.status === 403) {
       state.admin.allowed = false;
       state.admin.selected.detail = null;
-      setAdminDetailStatus("Admin adgang mangler.", true);
+      setAdminDetailStatus("Admin adgang mangler. Log ind med en admin-konto.", true);
     } else {
       setAdminDetailStatus("Kunne ikke hente brugerdata.", true);
     }
@@ -4302,9 +5271,14 @@ async function handleAdminUserSave() {
   }
   const email = elements.adminDetailEmailInput?.value.trim() || "";
   if (!email) {
+    if (elements.adminDetailEmailInput) {
+      elements.adminDetailEmailInput.focus();
+    }
+    setInputInvalid(elements.adminDetailEmailInput, true);
     setAdminDetailStatus("Email kan ikke være tom.", true);
     return;
   }
+  setInputInvalid(elements.adminDetailEmailInput, false);
 
   const profilePatch = {
     full_name: elements.adminDetailNameInput?.value.trim() || null,
@@ -4355,9 +5329,14 @@ async function handleAdminUserPassword() {
     return;
   }
   if (!password || password.length < 8) {
+    if (elements.adminDetailPassword) {
+      elements.adminDetailPassword.focus();
+    }
+    setInputInvalid(elements.adminDetailPassword, true);
     setAdminDetailStatus("Kodeord skal være mindst 8 tegn.", true);
     return;
   }
+  setInputInvalid(elements.adminDetailPassword, false);
   setAdminDetailStatus("Opdaterer kodeord …");
   try {
     const res = await apiFetch("/api/admin/user/update", {
@@ -4410,7 +5389,7 @@ async function handleAdminBanUser() {
     setAdminDetailStatus("Vælg en bruger først.", true);
     return;
   }
-  if (!window.confirm("Deaktiver denne bruger?")) return;
+  if (!window.confirm("Deaktiver bruger? Brugeren kan ikke logge ind før genaktivering.")) return;
   const reason = elements.adminDetailDisableReason?.value.trim() || null;
   setAdminDetailStatus("Deaktiverer bruger …");
   try {
@@ -4439,7 +5418,7 @@ async function handleAdminUnbanUser() {
     setAdminDetailStatus("Vælg en bruger først.", true);
     return;
   }
-  if (!window.confirm("Genaktivér denne bruger?")) return;
+  if (!window.confirm("Genaktivér bruger og genskab adgang?")) return;
   setAdminDetailStatus("Genaktiverer bruger …");
   try {
     const res = await apiFetch("/api/admin/user/action", {
@@ -4467,7 +5446,7 @@ async function handleAdminClearUserData(action) {
     setAdminDetailStatus("Vælg en bruger først.", true);
     return;
   }
-  if (!window.confirm("Bekræft handlingen. Dette kan ikke fortrydes.")) return;
+  if (!window.confirm("Bekræft handlingen. Den kan ikke fortrydes.")) return;
   setAdminDetailStatus("Udfører handling …");
   try {
     const res = await apiFetch("/api/admin/user/action", {
@@ -4497,7 +5476,7 @@ async function handleAdminUserDelete(mode) {
   const message =
     mode === "hard"
       ? "Hard delete sletter auth + data permanent. Fortsæt?"
-      : "Soft delete deaktiverer brugeren. Fortsæt?";
+      : "Soft delete deaktiverer adgang og bevarer data. Fortsæt?";
   if (!window.confirm(message)) return;
   setAdminDetailStatus("Sletter bruger …");
   try {
@@ -4532,13 +5511,24 @@ async function handleAdminCreateUser() {
   const notes = elements.adminCreateNotes?.value || null;
 
   if (!email) {
+    if (elements.adminCreateEmail) {
+      elements.adminCreateEmail.focus();
+    }
+    setInputInvalid(elements.adminCreateEmail, true);
+    setInputInvalid(elements.adminCreatePassword, false);
     setAdminCreateStatus("Email er påkrævet.", true);
     return;
   }
+  setInputInvalid(elements.adminCreateEmail, false);
   if (!invite && password.length < 8) {
+    if (elements.adminCreatePassword) {
+      elements.adminCreatePassword.focus();
+    }
+    setInputInvalid(elements.adminCreatePassword, true);
     setAdminCreateStatus("Kodeord skal være mindst 8 tegn.", true);
     return;
   }
+  setInputInvalid(elements.adminCreatePassword, false);
 
   setAdminCreateStatus("Opretter bruger …");
   try {
@@ -4620,7 +5610,7 @@ async function handleAdminSubscriptionDelete() {
     setAdminSubscriptionStatus("Vælg en subscription først.", true);
     return;
   }
-  if (!window.confirm("Slet denne subscription?")) return;
+  if (!window.confirm("Slet abonnement? Brugeren mister planstatus.")) return;
   const cancelStripe = Boolean(elements.adminSubscriptionCancelStripe?.checked);
 
   setAdminSubscriptionStatus("Sletter subscription …");
@@ -4650,7 +5640,7 @@ async function handleAdminSubscriptionDelete() {
 
 async function handleAdminImport() {
   if (!state.admin.allowed) {
-    setAdminImportStatus("Admin adgang mangler.", true);
+    setAdminImportStatus("Admin adgang mangler. Log ind med en admin-konto.", true);
     return;
   }
   if (!state.admin.importEnabled) {
@@ -4687,6 +5677,7 @@ async function handleAdminImport() {
     const data = await safeReadJson(res);
     const itemCount = data?.result?.itemCount;
     const warnings = data?.result?.warnings;
+    const draftId = data?.draftId || data?.result?.draftId;
     const notes = [];
     if (typeof itemCount === "number") {
       notes.push(`${itemCount} rækker`);
@@ -4701,7 +5692,12 @@ async function handleAdminImport() {
       notes.push(`${warnings.formatWarnings.length} formatteringsadvarsler`);
     }
     const detail = notes.length ? ` (${notes.join(" · ")})` : "";
-    setAdminImportStatus(`Import gennemført${detail}. Opdatér siden for at bruge nye data.`);
+    setAdminImportStatus(`Kladde oprettet${detail}. Gennemgå og publicér under Datasæt.`);
+    if (draftId) {
+      state.admin.datasets.type = type;
+      state.admin.datasets.selectedVersionId = draftId;
+      void loadAdminDatasetVersions({ dataset: type });
+    }
     void refreshAdminMetrics({ silent: true });
     success = true;
   } catch (error) {
@@ -4714,11 +5710,7 @@ async function handleAdminImport() {
 }
 
 function setConsentStatus(message, isWarn = false) {
-  if (!elements.consentStatus) return;
-  const text = String(message || "").trim();
-  elements.consentStatus.textContent = text;
-  elements.consentStatus.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.consentStatus, Boolean(text));
+  updateStatusMessage(elements.consentStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
 function needsConsent() {
@@ -4896,6 +5888,9 @@ function setAccountControlsEnabled(enabled) {
       control.disabled = !enabled;
     }
   });
+  if (elements.account) {
+    elements.account.setAttribute("aria-busy", String(!enabled));
+  }
   if (elements.accountBtn) {
     elements.accountBtn.disabled = !enabled;
     elements.accountBtn.textContent = enabled ? "Konto" : "Konto (login)";
@@ -4919,6 +5914,12 @@ function setBillingControlsEnabled(enabled) {
       control.disabled = !enabled;
     }
   });
+  if (elements.billing) {
+    elements.billing.setAttribute("aria-busy", String(!enabled));
+  }
+  if (elements.billingUpdateForm) {
+    elements.billingUpdateForm.setAttribute("aria-busy", String(!enabled));
+  }
 }
 
 function normalizePlanValue(plan) {
@@ -5588,7 +6589,7 @@ function requireAuthGuard(message = "Log ind for at fortsætte", options = {}) {
   if (state.session?.user) {
     if (!options.ignoreConsent && needsConsent()) {
       showScreen("consent");
-      setConsentStatus("Accepter vilkår og privatlivspolitik for at fortsætte.", true);
+      setConsentStatus("Markér begge felter for at fortsætte.", true);
       return false;
     }
     return true;
@@ -5728,9 +6729,7 @@ function canRunDemoQuiz() {
 }
 
 function setDemoStatus(message, isWarn = false) {
-  if (!elements.demoStatus) return;
-  elements.demoStatus.textContent = message || "";
-  elements.demoStatus.classList.toggle("warn", isWarn);
+  updateStatusMessage(elements.demoStatus, message, { isWarn, autoHide: false, focusOnWarn: false });
 }
 
 function updateDemoCardTitle() {
@@ -5738,7 +6737,7 @@ function updateDemoCardTitle() {
   if (state.demoQuiz.status === "active") {
     elements.demoCardTitle.textContent = "Mini-runde i gang";
   } else if (state.demoQuiz.status === "complete") {
-    elements.demoCardTitle.textContent = "Prøvespil afsluttet";
+    elements.demoCardTitle.textContent = "Prøverunde afsluttet";
   } else {
     elements.demoCardTitle.textContent = "Træk dagens mini-runde";
   }
@@ -5750,10 +6749,10 @@ function updateDemoAvailability() {
 
   if (!state.backendAvailable) {
     elements.demoStartBtn.disabled = true;
-    elements.demoStartBtn.textContent = "Prøvespil er offline";
-    setDemoStatus(state.configError || "Prøvespil er ikke tilgængeligt lige nu.", true);
+    elements.demoStartBtn.textContent = "Prøverunde er offline";
+    setDemoStatus(state.configError || "Prøverunden er ikke tilgængelig lige nu.", true);
     if (elements.demoLimit) {
-      elements.demoLimit.textContent = "Prøvespil er offline";
+      elements.demoLimit.textContent = "Prøverunde er offline";
     }
     updateDemoCardTitle();
     return;
@@ -5761,7 +6760,7 @@ function updateDemoAvailability() {
 
   const canStart = canRunDemoQuiz();
   elements.demoStartBtn.disabled = !canStart;
-  elements.demoStartBtn.textContent = canStart ? "Start prøvespil" : "Prøvespil brugt i dag";
+  elements.demoStartBtn.textContent = canStart ? "Start prøverunde" : "Prøverunde brugt i dag";
   if (canStart) {
     setDemoStatus("Klar til at starte.");
     if (elements.demoLimit) {
@@ -5770,7 +6769,7 @@ function updateDemoAvailability() {
   } else {
     const remaining = getDemoRemainingMs();
     const waitText = formatDemoWait(remaining);
-    setDemoStatus(`Dagens prøvespil er brugt. Prøv igen om ${waitText}.`, true);
+    setDemoStatus(`Dagens prøverunde er brugt. Prøv igen om ${waitText}.`, true);
     if (elements.demoLimit) {
       elements.demoLimit.textContent = `Tilgængelig igen om ${waitText}`;
     }
@@ -6193,7 +7192,7 @@ function completeDemoQuiz() {
   if (demoResult) {
     saveDemoResult(demoResult);
   }
-  setDemoStatus("Prøvespil gennemført. Kom tilbage i morgen for en ny runde.");
+  setDemoStatus("Prøverunde gennemført. Kom tilbage i morgen for en ny runde.");
   setDemoView("result");
   updateDemoAvailability();
 }
@@ -6219,7 +7218,7 @@ function closeDemoQuiz() {
 async function startDemoQuiz() {
   if (!elements.demoStartBtn) return;
   if (!state.backendAvailable) {
-    setDemoStatus(state.configError || "Prøvespil er ikke tilgængeligt lige nu.", true);
+    setDemoStatus(state.configError || "Prøverunden er ikke tilgængelig lige nu.", true);
     updateDemoAvailability();
     return;
   }
@@ -6229,7 +7228,7 @@ async function startDemoQuiz() {
   }
 
   state.demoQuiz.status = "loading";
-  setDemoStatus("Trækker dagens prøvespil …");
+  setDemoStatus("Trækker dagens prøverunde …");
   setDemoView("loading");
   elements.demoStartBtn.disabled = true;
 
@@ -6249,18 +7248,18 @@ async function startDemoQuiz() {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       const errorCode = String(data?.error || "").toLowerCase();
-      let message = "Prøvespil kunne ikke startes.";
+      let message = "Prøverunde kunne ikke startes.";
       if (errorCode === "rate_limited") {
-        message = "Dagens prøvespil er allerede brugt.";
+        message = "Dagens prøverunde er allerede brugt.";
       } else if (errorCode === "data_missing") {
-        message = "Prøvespillet kunne ikke bygges endnu.";
+        message = "Prøverunden kunne ikke bygges endnu.";
       }
       throw new Error(message);
     }
     const data = await res.json();
     const questions = buildDemoQuestions(data);
     if (questions.length < DEMO_TOTAL_QUESTIONS) {
-      throw new Error("Prøvespillet kunne ikke bygges endnu.");
+      throw new Error("Prøverunden kunne ikke bygges endnu.");
     }
 
     localStorage.setItem(STORAGE_KEYS.demoTrialLastRun, String(Date.now()));
@@ -6275,7 +7274,7 @@ async function startDemoQuiz() {
     setDemoView("active");
     renderDemoQuestion();
   } catch (error) {
-    setDemoStatus(error.message || "Prøvespil kunne ikke startes.", true);
+    setDemoStatus(error.message || "Prøverunde kunne ikke startes.", true);
     state.demoQuiz.status = "idle";
     setDemoView("idle");
   } finally {
@@ -6607,7 +7606,7 @@ async function handleProfileSave() {
     updateUserChip();
     setAccountStatus("Profil opdateret.");
   } else {
-    setAccountStatus("Kunne ikke gemme profil.", true);
+    setAccountStatus("Kunne ikke gemme profil. Tjek navnet og prøv igen.", true);
   }
 }
 
@@ -6622,13 +7621,13 @@ async function handleConsentSave() {
 
   if (!acceptTerms && !acceptPrivacy) {
     const message = gateActive
-      ? "Du skal acceptere vilkår og privatlivspolitik for at fortsætte."
+      ? "Markér begge felter for at fortsætte."
       : "Vælg mindst ét samtykke.";
     setStatus(message, true);
     return;
   }
   if (gateActive && !(acceptTerms && acceptPrivacy)) {
-    setStatus("Du skal acceptere vilkår og privatlivspolitik for at fortsætte.", true);
+    setStatus("Markér begge felter for at fortsætte.", true);
     return;
   }
 
@@ -6654,11 +7653,7 @@ async function handleConsentSave() {
 }
 
 function setCheckoutStatus(message, isWarn = false) {
-  if (!elements.checkoutStatus) return;
-  const text = String(message || "").trim();
-  elements.checkoutStatus.textContent = text;
-  elements.checkoutStatus.classList.toggle("warn", Boolean(text) && isWarn);
-  setElementVisible(elements.checkoutStatus, Boolean(text));
+  updateStatusMessage(elements.checkoutStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
 function setCheckoutControlsEnabled(enabled) {
@@ -6683,6 +7678,12 @@ function setCheckoutControlsEnabled(enabled) {
   }
   if (elements.checkoutPlanLifetimeBtn) {
     elements.checkoutPlanLifetimeBtn.disabled = !canSwitchPlans || !hasLifetime;
+  }
+  if (elements.checkout) {
+    elements.checkout.setAttribute("aria-busy", String(!enabled));
+  }
+  if (elements.checkoutForm) {
+    elements.checkoutForm.setAttribute("aria-busy", String(!enabled));
   }
 }
 
@@ -7750,9 +8751,14 @@ async function saveOwnKey() {
   if (!requireAuthGuard()) return;
   const key = elements.ownKeyInput ? elements.ownKeyInput.value.trim() : "";
   if (!key) {
+    if (elements.ownKeyInput) {
+      elements.ownKeyInput.focus();
+    }
+    setInputInvalid(elements.ownKeyInput, true);
     setAccountStatus("Indtast din nøgle først.", true);
     return;
   }
+  setInputInvalid(elements.ownKeyInput, false);
   setAccountStatus("Gemmer nøgle …");
   try {
     const res = await apiFetch("/api/own-key", {
@@ -7763,7 +8769,7 @@ async function saveOwnKey() {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       const errorCode = String(data?.error || "").toLowerCase();
-      let message = "Kunne ikke gemme nøgle.";
+      let message = "Kunne ikke gemme nøgle. Tjek nøglen og prøv igen.";
       if (res.status === 401 || errorCode === "unauthenticated") {
         message = "Log ind for at gemme nøgle.";
       } else if (res.status === 400) {
@@ -7794,7 +8800,7 @@ async function saveOwnKey() {
     setAccountStatus("Nøglen er gemt.");
     checkAiAvailability();
   } catch (error) {
-    setAccountStatus("Kunne ikke gemme nøgle.", true);
+    setAccountStatus("Kunne ikke gemme nøgle. Tjek nøglen og prøv igen.", true);
   }
 }
 
@@ -7806,7 +8812,7 @@ async function clearOwnKey() {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       const errorCode = String(data?.error || "").toLowerCase();
-      let message = "Kunne ikke fjerne nøgle.";
+      let message = "Kunne ikke fjerne nøgle. Prøv igen om lidt.";
       if (res.status === 401 || errorCode === "unauthenticated") {
         message = "Log ind for at fjerne nøgle.";
       } else if (res.status === 429 || errorCode === "rate_limited") {
@@ -7826,7 +8832,7 @@ async function clearOwnKey() {
     setAccountStatus("Nøglen er fjernet.");
     checkAiAvailability();
   } catch (error) {
-    setAccountStatus("Kunne ikke fjerne nøgle.", true);
+    setAccountStatus("Kunne ikke fjerne nøgle. Prøv igen om lidt.", true);
   }
 }
 
@@ -7871,7 +8877,7 @@ async function handleExportData() {
 async function handleDeleteAccount() {
   if (!requireAuthGuard()) return;
   const confirmed = window.confirm(
-    "Er du sikker? Dette sletter din konto og alle data permanent."
+    "Slet konto permanent? Alle data fjernes og kan ikke gendannes."
   );
   if (!confirmed) return;
   const res = await apiFetch("/api/account/delete", {
@@ -7883,7 +8889,7 @@ async function handleDeleteAccount() {
     setAccountStatus("Konto slettet.");
     await handleLogout();
   } else {
-    setAccountStatus("Kunne ikke slette konto.", true);
+    setAccountStatus("Kunne ikke slette konto. Prøv igen eller kontakt support.", true);
   }
 }
 
@@ -8163,7 +9169,9 @@ function normalizeCategory(category) {
   const trimmed = category.trim();
   if (!trimmed) return null;
   if (DEPRECATED_CATEGORY.test(trimmed)) return null;
-  const alias = CATEGORY_ALIASES[trimmed] || CATEGORY_ALIASES[trimmed.toLowerCase()];
+  const alias =
+    CATEGORY_ALIAS_LOOKUP.get(trimmed) ||
+    CATEGORY_ALIAS_LOOKUP.get(trimmed.toLowerCase());
   return alias || trimmed;
 }
 
@@ -16864,7 +17872,7 @@ async function checkAiAvailability() {
       return;
     }
     if (needsConsent()) {
-      const message = "Accepter vilkår for at fortsætte.";
+      const message = "Markér vilkår for at fortsætte.";
       setAiStatus({
         available: false,
         model: null,
@@ -17232,6 +18240,7 @@ function attachEvents() {
     elements.adminRefreshBtn.addEventListener("click", () => {
       void refreshAdminMetrics();
       void loadAdminUsers({ page: state.admin.users.page });
+      void loadAdminDatasetVersions();
       const selectedId = getAdminSelectedUserId();
       if (selectedId) {
         void loadAdminUserDetail(selectedId);
@@ -17386,6 +18395,79 @@ function attachEvents() {
   }
   if (elements.adminImportContent) {
     elements.adminImportContent.addEventListener("input", () => setAdminImportStatus(""));
+  }
+  if (elements.adminDatasetRefreshBtn) {
+    elements.adminDatasetRefreshBtn.addEventListener("click", () => {
+      void loadAdminDatasetVersions();
+    });
+  }
+  if (elements.adminDatasetType) {
+    elements.adminDatasetType.addEventListener("change", () => {
+      state.admin.datasets.type = elements.adminDatasetType.value || "mcq";
+      state.admin.datasets.selectedVersionId = null;
+      state.admin.datasets.page = 1;
+      state.admin.datasets.bulkSelection.clear();
+      void loadAdminDatasetVersions({ dataset: state.admin.datasets.type });
+    });
+  }
+  if (elements.adminDatasetVersion) {
+    elements.adminDatasetVersion.addEventListener("change", () => {
+      state.admin.datasets.selectedVersionId = elements.adminDatasetVersion.value || null;
+      state.admin.datasets.page = 1;
+      state.admin.datasets.bulkSelection.clear();
+      void loadAdminDatasetItems({ page: 1 });
+      void refreshAdminDatasetQa();
+    });
+  }
+  if (elements.adminDatasetSearchBtn) {
+    elements.adminDatasetSearchBtn.addEventListener("click", handleAdminDatasetSearch);
+  }
+  if (elements.adminDatasetClearBtn) {
+    elements.adminDatasetClearBtn.addEventListener("click", handleAdminDatasetClear);
+  }
+  if (elements.adminDatasetSearch) {
+    elements.adminDatasetSearch.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        void handleAdminDatasetSearch();
+      }
+    });
+  }
+  if (elements.adminDatasetPrevBtn) {
+    elements.adminDatasetPrevBtn.addEventListener("click", () => {
+      const nextPage = Math.max(1, state.admin.datasets.page - 1);
+      void loadAdminDatasetItems({ page: nextPage });
+    });
+  }
+  if (elements.adminDatasetNextBtn) {
+    elements.adminDatasetNextBtn.addEventListener("click", () => {
+      const totalPages = Math.max(
+        1,
+        Math.ceil((state.admin.datasets.total || 0) / state.admin.datasets.perPage)
+      );
+      const nextPage = Math.min(totalPages, state.admin.datasets.page + 1);
+      void loadAdminDatasetItems({ page: nextPage });
+    });
+  }
+  if (elements.adminDatasetNewBtn) {
+    elements.adminDatasetNewBtn.addEventListener("click", handleAdminDatasetNewItem);
+  }
+  if (elements.adminDatasetSaveBtn) {
+    elements.adminDatasetSaveBtn.addEventListener("click", handleAdminDatasetSave);
+  }
+  if (elements.adminDatasetDeleteBtn) {
+    elements.adminDatasetDeleteBtn.addEventListener("click", handleAdminDatasetDelete);
+  }
+  if (elements.adminDatasetPublishBtn) {
+    elements.adminDatasetPublishBtn.addEventListener("click", handleAdminDatasetPublish);
+  }
+  if (elements.adminDatasetCloneBtn) {
+    elements.adminDatasetCloneBtn.addEventListener("click", handleAdminDatasetClone);
+  }
+  if (elements.adminDatasetEmptyBtn) {
+    elements.adminDatasetEmptyBtn.addEventListener("click", handleAdminDatasetEmptyDraft);
+  }
+  if (elements.adminDatasetBulkApplyBtn) {
+    elements.adminDatasetBulkApplyBtn.addEventListener("click", handleAdminDatasetBulkApply);
   }
   if (elements.upgradeBtn) {
     elements.upgradeBtn.addEventListener("click", handleCheckout);

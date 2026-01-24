@@ -1,7 +1,7 @@
 const { optionalEnv } = require("./env");
 const { callOpenAiJson } = require("./openai");
 const { validatePayload } = require("./validate");
-const { normalizeNewlines, stripBom } = require("./rawdataParser");
+const { normalizeNewlines, stripBom, HUMAN_CATEGORY_LABELS } = require("./rawdataParser");
 
 const DEFAULT_IMPORT_MODEL = "gpt-4o-mini";
 const MAX_AI_IMPORT_CHARS = 250_000;
@@ -41,7 +41,8 @@ function buildSystemPrompt(type) {
       "- Hvis input bruger point (fx 3/-1, 'point', '+3'), vælg højeste positive score som korrekt.",
       "- Hvis (korrekt)/(rigtigt) findes og konflikter, følg markeringen og tilføj warning.",
       "- Fjern pointangivelser og støj fra svarlinjerne.",
-      "- Brug 'Ukendt' hvis kategori mangler.",
+      `- Kategorier skal være en af: ${HUMAN_CATEGORY_LABELS.join(", ")}.`,
+      "- Hvis kategori mangler eller ikke matcher listen sikkert, spring spørgsmålet over og tilføj warning.",
       "- Hold spørgsmål og svar på én linje hver.",
     ].join("\n");
   }
@@ -60,6 +61,8 @@ function buildSystemPrompt(type) {
       "- Hvis delspørgsmål mangler bogstav, brug a), b), c) i rækkefølge.",
       "- Behold linjeskift i svar, men undgå tomme linjer.",
       "- Hvis kilde mangler, udelad Kilde-linjen.",
+      `- Kategorier skal være en af: ${HUMAN_CATEGORY_LABELS.join(", ")}.`,
+      "- Hvis kategori mangler eller ikke matcher listen sikkert, spring opgaven over og tilføj warning.",
     ].join("\n");
   }
 

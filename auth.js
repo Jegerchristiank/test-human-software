@@ -143,11 +143,60 @@ function applyTheme(theme) {
   safeStorageSet(STORAGE_KEYS.theme, nextTheme);
 }
 
+function setFieldInvalid(field, isInvalid) {
+  if (!field) return;
+  if (isInvalid) {
+    field.setAttribute("aria-invalid", "true");
+  } else {
+    field.removeAttribute("aria-invalid");
+  }
+}
+
+function focusFirstAuthError() {
+  const mode = getAuthMode();
+  const emailValue = elements.emailInput ? elements.emailInput.value.trim() : "";
+  const passwordValue = elements.passwordInput ? elements.passwordInput.value : "";
+  const emailInvalid = Boolean(elements.emailInput) && (!emailValue || !isValidEmail(emailValue));
+  const passwordInvalid = Boolean(elements.passwordInput) &&
+    (!passwordValue || (mode === "sign-up" && passwordValue.length < MIN_PASSWORD_LENGTH));
+
+  setFieldInvalid(elements.emailInput, emailInvalid);
+  setFieldInvalid(elements.passwordInput, passwordInvalid);
+  setFieldInvalid(elements.nameInput, false);
+
+  const target = emailInvalid
+    ? elements.emailInput
+    : passwordInvalid
+      ? elements.passwordInput
+      : null;
+  if (target && typeof target.focus === "function") {
+    target.focus();
+    return;
+  }
+  if (elements.status && typeof elements.status.focus === "function") {
+    elements.status.tabIndex = -1;
+    elements.status.focus();
+  }
+}
+
+function clearAuthInvalidStates() {
+  setFieldInvalid(elements.emailInput, false);
+  setFieldInvalid(elements.passwordInput, false);
+  setFieldInvalid(elements.nameInput, false);
+}
+
 function setStatus(message, isWarn = false) {
   if (!elements.status) return;
   const text = String(message || "").trim();
   elements.status.textContent = text;
   elements.status.classList.toggle("warn", Boolean(text) && isWarn);
+  elements.status.setAttribute("aria-live", isWarn ? "assertive" : "polite");
+  elements.status.setAttribute("role", isWarn ? "alert" : "status");
+  if (text && isWarn) {
+    focusFirstAuthError();
+  } else {
+    clearAuthInvalidStates();
+  }
 }
 
 function setControlsEnabled(enabled) {
@@ -165,12 +214,15 @@ function setControlsEnabled(enabled) {
       control.disabled = !enabled;
     }
   });
+  if (elements.form) {
+    elements.form.setAttribute("aria-busy", String(!enabled));
+  }
 }
 
 async function loadConfig() {
   const res = await fetch("/api/config", { cache: "no-store" });
   if (!res.ok) {
-    let detail = "Serveren svarer ikke lige nu.";
+    let detail = "Serveren svarer ikke lige nu. Prøv igen om lidt.";
     try {
       const data = await res.json();
       if (data?.error) {
@@ -214,7 +266,7 @@ function initSupabaseClient(config) {
   if (supabase) return;
   const supabaseLib = canUseDOM ? window.supabase : null;
   if (!supabaseLib?.createClient || !config?.supabaseUrl || !config?.supabaseAnonKey) {
-    throw new Error("Supabase klienten er ikke klar.");
+    throw new Error("Supabase klienten er ikke klar. Prøv igen om lidt.");
   }
   supabase = supabaseLib.createClient(config.supabaseUrl, config.supabaseAnonKey, {
     auth: {
@@ -310,19 +362,19 @@ function mapAuthError(error, { mode } = {}) {
     normalizedCode === "invalid_credentials" ||
     normalizedMessage.includes("invalid login credentials")
   ) {
-    return "Forkert email eller adgangskode.";
+    return "Forkert email eller adgangskode. Prøv igen.";
   }
   if (
     normalizedCode === "user_already_exists" ||
     normalizedMessage.includes("user already registered")
   ) {
-    return "Der findes allerede en konto med den email.";
+    return "Der findes allerede en konto med den email. Log ind i stedet.";
   }
   if (
     normalizedCode === "email_not_confirmed" ||
     normalizedMessage.includes("email not confirmed")
   ) {
-    return "Bekræft din email før du logger ind.";
+    return "Bekræft din email før du logger ind. Tjek indbakken og prøv igen.";
   }
   if (
     normalizedCode === "invalid_email" ||
@@ -348,13 +400,13 @@ function mapAuthError(error, { mode } = {}) {
     return "For mange forsøg. Vent lidt og prøv igen.";
   }
   if (normalizedCode === "oauth_url_missing" || normalizedMessage.includes("oauth url")) {
-    return "Kunne ikke starte OAuth-login.";
+    return "Kunne ikke starte OAuth-login. Prøv igen eller brug email-login.";
   }
   if (
     normalizedCode === "signup_disabled" ||
     normalizedMessage.includes("signups not allowed")
   ) {
-    return "Oprettelse er slået fra lige nu.";
+    return "Oprettelse er slået fra lige nu. Prøv igen senere.";
   }
   if (
     normalizedMessage.includes("network") ||
@@ -363,9 +415,13 @@ function mapAuthError(error, { mode } = {}) {
     return "Netværksfejl. Prøv igen om lidt.";
   }
 
-  if (mode === "sign-up") return "Kunne ikke oprette konto.";
-  if (mode === "oauth") return "OAuth-login fejlede.";
-  return "Kunne ikke logge ind.";
+  if (mode === "sign-up") {
+    return "Kunne ikke oprette konto. Tjek felterne og prøv igen.";
+  }
+  if (mode === "oauth") {
+    return "OAuth-login fejlede. Prøv igen eller vælg en anden metode.";
+  }
+  return "Kunne ikke logge ind. Tjek email og adgangskode og prøv igen.";
 }
 
 async function getExistingSession() {
@@ -391,7 +447,7 @@ async function handleEmailAuth(event) {
     await ensureSupabaseReady();
   } catch (error) {
     logAuthError("email-init", error);
-    setStatus("Login er ikke klar endnu.", true);
+    setStatus("Login er ikke klar endnu. Prøv igen om lidt.", true);
     return;
   }
   const mode = getAuthMode();
@@ -420,7 +476,7 @@ async function handleEmailAuth(event) {
         window.location.replace(getRedirectPath());
         return;
       }
-      setStatus("Tjek din email for at bekræfte din konto.");
+      setStatus("Tjek din email for at bekræfte din konto og fortsæt.");
       return;
     }
 
@@ -433,7 +489,7 @@ async function handleEmailAuth(event) {
       window.location.replace(getRedirectPath());
       return;
     }
-    setStatus("Kunne ikke logge ind endnu.", true);
+    setStatus("Kunne ikke logge ind endnu. Prøv igen om lidt.", true);
   } catch (error) {
     logAuthError("email", error);
     setStatus(mapAuthError(error, { mode }), true);
@@ -493,7 +549,7 @@ async function initAuth() {
     if (redirectIfAuthenticated(session)) return;
     subscribeToAuthChanges();
   } catch (error) {
-    setStatus(error.message || "Login er ikke klar endnu.", true);
+    setStatus(error.message || "Login er ikke klar endnu. Prøv igen om lidt.", true);
   } finally {
     setControlsEnabled(true);
   }

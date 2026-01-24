@@ -75,7 +75,7 @@
               </div>
               <h1>Human Biologi Studio</h1>
               <p>
-                Byg en runde på få sekunder, træn MCQ og kortsvar i samme flow, og se præcis, hvor du løfter din 7-trinsscore.
+                Byg en runde på få sekunder, træn MCQ og kortsvar i samme flow, og se præcis hvad der løfter din 7-trinsscore.
               </p>
               <div class="hero-meta-row" data-testid="auth-hero-highlights">
                 <span class="hero-meta-item">MCQ + kortsvar</span>
@@ -83,11 +83,11 @@
                 <span class="hero-meta-item">AI-hjælp på Pro</span>
               </div>
               <div class="sales-cta" data-testid="auth-hero-cta">
-                <a class="btn primary" href="/sign-up" data-testid="auth-cta-start">Start gratis</a>
-                <button id="auth-demo-btn" data-testid="auth-demo-btn" class="btn ghost" type="button">Se demo</button>
+                <a class="btn primary" href="/sign-up" data-testid="auth-cta-start">Opret gratis konto</a>
+                <button id="auth-demo-btn" data-testid="auth-demo-btn" class="btn ghost" type="button">Start prøverunde</button>
               </div>
               <div class="auth-note" id="auth-note" data-testid="auth-note">
-                Demo gemmer kun lokalt og giver ikke adgang til Pro.
+                Prøverunden gemmes kun lokalt og giver ikke adgang til Pro.
               </div>
               <div class="sales-price" data-testid="auth-hero-price">
                 <div class="price-pill" data-testid="index__auth-hero-copy--auth-hero-price__price-pill">Pro 179 kr/md eller 1.500 kr</div>
@@ -141,8 +141,8 @@
 
           <section class="sales-section reveal" data-testid="feature-section" style="--delay: 0.1s">
             <div class="section-header" data-testid="feature-section-header">
-              <h2>Et komplet studieflow, samlet ét sted</h2>
-              <p>Byg runden, svar, få feedback og følg dit niveau uden at hoppe mellem værktøjer.</p>
+              <h2>Fra spørgsmål til score på ét sted</h2>
+              <p>Byg runden, svar, få feedback og se din progression uden at hoppe mellem værktøjer.</p>
             </div>
             <div class="feature-grid" data-testid="feature-grid">
               <div class="feature-card" data-testid="feature-card-mcq-kortsvar">
@@ -180,13 +180,13 @@
 
           <section class="sales-section demo-section reveal" id="demo-section" data-testid="demo-section" style="--delay: 0.12s">
             <div class="section-header" data-testid="demo-section-header">
-              <h2>Prøv flowet på 6 spørgsmål</h2>
+              <h2>Prøverunde på 6 spørgsmål</h2>
               <p>5 multiple choice og 1 kortsvar, trukket tilfældigt fra de rigtige spørgsmål. Ét forsøg pr. dag.</p>
             </div>
             <div class="demo-grid" data-testid="demo-grid">
               <div class="demo-copy" data-testid="demo-copy">
-                <div class="demo-pill" data-testid="index__demo-grid--demo-copy__demo-pill">Prøvespil</div>
-                <h3>Se hvordan runden føles</h3>
+                <div class="demo-pill" data-testid="index__demo-grid--demo-copy__demo-pill">Prøverunde</div>
+                <h3>Se tempo og feedback i praksis</h3>
                 <p>Få et realistisk indtryk af tempo, feedback og scoring — helt uden login.</p>
                 <div class="demo-meta" data-testid="index__demo-grid--demo-copy__demo-meta">
                   <span>6 spørgsmål</span>
@@ -198,7 +198,7 @@
               <div class="panel demo-card" id="demo-card" data-testid="demo-card">
                 <div class="demo-card-header" data-testid="index__demo-grid--demo-card__demo-card-header">
                   <div data-testid="index__demo-card--demo-card-header__div">
-                    <div class="demo-card-label" data-testid="index__demo-card--demo-card-header__demo-card-label">Prøvespil</div>
+                    <div class="demo-card-label" data-testid="index__demo-card--demo-card-header__demo-card-label">Prøverunde</div>
                     <div class="demo-card-title" id="demo-card-title" data-testid="demo-card-title">Træk dagens mini-runde</div>
                   </div>
                   <div class="demo-card-meta" data-testid="index__demo-card--demo-card-header__demo-card-meta">
@@ -209,11 +209,11 @@
                 <div class="demo-body" data-testid="index__demo-grid--demo-card__demo-body">
                   <div class="demo-loading hidden" id="demo-loading" data-testid="demo-loading" aria-live="polite">
                     <div class="demo-loading-spinner" aria-hidden="true" data-testid="index__demo-body--demo-loading__demo-loading-spinner"></div>
-                    <div class="demo-loading-text" data-testid="index__demo-body--demo-loading__demo-loading-text">Trækker dagens prøvespil …</div>
+                    <div class="demo-loading-text" data-testid="index__demo-body--demo-loading__demo-loading-text">Trækker dagens prøverunde …</div>
                   </div>
                   <div class="demo-empty" id="demo-empty" data-testid="demo-empty">
                     <p>Du får 5 MCQ og 1 kortsvar fra de rigtige opgaver med det samme.</p>
-                    <button id="demo-start-btn" data-testid="demo-start-btn" class="btn primary" type="button">Start prøvespil</button>
+                    <button id="demo-start-btn" data-testid="demo-start-btn" class="btn primary" type="button">Start prøverunde</button>
                     <div class="demo-limit" id="demo-limit" data-testid="demo-limit">Én gang pr. dag</div>
                   </div>
                   <div class="demo-question hidden" id="demo-question" data-testid="demo-question">
@@ -248,7 +248,7 @@
                   </div>
                   <div class="demo-result hidden" id="demo-result" data-testid="demo-result">
                     <div class="demo-result-score" id="demo-result-score" data-testid="demo-result-score">Score 0/6</div>
-                    <p class="demo-result-copy">Du har gennemført prøvespillet.</p>
+                    <p class="demo-result-copy">Du har gennemført prøverunden.</p>
                     <div class="demo-result-actions" data-testid="demo-result-actions">
                       <a class="btn primary" href="/sign-up" data-testid="demo-cta-full-access">Få fuld adgang</a>
                       <button id="demo-close-btn" data-testid="demo-close-btn" class="btn ghost small" type="button">Luk</button>
@@ -302,7 +302,7 @@
 
           <section class="sales-section legal-section reveal" data-testid="legal-section" style="--delay: 0.18s">
             <div class="section-header" data-testid="legal-section-header">
-              <h2>Juridiske dokumenter</h2>
+              <h2>Vilkår og politikker</h2>
               <p>Læs vilkår, handelsbetingelser og privatlivspolitikker, før du opretter konto.</p>
             </div>
             <div class="legal-links" data-testid="front-legal-links">
@@ -397,7 +397,7 @@
                 Byg en ny runde på få sekunder og følg, hvordan du ligger i forhold til 12-målet.
               </p>
               <div class="landing-actions" data-testid="landing-actions">
-                <button id="landing-start-btn" data-testid="landing-start-btn" class="btn primary" type="button">Start runde</button>
+                <button id="landing-start-btn" data-testid="landing-start-btn" class="btn primary" type="button">Start ny runde</button>
               </div>
             </div>
             <div class="dashboard-highlight" data-testid="landing-highlight">
@@ -817,7 +817,7 @@
                   <button id="finish-round-btn" data-testid="finish-round-btn" class="btn secondary" type="button">
                     Afslut runde og få resultat
                   </button>
-                  <button id="cancel-round-btn" data-testid="cancel-round-btn" class="btn danger" type="button">Annuller runde</button>
+                  <button id="cancel-round-btn" data-testid="cancel-round-btn" class="btn danger" type="button">Annuller denne runde</button>
                 </div>
                 <div class="hint" id="paused-round-note" data-testid="paused-round-note">Ændringer i menuen påvirker næste runde.</div>
               </section>
@@ -837,7 +837,7 @@
                 </div>
 
                 <div class="cta-stack" data-testid="index__menu-column--menu-summary-panel__cta-stack">
-                  <button id="start-btn" data-testid="start-btn" class="btn primary" type="button">Start spil</button>
+                <button id="start-btn" data-testid="start-btn" class="btn primary" type="button">Start runde</button>
                 </div>
                 <details class="more-drawer">
                   <summary>
@@ -849,6 +849,128 @@
                   </div>
                 </details>
                 <div class="hint" id="selection-hint" data-testid="selection-hint">Vælg mindst ét emne og ét sæt for at starte.</div>
+              </section>
+
+              <section class="panel admin-datasets-panel reveal" data-testid="admin-datasets-panel" style="--delay: 0.12s">
+                <div class="panel-header" data-testid="admin-datasets-header">
+                  <h2>Datasæt</h2>
+                  <p>Gennemse, redigér og publicér MCQ, Kortsvar og Sygdomslære.</p>
+                </div>
+
+                <div class="admin-section" data-testid="admin-dataset-controls">
+                  <div class="admin-dataset-toolbar" data-testid="admin-dataset-toolbar">
+                    <div class="field" data-testid="admin-dataset-type-field">
+                      <label for="admin-dataset-type">Datasæt</label>
+                      <select id="admin-dataset-type" data-testid="admin-dataset-type">
+                        <option value="mcq">MCQ</option>
+                        <option value="kortsvar">Kortsvar</option>
+                        <option value="sygdomslaere">Sygdomslære</option>
+                      </select>
+                    </div>
+                    <div class="field" data-testid="admin-dataset-version-field">
+                      <label for="admin-dataset-version">Version</label>
+                      <select id="admin-dataset-version" data-testid="admin-dataset-version"></select>
+                    </div>
+                    <div class="admin-toolbar-actions" data-testid="admin-dataset-actions">
+                      <button id="admin-dataset-refresh-btn" data-testid="admin-dataset-refresh-btn" class="btn ghost" type="button">Opdatér</button>
+                      <button id="admin-dataset-clone-btn" data-testid="admin-dataset-clone-btn" class="btn ghost" type="button">Klon live</button>
+                      <button id="admin-dataset-empty-btn" data-testid="admin-dataset-empty-btn" class="btn ghost" type="button">Ny tom kladde</button>
+                      <button id="admin-dataset-new-btn" data-testid="admin-dataset-new-btn" class="btn ghost" type="button">Nyt item</button>
+                      <button id="admin-dataset-publish-btn" data-testid="admin-dataset-publish-btn" class="btn primary" type="button">Publicér</button>
+                    </div>
+                  </div>
+                  <div class="admin-status hidden" id="admin-dataset-status" data-testid="admin-dataset-status" role="status" aria-live="polite"></div>
+                </div>
+
+                <div class="admin-section" data-testid="admin-dataset-filters">
+                  <div class="admin-user-toolbar" data-testid="admin-dataset-filter-grid">
+                    <div class="field" data-testid="admin-dataset-search-field">
+                      <label for="admin-dataset-search">Søg</label>
+                      <input id="admin-dataset-search" data-testid="admin-dataset-search" type="search" placeholder="Søg i spørgsmål, svar eller sygdomme" aria-describedby="admin-dataset-status" />
+                    </div>
+                    <div class="field" data-testid="admin-dataset-year-field">
+                      <label for="admin-dataset-year">År</label>
+                      <input id="admin-dataset-year" data-testid="admin-dataset-year" type="number" inputmode="numeric" placeholder="2024" aria-describedby="admin-dataset-status" />
+                    </div>
+                    <div class="field" data-testid="admin-dataset-session-field">
+                      <label for="admin-dataset-session">Session</label>
+                      <select id="admin-dataset-session" data-testid="admin-dataset-session">
+                        <option value="">Alle</option>
+                        <option value="ordinær">Ordinær</option>
+                        <option value="sygeeksamen">Sygeeksamen</option>
+                      </select>
+                    </div>
+                    <div class="field" data-testid="admin-dataset-category-field">
+                      <label for="admin-dataset-category">Kategori</label>
+                      <input id="admin-dataset-category" data-testid="admin-dataset-category" type="text" placeholder="Hjerte-kredsløb" aria-describedby="admin-dataset-status" />
+                    </div>
+                    <div class="field" data-testid="admin-dataset-priority-field">
+                      <label for="admin-dataset-priority">Prioritet</label>
+                      <select id="admin-dataset-priority" data-testid="admin-dataset-priority">
+                        <option value="">Alle</option>
+                        <option value="high">Høj</option>
+                        <option value="medium">Mellem</option>
+                        <option value="low">Lav</option>
+                        <option value="excluded">Ikke pensum</option>
+                      </select>
+                    </div>
+                    <div class="admin-toolbar-actions" data-testid="admin-dataset-filter-actions">
+                      <button id="admin-dataset-search-btn" data-testid="admin-dataset-search-btn" class="btn ghost" type="button">Søg</button>
+                      <button id="admin-dataset-clear-btn" data-testid="admin-dataset-clear-btn" class="btn ghost" type="button">Nulstil</button>
+                    </div>
+                  </div>
+                  <div class="admin-dataset-qa" id="admin-dataset-qa" data-testid="admin-dataset-qa"></div>
+                </div>
+
+                <div class="admin-dataset-grid" data-testid="admin-dataset-grid">
+                  <div class="admin-dataset-list" data-testid="admin-dataset-list">
+                    <div class="admin-user-list-header" data-testid="admin-dataset-list-header">
+                      <div>
+                        <h3>Items</h3>
+                        <p>Vælg et item for at redigere.</p>
+                      </div>
+                      <div class="admin-user-count" id="admin-dataset-count" data-testid="admin-dataset-count">0</div>
+                    </div>
+                    <div class="admin-dataset-list-body" id="admin-dataset-items" data-testid="admin-dataset-items"></div>
+                    <div class="admin-user-pagination" data-testid="admin-dataset-pagination">
+                      <button id="admin-dataset-prev-btn" data-testid="admin-dataset-prev-btn" class="btn ghost small" type="button">Forrige</button>
+                      <span id="admin-dataset-page" data-testid="admin-dataset-page">Side 1</span>
+                      <button id="admin-dataset-next-btn" data-testid="admin-dataset-next-btn" class="btn ghost small" type="button">Næste</button>
+                    </div>
+
+                    <div class="admin-dataset-bulk" data-testid="admin-dataset-bulk">
+                      <div class="field" data-testid="admin-dataset-bulk-field-field">
+                        <label for="admin-dataset-bulk-field">Bulk felt</label>
+                        <select id="admin-dataset-bulk-field" data-testid="admin-dataset-bulk-field">
+                          <option value="">Vælg felt</option>
+                          <option value="category">Kategori</option>
+                          <option value="session">Session</option>
+                          <option value="priority">Prioritet</option>
+                        </select>
+                      </div>
+                      <div class="field" data-testid="admin-dataset-bulk-value-field">
+                        <label for="admin-dataset-bulk-value">Ny værdi</label>
+                      <input id="admin-dataset-bulk-value" data-testid="admin-dataset-bulk-value" type="text" placeholder="Ny værdi" aria-describedby="admin-dataset-status" />
+                      </div>
+                      <div class="admin-toolbar-actions" data-testid="admin-dataset-bulk-actions">
+                        <button id="admin-dataset-bulk-apply-btn" data-testid="admin-dataset-bulk-apply-btn" class="btn ghost" type="button">Anvend på valgte</button>
+                      </div>
+                      <div class="field-hint" id="admin-dataset-bulk-hint" data-testid="admin-dataset-bulk-hint">Marker items i listen for at bruge bulk-redigering.</div>
+                    </div>
+                  </div>
+
+                  <div class="admin-dataset-detail" data-testid="admin-dataset-detail">
+                    <div class="admin-user-detail-empty" id="admin-dataset-detail-empty" data-testid="admin-dataset-detail-empty">
+                      Vælg et item eller opret et nyt for at redigere.
+                    </div>
+                    <div class="admin-dataset-editor hidden" id="admin-dataset-editor" data-testid="admin-dataset-editor"></div>
+                    <div class="account-actions" data-testid="admin-dataset-editor-actions">
+                      <button id="admin-dataset-save-btn" data-testid="admin-dataset-save-btn" class="btn primary" type="button">Gem item</button>
+                      <button id="admin-dataset-delete-btn" data-testid="admin-dataset-delete-btn" class="btn danger" type="button">Slet item permanent</button>
+                    </div>
+                    <div class="admin-status hidden" id="admin-dataset-editor-status" data-testid="admin-dataset-editor-status" role="status" aria-live="polite"></div>
+                  </div>
+                </div>
               </section>
             </div>
 
@@ -1327,7 +1449,7 @@
                 <div class="admin-user-toolbar" data-testid="admin-user-toolbar">
                   <div class="field" data-testid="admin-user-search-field">
                     <label for="admin-user-search">Søg</label>
-                    <input id="admin-user-search" data-testid="admin-user-search" type="search" placeholder="Søg efter email, navn eller id" />
+                    <input id="admin-user-search" data-testid="admin-user-search" type="search" placeholder="Søg efter email, navn eller id" aria-describedby="admin-user-status" />
                   </div>
                   <div class="field" data-testid="admin-user-search-mode-field">
                     <label for="admin-user-search-mode">Søg på</label>
@@ -1370,15 +1492,15 @@
                   <div class="admin-drawer-body" data-testid="admin-create-body">
                     <div class="field" data-testid="admin-create-email-field">
                       <label for="admin-create-email">Email</label>
-                      <input id="admin-create-email" data-testid="admin-create-email" type="email" placeholder="admin@domæne.dk" />
+                      <input id="admin-create-email" data-testid="admin-create-email" type="email" placeholder="admin@domæne.dk" aria-describedby="admin-create-status" />
                     </div>
                     <div class="field" data-testid="admin-create-name-field">
                       <label for="admin-create-name">Navn</label>
-                      <input id="admin-create-name" data-testid="admin-create-name" type="text" placeholder="Navn" />
+                      <input id="admin-create-name" data-testid="admin-create-name" type="text" placeholder="Navn" aria-describedby="admin-create-status" />
                     </div>
                     <div class="field" data-testid="admin-create-password-field">
                       <label for="admin-create-password">Kodeord</label>
-                      <input id="admin-create-password" data-testid="admin-create-password" type="password" placeholder="Minimum 8 tegn" />
+                      <input id="admin-create-password" data-testid="admin-create-password" type="password" placeholder="Minimum 8 tegn" aria-describedby="admin-create-status" />
                     </div>
                     <label class="toggle" data-testid="admin-create-invite-toggle">
                       <input type="checkbox" id="admin-create-invite" data-testid="admin-create-invite" />
@@ -1392,7 +1514,7 @@
                     </label>
                     <div class="field" data-testid="admin-create-plan-field">
                       <label for="admin-create-plan">Plan</label>
-                      <select id="admin-create-plan" data-testid="admin-create-plan">
+                      <select id="admin-create-plan" data-testid="admin-create-plan" aria-describedby="admin-create-status">
                         <option value="free">Free</option>
                         <option value="trial">Trial</option>
                         <option value="paid">Paid</option>
@@ -1406,7 +1528,7 @@
                     </label>
                     <div class="field" data-testid="admin-create-notes-field">
                       <label for="admin-create-notes">Admin noter</label>
-                      <textarea id="admin-create-notes" data-testid="admin-create-notes" rows="4" placeholder="Interne noter til teamet"></textarea>
+                      <textarea id="admin-create-notes" data-testid="admin-create-notes" rows="4" placeholder="Interne noter til teamet" aria-describedby="admin-create-status"></textarea>
                     </div>
                     <div class="account-actions" data-testid="admin-create-actions">
                       <button id="admin-create-btn" data-testid="admin-create-btn" class="btn primary" type="button">Opret bruger</button>
@@ -1459,15 +1581,15 @@
                           </div>
                           <div class="field" data-testid="admin-detail-name-field">
                             <label for="admin-detail-name">Navn</label>
-                            <input id="admin-detail-name" data-testid="admin-detail-name" type="text" />
+                            <input id="admin-detail-name" data-testid="admin-detail-name" type="text" aria-describedby="admin-detail-status" />
                           </div>
                           <div class="field" data-testid="admin-detail-email-field">
                             <label for="admin-detail-email-input">Email</label>
-                            <input id="admin-detail-email-input" data-testid="admin-detail-email-input" type="email" />
+                            <input id="admin-detail-email-input" data-testid="admin-detail-email-input" type="email" aria-describedby="admin-detail-status" />
                           </div>
                           <div class="field" data-testid="admin-detail-plan-field">
                             <label for="admin-detail-plan">Plan</label>
-                            <select id="admin-detail-plan" data-testid="admin-detail-plan">
+                            <select id="admin-detail-plan" data-testid="admin-detail-plan" aria-describedby="admin-detail-status">
                               <option value="free">Free</option>
                               <option value="trial">Trial</option>
                               <option value="paid">Paid</option>
@@ -1486,19 +1608,19 @@
                           </label>
                           <div class="field" data-testid="admin-detail-stripe-field">
                             <label for="admin-detail-stripe">Stripe customer id</label>
-                            <input id="admin-detail-stripe" data-testid="admin-detail-stripe" type="text" placeholder="cus_..." />
+                            <input id="admin-detail-stripe" data-testid="admin-detail-stripe" type="text" placeholder="cus_..." aria-describedby="admin-detail-status" />
                           </div>
                           <div class="field" data-testid="admin-detail-notes-field">
                             <label for="admin-detail-notes">Admin noter</label>
-                            <textarea id="admin-detail-notes" data-testid="admin-detail-notes" rows="4"></textarea>
+                            <textarea id="admin-detail-notes" data-testid="admin-detail-notes" rows="4" aria-describedby="admin-detail-status"></textarea>
                           </div>
                           <div class="field" data-testid="admin-detail-terms-field">
                             <label for="admin-detail-terms">Vilkår accepteret</label>
-                            <input id="admin-detail-terms" data-testid="admin-detail-terms" type="datetime-local" />
+                            <input id="admin-detail-terms" data-testid="admin-detail-terms" type="datetime-local" aria-describedby="admin-detail-status" />
                           </div>
                           <div class="field" data-testid="admin-detail-privacy-field">
                             <label for="admin-detail-privacy">Privatliv accepteret</label>
-                            <input id="admin-detail-privacy" data-testid="admin-detail-privacy" type="datetime-local" />
+                            <input id="admin-detail-privacy" data-testid="admin-detail-privacy" type="datetime-local" aria-describedby="admin-detail-status" />
                           </div>
                           <div class="account-actions" data-testid="admin-detail-profile-actions">
                             <button id="admin-user-save-btn" data-testid="admin-user-save-btn" class="btn primary" type="button">Gem ændringer</button>
@@ -1513,20 +1635,20 @@
                           </div>
                           <div class="field" data-testid="admin-detail-password-field">
                             <label for="admin-detail-password">Nyt kodeord</label>
-                            <input id="admin-detail-password" data-testid="admin-detail-password" type="password" placeholder="Nyt kodeord" />
+                            <input id="admin-detail-password" data-testid="admin-detail-password" type="password" placeholder="Nyt kodeord" aria-describedby="admin-detail-status" />
                           </div>
                           <div class="field" data-testid="admin-detail-role-field">
                             <label for="admin-detail-role">JWT role</label>
-                            <input id="admin-detail-role" data-testid="admin-detail-role" type="text" placeholder="authenticated" />
+                            <input id="admin-detail-role" data-testid="admin-detail-role" type="text" placeholder="authenticated" aria-describedby="admin-detail-status" />
                           </div>
                           <div class="field" data-testid="admin-detail-disable-reason-field">
                             <label for="admin-detail-disable-reason">Årsag til deaktivering</label>
-                            <input id="admin-detail-disable-reason" data-testid="admin-detail-disable-reason" type="text" placeholder="Valgfri årsag" />
+                            <input id="admin-detail-disable-reason" data-testid="admin-detail-disable-reason" type="text" placeholder="Valgfri årsag" aria-describedby="admin-detail-status" />
                           </div>
                           <div class="account-actions" data-testid="admin-detail-auth-actions">
                             <button id="admin-user-password-btn" data-testid="admin-user-password-btn" class="btn ghost" type="button">Sæt kodeord</button>
                             <button id="admin-user-confirm-email-btn" data-testid="admin-user-confirm-email-btn" class="btn ghost" type="button">Bekræft email</button>
-                            <button id="admin-user-ban-btn" data-testid="admin-user-ban-btn" class="btn danger" type="button">Deaktiver</button>
+                            <button id="admin-user-ban-btn" data-testid="admin-user-ban-btn" class="btn danger" type="button">Deaktiver bruger</button>
                             <button id="admin-user-unban-btn" data-testid="admin-user-unban-btn" class="btn ghost" type="button">Genaktiver</button>
                           </div>
                           <div class="field-hint" id="admin-detail-auth-meta" data-testid="admin-detail-auth-meta">—</div>
@@ -1559,7 +1681,7 @@
                             <input type="hidden" id="admin-subscription-id" data-testid="admin-subscription-id" />
                             <div class="field" data-testid="admin-subscription-stripe-field">
                               <label for="admin-subscription-stripe">Stripe subscription id</label>
-                              <input id="admin-subscription-stripe" data-testid="admin-subscription-stripe" type="text" placeholder="sub_..." />
+                              <input id="admin-subscription-stripe" data-testid="admin-subscription-stripe" type="text" placeholder="sub_..." aria-describedby="admin-subscription-status-text" />
                             </div>
                             <div class="field" data-testid="admin-subscription-status-field">
                               <label for="admin-subscription-status">Status</label>
@@ -1573,7 +1695,7 @@
                             </div>
                             <div class="field" data-testid="admin-subscription-price-field">
                               <label for="admin-subscription-price">Price id</label>
-                              <input id="admin-subscription-price" data-testid="admin-subscription-price" type="text" placeholder="price_..." />
+                              <input id="admin-subscription-price" data-testid="admin-subscription-price" type="text" placeholder="price_..." aria-describedby="admin-subscription-status-text" />
                             </div>
                             <div class="field" data-testid="admin-subscription-period-field">
                               <label for="admin-subscription-period">Current period end</label>
@@ -1591,7 +1713,7 @@
                             </label>
                             <div class="account-actions" data-testid="admin-subscription-editor-actions">
                               <button id="admin-subscription-save-btn" data-testid="admin-subscription-save-btn" class="btn primary" type="button">Gem subscription</button>
-                              <button id="admin-subscription-delete-btn" data-testid="admin-subscription-delete-btn" class="btn danger" type="button">Slet subscription</button>
+                              <button id="admin-subscription-delete-btn" data-testid="admin-subscription-delete-btn" class="btn danger" type="button">Slet abonnement</button>
                             </div>
                             <div class="admin-status hidden" id="admin-subscription-status-text" data-testid="admin-subscription-status-text" role="status" aria-live="polite"></div>
                           </div>
@@ -1603,8 +1725,8 @@
                             <p>Permanent handlinger kan ikke fortrydes.</p>
                           </div>
                           <div class="account-actions" data-testid="admin-detail-danger-actions">
-                            <button id="admin-user-soft-delete-btn" data-testid="admin-user-soft-delete-btn" class="btn danger" type="button">Soft delete</button>
-                            <button id="admin-user-hard-delete-btn" data-testid="admin-user-hard-delete-btn" class="btn danger" type="button">Hard delete</button>
+                            <button id="admin-user-soft-delete-btn" data-testid="admin-user-soft-delete-btn" class="btn danger" type="button">Soft delete bruger</button>
+                            <button id="admin-user-hard-delete-btn" data-testid="admin-user-hard-delete-btn" class="btn danger" type="button">Hard delete bruger</button>
                           </div>
                         </section>
                       </div>
@@ -1724,10 +1846,10 @@
                 </div>
                 <div class="field" data-testid="admin-import-content-field">
                   <label for="admin-import-content">Indsæt rådata</label>
-                  <textarea id="admin-import-content" data-testid="admin-import-content" rows="10" placeholder="Indsæt rådata (AI formatterer automatisk, også hvis det er uformatteret)."></textarea>
+                  <textarea id="admin-import-content" data-testid="admin-import-content" rows="10" placeholder="Indsæt rådata (AI formatterer automatisk, også hvis det er uformatteret)." aria-describedby="admin-import-hint admin-import-status"></textarea>
                 </div>
                 <div class="account-actions" data-testid="admin-import-actions">
-                  <button id="admin-import-btn" data-testid="admin-import-btn" class="btn primary" type="button">Importer</button>
+                  <button id="admin-import-btn" data-testid="admin-import-btn" class="btn primary" type="button">Opret kladde</button>
                 </div>
                 <div class="admin-progress hidden" id="admin-import-progress" data-testid="admin-import-progress" role="status" aria-live="polite">
                   <div class="admin-progress-row">
@@ -1738,7 +1860,7 @@
                     <div class="admin-progress-fill" id="admin-import-progress-fill" data-testid="admin-import-progress-fill"></div>
                   </div>
                 </div>
-                <div class="field-hint" data-testid="admin-import-hint">AI formatterer rådata før import til databasen.</div>
+                <div class="field-hint" id="admin-import-hint" data-testid="admin-import-hint">AI formatterer rådata og opretter en kladde, som kan gennemgås før publicering.</div>
                 <div class="admin-status hidden" id="admin-import-status" data-testid="admin-import-status" role="status" aria-live="polite"></div>
               </section>
             </div>
@@ -1778,7 +1900,7 @@
               </div>
               <div class="field" data-testid="index__account-grid--account-panel-profile__field">
                 <label for="profile-name-input">Navn</label>
-                <input id="profile-name-input" data-testid="profile-name-input" type="text" placeholder="Dit navn" />
+                <input id="profile-name-input" data-testid="profile-name-input" type="text" placeholder="Dit navn" aria-describedby="account-status" />
               </div>
               <div class="field" data-testid="index__account-grid--account-panel-profile__field--2">
                 <label>Email</label>
@@ -1801,8 +1923,8 @@
               </label>
               <div class="field" data-testid="index__account-grid--account-panel-key__field">
                 <label for="own-key-input">Din nøgle</label>
-                <input id="own-key-input" data-testid="own-key-input" type="password" placeholder="sk-..." autocomplete="off" />
-                <div class="field-hint" data-testid="index__account-panel-key--field__field-hint">Nøglen gemmes krypteret og bruges kun til hjælp.</div>
+                <input id="own-key-input" data-testid="own-key-input" type="password" placeholder="sk-..." autocomplete="off" aria-describedby="own-key-hint account-status" />
+                <div class="field-hint" id="own-key-hint" data-testid="index__account-panel-key--field__field-hint">Nøglen gemmes krypteret og bruges kun til hjælp.</div>
               </div>
               <div class="account-actions" data-testid="index__account-grid--account-panel-key__account-actions">
                 <button id="own-key-save-btn" data-testid="own-key-save-btn" class="btn primary" type="button">Gem nøgle</button>
@@ -1851,7 +1973,7 @@
               <div class="account-actions" data-testid="index__account-grid--account-panel-data__account-actions">
                 <button id="export-data-btn" data-testid="export-data-btn" class="btn ghost" type="button">Download data</button>
                 <button id="logout-btn" data-testid="logout-btn" class="btn ghost" type="button">Log ud</button>
-                <button id="delete-account-btn" data-testid="delete-account-btn" class="btn danger" type="button">Slet konto</button>
+                <button id="delete-account-btn" data-testid="delete-account-btn" class="btn danger" type="button">Slet konto permanent</button>
               </div>
               <div class="field-hint" data-testid="index__account-grid--account-panel-data__field-hint">Sletning er permanent og kan ikke fortrydes.</div>
             </section>

@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT_PATH / "scripts"))
 import convert_rawdata  # type: ignore
 import convert_kortsvar  # type: ignore
 import convert_sygdomslaere  # type: ignore
+from human_categories import normalize_human_category
 
 PIPELINE_VERSION = "2026-01-11.1"
 NAMESPACE_UUID = uuid.UUID("9e2d6f3b-6a3a-4e4b-8f36-9a7c56a8d5a4")
@@ -336,7 +337,8 @@ def build_mcq_items(raw_text: str, ingest_run_id: str, source_hash: str) -> Tupl
 
 def normalize_short_category(title: Optional[str]) -> str:
     cleaned = convert_kortsvar.HOVEDEMN_TITLE_RE.sub("", title or "").strip()
-    return cleaned or (title or "")
+    cleaned = cleaned or (title or "")
+    return normalize_human_category(cleaned)
 
 
 def build_short_items(raw_text: str, ingest_run_id: str, source_hash: str) -> Tuple[

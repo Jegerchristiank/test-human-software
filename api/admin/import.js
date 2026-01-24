@@ -87,6 +87,7 @@ module.exports = async function handler(req, res) {
       metadata: {
         dataset: payload.type,
         mode: payload.mode,
+        draft_id: result.draftId,
       },
     });
 
@@ -95,7 +96,7 @@ module.exports = async function handler(req, res) {
       dataset: payload.type,
       mode: payload.mode,
       result,
-      files: result,
+      draftId: result.draftId,
     });
   } catch (err) {
     await logAuditEvent({

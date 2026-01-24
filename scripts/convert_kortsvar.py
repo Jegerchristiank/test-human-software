@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
 
+from human_categories import normalize_human_category
 ROOT_PATH = Path(__file__).resolve().parent.parent
 RAW_PATH = ROOT_PATH / "rawdata-kortsvar"
 OUTPUT_PATH = ROOT_PATH / "data" / "kortsvar.json"
@@ -435,16 +436,22 @@ def assign_images(
 
 
 def write_output(questions: List[ShortQuestion], output_path: Path) -> None:
-    def normalize_category(title: Optional[str]) -> str:
-        cleaned = HOVEDEMN_TITLE_RE.sub("", title or "").strip()
-        return cleaned or (title or "")
+    def normalize_category(question: ShortQuestion) -> str:
+        cleaned = HOVEDEMN_TITLE_RE.sub("", question.opgave_title or "").strip()
+        cleaned = cleaned or (question.opgave_title or "")
+        try:
+            return normalize_human_category(cleaned)
+        except ValueError as exc:
+            raise ValueError(
+                f"Unknown category '{cleaned}' for opgave {question.opgave} ({question.year})"
+            ) from exc
 
     serializable = [
         {
             "type": "short",
             "year": question.year,
             "session": question.session,
-            "category": normalize_category(question.opgave_title),
+            "category": normalize_category(question),
             "opgave": question.opgave,
             "opgaveTitle": question.opgave_title,
             "opgaveIntro": question.opgave_intro,

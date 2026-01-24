@@ -335,6 +335,121 @@ create policy "Dataset snapshots are not accessible to clients"
   using (false)
   with check (false);
 
+-- Dataset versions (draft/published history for admin imports)
+create table if not exists public.dataset_versions (
+  id uuid primary key default gen_random_uuid(),
+  dataset text not null,
+  status text not null default 'draft',
+  source text not null default 'manual',
+  base_version_id uuid references public.dataset_versions(id) on delete set null,
+  item_count integer not null default 0,
+  raw_text text,
+  qa_summary jsonb,
+  created_by uuid references auth.users(id) on delete set null,
+  published_by uuid references auth.users(id) on delete set null,
+  published_at timestamptz,
+  note text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (dataset in ('mcq', 'kortsvar', 'sygdomslaere')),
+  check (status in ('draft', 'published', 'archived'))
+);
+
+create index if not exists idx_dataset_versions_dataset on public.dataset_versions (dataset);
+create index if not exists idx_dataset_versions_status on public.dataset_versions (status);
+create index if not exists idx_dataset_versions_dataset_status
+  on public.dataset_versions (dataset, status);
+
+drop trigger if exists set_dataset_versions_updated_at on public.dataset_versions;
+create trigger set_dataset_versions_updated_at
+before update on public.dataset_versions
+for each row
+execute function public.set_updated_at();
+
+alter table if exists public.dataset_versions enable row level security;
+
+drop policy if exists "Dataset versions are not accessible to clients" on public.dataset_versions;
+create policy "Dataset versions are not accessible to clients"
+  on public.dataset_versions
+  for all
+  using (false)
+  with check (false);
+
+-- Dataset items (normalized rows for admin editing/search)
+create table if not exists public.dataset_items (
+  id uuid primary key default gen_random_uuid(),
+  version_id uuid not null references public.dataset_versions(id) on delete cascade,
+  dataset text not null,
+  item_type text not null,
+  item_key text not null,
+  year integer,
+  session text,
+  number integer,
+  opgave integer,
+  label text,
+  category text,
+  priority text,
+  weight text,
+  title text,
+  search_text text,
+  payload jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (dataset in ('mcq', 'kortsvar', 'sygdomslaere')),
+  check (char_length(item_key) <= 200)
+);
+
+create unique index if not exists idx_dataset_items_version_key
+  on public.dataset_items (version_id, item_key);
+create index if not exists idx_dataset_items_version_id on public.dataset_items (version_id);
+create index if not exists idx_dataset_items_dataset on public.dataset_items (dataset);
+create index if not exists idx_dataset_items_category on public.dataset_items (category);
+create index if not exists idx_dataset_items_year on public.dataset_items (year);
+create index if not exists idx_dataset_items_priority on public.dataset_items (priority);
+
+drop trigger if exists set_dataset_items_updated_at on public.dataset_items;
+create trigger set_dataset_items_updated_at
+before update on public.dataset_items
+for each row
+execute function public.set_updated_at();
+
+alter table if exists public.dataset_items enable row level security;
+
+drop policy if exists "Dataset items are not accessible to clients" on public.dataset_items;
+create policy "Dataset items are not accessible to clients"
+  on public.dataset_items
+  for all
+  using (false)
+  with check (false);
+
+-- Dataset version events (audit/rollback history)
+create table if not exists public.dataset_version_events (
+  id uuid primary key default gen_random_uuid(),
+  dataset text not null,
+  version_id uuid references public.dataset_versions(id) on delete set null,
+  action text not null,
+  actor uuid references auth.users(id) on delete set null,
+  metadata jsonb,
+  created_at timestamptz not null default now(),
+  check (dataset in ('mcq', 'kortsvar', 'sygdomslaere')),
+  check (char_length(action) <= 40)
+);
+
+create index if not exists idx_dataset_events_dataset on public.dataset_version_events (dataset);
+create index if not exists idx_dataset_events_version on public.dataset_version_events (version_id);
+
+alter table if exists public.dataset_version_events enable row level security;
+
+drop policy if exists "Dataset version events are not accessible to clients" on public.dataset_version_events;
+create policy "Dataset version events are not accessible to clients"
+  on public.dataset_version_events
+  for all
+  using (false)
+  with check (false);
+
+alter table if exists public.dataset_snapshots
+  add column if not exists published_version_id uuid references public.dataset_versions(id) on delete set null;
+
 -- Rate limits
 create table if not exists public.rate_limits (
   key text primary key,

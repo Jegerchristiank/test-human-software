@@ -54,16 +54,16 @@ describe("auth client helpers", () => {
 
   it("maps common auth errors", () => {
     expect(mapAuthError({ code: "invalid_credentials", message: "Invalid login credentials" })).toBe(
-      "Forkert email eller adgangskode."
+      "Forkert email eller adgangskode. Prøv igen."
     );
     expect(mapAuthError({ code: "user_already_exists", message: "User already registered" })).toBe(
-      "Der findes allerede en konto med den email."
+      "Der findes allerede en konto med den email. Log ind i stedet."
     );
     expect(mapAuthError({ message: "Password should be at least 10 characters" })).toBe(
       "Adgangskoden skal være mindst 10 tegn."
     );
     expect(mapAuthError({ code: "oauth_url_missing", message: "OAuth URL missing" })).toBe(
-      "Kunne ikke starte OAuth-login."
+      "Kunne ikke starte OAuth-login. Prøv igen eller brug email-login."
     );
   });
 

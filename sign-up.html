@@ -58,7 +58,7 @@
       <section class="panel auth-panel" data-testid="auth-panel">
         <div class="panel-header" data-testid="sign-up__auth-page--auth-panel__panel-header">
           <h1>Opret konto</h1>
-          <p>Opret en konto for at starte din første session.</p>
+          <p>Opret en konto for at starte din første runde.</p>
         </div>
         <form class="auth-form" id="auth-form" data-testid="auth-form">
           <div class="field" data-testid="sign-up__auth-panel--auth-form__field">
@@ -68,6 +68,7 @@
               id="auth-name-input"
               data-testid="auth-name-input"
               autocomplete="name"
+              aria-describedby="auth-status"
             />
           </div>
           <div class="field" data-testid="sign-up__auth-panel--auth-form__field--2">
@@ -78,6 +79,7 @@
               data-testid="auth-email-input"
               autocomplete="email"
               required
+              aria-describedby="auth-status"
             />
           </div>
           <div class="field" data-testid="sign-up__auth-panel--auth-form__field--3">
@@ -88,6 +90,7 @@
               data-testid="auth-password-input"
               autocomplete="new-password"
               required
+              aria-describedby="auth-status"
             />
           </div>
           <button id="auth-signup-btn" data-testid="auth-signup-btn" class="btn primary" type="submit">
@@ -116,7 +119,7 @@
             <span>Fortsæt med Apple</span>
           </button>
         </div>
-        <div class="auth-status" id="auth-status" data-testid="auth-status" role="status" aria-live="polite" aria-atomic="true">Opret konto for at starte.</div>
+        <div class="auth-status" id="auth-status" data-testid="auth-status" role="status" aria-live="polite" aria-atomic="true">Opret konto for at starte din første runde.</div>
         <div class="auth-switch" data-testid="auth-switch">
           <span>Har du allerede en konto?</span>
           <a href="/sign-in" data-testid="auth-switch-link" data-preserve-redirect="true">Log ind</a>
