@@ -13,6 +13,12 @@
 - Security: no auth/data surface changes; edit is client-side rendering logic.
 - Follow-ups: none.
 
+- Purpose: move the admin datasets panel into the admin dashboard so it is not visible in the public menu.
+- Files: index.html, docs/activity.md.
+- Commands: ls; cat docs/activity.md; rg -n "admin-datasets" -n; sed -n '820,1100p' index.html; rg -n "admin-dataset" app.js; rg -n "is_admin" app.js; sed -n '4080,4380p' app.js; rg -n "const elements" app.js; sed -n '1150,1380p' app.js; rg -n "setElementVisible" app.js; sed -n '5920,5975p' app.js; rg -n "function updateAdminUI" app.js; sed -n '3750,3880p' app.js; rg -n "admin-screen" index.html; sed -n '1380,1640p' index.html; sed -n '1640,2200p' index.html; sed -n '1100,1500p' index.html; nl -ba index.html | sed -n '900,1250p'; rg -n "admin-detail-danger-section" index.html; sed -n '1760,1980p' index.html; nl -ba index.html | sed -n '1600,1950p'; sed -n '880,980p' index.html; rg -n "admin-datasets-panel" index.html; sed -n '780,900p' index.html; rg -n "admin-side-column" index.html; sed -n '1730,1820p' index.html; rg -n "menu-summary-panel" index.html; sed -n '820,900p' index.html; rg -n "id=\\"admin-screen\\"" index.html; rg -n "move the admin datasets panel" docs/activity.md; apply_patch (index.html); apply_patch (docs/activity.md); date +%F.
+- Security: admin datasets UI no longer renders on the public menu; backend admin auth requirements unchanged.
+- Follow-ups: verify the datasets panel appears in the admin dashboard and is absent from non-admin menus.
+
 ## 2026-01-24
 - Purpose: fix admin import supabase access reference and prepare SQL to normalize human category labels across snapshots/items.
 - Files: api/_lib/importer.js, supabase/fix_human_categories.sql, docs/activity.md.
