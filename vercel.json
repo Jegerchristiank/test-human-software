@@ -33,7 +33,7 @@
   ],
   "headers": [
     {
-      "source": "/consent",
+      "source": "/samtykke",
       "headers": [
         {
           "key": "Content-Security-Policy",
@@ -47,7 +47,7 @@
       ]
     },
     {
-      "source": "/consent.html",
+      "source": "/samtykke.html",
       "headers": [
         {
           "key": "Content-Security-Policy",
