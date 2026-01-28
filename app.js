@@ -1007,6 +1007,8 @@ const state = {
       editorMode: "view",
       bulkSelection: new Set(),
       qaSummary: null,
+      searchTimer: null,
+      lastSignature: "",
     },
   },
   billingElements: null,
@@ -5047,7 +5049,7 @@ async function refreshAdminDatasetQa() {
   }
 }
 
-async function loadAdminDatasetItems({ page } = {}) {
+async function loadAdminDatasetItems({ page, force } = {}) {
   if (!state.admin.allowed) return;
   const dataset = state.admin.datasets.type;
   const versionId = state.admin.datasets.selectedVersionId;
@@ -5058,8 +5060,14 @@ async function loadAdminDatasetItems({ page } = {}) {
     renderAdminDatasetSummary();
     return;
   }
-  state.admin.datasets.loading = true;
   const targetPage = page || state.admin.datasets.page || 1;
+  state.admin.datasets.page = targetPage;
+  const signature = getAdminDatasetSignature();
+  if (!force && signature === state.admin.datasets.lastSignature && !state.admin.datasets.loading) {
+    return;
+  }
+  state.admin.datasets.lastSignature = signature;
+  state.admin.datasets.loading = true;
   const filters = state.admin.datasets.filters;
   const params = new URLSearchParams({
     dataset,
@@ -5094,6 +5102,14 @@ async function loadAdminDatasetItems({ page } = {}) {
     renderAdminDatasetItems();
     renderAdminDatasetEditor();
     renderAdminDatasetSummary();
+
+    const hasFilter = Boolean(filters.search) || Boolean(filters.year) || Boolean(filters.session) || Boolean(filters.category) || Boolean(filters.priority);
+    if (hasFilter && state.admin.datasets.items.length === 1) {
+      const onlyItemId = state.admin.datasets.items[0]?.id;
+      if (onlyItemId && onlyItemId !== state.admin.datasets.selectedItemId) {
+        void loadAdminDatasetItemDetail(onlyItemId);
+      }
+    }
   } catch (error) {
     setAdminDatasetStatus("Kunne ikke hente items.", true);
   } finally {
@@ -5355,6 +5371,7 @@ function handleAdminDatasetSearch() {
     category: elements.adminDatasetCategory?.value.trim() || "",
     priority: isDisease ? elements.adminDatasetPriority?.value.trim() || "" : "",
   };
+  state.admin.datasets.page = 1;
   void loadAdminDatasetItems({ page: 1 });
 }
 
@@ -5371,7 +5388,34 @@ function handleAdminDatasetClear() {
     category: "",
     priority: "",
   };
-  void loadAdminDatasetItems({ page: 1 });
+  state.admin.datasets.page = 1;
+  state.admin.datasets.lastSignature = "";
+  void loadAdminDatasetItems({ page: 1, force: true });
+}
+
+function getAdminDatasetSignature() {
+  const { type, selectedVersionId, page, perPage, filters } = state.admin.datasets;
+  return [
+    type,
+    selectedVersionId,
+    page,
+    perPage,
+    filters.search,
+    filters.year,
+    filters.session,
+    filters.category,
+    filters.priority,
+  ].join("|");
+}
+
+function scheduleAdminDatasetSearch(delay = 350) {
+  if (state.admin.datasets.searchTimer) {
+    clearTimeout(state.admin.datasets.searchTimer);
+  }
+  state.admin.datasets.searchTimer = setTimeout(() => {
+    state.admin.datasets.searchTimer = null;
+    void handleAdminDatasetSearch();
+  }, delay);
 }
 
 function getAdminSelectedUserId() {
@@ -18681,6 +18725,7 @@ function attachEvents() {
   }
   if (elements.adminDatasetRefreshBtn) {
     elements.adminDatasetRefreshBtn.addEventListener("click", () => {
+      state.admin.datasets.lastSignature = "";
       void loadAdminDatasetVersions();
     });
   }
@@ -18703,9 +18748,10 @@ function attachEvents() {
       state.admin.datasets.page = 1;
       state.admin.datasets.bulkSelection.clear();
       state.admin.datasets.qaSummary = null;
+      state.admin.datasets.lastSignature = "";
       renderAdminDatasetQa();
       updateAdminDatasetSelectionUi();
-      void loadAdminDatasetItems({ page: 1 });
+      void loadAdminDatasetItems({ page: 1, force: true });
       void refreshAdminDatasetQa();
     });
   }
@@ -18720,6 +18766,29 @@ function attachEvents() {
       if (event.key === "Enter") {
         void handleAdminDatasetSearch();
       }
+    });
+    elements.adminDatasetSearch.addEventListener("input", () => {
+      scheduleAdminDatasetSearch();
+    });
+  }
+  if (elements.adminDatasetYear) {
+    elements.adminDatasetYear.addEventListener("input", () => {
+      scheduleAdminDatasetSearch();
+    });
+  }
+  if (elements.adminDatasetSession) {
+    elements.adminDatasetSession.addEventListener("change", () => {
+      scheduleAdminDatasetSearch();
+    });
+  }
+  if (elements.adminDatasetCategory) {
+    elements.adminDatasetCategory.addEventListener("input", () => {
+      scheduleAdminDatasetSearch();
+    });
+  }
+  if (elements.adminDatasetPriority) {
+    elements.adminDatasetPriority.addEventListener("change", () => {
+      scheduleAdminDatasetSearch();
     });
   }
   if (elements.adminDatasetPrevBtn) {
