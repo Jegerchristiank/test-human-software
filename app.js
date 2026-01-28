@@ -21,8 +21,8 @@ const STUDIO_PATHS = {
   sygdomslaere: "/sygdomslaere",
 };
 const AUTH_ROUTES = {
-  signIn: "/sign-in",
-  signUp: "/sign-up",
+  signIn: "/login",
+  signUp: "/opret",
 };
 
 const DEFAULT_SETTINGS = {
@@ -3131,9 +3131,27 @@ const AUTH_REQUIRED_SCREENS = new Set([
   "checkout",
   "consent",
 ]);
-const AUTH_REDIRECT_ROUTE = "/sign-in";
+const AUTH_REDIRECT_ROUTE = "/login";
 const ADMIN_ROUTE_BASE = "/admin";
 const ADMIN_TABS = new Set(["overview", "users", "datasets", "import"]);
+const SCREEN_ROUTES = {
+  landing: "/",
+  menu: "/app",
+  quiz: "/runde",
+  result: "/resultat",
+  account: "/konto",
+  billing: "/betaling",
+  checkout: "/checkout",
+  admin: ADMIN_ROUTE_BASE,
+  auth: "/login",
+  consent: "/samtykke",
+};
+const LEGACY_ROUTES = new Map([
+  ["/sign-in", "auth"],
+  ["/sign-up", "auth"],
+  ["/consent", "consent"],
+]);
+let suppressRouteSync = false;
 
 function getAuthReturnPath() {
   const url = new URL(window.location.href);
@@ -3161,12 +3179,16 @@ function showScreen(target) {
   ) {
     const path = window.location.pathname || "";
     const onConsentPage =
+      path === "/samtykke" ||
+      path.endsWith("/samtykke") ||
+      path.endsWith("/samtykke.html") ||
+      path.endsWith("samtykke.html") ||
       path === "/consent" ||
       path.endsWith("/consent") ||
       path.endsWith("/consent.html") ||
       path.endsWith("consent.html");
     if (!onConsentPage) {
-      window.location.replace("/consent");
+      window.location.replace("/samtykke");
       return;
     }
     if (!state.consentReturnTo) {
@@ -3201,6 +3223,8 @@ function showScreen(target) {
     document.body.classList.remove("meta-hidden");
     cancelMicRecording();
   }
+
+  syncScreenRoute(target);
 }
 
 function getAdminTabFromPath(pathname) {
@@ -3211,15 +3235,42 @@ function getAdminTabFromPath(pathname) {
   return ADMIN_TABS.has(normalized) ? normalized : "overview";
 }
 
+function normalizePath(pathname) {
+  if (!pathname) return "/";
+  const trimmed = pathname.replace(/\/+$/, "");
+  return trimmed || "/";
+}
+
+function getScreenFromPath(pathname) {
+  const normalized = normalizePath(pathname);
+  const legacy = LEGACY_ROUTES.get(normalized);
+  if (legacy) return legacy;
+  const match = Object.entries(SCREEN_ROUTES).find(([, path]) => path === normalized);
+  return match ? match[0] : null;
+}
+
 function buildAdminPath(tab) {
   const safeTab = ADMIN_TABS.has(tab) ? tab : "overview";
   return safeTab === "overview" ? ADMIN_ROUTE_BASE : `${ADMIN_ROUTE_BASE}/${safeTab}`;
 }
 
 function syncAdminRoute(tab, { replace = false } = {}) {
+  if (suppressRouteSync) return;
   const url = new URL(window.location.href);
   const targetPath = buildAdminPath(tab);
-  if (url.pathname === targetPath) return;
+  if (normalizePath(url.pathname) === targetPath) return;
+  url.pathname = targetPath;
+  url.hash = "";
+  const method = replace ? "replaceState" : "pushState";
+  window.history[method]({}, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function syncScreenRoute(screen, { replace = false } = {}) {
+  if (screen === "admin" || suppressRouteSync) return;
+  const targetPath = SCREEN_ROUTES[screen];
+  if (!targetPath) return;
+  const url = new URL(window.location.href);
+  if (normalizePath(url.pathname) === targetPath) return;
   url.pathname = targetPath;
   url.hash = "";
   const method = replace ? "replaceState" : "pushState";
@@ -3227,10 +3278,16 @@ function syncAdminRoute(tab, { replace = false } = {}) {
 }
 
 function applyRouteFromLocation() {
-  const tab = getAdminTabFromPath(window.location.pathname || "");
-  if (!tab) return false;
-  setAdminTab(tab);
-  showScreen("admin");
+  const path = window.location.pathname || "/";
+  const tab = getAdminTabFromPath(path);
+  if (tab) {
+    setAdminTab(tab);
+    showScreen("admin");
+    return true;
+  }
+  const screen = getScreenFromPath(path);
+  if (!screen) return false;
+  showScreen(screen);
   return true;
 }
 
@@ -20142,11 +20199,11 @@ document.addEventListener("visibilitychange", () => {
 });
 
 window.addEventListener("popstate", () => {
-  const tab = getAdminTabFromPath(window.location.pathname || "");
-  if (!tab) return;
-  setAdminTab(tab);
-  if (!screens.admin?.classList.contains("active")) {
-    showScreen("admin");
+  suppressRouteSync = true;
+  try {
+    applyRouteFromLocation();
+  } finally {
+    suppressRouteSync = false;
   }
 });
 
