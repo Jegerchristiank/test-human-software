@@ -81,4 +81,21 @@ describe("import formatter", () => {
       "Invalid AI response"
     );
   });
+
+  it("bypasses AI for sygdomslaere CSV input", async () => {
+    delete process.env.OPENAI_API_KEY;
+    const openAiStub = { callOpenAiJson: vi.fn(async () => ({})) };
+    stubModule("../api/_lib/openai.js", openAiStub);
+    const { formatImportContent } = loadFormatter();
+    const csv = [
+      "Sygdom;Tyngde;Emne;Definition;Prioritet",
+      "Influenza;Høj;Infektion;Virus;Høj",
+      "Astma;Mellem;Luftveje;Kronisk inflammation;Lav",
+    ].join("\n");
+    const result = await formatImportContent({ type: "sygdomslaere", content: csv });
+    expect(result.formattedText).toContain("Sygdom\tTyngde\tEmne\tDefinition\tprioritet");
+    expect(result.formattedText).toContain("Influenza\tHøj\tInfektion\tVirus\tHøj");
+    expect(result.model).toBe("uden AI");
+    expect(openAiStub.callOpenAiJson).not.toHaveBeenCalled();
+  });
 });

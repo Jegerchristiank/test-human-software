@@ -8,6 +8,11 @@
 - Follow-ups: confirm admin tabs no longer reserve an empty column and content spans the full width.
 
 ## 2026-01-28
+- Purpose: speed up sygdomslære CSV/TSV admin imports by bypassing AI formatting when the file is already structured, and extend admin publish timeout to reduce publish failures.
+- Files: api/_lib/importFormatter.js, app.js, tests/importFormatter.test.mjs, docs/activity.md.
+- Commands: rg -n "admin import|admin-import|importProgress|importLog|dataset|publish" app.js api/admin -S; sed -n '880,1160p' app.js; sed -n '3400,3820p' app.js; sed -n '6200,6685p' app.js; sed -n '1,220p' api/admin/import-preview.js; sed -n '1,220p' api/admin/import.js; sed -n '1,260p' api/_lib/importer.js; sed -n '800,980p' api/_lib/rawdataParser.js; rg -n "publishVersion|createDraftVersion|ensurePublishedVersion" api/_lib/datasetAdmin.js; sed -n '700,840p' api/_lib/datasetAdmin.js; cat vercel.json; wc -c "SundFi Infobank - Sygdomslære.csv"; apply_patch (api/_lib/importFormatter.js, app.js, tests/importFormatter.test.mjs, docs/activity.md); npm test -- tests/importFormatter.test.mjs.
+- Security: maintains admin auth + rate limits; formatting bypass only activates for structured sygdomslære input and still enforces size limits.
+- Follow-ups: verify full sygdomslære CSV preview/import completes quickly and that publish completes without timing out.
 - Purpose: remove the landing screen and route logic so users land directly in auth/menu flows without the extra landing step.
 - Files: index.html, app.js, docs/activity.md.
 - Commands: sed -n '1,120p' docs/activity.md; rg -n "landing" index.html app.js styles.css; sed -n '372,470p' index.html; rg -n "\\/app" -S .; cat vercel.json; sed -n '1165,1215p' app.js; sed -n '1545,1605p' app.js; sed -n '19020,19080p' app.js; rg -n "landing-screen" index.html app.js; rg -n "landing" app.js; apply_patch (index.html, app.js, docs/activity.md).

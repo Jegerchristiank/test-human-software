@@ -5536,7 +5536,7 @@ async function handleAdminDatasetPublish() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ version_id: versionId }),
-      timeoutMs: 30000,
+      timeoutMs: 120000,
     });
     if (!res.ok) {
       const data = await safeReadJson(res);

@@ -6,6 +6,45 @@ const { normalizeNewlines, stripBom, HUMAN_CATEGORY_LABELS } = require("./rawdat
 const DEFAULT_IMPORT_MODEL = "gpt-4o-mini";
 const MAX_AI_IMPORT_CHARS = 250_000;
 const MAX_FORMATTED_CHARS = 1_500_000;
+const SYGDOM_REQUIRED_HEADERS = new Set(["sygdom", "emne"]);
+const SYGDOM_HEADER_LABELS = {
+  sygdom: "Sygdom",
+  tyngde: "Tyngde",
+  emne: "Emne",
+  definition: "Definition",
+  forekomst: "Forekomst",
+  patogenese: "Patogenese",
+  ætiologi: "Ætiologi",
+  "symptomer og fund": "Symptomer og fund",
+  diagnostik: "Diagnostik",
+  følgetilstande: "Følgetilstande",
+  behandling: "Behandling",
+  forebyggelse: "Forebyggelse",
+  prognose: "Prognose",
+  prioritet: "prioritet",
+};
+const SYGDOM_HEADER_KEYS = new Set(Object.keys(SYGDOM_HEADER_LABELS));
+const SYGDOM_HEADER_ALIASES = {
+  disease: "sygdom",
+  navn: "sygdom",
+  name: "sygdom",
+  weight: "tyngde",
+  severity: "tyngde",
+  topic: "emne",
+  kategori: "emne",
+  category: "emne",
+  incidence: "forekomst",
+  etiologi: "ætiologi",
+  aetiologi: "ætiologi",
+  aetiology: "ætiologi",
+  "symptomer/fund": "symptomer og fund",
+  diagnosis: "diagnostik",
+  sequelae: "følgetilstande",
+  treatment: "behandling",
+  prevention: "forebyggelse",
+  prognosis: "prognose",
+  priority: "prioritet",
+};
 
 function ensureTrailingNewline(text) {
   if (text.endsWith("\n")) return text;
@@ -14,6 +53,135 @@ function ensureTrailingNewline(text) {
 
 function cleanInput(text) {
   return ensureTrailingNewline(normalizeNewlines(stripBom(String(text || ""))));
+}
+
+function normalizeHeaderLabel(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\u00a0/g, " ")
+    .replace(/[_-]+/g, " ")
+    .replace(/[.:]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function canonicalizeSygdomHeader(value) {
+  const normalized = normalizeHeaderLabel(value);
+  if (!normalized) return "";
+  if (SYGDOM_HEADER_ALIASES[normalized]) return SYGDOM_HEADER_ALIASES[normalized];
+  return normalized;
+}
+
+function splitDelimitedLine(line, delimiter) {
+  const fields = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+        continue;
+      }
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (!inQuotes && ch === delimiter) {
+      fields.push(current);
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  fields.push(current);
+  return fields;
+}
+
+function parseDelimited(text, delimiter) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (ch === '"') {
+      if (inQuotes && text[i + 1] === '"') {
+        field += '"';
+        i += 1;
+        continue;
+      }
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (ch === "\r") continue;
+    if (!inQuotes && ch === delimiter) {
+      row.push(field);
+      field = "";
+      continue;
+    }
+    if (!inQuotes && ch === "\n") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+      continue;
+    }
+    field += ch;
+  }
+  row.push(field);
+  rows.push(row);
+  return rows;
+}
+
+function sanitizeDelimitedCell(value) {
+  return String(value || "")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\t+/g, " ")
+    .trim();
+}
+
+function firstNonEmptyLine(text) {
+  const lines = text.split("\n");
+  for (const line of lines) {
+    if (line && line.trim()) return line;
+  }
+  return "";
+}
+
+function detectSygdomDelimitedFormat(text) {
+  const headerLine = firstNonEmptyLine(text);
+  if (!headerLine) return null;
+  const candidates = ["\t", ";", ","];
+  let best = null;
+  for (const delimiter of candidates) {
+    if (!headerLine.includes(delimiter)) continue;
+    const cells = splitDelimitedLine(headerLine, delimiter);
+    if (cells.length < 2) continue;
+    const canonical = cells.map((cell) => canonicalizeSygdomHeader(cell));
+    const matchCount = canonical.filter((cell) => SYGDOM_HEADER_KEYS.has(cell)).length;
+    const hasRequired = Array.from(SYGDOM_REQUIRED_HEADERS).every((key) => canonical.includes(key));
+    if (!hasRequired || matchCount < 3) continue;
+    if (!best || matchCount > best.matchCount) {
+      best = { delimiter, matchCount };
+    }
+  }
+  return best;
+}
+
+function formatSygdomDelimited(text, delimiter) {
+  const rows = parseDelimited(text, delimiter)
+    .map((row) => row.map((cell) => sanitizeDelimitedCell(cell)))
+    .filter((row) => row.some((cell) => cell));
+  if (!rows.length) return "";
+  const header = rows[0].map((cell) => {
+    const canonical = canonicalizeSygdomHeader(cell);
+    return SYGDOM_HEADER_LABELS[canonical] || cell || "";
+  });
+  const outputRows = [header, ...rows.slice(1)];
+  const result = outputRows.map((row) => row.join("\t")).join("\n");
+  return ensureTrailingNewline(result);
 }
 
 function buildSystemPrompt(type) {
@@ -109,6 +277,25 @@ async function formatImportContent({ type, content }) {
   if (!cleanedInput.trim()) {
     throw new ImportFormatError("Import content is empty", 400);
   }
+
+  if (type === "sygdomslaere") {
+    const detected = detectSygdomDelimitedFormat(cleanedInput);
+    if (detected) {
+      const formattedText = formatSygdomDelimited(cleanedInput, detected.delimiter);
+      if (!formattedText.trim()) {
+        throw new ImportFormatError("Import content is empty", 400);
+      }
+      if (formattedText.length > MAX_FORMATTED_CHARS) {
+        throw new ImportFormatError("Import content too large", 413);
+      }
+      return {
+        formattedText,
+        warnings: null,
+        model: "uden AI",
+      };
+    }
+  }
+
   if (cleanedInput.length > MAX_AI_IMPORT_CHARS) {
     throw new ImportFormatError(
       "Import content too large for AI formatting. Split the import into smaller batches.",
