@@ -962,6 +962,8 @@ const state = {
     metrics: null,
     loading: false,
     importing: false,
+    importPreview: null,
+    tab: "overview",
     importProgress: {
       value: 0,
       label: "",
@@ -1327,6 +1329,8 @@ const elements = {
   adminBackBtn: document.getElementById("admin-back-btn"),
   adminStatus: document.getElementById("admin-status"),
   adminRefreshBtn: document.getElementById("admin-refresh-btn"),
+  adminMenuGrid: document.querySelector(".admin-menu-grid"),
+  adminTabButtons: Array.from(document.querySelectorAll("[data-admin-tab]")),
   adminUserSearch: document.getElementById("admin-user-search"),
   adminUserSearchMode: document.getElementById("admin-user-search-mode"),
   adminUserPlanFilter: document.getElementById("admin-user-plan-filter"),
@@ -1424,7 +1428,14 @@ const elements = {
   adminProWelcomeTestBtn: document.getElementById("admin-pro-welcome-test-btn"),
   adminImportType: document.getElementById("admin-import-type"),
   adminImportMode: document.getElementById("admin-import-mode"),
+  adminImportFile: document.getElementById("admin-import-file"),
   adminImportContent: document.getElementById("admin-import-content"),
+  adminImportPreviewBtn: document.getElementById("admin-import-preview-btn"),
+  adminImportPreview: document.getElementById("admin-import-preview"),
+  adminImportPreviewText: document.getElementById("admin-import-preview-text"),
+  adminImportPreviewSummary: document.getElementById("admin-import-preview-summary"),
+  adminImportPreviewWarnings: document.getElementById("admin-import-preview-warnings"),
+  adminImportPreviewSample: document.getElementById("admin-import-preview-sample"),
   adminImportBtn: document.getElementById("admin-import-btn"),
   adminImportStatus: document.getElementById("admin-import-status"),
   adminImportProgress: document.getElementById("admin-import-progress"),
@@ -3785,6 +3796,8 @@ function renderAdminMetrics(metrics) {
 function updateAdminUI() {
   const allowed = Boolean(state.admin.allowed && state.session?.user);
 
+  setAdminTab(state.admin.tab || "overview");
+
   if (elements.adminMenuBtn) {
     setElementVisible(elements.adminMenuBtn, allowed);
     elements.adminMenuBtn.disabled = !allowed;
@@ -3798,14 +3811,23 @@ function updateAdminUI() {
   if (elements.adminImportBtn) {
     elements.adminImportBtn.disabled = !importReady;
   }
+  if (elements.adminImportPreviewBtn) {
+    elements.adminImportPreviewBtn.disabled = !importReady;
+  }
   if (elements.adminImportContent) {
     elements.adminImportContent.disabled = !importReady;
+  }
+  if (elements.adminImportFile) {
+    elements.adminImportFile.disabled = !importReady;
   }
   if (elements.adminImportType) {
     elements.adminImportType.disabled = !importReady;
   }
   if (elements.adminImportMode) {
     elements.adminImportMode.disabled = !importReady;
+  }
+  if (elements.adminImportPreviewText) {
+    elements.adminImportPreviewText.disabled = !importReady;
   }
   if (elements.adminImportProgress) {
     setElementVisible(elements.adminImportProgress, allowed && state.admin.importing);
@@ -5482,6 +5504,20 @@ function syncAdminInviteToggle() {
   }
 }
 
+function setAdminTab(tab) {
+  state.admin.tab = tab;
+  if (elements.adminTabButtons?.length) {
+    elements.adminTabButtons.forEach((btn) => {
+      const isActive = btn.dataset.adminTab === tab;
+      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+      btn.classList.toggle("active", isActive);
+    });
+  }
+  if (elements.adminMenuGrid) {
+    elements.adminMenuGrid.dataset.activeTab = tab;
+  }
+}
+
 function updateAdminUserFiltersFromInputs() {
   if (elements.adminUserSearch) {
     state.admin.users.query = elements.adminUserSearch.value.trim();
@@ -6035,7 +6071,70 @@ async function handleAdminSubscriptionDelete() {
   }
 }
 
-async function handleAdminImport() {
+function getAdminImportContent() {
+  const previewText = elements.adminImportPreviewText?.value || "";
+  if (previewText.trim()) return previewText;
+  return elements.adminImportContent ? elements.adminImportContent.value : "";
+}
+
+function clearAdminImportPreview() {
+  state.admin.importPreview = null;
+  if (elements.adminImportPreviewText) elements.adminImportPreviewText.value = "";
+  if (elements.adminImportPreviewSummary) elements.adminImportPreviewSummary.textContent = "—";
+  if (elements.adminImportPreviewWarnings) elements.adminImportPreviewWarnings.textContent = "";
+  if (elements.adminImportPreviewSample) elements.adminImportPreviewSample.textContent = "";
+  if (elements.adminImportPreview) setElementVisible(elements.adminImportPreview, false);
+}
+
+function renderAdminImportPreview(result) {
+  if (!result) {
+    clearAdminImportPreview();
+    return;
+  }
+  if (elements.adminImportPreview) setElementVisible(elements.adminImportPreview, true);
+  if (elements.adminImportPreviewText) {
+    elements.adminImportPreviewText.value = result.formattedText || "";
+  }
+  if (elements.adminImportPreviewSummary) {
+    const count = typeof result.itemCount === "number" ? `${result.itemCount} rækker` : "—";
+    const model = result.model ? ` · ${result.model}` : "";
+    elements.adminImportPreviewSummary.textContent = `${count}${model}`;
+  }
+  if (elements.adminImportPreviewWarnings) {
+    elements.adminImportPreviewWarnings.textContent = "";
+    const warnings = result.warnings || {};
+    const lines = [];
+    if (warnings.formatWarnings?.length) {
+      lines.push(`${warnings.formatWarnings.length} formatteringsadvarsler`);
+    }
+    if (warnings.missingImages?.length) {
+      lines.push(`${warnings.missingImages.length} mangler billeder`);
+    }
+    if (warnings.unmatchedImages?.length) {
+      lines.push(`${warnings.unmatchedImages.length} billeder uden match`);
+    }
+    if (lines.length) {
+      lines.forEach((line) => {
+        const div = document.createElement("div");
+        div.textContent = line;
+        elements.adminImportPreviewWarnings.appendChild(div);
+      });
+    }
+  }
+  if (elements.adminImportPreviewSample) {
+    elements.adminImportPreviewSample.textContent = "";
+    const sample = result.sample || [];
+    if (sample.length) {
+      sample.forEach((line) => {
+        const div = document.createElement("div");
+        div.textContent = line;
+        elements.adminImportPreviewSample.appendChild(div);
+      });
+    }
+  }
+}
+
+async function handleAdminImportPreview() {
   if (!state.admin.allowed) {
     setAdminImportStatus("Admin adgang mangler. Log ind med en admin-konto.", true);
     return;
@@ -6045,6 +6144,55 @@ async function handleAdminImport() {
     return;
   }
   const content = elements.adminImportContent ? elements.adminImportContent.value : "";
+  if (!content || !content.trim()) {
+    setAdminImportStatus("Indsæt rådata først.", true);
+    return;
+  }
+  const type = elements.adminImportType ? elements.adminImportType.value : "mcq";
+
+  state.admin.importing = true;
+  startAdminImportProgress();
+  setAdminImportStatus("AI formatterer …");
+  updateAdminUI();
+
+  let success = false;
+  try {
+    const res = await apiFetch("/api/admin/import-preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, content }),
+      timeoutMs: 60000,
+    });
+    if (!res.ok) {
+      const data = await safeReadJson(res);
+      const message = data?.error || "Forhåndsvisning fejlede.";
+      setAdminImportStatus(message, true);
+      return;
+    }
+    const data = await safeReadJson(res);
+    state.admin.importPreview = data?.result || null;
+    renderAdminImportPreview(state.admin.importPreview);
+    setAdminImportStatus("Forhåndsvisning klar. Ret formatteret data før import.");
+    success = true;
+  } catch (error) {
+    setAdminImportStatus("Forhåndsvisning fejlede.", true);
+  } finally {
+    stopAdminImportProgress(success ? "Færdig" : "Fejl", success ? 1 : state.admin.importProgress.value);
+    state.admin.importing = false;
+    updateAdminUI();
+  }
+}
+
+async function handleAdminImport() {
+  if (!state.admin.allowed) {
+    setAdminImportStatus("Admin adgang mangler. Log ind med en admin-konto.", true);
+    return;
+  }
+  if (!state.admin.importEnabled) {
+    setAdminImportStatus("Admin import er deaktiveret i miljøet.", true);
+    return;
+  }
+  const content = getAdminImportContent();
   if (!content || !content.trim()) {
     setAdminImportStatus("Indsæt rådata først.", true);
     return;
@@ -6095,6 +6243,9 @@ async function handleAdminImport() {
       state.admin.datasets.selectedVersionId = draftId;
       void loadAdminDatasetVersions({ dataset: type });
     }
+    clearAdminImportPreview();
+    if (elements.adminImportContent) elements.adminImportContent.value = "";
+    if (elements.adminImportFile) elements.adminImportFile.value = "";
     void refreshAdminMetrics({ silent: true });
     success = true;
   } catch (error) {
@@ -18797,11 +18948,64 @@ function attachEvents() {
       setAdminSubscriptionStatus("");
     });
   }
+  if (elements.adminImportPreviewBtn) {
+    elements.adminImportPreviewBtn.addEventListener("click", handleAdminImportPreview);
+  }
   if (elements.adminImportBtn) {
     elements.adminImportBtn.addEventListener("click", handleAdminImport);
   }
   if (elements.adminImportContent) {
-    elements.adminImportContent.addEventListener("input", () => setAdminImportStatus(""));
+    elements.adminImportContent.addEventListener("input", () => {
+      setAdminImportStatus("");
+      clearAdminImportPreview();
+    });
+  }
+  if (elements.adminImportPreviewText) {
+    elements.adminImportPreviewText.addEventListener("input", () => {
+      setAdminImportStatus("");
+    });
+  }
+  if (elements.adminImportFile) {
+    elements.adminImportFile.addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      try {
+        let text = "";
+        if (ext === "xlsx") {
+          if (!window.XLSX) {
+            setAdminImportStatus("Excel-læser er ikke indlæst endnu.", true);
+            return;
+          }
+          const buffer = await file.arrayBuffer();
+          const workbook = window.XLSX.read(buffer, { type: "array" });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+          text = rows.map((row) => row.join("\t")).join("\n");
+        } else {
+          text = await file.text();
+        }
+        if (elements.adminImportContent) {
+          elements.adminImportContent.value = text;
+        }
+        clearAdminImportPreview();
+        setAdminImportStatus("Fil indlæst. Klik Forhåndsvis.");
+      } catch (error) {
+        setAdminImportStatus("Kunne ikke læse filen.", true);
+      }
+    });
+  }
+  if (elements.adminImportType) {
+    elements.adminImportType.addEventListener("change", () => {
+      clearAdminImportPreview();
+      setAdminImportStatus("");
+    });
+  }
+  if (elements.adminImportMode) {
+    elements.adminImportMode.addEventListener("change", () => {
+      setAdminImportStatus("");
+    });
   }
   if (elements.adminDatasetRefreshBtn) {
     elements.adminDatasetRefreshBtn.addEventListener("click", () => {
@@ -18913,6 +19117,14 @@ function attachEvents() {
   }
   if (elements.adminDatasetBulkApplyBtn) {
     elements.adminDatasetBulkApplyBtn.addEventListener("click", handleAdminDatasetBulkApply);
+  }
+  if (elements.adminTabButtons?.length) {
+    elements.adminTabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tab = btn.dataset.adminTab || "overview";
+        setAdminTab(tab);
+      });
+    });
   }
   if (elements.upgradeBtn) {
     elements.upgradeBtn.addEventListener("click", handleCheckout);

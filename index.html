@@ -11,6 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body data-testid="page-index">
@@ -1318,9 +1319,15 @@
               </div>
             </div>
           </header>
-          <div class="menu-grid admin-menu-grid" data-testid="admin-menu-grid">
+          <div class="admin-tabs" role="tablist" aria-label="Admin navigation" data-testid="admin-tabs">
+            <button class="btn ghost small" data-admin-tab="overview" type="button" aria-pressed="true">Overblik</button>
+            <button class="btn ghost small" data-admin-tab="users" type="button" aria-pressed="false">Brugere</button>
+            <button class="btn ghost small" data-admin-tab="datasets" type="button" aria-pressed="false">Datasæt</button>
+            <button class="btn ghost small" data-admin-tab="import" type="button" aria-pressed="false">Import</button>
+          </div>
+          <div class="menu-grid admin-menu-grid" data-testid="admin-menu-grid" data-active-tab="overview">
             <div class="menu-column admin-main" data-testid="admin-main-column">
-              <section class="panel admin-users-panel reveal" data-testid="admin-users-panel" style="--delay: 0.05s">
+              <section class="panel admin-users-panel reveal" data-testid="admin-users-panel" data-admin-panel="users" style="--delay: 0.05s">
                 <div class="panel-header" data-testid="admin-users-header">
                   <h2>Brugere</h2>
                   <p>Søg, redigér og administrér adgang, plan og aktivitet.</p>
@@ -1615,7 +1622,7 @@
                   </div>
                 </div>
               </section>
-              <section class="panel admin-datasets-panel reveal" data-testid="admin-datasets-panel" style="--delay: 0.12s">
+              <section class="panel admin-datasets-panel reveal" data-testid="admin-datasets-panel" data-admin-panel="datasets" style="--delay: 0.12s">
                 <div class="panel-header" data-testid="admin-datasets-header">
                   <h2>Datasæt</h2>
                   <p>Gennemse, redigér og publicér MCQ, Kortsvar og Sygdomslære.</p>
@@ -1799,7 +1806,7 @@
             </div>
 
             <div class="menu-column admin-side" data-testid="admin-side-column">
-              <section class="panel admin-panel reveal" data-testid="admin-panel" style="--delay: 0.1s">
+              <section class="panel admin-panel reveal" data-testid="admin-panel" data-admin-panel="overview" style="--delay: 0.1s">
                 <div class="panel-header" data-testid="admin-overview-header">
                   <h2>Command center</h2>
                   <p>Realtime status på brugere, betaling og data.</p>
@@ -1864,7 +1871,7 @@
                 <div class="admin-status hidden" id="admin-status" data-testid="admin-status" role="status" aria-live="polite"></div>
               </section>
 
-              <section class="panel admin-system-panel reveal" data-testid="admin-system-panel" style="--delay: 0.15s">
+              <section class="panel admin-system-panel reveal" data-testid="admin-system-panel" data-admin-panel="overview" style="--delay: 0.15s">
                 <div class="panel-header" data-testid="admin-system-header">
                   <h2>System &amp; analytics</h2>
                   <p>Vercel-trafik og samlet app health.</p>
@@ -1886,10 +1893,10 @@
                 </div>
               </section>
 
-              <section class="panel admin-import-panel reveal" data-testid="admin-import-panel" style="--delay: 0.2s">
+              <section class="panel admin-import-panel reveal" data-testid="admin-import-panel" data-admin-panel="import" style="--delay: 0.2s">
                 <div class="panel-header" data-testid="admin-import-header">
-                  <h2>Import</h2>
-                  <p>Indsæt et udsnit af et eksamenssæt og vælg append eller replace.</p>
+                  <h2>Importér nye datasæt</h2>
+                  <p>Upload eller indsæt rådata, få en forhåndsvisning, ret og importér først når alt ser korrekt ud.</p>
                 </div>
                 <div class="field" data-testid="admin-import-type-field">
                   <label for="admin-import-type">Importtype</label>
@@ -1906,12 +1913,31 @@
                     <option value="replace">Erstat alt (replace)</option>
                   </select>
                 </div>
+                <div class="field" data-testid="admin-import-file-field">
+                  <label for="admin-import-file">Upload fil (TXT, CSV, TSV eller Excel)</label>
+                  <input id="admin-import-file" data-testid="admin-import-file" type="file" accept=".txt,.csv,.tsv,.xlsx" />
+                </div>
                 <div class="field" data-testid="admin-import-content-field">
                   <label for="admin-import-content">Indsæt rådata</label>
                   <textarea id="admin-import-content" data-testid="admin-import-content" rows="10" placeholder="Indsæt rådata (AI formatterer automatisk, også hvis det er uformatteret)." aria-describedby="admin-import-hint admin-import-status"></textarea>
                 </div>
                 <div class="account-actions" data-testid="admin-import-actions">
-                  <button id="admin-import-btn" data-testid="admin-import-btn" class="btn primary" type="button">Opret kladde</button>
+                  <button id="admin-import-preview-btn" data-testid="admin-import-preview-btn" class="btn secondary" type="button">Forhåndsvis</button>
+                  <button id="admin-import-btn" data-testid="admin-import-btn" class="btn primary" type="button">Importér kladde</button>
+                </div>
+                <div class="admin-import-preview hidden" id="admin-import-preview" data-testid="admin-import-preview">
+                  <div class="admin-import-preview-header">
+                    <div>
+                      <div class="eyebrow">Forhåndsvisning</div>
+                      <div class="admin-import-preview-summary" id="admin-import-preview-summary" data-testid="admin-import-preview-summary">—</div>
+                    </div>
+                  </div>
+                  <div class="admin-import-preview-warnings" id="admin-import-preview-warnings" data-testid="admin-import-preview-warnings"></div>
+                  <div class="field">
+                    <label for="admin-import-preview-text">Formatteret data (kan rettes)</label>
+                    <textarea id="admin-import-preview-text" data-testid="admin-import-preview-text" rows="12"></textarea>
+                  </div>
+                  <div class="admin-import-preview-sample" id="admin-import-preview-sample" data-testid="admin-import-preview-sample"></div>
                 </div>
                 <div class="admin-progress hidden" id="admin-import-progress" data-testid="admin-import-progress" role="status" aria-live="polite">
                   <div class="admin-progress-row">
@@ -1922,7 +1948,7 @@
                     <div class="admin-progress-fill" id="admin-import-progress-fill" data-testid="admin-import-progress-fill"></div>
                   </div>
                 </div>
-                <div class="field-hint" id="admin-import-hint" data-testid="admin-import-hint">AI formatterer rådata og opretter en kladde, som kan gennemgås før publicering.</div>
+                <div class="field-hint" id="admin-import-hint" data-testid="admin-import-hint">Brug forhåndsvisningen til at rette formatteret data, før du importerer en kladde.</div>
                 <div class="admin-status hidden" id="admin-import-status" data-testid="admin-import-status" role="status" aria-live="polite"></div>
               </section>
             </div>

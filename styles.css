@@ -5458,6 +5458,55 @@ body.meta-hidden .question-meta {
   align-self: start;
 }
 
+.admin-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-5);
+}
+
+.admin-menu-grid [data-admin-panel] {
+  display: none;
+}
+
+.admin-menu-grid[data-active-tab="overview"] [data-admin-panel="overview"],
+.admin-menu-grid[data-active-tab="users"] [data-admin-panel="users"],
+.admin-menu-grid[data-active-tab="datasets"] [data-admin-panel="datasets"],
+.admin-menu-grid[data-active-tab="import"] [data-admin-panel="import"] {
+  display: block;
+}
+
+.admin-import-preview {
+  margin-top: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  background: var(--surface);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+  display: grid;
+  gap: 12px;
+}
+
+.admin-import-preview-summary {
+  font-weight: 600;
+}
+
+.admin-import-preview-warnings {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-import-preview-sample {
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  display: grid;
+  gap: 4px;
+}
+
 .admin-user-toolbar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

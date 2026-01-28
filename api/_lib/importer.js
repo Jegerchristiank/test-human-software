@@ -101,6 +101,66 @@ async function getSnapshot(type) {
   return data || null;
 }
 
+async function previewImport({ type, content }) {
+  const formatted = await formatImportContent({ type, content });
+  const cleaned = ensureTrailingNewline(
+    normalizeNewlines(stripBom(String(formatted.formattedText || "")))
+  );
+
+  let payload = null;
+  let warnings = null;
+
+  if (type === "mcq") {
+    const parsed = parseMcqRawData(cleaned);
+    payload = parsed.items;
+  } else if (type === "kortsvar") {
+    const parsed = parseKortsvarRawData(cleaned);
+    payload = parsed.items;
+    warnings = parsed.warnings || null;
+  } else if (type === "sygdomslaere") {
+    const parsed = parseSygdomslaereRawData(cleaned);
+    payload = parsed.payload;
+  } else {
+    throw new Error(`Unknown import type: ${type}`);
+  }
+
+  if (formatted.warnings && formatted.warnings.length) {
+    if (warnings && typeof warnings === "object") {
+      warnings = { ...warnings, formatWarnings: formatted.warnings };
+    } else {
+      warnings = { formatWarnings: formatted.warnings };
+    }
+  }
+
+  let itemCount = 0;
+  let sample = [];
+  if (type === "mcq") {
+    itemCount = payload.length;
+    sample = payload.slice(0, 10).map((item) =>
+      `${item.year}${item.session ? " " + item.session : ""} · ${item.category} #${item.number} · ${item.text}`
+    );
+  } else if (type === "kortsvar") {
+    itemCount = payload.length;
+    sample = payload.slice(0, 10).map((item) =>
+      `${item.year}${item.session ? " " + item.session : ""} · Opgave ${item.opgave}${item.label ? item.label : ""} · ${item.opgave_title || ""}`
+    );
+  } else if (type === "sygdomslaere") {
+    itemCount = payload?.diseases?.length || 0;
+    sample = (payload?.diseases || []).slice(0, 10).map((item) =>
+      `${item.name}${item.category ? " · " + item.category : ""}`
+    );
+  }
+
+  return {
+    dataset: type,
+    itemCount,
+    formattedText: cleaned,
+    warnings: warnings || null,
+    sample,
+    model: formatted.model,
+  };
+}
+
 async function applyImport({ type, mode, content, userId }) {
   const formatted = await formatImportContent({ type, content });
   const cleaned = ensureTrailingNewline(
@@ -177,4 +237,5 @@ async function applyImport({ type, mode, content, userId }) {
 
 module.exports = {
   applyImport,
+  previewImport,
 };
