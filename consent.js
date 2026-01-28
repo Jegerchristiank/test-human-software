@@ -115,7 +115,7 @@ function setControlsEnabled(enabled) {
 function redirectToSignIn() {
   if (!canUseDOM) return;
   const redirectPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-  const url = new URL("/sign-in", window.location.origin);
+  const url = new URL("/login", window.location.origin);
   url.searchParams.set("redirect", redirectPath);
   window.location.replace(`${url.pathname}${url.search}${url.hash}`);
 }

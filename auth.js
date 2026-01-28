@@ -8,6 +8,9 @@ const DEFAULT_BASE_URL = "http://localhost/";
 const MIN_PASSWORD_LENGTH = 6;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const AUTH_REDIRECT_BLOCKLIST = new Set([
+  "/login",
+  "/opret",
+  "/samtykke",
   "/sign-in",
   "/sign-up",
   "/consent",

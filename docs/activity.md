@@ -1,5 +1,12 @@
 # Activity Log
 
+## 2026-01-28
+- Purpose: restore login/signup flow for the new slugs by routing /login and /opret to the auth pages, updating auth/consent redirects, and extending redirect blocklist tests.
+- Files: vercel.json, auth.js, consent.js, sign-in.html, sign-up.html, tests/authClient.test.mjs, docs/activity.md.
+- Commands: ls; cat docs/activity.md; cat vercel.json; rg -n "login|opret|sign-in|sign-up|samtykke|consent" app.js index.html auth.js consent.js sign-in.html sign-up.html; sed -n '1,220p' app.js; sed -n '3080,3260p' app.js; sed -n '40,140p' index.html; sed -n '1,180p' sign-in.html; sed -n '1,150p' sign-up.html; sed -n '1,220p' auth.js; sed -n '220,520p' auth.js; sed -n '1,200p' consent.js; rg -n "/sign-in|/sign-up|/consent" -S .; cat agents.md; apply_patch (vercel.json, auth.js, consent.js, sign-in.html, sign-up.html, tests/authClient.test.mjs, docs/activity.md); npm test -- tests/authClient.test.mjs; date +%F.
+- Security: keeps auth redirects same-origin and extends blocklist to cover new auth slugs; no new data access paths.
+- Follow-ups: verify /login and /opret serve the auth forms in the browser and that login redirects back to /app as expected.
+
 ## 2026-01-25
 - Purpose: tune page-index background colors, fix menu-grid column overlap, and restore original blue for Human Biologi chips.
 - Files: styles.css, docs/activity.md.

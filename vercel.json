@@ -16,8 +16,8 @@
   "rewrites": [
     { "source": "/admin", "destination": "/index.html" },
     { "source": "/admin/:tab", "destination": "/index.html" },
-    { "source": "/login", "destination": "/index.html" },
-    { "source": "/opret", "destination": "/index.html" },
+    { "source": "/login", "destination": "/sign-in.html" },
+    { "source": "/opret", "destination": "/sign-up.html" },
     { "source": "/samtykke", "destination": "/index.html" },
     { "source": "/app", "destination": "/index.html" },
     { "source": "/runde", "destination": "/index.html" },

@@ -24,6 +24,9 @@ describe("auth client helpers", () => {
   });
 
   it("blocks redirecting back to auth pages", () => {
+    expect(sanitizeRedirectPath("/login", baseUrl)).toBe("");
+    expect(sanitizeRedirectPath("/opret", baseUrl)).toBe("");
+    expect(sanitizeRedirectPath("/samtykke", baseUrl)).toBe("");
     expect(sanitizeRedirectPath("/sign-in.html", baseUrl)).toBe("");
     expect(sanitizeRedirectPath("/sign-up.html", baseUrl)).toBe("");
     expect(sanitizeRedirectPath("/consent.html", baseUrl)).toBe("");
