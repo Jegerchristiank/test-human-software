@@ -3267,6 +3267,7 @@ function syncAdminRoute(tab, { replace = false } = {}) {
 
 function syncScreenRoute(screen, { replace = false } = {}) {
   if (screen === "admin" || suppressRouteSync) return;
+  if (!window?.history) return;
   const targetPath = SCREEN_ROUTES[screen];
   if (!targetPath) return;
   const url = new URL(window.location.href);
@@ -3274,6 +3275,7 @@ function syncScreenRoute(screen, { replace = false } = {}) {
   url.pathname = targetPath;
   url.hash = "";
   const method = replace ? "replaceState" : "pushState";
+  if (typeof window.history[method] !== "function") return;
   window.history[method]({}, "", `${url.pathname}${url.search}${url.hash}`);
 }
 
