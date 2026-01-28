@@ -4107,6 +4107,17 @@ function formatAdminUserTitle(profile) {
   return profile.full_name || profile.email || profile.id || "—";
 }
 
+function getAdminSelectedUserLabel() {
+  const detail = state.admin.selected.detail || {};
+  const profile = detail.profile || {};
+  const name = profile.full_name || "";
+  const email = profile.email || detail.auth?.email || "";
+  const id = profile.id || detail.auth?.id || state.admin.selected.id || "";
+  const primary = name || email || id || "bruger";
+  const secondary = email && email !== primary ? email : id && id !== primary ? id : "";
+  return secondary ? `${primary} (${secondary})` : primary;
+}
+
 function renderAdminUsers() {
   if (!elements.adminUserList) return;
   const { items, total, page, perPage } = state.admin.users;
@@ -5710,6 +5721,8 @@ async function handleAdminConfirmEmail() {
     setAdminDetailStatus("Vælg en bruger først.", true);
     return;
   }
+  const label = getAdminSelectedUserLabel();
+  if (!window.confirm(`Bekræft email for ${label}?`)) return;
   setAdminDetailStatus("Bekræfter email …");
   try {
     const res = await apiFetch("/api/admin/user/update", {
@@ -5736,7 +5749,8 @@ async function handleAdminBanUser() {
     setAdminDetailStatus("Vælg en bruger først.", true);
     return;
   }
-  if (!window.confirm("Deaktiver bruger? Brugeren kan ikke logge ind før genaktivering.")) return;
+  const label = getAdminSelectedUserLabel();
+  if (!window.confirm(`Deaktiver ${label}? Brugeren kan ikke logge ind før genaktivering.`)) return;
   const reason = elements.adminDetailDisableReason?.value.trim() || null;
   setAdminDetailStatus("Deaktiverer bruger …");
   try {
@@ -5765,7 +5779,8 @@ async function handleAdminUnbanUser() {
     setAdminDetailStatus("Vælg en bruger først.", true);
     return;
   }
-  if (!window.confirm("Genaktivér bruger og genskab adgang?")) return;
+  const label = getAdminSelectedUserLabel();
+  if (!window.confirm(`Genaktivér ${label} og genskab adgang?`)) return;
   setAdminDetailStatus("Genaktiverer bruger …");
   try {
     const res = await apiFetch("/api/admin/user/action", {
@@ -5793,7 +5808,11 @@ async function handleAdminClearUserData(action) {
     setAdminDetailStatus("Vælg en bruger først.", true);
     return;
   }
-  if (!window.confirm("Bekræft handlingen. Den kan ikke fortrydes.")) return;
+  const label = getAdminSelectedUserLabel();
+  const actionLabel = action
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+  if (!window.confirm(`${actionLabel} for ${label}? Dette kan ikke fortrydes.`)) return;
   setAdminDetailStatus("Udfører handling …");
   try {
     const res = await apiFetch("/api/admin/user/action", {
@@ -5820,10 +5839,11 @@ async function handleAdminUserDelete(mode) {
     setAdminDetailStatus("Vælg en bruger først.", true);
     return;
   }
+  const label = getAdminSelectedUserLabel();
   const message =
     mode === "hard"
-      ? "Hard delete sletter auth + data permanent. Fortsæt?"
-      : "Soft delete deaktiverer adgang og bevarer data. Fortsæt?";
+      ? `Hard delete sletter auth + data permanent for ${label}. Fortsæt?`
+      : `Soft delete deaktiverer adgang og bevarer data for ${label}. Fortsæt?`;
   if (!window.confirm(message)) return;
   setAdminDetailStatus("Sletter bruger …");
   try {
