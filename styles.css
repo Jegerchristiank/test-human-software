@@ -5481,6 +5481,23 @@ body.meta-hidden .question-meta {
   align-self: start;
 }
 
+.admin-menu-grid[data-active-tab="overview"],
+.admin-menu-grid[data-active-tab="users"],
+.admin-menu-grid[data-active-tab="datasets"],
+.admin-menu-grid[data-active-tab="import"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-menu-grid[data-active-tab="overview"] .admin-main {
+  display: none;
+}
+
+.admin-menu-grid[data-active-tab="users"] .admin-side,
+.admin-menu-grid[data-active-tab="datasets"] .admin-side,
+.admin-menu-grid[data-active-tab="import"] .admin-side {
+  display: none;
+}
+
 .admin-tabs {
   display: flex;
   gap: 8px;

@@ -1,5 +1,12 @@
 # Activity Log
 
+## 2026-01-29
+- Purpose: remove empty admin columns per tab so the dashboard uses full width instead of drifting to the right.
+- Files: styles.css, docs/activity.md.
+- Commands: rg -n "admin-.*grid|admin-grid|admin-dashboard|admin-shell|admin-panel|admin-menu-grid" index.html styles.css; sed -n '1260,1760p' index.html; sed -n '1760,2080p' index.html; sed -n '5400,6060p' styles.css; rg -n "menu-shell|menu-grid|menu-column" styles.css; sed -n '480,620p' styles.css; apply_patch (styles.css, docs/activity.md); date +%F.
+- Security: layout-only change.
+- Follow-ups: confirm admin tabs no longer reserve an empty column and content spans the full width.
+
 ## 2026-01-28
 - Purpose: remove the landing screen and route logic so users land directly in auth/menu flows without the extra landing step.
 - Files: index.html, app.js, docs/activity.md.
