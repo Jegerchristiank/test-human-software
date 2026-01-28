@@ -5941,6 +5941,26 @@ async function handleAdminSubscriptionSave() {
   const periodEnd = parseAdminInputDate(elements.adminSubscriptionPeriod?.value || "");
   const cancelAtPeriodEnd = Boolean(elements.adminSubscriptionCancel?.checked);
 
+  if (!subscriptionId && (!stripeId || !status)) {
+    setAdminSubscriptionStatus("Udfyld Stripe id og status for at oprette.", true);
+    setInputInvalid(elements.adminSubscriptionStripe, !stripeId);
+    setInputInvalid(elements.adminSubscriptionStatus, !status);
+    return;
+  }
+
+  if (stripeId && stripeId.length < 6) {
+    setAdminSubscriptionStatus("Stripe id ser forkert ud.", true);
+    setInputInvalid(elements.adminSubscriptionStripe, true);
+    return;
+  }
+
+  setInputInvalid(elements.adminSubscriptionStripe, false);
+  setInputInvalid(elements.adminSubscriptionStatus, false);
+
+  const label = getAdminSelectedUserLabel();
+  const modeLabel = subscriptionId ? "Opdatere" : "Oprette";
+  if (!window.confirm(`${modeLabel} subscription for ${label}?`)) return;
+
   setAdminSubscriptionStatus("Gemmer subscription …");
   try {
     const res = await apiFetch("/api/admin/subscription", {
@@ -5977,7 +5997,8 @@ async function handleAdminSubscriptionDelete() {
     setAdminSubscriptionStatus("Vælg en subscription først.", true);
     return;
   }
-  if (!window.confirm("Slet abonnement? Brugeren mister planstatus.")) return;
+  const label = getAdminSelectedUserLabel();
+  if (!window.confirm(`Slet abonnement for ${label}? Brugeren mister planstatus.`)) return;
   const cancelStripe = Boolean(elements.adminSubscriptionCancelStripe?.checked);
 
   setAdminSubscriptionStatus("Sletter subscription …");
