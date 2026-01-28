@@ -1,6 +1,12 @@
 # Activity Log
 
 ## 2026-01-28
+- Purpose: improve admin import UX with file-read progress + log output, extend import timeouts, and keep admin dashboard on the blue theme regardless of course.
+- Files: app.js, index.html, styles.css, docs/activity.md.
+- Commands: ls; sed -n '1,200p' docs/activity.md; rg -n "import|dataset|csv|upload|admin-import|admin-dataset|progress|status" index.html app.js studio-engine.js studio-policy.js api -S; sed -n '1600,1820p' index.html; rg -n "admin-import" index.html; sed -n '1880,1985p' index.html; rg -n "adminImportFile|import-file" app.js; sed -n '1360,1525p' app.js; sed -n '3890,3935p' app.js; sed -n '18980,19180p' app.js; rg -n "importProgress|startAdminImportProgress|stopAdminImportProgress" app.js; sed -n '3520,3625p' app.js; rg -n "data-course|course|theme|admin" styles.css; sed -n '180,280p' styles.css; rg -n "data-course|course" app.js; sed -n '2160,2225p' app.js; rg -n "function showScreen|showScreen\\(" app.js; sed -n '3120,3225p' app.js; sed -n '1,240p' api/admin/import.js; sed -n '1,220p' api/_lib/importer.js; sed -n '220,520p' api/_lib/importer.js; sed -n '1,40p' "SundFi Infobank - Sygdomslære.csv"; wc -c "SundFi Infobank - Sygdomslære.csv"; sed -n '5360,5555p' styles.css; sed -n '1,120p' styles.css; rg -n "\\.btn" styles.css | head -n 20; sed -n '2235,2310p' styles.css; rg -n "DEFAULT_COURSE" app.js | head -n 5; sed -n '6200,6585p' app.js.
+- Security: UI-only changes; admin import remains auth/rate-limit gated server-side; no new data access paths.
+- Follow-ups: verify CSV upload now populates the textarea, the import log/progress updates during long runs, and the admin dashboard stays blue when opened from Sygdomslære.
+
 - Purpose: restore login/signup flow for the new slugs by routing /login and /opret to the auth pages, updating auth/consent redirects, and extending redirect blocklist tests.
 - Files: vercel.json, auth.js, consent.js, sign-in.html, sign-up.html, tests/authClient.test.mjs, docs/activity.md.
 - Commands: ls; cat docs/activity.md; cat vercel.json; rg -n "login|opret|sign-in|sign-up|samtykke|consent" app.js index.html auth.js consent.js sign-in.html sign-up.html; sed -n '1,220p' app.js; sed -n '3080,3260p' app.js; sed -n '40,140p' index.html; sed -n '1,180p' sign-in.html; sed -n '1,150p' sign-up.html; sed -n '1,220p' auth.js; sed -n '220,520p' auth.js; sed -n '1,200p' consent.js; rg -n "/sign-in|/sign-up|/consent" -S .; cat agents.md; apply_patch (vercel.json, auth.js, consent.js, sign-in.html, sign-up.html, tests/authClient.test.mjs, docs/activity.md); npm test -- tests/authClient.test.mjs; date +%F.
@@ -18,6 +24,12 @@
 - Commands: rg -n "admin-.*grid|admin-grid|admin-dashboard|admin-shell|admin-panel|admin-menu-grid" index.html styles.css; sed -n '1260,1760p' index.html; sed -n '1760,2080p' index.html; sed -n '5400,6060p' styles.css; rg -n "menu-shell|menu-grid|menu-column" styles.css; sed -n '480,620p' styles.css; sed -n '4360,4445p' styles.css; rg -n "admin-kpi-grid|admin-analytics-grid" styles.css; rg -n "diagnostics-grid" styles.css; sed -n '5290,5405p' styles.css; apply_patch (index.html, styles.css, docs/activity.md); date +%F.
 - Security: layout-only changes; no auth or data access behavior changed.
 - Follow-ups: verify admin grids fill the viewport on widescreen and that the sticky side column still behaves as expected.
+
+- Purpose: restore admin access checks for users with admin metadata or legacy profiles, and widen menu shells to use full screen width.
+- Files: api/_lib/admin.js, index.html, styles.css, tests/adminAuth.test.mjs, docs/activity.md.
+- Commands: rg -n "admin access|admin adgang|is_admin|admin" api app.js auth.js access-policy.js; sed -n '1,200p' api/_lib/admin.js; sed -n '1,220p' api/_lib/auth.js; sed -n '1,220p' api/me.js; rg -n "checkAdminStatus" app.js; sed -n '3960,4240p' app.js; sed -n '8120,8245p' app.js; rg -n "menu-shell" index.html; rg -n "menu-shell|menu-grid|menu-column" styles.css; sed -n '480,620p' styles.css; rg -n "diagnostics-grid" styles.css; sed -n '5290,5405p' styles.css; apply_patch (index.html, styles.css, api/_lib/admin.js, tests/adminAuth.test.mjs, docs/activity.md); npm test -- tests/adminAuth.test.mjs; date +%F.
+- Security: admin checks still rely on server-side verification; email fallback requires confirmed email and admin flag from profiles or app metadata.
+- Follow-ups: verify admin banner clears after refresh and that menu/admin screens now stretch to full width.
 
 ## 2026-01-25
 - Purpose: tune page-index background colors, fix menu-grid column overlap, and restore original blue for Human Biologi chips.

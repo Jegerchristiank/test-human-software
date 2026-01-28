@@ -529,7 +529,7 @@ body[data-theme="dark"] .noise-layer {
   padding: var(--space-9) var(--space-4) var(--space-11);
 }
 
-.menu-shell.admin-shell {
+.menu-shell.menu-shell--wide {
   max-width: 100%;
   width: 100%;
   padding-left: clamp(20px, 3vw, 64px);
@@ -5528,6 +5528,57 @@ body.meta-hidden .question-meta {
   color: var(--muted);
   display: grid;
   gap: 4px;
+}
+
+.admin-import-log {
+  margin-top: var(--space-4);
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  display: grid;
+  gap: 10px;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+}
+
+.admin-import-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-import-log-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--tooltip-text);
+}
+
+.admin-import-log-output {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: var(--tooltip-text);
+}
+
+.admin-import-log-output.is-empty {
+  color: rgba(226, 232, 240, 0.7);
+  font-style: italic;
+}
+
+.admin-import-log .btn {
+  border-color: rgba(148, 163, 184, 0.4);
+  color: var(--tooltip-text);
+}
+
+.admin-import-log .btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: #fff;
 }
 
 .admin-user-toolbar {

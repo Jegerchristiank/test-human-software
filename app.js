@@ -962,8 +962,11 @@ const state = {
     metrics: null,
     loading: false,
     importing: false,
+    importFileLoading: false,
     importPreview: null,
     tab: "overview",
+    importLog: [],
+    themeOverrideCourse: null,
     importProgress: {
       value: 0,
       label: "",
@@ -1443,6 +1446,9 @@ const elements = {
   adminImportProgressValue: document.getElementById("admin-import-progress-value"),
   adminImportProgressBar: document.getElementById("admin-import-progress-bar"),
   adminImportProgressFill: document.getElementById("admin-import-progress-fill"),
+  adminImportLog: document.getElementById("admin-import-log"),
+  adminImportLogOutput: document.getElementById("admin-import-log-output"),
+  adminImportLogClear: document.getElementById("admin-import-log-clear"),
   adminDatasetType: document.getElementById("admin-dataset-type"),
   adminDatasetVersion: document.getElementById("admin-dataset-version"),
   adminDatasetRefreshBtn: document.getElementById("admin-dataset-refresh-btn"),
@@ -3133,6 +3139,10 @@ const AUTH_REQUIRED_SCREENS = new Set([
 const AUTH_REDIRECT_ROUTE = "/login";
 const ADMIN_ROUTE_BASE = "/admin";
 const ADMIN_TABS = new Set(["overview", "users", "datasets", "import"]);
+const ADMIN_IMPORT_TIMEOUT_MS = 120000;
+const ADMIN_IMPORT_PROGRESS_RAMP_MS = 90000;
+const ADMIN_IMPORT_LOG_LIMIT = 160;
+const ADMIN_IMPORT_CHAR_LIMIT = 1_500_000;
 const SCREEN_ROUTES = {
   landing: "/",
   menu: "/app",
@@ -3164,6 +3174,22 @@ function redirectToAuth() {
     target.searchParams.set("redirect", returnTo);
   }
   window.location.replace(target.toString());
+}
+
+function applyAdminThemeOverride(target) {
+  if (!document?.body) return;
+  if (target === "admin") {
+    if (!state.admin.themeOverrideCourse) {
+      state.admin.themeOverrideCourse = document.body.dataset.course || DEFAULT_COURSE;
+    }
+    document.body.dataset.course = DEFAULT_COURSE;
+    return;
+  }
+  if (state.admin.themeOverrideCourse) {
+    const restore = state.admin.themeOverrideCourse;
+    state.admin.themeOverrideCourse = null;
+    document.body.dataset.course = restore;
+  }
 }
 
 function showScreen(target) {
@@ -3214,6 +3240,7 @@ function showScreen(target) {
   );
   document.body.classList.toggle("mode-game", target === "quiz");
   document.body.classList.toggle("mode-result", target === "result");
+  applyAdminThemeOverride(target);
   if (["menu", "landing", "quiz", "result"].includes(target)) {
     state.lastAppScreen = target;
   }
@@ -3555,6 +3582,67 @@ function setAdminImportStatus(message, isWarn = false) {
   updateStatusMessage(elements.adminImportStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
 
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes)) return "";
+  const units = ["B", "KB", "MB", "GB"];
+  let value = Math.max(0, bytes);
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  const precision = value >= 10 || unitIndex === 0 ? 0 : 1;
+  return `${value.toFixed(precision)} ${units[unitIndex]}`;
+}
+
+function formatImportLogTime(date = new Date()) {
+  try {
+    return date.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  } catch (error) {
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+    return `${hours}:${minutes}:${seconds}`;
+  }
+}
+
+function renderAdminImportLog() {
+  if (!elements.adminImportLogOutput) return;
+  const entries = Array.isArray(state.admin.importLog) ? state.admin.importLog : [];
+  if (!entries.length) {
+    elements.adminImportLogOutput.textContent = "Ingen log endnu.";
+    elements.adminImportLogOutput.classList.add("is-empty");
+  } else {
+    elements.adminImportLogOutput.textContent = entries.join("\n");
+    elements.adminImportLogOutput.classList.remove("is-empty");
+  }
+  if (elements.adminImportLog) {
+    setElementVisible(elements.adminImportLog, true);
+  }
+  elements.adminImportLogOutput.scrollTop = elements.adminImportLogOutput.scrollHeight;
+}
+
+function appendAdminImportLog(message, { isWarn = false } = {}) {
+  const text = String(message || "").trim();
+  if (!text) return;
+  const prefix = isWarn ? "WARN" : "INFO";
+  const entry = `${formatImportLogTime()} ${prefix} ${text}`;
+  const entries = Array.isArray(state.admin.importLog) ? state.admin.importLog : [];
+  entries.push(entry);
+  if (entries.length > ADMIN_IMPORT_LOG_LIMIT) {
+    entries.splice(0, entries.length - ADMIN_IMPORT_LOG_LIMIT);
+  }
+  state.admin.importLog = entries;
+  renderAdminImportLog();
+}
+
+function clearAdminImportLog({ silent = false } = {}) {
+  state.admin.importLog = [];
+  if (!silent) {
+    renderAdminImportLog();
+  }
+}
+
 function setAdminDatasetStatus(message, isWarn = false) {
   updateStatusMessage(elements.adminDatasetStatus, message, { isWarn, autoHide: true, focusOnWarn: true });
 }
@@ -3596,18 +3684,66 @@ function setAdminImportProgress(value, label) {
 function startAdminImportProgress() {
   clearAdminImportProgressTimer();
   state.admin.importProgress.startedAt = Date.now();
-  setAdminImportProgress(0.02, "AI formatterer …");
+  const baseLabel = "AI formatterer …";
+  setAdminImportProgress(0.02, baseLabel);
   state.admin.importProgressTimer = setInterval(() => {
     const elapsed = Date.now() - (state.admin.importProgress.startedAt || Date.now());
-    const ramp = Math.min(0.9, 0.02 + (elapsed / 30000) * 0.88);
-    setAdminImportProgress(ramp, "AI formatterer …");
-  }, 250);
+    const ramp = Math.min(0.9, 0.02 + (elapsed / ADMIN_IMPORT_PROGRESS_RAMP_MS) * 0.88);
+    const seconds = Math.max(1, Math.round(elapsed / 1000));
+    setAdminImportProgress(ramp, `${baseLabel} (${seconds}s)`);
+  }, 500);
 }
 
 function stopAdminImportProgress(label, value) {
   clearAdminImportProgressTimer();
   const finalValue = Number.isFinite(value) ? value : 1;
   setAdminImportProgress(finalValue, label || "Færdig");
+}
+
+function startAdminImportFileProgress() {
+  clearAdminImportProgressTimer();
+  state.admin.importProgress.startedAt = Date.now();
+  setAdminImportProgress(0.02, "Læser fil …");
+}
+
+function updateAdminImportFileProgress(loaded, total) {
+  if (!Number.isFinite(total) || total <= 0) {
+    setAdminImportProgress(0.12, "Læser fil …");
+    return;
+  }
+  const ratio = Math.min(1, Math.max(0, loaded / total));
+  const value = Math.min(0.98, Math.max(0.02, ratio));
+  setAdminImportProgress(value, "Læser fil …");
+}
+
+function readFileAsTextWithProgress(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error("file_read_failed"));
+    reader.onabort = () => reject(new Error("file_read_aborted"));
+    reader.onprogress = (event) => {
+      if (event.lengthComputable && typeof onProgress === "function") {
+        onProgress(event.loaded, event.total);
+      }
+    };
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.readAsText(file);
+  });
+}
+
+function readFileAsArrayBufferWithProgress(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error("file_read_failed"));
+    reader.onabort = () => reject(new Error("file_read_aborted"));
+    reader.onprogress = (event) => {
+      if (event.lengthComputable && typeof onProgress === "function") {
+        onProgress(event.loaded, event.total);
+      }
+    };
+    reader.onload = () => resolve(reader.result instanceof ArrayBuffer ? reader.result : null);
+    reader.readAsArrayBuffer(file);
+  });
 }
 
 function setAdminUserStatus(message, isWarn = false) {
@@ -3899,7 +4035,8 @@ function updateAdminUI() {
   }
 
   const importEnabled = Boolean(state.admin.importEnabled);
-  const importReady = allowed && importEnabled && !state.admin.importing;
+  const importBusy = state.admin.importing || state.admin.importFileLoading;
+  const importReady = allowed && importEnabled && !importBusy;
   const importHasPreview = Boolean(state.admin.importPreview);
   if (elements.adminImportBtn) {
     elements.adminImportBtn.disabled = !importReady || !importHasPreview;
@@ -3923,7 +4060,7 @@ function updateAdminUI() {
     elements.adminImportPreviewText.disabled = !importReady;
   }
   if (elements.adminImportProgress) {
-    setElementVisible(elements.adminImportProgress, allowed && state.admin.importing);
+    setElementVisible(elements.adminImportProgress, allowed && (state.admin.importing || state.admin.importFileLoading));
   }
 
   const datasetEnabled = allowed && !state.admin.datasets.loading;
@@ -4096,8 +4233,11 @@ function resetAdminState() {
   state.admin.metrics = null;
   state.admin.loading = false;
   state.admin.importing = false;
+  state.admin.importFileLoading = false;
   state.admin.importProgress = { value: 0, label: "", startedAt: null };
   clearAdminImportProgressTimer();
+  state.admin.importLog = [];
+  state.admin.themeOverrideCourse = null;
   state.admin.users = {
     loading: false,
     items: [],
@@ -4119,6 +4259,7 @@ function resetAdminState() {
   setAdminDetailStatus("");
   setAdminCreateStatus("");
   setAdminSubscriptionStatus("");
+  renderAdminImportLog();
   updateAdminUI();
 }
 
@@ -6244,9 +6385,15 @@ async function handleAdminImportPreview() {
     setAdminImportStatus("Admin import er deaktiveret i miljøet.", true);
     return;
   }
+  if (state.admin.importFileLoading) {
+    setAdminImportStatus("Vent på at filen er læst færdig.", true);
+    appendAdminImportLog("Forhåndsvisning afbrudt: filen læses stadig.", { isWarn: true });
+    return;
+  }
   const content = elements.adminImportContent ? elements.adminImportContent.value : "";
   if (!content || !content.trim()) {
     setAdminImportStatus("Indsæt rådata først.", true);
+    appendAdminImportLog("Forhåndsvisning afbrudt: ingen rådata.", { isWarn: true });
     return;
   }
   const type = elements.adminImportType ? elements.adminImportType.value : "mcq";
@@ -6254,6 +6401,7 @@ async function handleAdminImportPreview() {
   state.admin.importing = true;
   startAdminImportProgress();
   setAdminImportStatus("AI formatterer …");
+  appendAdminImportLog(`Starter forhåndsvisning (${type}).`);
   updateAdminUI();
 
   let success = false;
@@ -6262,21 +6410,42 @@ async function handleAdminImportPreview() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type, content }),
-      timeoutMs: 60000,
+      timeoutMs: ADMIN_IMPORT_TIMEOUT_MS,
     });
     if (!res.ok) {
       const data = await safeReadJson(res);
       const message = data?.error || "Forhåndsvisning fejlede.";
       setAdminImportStatus(message, true);
+      appendAdminImportLog(`Forhåndsvisning fejlede: ${message}`, { isWarn: true });
       return;
     }
     const data = await safeReadJson(res);
     state.admin.importPreview = data?.result || null;
     renderAdminImportPreview(state.admin.importPreview);
     setAdminImportStatus("Forhåndsvisning klar. Ret formatteret data før import.");
+    if (state.admin.importPreview) {
+      const count = typeof state.admin.importPreview.itemCount === "number" ? state.admin.importPreview.itemCount : null;
+      const model = state.admin.importPreview.model ? ` · ${state.admin.importPreview.model}` : "";
+      appendAdminImportLog(
+        `Forhåndsvisning klar${count !== null ? ` (${count} rækker${model})` : model}.`
+      );
+      const warnings = state.admin.importPreview.warnings || {};
+      if (warnings.formatWarnings?.length) {
+        appendAdminImportLog(`${warnings.formatWarnings.length} formatteringsadvarsler.`, { isWarn: true });
+      }
+      if (warnings.missingImages?.length) {
+        appendAdminImportLog(`${warnings.missingImages.length} mangler billeder.`, { isWarn: true });
+      }
+      if (warnings.unmatchedImages?.length) {
+        appendAdminImportLog(`${warnings.unmatchedImages.length} billeder uden match.`, { isWarn: true });
+      }
+    }
     success = true;
   } catch (error) {
-    setAdminImportStatus("Forhåndsvisning fejlede.", true);
+    const timedOut = error && error.name === "AbortError";
+    const message = timedOut ? "Forhåndsvisning tog for lang tid." : "Forhåndsvisning fejlede.";
+    setAdminImportStatus(message, true);
+    appendAdminImportLog(message, { isWarn: true });
   } finally {
     stopAdminImportProgress(success ? "Færdig" : "Fejl", success ? 1 : state.admin.importProgress.value);
     state.admin.importing = false;
@@ -6293,13 +6462,20 @@ async function handleAdminImport() {
     setAdminImportStatus("Admin import er deaktiveret i miljøet.", true);
     return;
   }
+  if (state.admin.importFileLoading) {
+    setAdminImportStatus("Vent på at filen er læst færdig.", true);
+    appendAdminImportLog("Import afbrudt: filen læses stadig.", { isWarn: true });
+    return;
+  }
   const content = getAdminImportContent();
   if (!content || !content.trim()) {
     setAdminImportStatus("Indsæt rådata først.", true);
+    appendAdminImportLog("Import afbrudt: ingen rådata.", { isWarn: true });
     return;
   }
   if (!state.admin.importPreview) {
     setAdminImportStatus("Lav en forhåndsvisning først.", true);
+    appendAdminImportLog("Import afbrudt: mangler forhåndsvisning.", { isWarn: true });
     return;
   }
   const type = elements.adminImportType ? elements.adminImportType.value : "mcq";
@@ -6308,6 +6484,7 @@ async function handleAdminImport() {
   state.admin.importing = true;
   startAdminImportProgress();
   setAdminImportStatus("AI formatterer …");
+  appendAdminImportLog(`Starter import (${type}, ${mode}).`);
   updateAdminUI();
 
   let success = false;
@@ -6316,12 +6493,13 @@ async function handleAdminImport() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type, mode, content }),
-      timeoutMs: 60000,
+      timeoutMs: ADMIN_IMPORT_TIMEOUT_MS,
     });
     if (!res.ok) {
       const data = await safeReadJson(res);
       const message = data?.error || "Importen fejlede.";
       setAdminImportStatus(message, true);
+      appendAdminImportLog(`Import fejlede: ${message}`, { isWarn: true });
       return;
     }
     const data = await safeReadJson(res);
@@ -6343,6 +6521,7 @@ async function handleAdminImport() {
     }
     const detail = notes.length ? ` (${notes.join(" · ")})` : "";
     setAdminImportStatus(`Kladde oprettet${detail}. Gennemgå og publicér under Datasæt.`);
+    appendAdminImportLog(`Kladde oprettet${detail}.`);
     if (draftId) {
       state.admin.datasets.type = type;
       state.admin.datasets.selectedVersionId = draftId;
@@ -6354,10 +6533,93 @@ async function handleAdminImport() {
     void refreshAdminMetrics({ silent: true });
     success = true;
   } catch (error) {
-    setAdminImportStatus("Importen fejlede.", true);
+    const timedOut = error && error.name === "AbortError";
+    const message = timedOut ? "Importen tog for lang tid." : "Importen fejlede.";
+    setAdminImportStatus(message, true);
+    appendAdminImportLog(message, { isWarn: true });
   } finally {
     stopAdminImportProgress(success ? "Færdig" : "Fejl", success ? 1 : state.admin.importProgress.value);
     state.admin.importing = false;
+    updateAdminUI();
+  }
+}
+
+async function handleAdminImportFileChange(file) {
+  if (!file) return;
+  if (!state.admin.allowed) {
+    setAdminImportStatus("Admin adgang mangler. Log ind med en admin-konto.", true);
+    appendAdminImportLog("Fil kan ikke læses uden admin adgang.", { isWarn: true });
+    return;
+  }
+  if (!state.admin.importEnabled) {
+    setAdminImportStatus("Admin import er deaktiveret i miljøet.", true);
+    appendAdminImportLog("Fil kan ikke læses: admin import er deaktiveret.", { isWarn: true });
+    return;
+  }
+
+  const fileName = file.name || "ukendt fil";
+  const fileSize = formatBytes(file.size);
+  const ext = file.name.split(".").pop()?.toLowerCase() || "";
+
+  state.admin.importFileLoading = true;
+  startAdminImportFileProgress();
+  clearAdminImportPreview();
+  setAdminImportStatus(`Læser ${fileName} …`);
+  appendAdminImportLog(`Fil valgt: ${fileName}${fileSize ? ` (${fileSize})` : ""}.`);
+  updateAdminUI();
+
+  try {
+    let text = "";
+    if (ext === "xlsx") {
+      if (!window.XLSX) {
+        const message = "Excel-filer kræver XLSX loader. Eksportér som CSV/TSV først.";
+        setAdminImportStatus(message, true);
+        appendAdminImportLog(message, { isWarn: true });
+        return;
+      }
+      const buffer = await readFileAsArrayBufferWithProgress(file, updateAdminImportFileProgress);
+      if (!buffer) {
+        throw new Error("file_buffer_empty");
+      }
+      const workbook = window.XLSX.read(buffer, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+      text = rows.map((row) => row.join("\t")).join("\n");
+    } else {
+      text = await readFileAsTextWithProgress(file, updateAdminImportFileProgress);
+    }
+
+    if (!text || !text.trim()) {
+      const message = "Filen er tom eller kunne ikke læses.";
+      setAdminImportStatus(message, true);
+      appendAdminImportLog(message, { isWarn: true });
+      return;
+    }
+
+    if (elements.adminImportContent) {
+      elements.adminImportContent.value = text;
+      elements.adminImportContent.scrollTop = 0;
+    }
+
+    const textLength = text.length;
+    if (textLength > ADMIN_IMPORT_CHAR_LIMIT) {
+      const message = `Filen er for stor (${textLength} tegn). Max er ${ADMIN_IMPORT_CHAR_LIMIT} tegn.`;
+      setAdminImportStatus(message, true);
+      appendAdminImportLog(message, { isWarn: true });
+    } else {
+      setAdminImportStatus("Fil indlæst. Klik Forhåndsvis.");
+    }
+
+    appendAdminImportLog(
+      `Fil indlæst${fileSize ? ` (${fileSize})` : ""}${textLength ? ` · ${textLength} tegn` : ""}.`
+    );
+  } catch (error) {
+    setAdminImportStatus("Kunne ikke læse filen.", true);
+    appendAdminImportLog("Kunne ikke læse filen.", { isWarn: true });
+  } finally {
+    stopAdminImportProgress("Klar", 1);
+    state.admin.importFileLoading = false;
     updateAdminUI();
   }
 }
@@ -19070,35 +19332,18 @@ function attachEvents() {
       setAdminImportStatus("");
     });
   }
+  if (elements.adminImportLogClear) {
+    elements.adminImportLogClear.addEventListener("click", () => {
+      clearAdminImportLog();
+      setAdminImportStatus("Log ryddet.");
+    });
+  }
+  renderAdminImportLog();
   if (elements.adminImportFile) {
-    elements.adminImportFile.addEventListener("change", async (event) => {
+    elements.adminImportFile.addEventListener("change", (event) => {
       const file = event.target.files?.[0];
       if (!file) return;
-      const ext = file.name.split(".").pop()?.toLowerCase();
-      try {
-        let text = "";
-        if (ext === "xlsx") {
-          if (!window.XLSX) {
-            setAdminImportStatus("Excel-læser er ikke indlæst endnu.", true);
-            return;
-          }
-          const buffer = await file.arrayBuffer();
-          const workbook = window.XLSX.read(buffer, { type: "array" });
-          const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const rows = window.XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
-          text = rows.map((row) => row.join("\t")).join("\n");
-        } else {
-          text = await file.text();
-        }
-        if (elements.adminImportContent) {
-          elements.adminImportContent.value = text;
-        }
-        clearAdminImportPreview();
-        setAdminImportStatus("Fil indlæst. Klik Forhåndsvis.");
-      } catch (error) {
-        setAdminImportStatus("Kunne ikke læse filen.", true);
-      }
+      void handleAdminImportFileChange(file);
     });
   }
   if (elements.adminImportType) {

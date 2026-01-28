@@ -440,7 +440,7 @@
       </section>
 
       <section id="menu-screen" data-testid="menu-screen" class="screen hidden">
-        <div class="menu-shell" data-testid="menu-shell">
+        <div class="menu-shell menu-shell--wide" data-testid="menu-shell">
           <header class="menu-header reveal" data-testid="menu-header" style="--delay: 0s">
             <a class="brand-block brand-action" href="/" data-brand-back data-testid="index__menu-shell--menu-header__brand-block">
               <div class="brand-mark" data-testid="index__menu-header--brand-block__brand-mark">
@@ -1300,7 +1300,7 @@
         </div>
       </section>
       <section id="admin-screen" data-testid="admin-screen" class="screen hidden">
-        <div class="menu-shell admin-shell" data-testid="admin-shell">
+        <div class="menu-shell menu-shell--wide admin-shell" data-testid="admin-shell">
           <header class="menu-header reveal" data-testid="admin-header" style="--delay: 0s">
             <a class="brand-block brand-action" href="/" data-brand-back data-testid="admin-header-brand">
               <div class="brand-mark" data-testid="admin-header-brand-mark">
@@ -1947,6 +1947,16 @@
                   <div class="admin-progress-bar" id="admin-import-progress-bar" data-testid="admin-import-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                     <div class="admin-progress-fill" id="admin-import-progress-fill" data-testid="admin-import-progress-fill"></div>
                   </div>
+                </div>
+                <div class="admin-import-log" id="admin-import-log" data-testid="admin-import-log">
+                  <div class="admin-import-log-header" data-testid="admin-import-log-header">
+                    <div>
+                      <div class="eyebrow" data-testid="admin-import-log-eyebrow">Log</div>
+                      <div class="admin-import-log-title" data-testid="admin-import-log-title">Importforløb</div>
+                    </div>
+                    <button id="admin-import-log-clear" data-testid="admin-import-log-clear" class="btn ghost small" type="button">Ryd log</button>
+                  </div>
+                  <pre class="admin-import-log-output" id="admin-import-log-output" data-testid="admin-import-log-output" role="log" aria-live="polite" aria-atomic="false"></pre>
                 </div>
                 <div class="field-hint" id="admin-import-hint" data-testid="admin-import-hint">Brug forhåndsvisningen til at rette formatteret data, før du importerer en kladde.</div>
                 <div class="admin-status hidden" id="admin-import-status" data-testid="admin-import-status" role="status" aria-live="polite"></div>
