@@ -8,6 +8,11 @@
 - Follow-ups: confirm admin tabs no longer reserve an empty column and content spans the full width.
 
 ## 2026-01-28
+- Purpose: restore the admin import panel visibility by fixing the import tab column layout (import panel lives in the side column).
+- Files: styles.css, docs/activity.md.
+- Commands: rg -n "admin-status|admin banner|admin-status" index.html app.js styles.css -S; sed -n '1200,1405p' index.html; rg -n "admin\\.allowed|checkAdmin|admin status|updateAdminUI|admin-screen" app.js -S; sed -n '3970,4365p' app.js; rg -n "admin-menu-grid|data-active-tab|admin-.*panel" styles.css; sed -n '5460,5535p' styles.css; apply_patch (styles.css, docs/activity.md).
+- Security: layout-only change; admin access enforcement unchanged.
+- Follow-ups: confirm the Import tab shows the import panel and that non-admins still see disabled controls plus the access warning.
 - Purpose: speed up sygdomslære CSV/TSV admin imports by bypassing AI formatting when the file is already structured, and extend admin publish timeout to reduce publish failures.
 - Files: api/_lib/importFormatter.js, app.js, tests/importFormatter.test.mjs, docs/activity.md.
 - Commands: rg -n "admin import|admin-import|importProgress|importLog|dataset|publish" app.js api/admin -S; sed -n '880,1160p' app.js; sed -n '3400,3820p' app.js; sed -n '6200,6685p' app.js; sed -n '1,220p' api/admin/import-preview.js; sed -n '1,220p' api/admin/import.js; sed -n '1,260p' api/_lib/importer.js; sed -n '800,980p' api/_lib/rawdataParser.js; rg -n "publishVersion|createDraftVersion|ensurePublishedVersion" api/_lib/datasetAdmin.js; sed -n '700,840p' api/_lib/datasetAdmin.js; cat vercel.json; wc -c "SundFi Infobank - Sygdomslære.csv"; apply_patch (api/_lib/importFormatter.js, app.js, tests/importFormatter.test.mjs, docs/activity.md); npm test -- tests/importFormatter.test.mjs.

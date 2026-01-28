@@ -5488,13 +5488,13 @@ body.meta-hidden .question-meta {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.admin-menu-grid[data-active-tab="overview"] .admin-main {
+.admin-menu-grid[data-active-tab="overview"] .admin-main,
+.admin-menu-grid[data-active-tab="import"] .admin-main {
   display: none;
 }
 
 .admin-menu-grid[data-active-tab="users"] .admin-side,
-.admin-menu-grid[data-active-tab="datasets"] .admin-side,
-.admin-menu-grid[data-active-tab="import"] .admin-side {
+.admin-menu-grid[data-active-tab="datasets"] .admin-side {
   display: none;
 }
 
