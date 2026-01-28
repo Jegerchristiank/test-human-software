@@ -978,6 +978,8 @@ const state = {
       mode: "email",
       plan: "all",
       status: "all",
+      searchTimer: null,
+      lastSignature: "",
     },
     selected: {
       id: null,
@@ -1329,6 +1331,7 @@ const elements = {
   adminUserStatusFilter: document.getElementById("admin-user-status-filter"),
   adminUserSearchBtn: document.getElementById("admin-user-search-btn"),
   adminUserRefreshBtn: document.getElementById("admin-user-refresh-btn"),
+  adminUserClearBtn: document.getElementById("admin-user-clear-btn"),
   adminUserList: document.getElementById("admin-user-list"),
   adminUserEmpty: document.getElementById("admin-user-empty"),
   adminUserCount: document.getElementById("admin-user-count"),
@@ -3880,6 +3883,7 @@ function updateAdminUI() {
     elements.adminUserStatusFilter,
     elements.adminUserSearchBtn,
     elements.adminUserRefreshBtn,
+    elements.adminUserClearBtn,
     elements.adminCreateEmail,
     elements.adminCreateName,
     elements.adminCreatePassword,
@@ -5398,11 +5402,44 @@ function updateAdminUserFiltersFromInputs() {
   }
 }
 
-async function loadAdminUsers({ page } = {}) {
+function getAdminUsersSignature() {
+  const { query, mode, plan, status, page, perPage } = state.admin.users;
+  return [query, mode, plan, status, page, perPage].join("|");
+}
+
+function scheduleAdminUserSearch(delay = 350) {
+  if (state.admin.users.searchTimer) {
+    clearTimeout(state.admin.users.searchTimer);
+  }
+  state.admin.users.searchTimer = setTimeout(() => {
+    state.admin.users.searchTimer = null;
+    void handleAdminUserSearch();
+  }, delay);
+}
+
+function resetAdminUserFilters() {
+  if (elements.adminUserSearch) elements.adminUserSearch.value = "";
+  if (elements.adminUserSearchMode) elements.adminUserSearchMode.value = "email";
+  if (elements.adminUserPlanFilter) elements.adminUserPlanFilter.value = "all";
+  if (elements.adminUserStatusFilter) elements.adminUserStatusFilter.value = "all";
+  state.admin.users.query = "";
+  state.admin.users.mode = "email";
+  state.admin.users.plan = "all";
+  state.admin.users.status = "all";
+  state.admin.users.page = 1;
+  state.admin.users.lastSignature = "";
+}
+
+async function loadAdminUsers({ page, force } = {}) {
   if (!state.admin.allowed) return;
   updateAdminUserFiltersFromInputs();
   const nextPage = page || state.admin.users.page || 1;
   state.admin.users.page = nextPage;
+  const signature = getAdminUsersSignature();
+  if (!force && signature === state.admin.users.lastSignature && !state.admin.users.loading) {
+    return;
+  }
+  state.admin.users.lastSignature = signature;
   state.admin.users.loading = true;
   setAdminUserStatus("Henter brugere …");
   updateAdminUI();
@@ -5430,6 +5467,17 @@ async function loadAdminUsers({ page } = {}) {
       state.admin.users.total =
         typeof data.total === "number" && Number.isFinite(data.total) ? data.total : data.users?.length || 0;
       setAdminUserStatus("");
+
+      const hasFilter =
+        Boolean(state.admin.users.query) ||
+        state.admin.users.plan !== "all" ||
+        state.admin.users.status !== "all";
+      if (hasFilter && state.admin.users.items.length === 1) {
+        const onlyUserId = state.admin.users.items[0]?.id;
+        if (onlyUserId && onlyUserId !== state.admin.selected.id) {
+          void loadAdminUserDetail(onlyUserId);
+        }
+      }
     } else if (res.status === 401 || res.status === 403) {
       state.admin.allowed = false;
       setAdminUserStatus("Admin adgang mangler. Log ind med en admin-konto.", true);
@@ -18479,7 +18527,15 @@ function attachEvents() {
   }
   if (elements.adminUserRefreshBtn) {
     elements.adminUserRefreshBtn.addEventListener("click", () => {
-      void loadAdminUsers({ page: state.admin.users.page });
+      void loadAdminUsers({ page: state.admin.users.page, force: true });
+    });
+  }
+  if (elements.adminUserClearBtn) {
+    elements.adminUserClearBtn.addEventListener("click", () => {
+      resetAdminUserFilters();
+      state.admin.selected.id = null;
+      state.admin.selected.detail = null;
+      void loadAdminUsers({ page: 1, force: true });
     });
   }
   if (elements.adminUserSearch) {
@@ -18487,6 +18543,9 @@ function attachEvents() {
       if (event.key === "Enter") {
         void handleAdminUserSearch();
       }
+    });
+    elements.adminUserSearch.addEventListener("input", () => {
+      scheduleAdminUserSearch();
     });
   }
   if (elements.adminUserPlanFilter) {
