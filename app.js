@@ -4251,11 +4251,20 @@ function setAdminSubscriptionEditor(subscription, userId) {
   if (elements.adminSubscriptionCancel) {
     elements.adminSubscriptionCancel.checked = Boolean(subscription?.cancel_at_period_end);
   }
+  if (elements.adminSubscriptionCancelStripe) {
+    elements.adminSubscriptionCancelStripe.checked = Boolean(subscription?.cancel_at_period_end);
+  }
   if (elements.adminSubscriptionDeleteBtn) {
     elements.adminSubscriptionDeleteBtn.disabled = !subscription?.id;
   }
   if (elements.adminSubscriptionSaveBtn) {
     elements.adminSubscriptionSaveBtn.disabled = !userId;
+  }
+
+  if (subscription?.id) {
+    setAdminSubscriptionStatus("Redigerer eksisterende subscription.");
+  } else {
+    setAdminSubscriptionStatus("Opretter ny subscription.");
   }
 }
 
@@ -18768,7 +18777,6 @@ function attachEvents() {
         return;
       }
       setAdminSubscriptionEditor(null, userId);
-      setAdminSubscriptionStatus("");
     });
   }
   if (elements.adminSubscriptionSaveBtn) {
