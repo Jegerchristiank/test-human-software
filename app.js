@@ -3132,6 +3132,8 @@ const AUTH_REQUIRED_SCREENS = new Set([
   "consent",
 ]);
 const AUTH_REDIRECT_ROUTE = "/sign-in";
+const ADMIN_ROUTE_BASE = "/admin";
+const ADMIN_TABS = new Set(["overview", "users", "datasets", "import"]);
 
 function getAuthReturnPath() {
   const url = new URL(window.location.href);
@@ -3199,6 +3201,37 @@ function showScreen(target) {
     document.body.classList.remove("meta-hidden");
     cancelMicRecording();
   }
+}
+
+function getAdminTabFromPath(pathname) {
+  if (!pathname || !pathname.startsWith(ADMIN_ROUTE_BASE)) return null;
+  const raw = pathname.slice(ADMIN_ROUTE_BASE.length).replace(/^\/+/, "");
+  if (!raw) return "overview";
+  const normalized = raw.split("/")[0].toLowerCase();
+  return ADMIN_TABS.has(normalized) ? normalized : "overview";
+}
+
+function buildAdminPath(tab) {
+  const safeTab = ADMIN_TABS.has(tab) ? tab : "overview";
+  return safeTab === "overview" ? ADMIN_ROUTE_BASE : `${ADMIN_ROUTE_BASE}/${safeTab}`;
+}
+
+function syncAdminRoute(tab, { replace = false } = {}) {
+  const url = new URL(window.location.href);
+  const targetPath = buildAdminPath(tab);
+  if (url.pathname === targetPath) return;
+  url.pathname = targetPath;
+  url.hash = "";
+  const method = replace ? "replaceState" : "pushState";
+  window.history[method]({}, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function applyRouteFromLocation() {
+  const tab = getAdminTabFromPath(window.location.pathname || "");
+  if (!tab) return false;
+  setAdminTab(tab);
+  showScreen("admin");
+  return true;
 }
 
 function handleBrandBack() {
@@ -4068,6 +4101,7 @@ async function checkAdminStatus({ force = false } = {}) {
 function openAdminDashboard() {
   if (!requireAuthGuard()) return;
   showScreen("admin");
+  syncAdminRoute(state.admin.tab || "overview", { replace: false });
   void checkAdminStatus({ force: true }).then(() => {
     if (!state.admin.allowed) return;
     void refreshAdminMetrics({ silent: true });
@@ -5521,6 +5555,9 @@ function setAdminTab(tab) {
   }
   if (elements.adminMenuGrid) {
     elements.adminMenuGrid.dataset.activeTab = tab;
+  }
+  if (screens.admin?.classList.contains("active")) {
+    syncAdminRoute(tab);
   }
 }
 
@@ -20046,7 +20083,9 @@ async function init() {
         await guardedStep(refreshProfile(), PROFILE_TIMEOUT_MS, "Profil indlæsning tog for lang tid");
       }
       await handleReturnParams();
+      const routed = applyRouteFromLocation();
       if (!state.session?.user) {
+        if (routed) return;
         if (getStudioParamValue()) {
           redirectToAuth();
           return;
@@ -20099,6 +20138,15 @@ async function init() {
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && state.isLoading) {
     scheduleLoadingFallback();
+  }
+});
+
+window.addEventListener("popstate", () => {
+  const tab = getAdminTabFromPath(window.location.pathname || "");
+  if (!tab) return;
+  setAdminTab(tab);
+  if (!screens.admin?.classList.contains("active")) {
+    showScreen("admin");
   }
 });
 

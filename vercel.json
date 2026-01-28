@@ -11,6 +11,8 @@
     { "source": "/handelsbetingelser.html", "destination": "/handelsbetingelser", "permanent": true }
   ],
   "rewrites": [
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/admin/:tab", "destination": "/index.html" },
     { "source": "/sign-in", "destination": "/sign-in.html" },
     { "source": "/sign-up", "destination": "/sign-up.html" },
     { "source": "/consent", "destination": "/consent.html" },
