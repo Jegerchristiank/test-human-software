@@ -1,6 +1,12 @@
 # Activity Log
 
 ## 2026-01-28
+- Purpose: remove the landing screen and route logic so users land directly in auth/menu flows without the extra landing step.
+- Files: index.html, app.js, docs/activity.md.
+- Commands: sed -n '1,120p' docs/activity.md; rg -n "landing" index.html app.js styles.css; sed -n '372,470p' index.html; rg -n "\\/app" -S .; cat vercel.json; sed -n '1165,1215p' app.js; sed -n '1545,1605p' app.js; sed -n '19020,19080p' app.js; rg -n "landing-screen" index.html app.js; rg -n "landing" app.js; apply_patch (index.html, app.js, docs/activity.md).
+- Security: UI-only change; routing still respects auth/consent gating; no data-access changes.
+- Follow-ups: confirm `/` now goes directly to login (logged out) or menu (logged in), and that no landing UI appears.
+
 - Purpose: improve admin import UX with file-read progress + log output, extend import timeouts, and keep admin dashboard on the blue theme regardless of course.
 - Files: app.js, index.html, styles.css, docs/activity.md.
 - Commands: ls; sed -n '1,200p' docs/activity.md; rg -n "import|dataset|csv|upload|admin-import|admin-dataset|progress|status" index.html app.js studio-engine.js studio-policy.js api -S; sed -n '1600,1820p' index.html; rg -n "admin-import" index.html; sed -n '1880,1985p' index.html; rg -n "adminImportFile|import-file" app.js; sed -n '1360,1525p' app.js; sed -n '3890,3935p' app.js; sed -n '18980,19180p' app.js; rg -n "importProgress|startAdminImportProgress|stopAdminImportProgress" app.js; sed -n '3520,3625p' app.js; rg -n "data-course|course|theme|admin" styles.css; sed -n '180,280p' styles.css; rg -n "data-course|course" app.js; sed -n '2160,2225p' app.js; rg -n "function showScreen|showScreen\\(" app.js; sed -n '3120,3225p' app.js; sed -n '1,240p' api/admin/import.js; sed -n '1,220p' api/_lib/importer.js; sed -n '220,520p' api/_lib/importer.js; sed -n '1,40p' "SundFi Infobank - Sygdomslære.csv"; wc -c "SundFi Infobank - Sygdomslære.csv"; sed -n '5360,5555p' styles.css; sed -n '1,120p' styles.css; rg -n "\\.btn" styles.css | head -n 20; sed -n '2235,2310p' styles.css; rg -n "DEFAULT_COURSE" app.js | head -n 5; sed -n '6200,6585p' app.js.

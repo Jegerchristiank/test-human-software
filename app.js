@@ -1168,7 +1168,6 @@ const screens = {
   loading: document.getElementById("loading-screen"),
   auth: document.getElementById("auth-screen"),
   consent: document.getElementById("consent-screen"),
-  landing: document.getElementById("landing-screen"),
   menu: document.getElementById("menu-screen"),
   quiz: document.getElementById("quiz-screen"),
   result: document.getElementById("result-screen"),
@@ -1187,8 +1186,6 @@ const elements = {
   startButtons: [document.getElementById("start-btn")].filter(Boolean),
   appRoot: document.querySelector(".app"),
   brandBackLinks: Array.from(document.querySelectorAll("[data-brand-back]")),
-  landingStartBtn: document.getElementById("landing-start-btn"),
-  landingQuickBtn: document.getElementById("landing-quick-btn"),
   demoStartBtn: document.getElementById("demo-start-btn"),
   demoStatus: document.getElementById("demo-status"),
   demoLimit: document.getElementById("demo-limit"),
@@ -1575,7 +1572,6 @@ const elements = {
   historyBest: document.getElementById("history-best"),
   historyBestMeta: document.getElementById("history-best-meta"),
   historyList: document.getElementById("history-list"),
-  landingHistoryList: document.getElementById("landing-history-list"),
   heroRank: document.getElementById("hero-rank"),
   heroRankMeta: document.getElementById("hero-rank-meta"),
   heroTarget: document.getElementById("hero-target"),
@@ -3144,7 +3140,6 @@ const ADMIN_IMPORT_PROGRESS_RAMP_MS = 90000;
 const ADMIN_IMPORT_LOG_LIMIT = 160;
 const ADMIN_IMPORT_CHAR_LIMIT = 1_500_000;
 const SCREEN_ROUTES = {
-  landing: "/",
   menu: "/app",
   quiz: "/runde",
   result: "/resultat",
@@ -3233,7 +3228,6 @@ function showScreen(target) {
   });
 
   document.body.classList.toggle("mode-auth", target === "auth" || target === "consent");
-  document.body.classList.toggle("mode-landing", target === "landing");
   document.body.classList.toggle(
     "mode-menu",
     target === "menu" || target === "account" || target === "admin" || target === "billing" || target === "checkout"
@@ -3241,7 +3235,7 @@ function showScreen(target) {
   document.body.classList.toggle("mode-game", target === "quiz");
   document.body.classList.toggle("mode-result", target === "result");
   applyAdminThemeOverride(target);
-  if (["menu", "landing", "quiz", "result"].includes(target)) {
+  if (["menu", "quiz", "result"].includes(target)) {
     state.lastAppScreen = target;
   }
   if (target !== "quiz") {
@@ -15555,7 +15549,6 @@ function renderHistory() {
   }
 
   renderHistoryList(elements.historyList, entries);
-  renderHistoryList(elements.landingHistoryList, entries);
 }
 
 function recordHistoryEntry() {
@@ -19037,15 +19030,6 @@ function attachEvents() {
     elements.brandBackLinks.forEach((link) => {
       link.addEventListener("click", handleBrandBackClick);
     });
-  }
-  if (elements.landingStartBtn) {
-    elements.landingStartBtn.addEventListener("click", () => {
-      if (!requireAuthGuard("Log ind for at fortsætte.")) return;
-      showScreen("menu");
-    });
-  }
-  if (elements.landingQuickBtn) {
-    elements.landingQuickBtn.addEventListener("click", startGame);
   }
   if (elements.demoStartBtn) {
     elements.demoStartBtn.addEventListener("click", startDemoQuiz);
