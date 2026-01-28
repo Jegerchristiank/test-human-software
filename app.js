@@ -4425,8 +4425,28 @@ function countDatasetQaWarnings(warnings) {
   return Object.values(warnings).reduce((sum, entry) => sum + (entry?.count || 0), 0);
 }
 
+function updateAdminDatasetWorkflow() {
+  if (!elements.adminDatasetWorkflow) return;
+  const version = getSelectedDatasetVersion();
+  const updated = version?.updated_at || version?.created_at || null;
+  const versionStatus = version ? formatDatasetStatus(version?.status) : "—";
+  const versionLabel = updated ? `${versionStatus} · Opdateret ${formatAdminDate(updated)}` : versionStatus;
+
+  const filters = state.admin.datasets.filters || {};
+  const filterParts = [];
+  if (filters.search) filterParts.push(`Søg “${filters.search}”`);
+  if (filters.year) filterParts.push(`År ${filters.year}`);
+  if (filters.session) filterParts.push(`Session ${filters.session}`);
+  if (filters.category) filterParts.push(`Kategori ${filters.category}`);
+  if (filters.priority) filterParts.push(`Prioritet ${filters.priority}`);
+  const filterLabel = filterParts.length ? filterParts.join(" · ") : "Ingen filtre";
+
+  elements.adminDatasetWorkflow.textContent = `Version: ${versionLabel} • Filtre: ${filterLabel}`;
+}
+
 function renderAdminDatasetSummary() {
   const version = getSelectedDatasetVersion();
+  updateAdminDatasetWorkflow();
   if (elements.adminDatasetVersionStatus) {
     elements.adminDatasetVersionStatus.textContent = formatDatasetStatus(version?.status);
   }
@@ -5230,7 +5250,11 @@ async function handleAdminDatasetPublish() {
     setAdminDatasetStatus("Vælg en version først.", true);
     return;
   }
-  if (!window.confirm("Publicér som live datasæt? Dette overskriver den nuværende live-version.")) return;
+  const version = getSelectedDatasetVersion();
+  const message = version?.status === "published"
+    ? "Denne version er allerede live. Vil du publicere igen?"
+    : "Publicér som live datasæt? Dette overskriver den nuværende live-version.";
+  if (!window.confirm(message)) return;
   setAdminDatasetStatus("Publicerer …");
   try {
     const res = await apiFetch("/api/admin/datasets/publish", {
@@ -5253,6 +5277,7 @@ async function handleAdminDatasetPublish() {
 
 async function handleAdminDatasetClone() {
   const dataset = state.admin.datasets.type;
+  if (!window.confirm("Klon live datasæt til ny kladde?")) return;
   setAdminDatasetStatus("Kloner live datasæt …");
   try {
     const res = await apiFetch("/api/admin/datasets/versions", {
@@ -5277,6 +5302,7 @@ async function handleAdminDatasetClone() {
 
 async function handleAdminDatasetEmptyDraft() {
   const dataset = state.admin.datasets.type;
+  if (!window.confirm("Opret en tom kladde uden data?")) return;
   setAdminDatasetStatus("Opretter kladde …");
   try {
     const res = await apiFetch("/api/admin/datasets/versions", {
@@ -5329,11 +5355,14 @@ async function handleAdminDatasetBulkApply() {
     return;
   }
   const field = elements.adminDatasetBulkField?.value || "";
-  const value = elements.adminDatasetBulkValue?.value || "";
+  const value = elements.adminDatasetBulkValue?.value?.trim() || "";
   if (!field || !value || !bulkSelection.size) {
     setAdminDatasetStatus("Vælg felt, værdi og items først.", true);
     return;
   }
+  const count = bulkSelection.size;
+  const confirmMessage = `Opdatér ${count} items?\nFelt: ${field}\nNy værdi: ${value}`;
+  if (count >= 5 && !window.confirm(confirmMessage)) return;
   setAdminDatasetStatus("Opdaterer items …");
   try {
     const res = await apiFetch("/api/admin/datasets/bulk", {
@@ -5372,6 +5401,7 @@ function handleAdminDatasetSearch() {
     priority: isDisease ? elements.adminDatasetPriority?.value.trim() || "" : "",
   };
   state.admin.datasets.page = 1;
+  updateAdminDatasetWorkflow();
   void loadAdminDatasetItems({ page: 1 });
 }
 
@@ -5390,6 +5420,7 @@ function handleAdminDatasetClear() {
   };
   state.admin.datasets.page = 1;
   state.admin.datasets.lastSignature = "";
+  updateAdminDatasetWorkflow();
   void loadAdminDatasetItems({ page: 1, force: true });
 }
 
