@@ -3121,7 +3121,6 @@ function applyPreset(presetId) {
 }
 
 const AUTH_REQUIRED_SCREENS = new Set([
-  "landing",
   "menu",
   "quiz",
   "result",

@@ -438,12 +438,6 @@ async function getExistingSession() {
   }
 }
 
-function redirectIfAuthenticated(session) {
-  if (!session?.user || !canUseDOM) return false;
-  window.location.replace(getRedirectPath());
-  return true;
-}
-
 async function handleEmailAuth(event) {
   event?.preventDefault?.();
   try {
@@ -534,23 +528,12 @@ async function handleOAuth(provider) {
   }
 }
 
-function subscribeToAuthChanges() {
-  if (!supabase) return;
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (session?.user) {
-      redirectIfAuthenticated(session);
-    }
-  });
-}
-
 async function initAuth() {
   setControlsEnabled(false);
   try {
     const config = await getRuntimeConfig();
     initSupabaseClient(config);
-    const session = await getExistingSession();
-    if (redirectIfAuthenticated(session)) return;
-    subscribeToAuthChanges();
+    await getExistingSession();
   } catch (error) {
     setStatus(error.message || "Login er ikke klar endnu. Prøv igen om lidt.", true);
   } finally {

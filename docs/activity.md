@@ -7,6 +7,18 @@
 - Security: keeps auth redirects same-origin and extends blocklist to cover new auth slugs; no new data access paths.
 - Follow-ups: verify /login and /opret serve the auth forms in the browser and that login redirects back to /app as expected.
 
+- Purpose: make the landing page public and stop automatic redirects away from the login screen, plus add a regression test for the auth script.
+- Files: app.js, auth.js, tests/authScript.test.mjs, docs/activity.md.
+- Commands: rg -n "redirectIfAuthenticated|getExistingSession" auth.js; sed -n '520,620p' auth.js; rg -n "bootstrap|initApp|init\\(|loadSession|initialize" app.js | head -n 40; sed -n '19880,20380p' app.js; rg -n "applyRouteFromLocation|applyRoute" app.js; sed -n '3260,3360p' app.js; rg -n "landing|AUTH_REQUIRED_SCREENS|redirectToAuth" tests app.js; apply_patch (app.js, auth.js, tests/authScript.test.mjs, docs/activity.md); npm test -- tests/authScript.test.mjs; date +%F.
+- Security: protected screens still require auth; landing is now public and login only redirects after explicit sign-in.
+- Follow-ups: confirm / shows the landing page without redirect and /login stays until the user submits the form.
+
+- Purpose: expand admin dashboard grids to use the full screen width, including widescreen layouts.
+- Files: index.html, styles.css, docs/activity.md.
+- Commands: rg -n "admin-.*grid|admin-grid|admin-dashboard|admin-shell|admin-panel|admin-menu-grid" index.html styles.css; sed -n '1260,1760p' index.html; sed -n '1760,2080p' index.html; sed -n '5400,6060p' styles.css; rg -n "menu-shell|menu-grid|menu-column" styles.css; sed -n '480,620p' styles.css; sed -n '4360,4445p' styles.css; rg -n "admin-kpi-grid|admin-analytics-grid" styles.css; rg -n "diagnostics-grid" styles.css; sed -n '5290,5405p' styles.css; apply_patch (index.html, styles.css, docs/activity.md); date +%F.
+- Security: layout-only changes; no auth or data access behavior changed.
+- Follow-ups: verify admin grids fill the viewport on widescreen and that the sticky side column still behaves as expected.
+
 ## 2026-01-25
 - Purpose: tune page-index background colors, fix menu-grid column overlap, and restore original blue for Human Biologi chips.
 - Files: styles.css, docs/activity.md.
