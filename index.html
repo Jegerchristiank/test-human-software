@@ -1319,6 +1319,7 @@
               </div>
             </div>
           </header>
+          <div class="admin-status admin-banner hidden" id="admin-status" data-testid="admin-status" role="status" aria-live="polite"></div>
           <div class="admin-tabs" role="tablist" aria-label="Admin navigation" data-testid="admin-tabs">
             <button class="btn ghost small" data-admin-tab="overview" type="button" aria-pressed="true">Overblik</button>
             <button class="btn ghost small" data-admin-tab="users" type="button" aria-pressed="false">Brugere</button>
@@ -1448,7 +1449,7 @@
 
                   <div class="admin-user-detail" data-testid="admin-user-detail-panel">
                     <div class="admin-user-detail-empty" id="admin-user-detail-empty" data-testid="admin-user-detail-empty">
-                      Vælg en bruger til højre for at starte.
+                      Vælg en bruger for at se detaljer.
                     </div>
                     <div class="admin-user-detail-body hidden" id="admin-user-detail" data-testid="admin-user-detail">
                       <div class="admin-user-hero" data-testid="admin-user-hero">
@@ -1750,7 +1751,7 @@
                       <button id="admin-dataset-next-btn" data-testid="admin-dataset-next-btn" class="btn ghost small" type="button">Næste</button>
                     </div>
 
-                    <div class="admin-dataset-bulk" data-testid="admin-dataset-bulk">
+                    <div class="admin-dataset-bulk" id="admin-dataset-bulk" data-testid="admin-dataset-bulk">
                       <div class="admin-section-header" data-testid="admin-dataset-bulk-header">
                         <h3>Bulk redigering</h3>
                         <p>Opdatér valgte items på én gang.</p>
@@ -1868,7 +1869,6 @@
                     <div class="diagnostic-meta" id="admin-imports-meta" data-testid="admin-imports-meta">—</div>
                   </div>
                 </div>
-                <div class="admin-status hidden" id="admin-status" data-testid="admin-status" role="status" aria-live="polite"></div>
               </section>
 
               <section class="panel admin-system-panel reveal" data-testid="admin-system-panel" data-admin-panel="overview" style="--delay: 0.15s">

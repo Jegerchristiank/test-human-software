@@ -5406,6 +5406,22 @@ body.meta-hidden .question-meta {
   color: var(--accent-warm);
 }
 
+.admin-status.admin-banner {
+  margin: 0 0 var(--space-5);
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  font-size: 13px;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+}
+
+.admin-status.admin-banner.warn {
+  border-color: var(--warning-border);
+  background: var(--danger-soft);
+  color: var(--ink);
+}
+
 .admin-progress {
   display: grid;
   gap: 6px;
@@ -5911,6 +5927,11 @@ body.meta-hidden .question-meta {
   padding-top: 12px;
   display: grid;
   gap: 10px;
+}
+
+.admin-dataset-bulk.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 @media (max-width: 1100px) {

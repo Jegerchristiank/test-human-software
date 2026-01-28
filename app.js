@@ -1451,6 +1451,7 @@ const elements = {
   adminDatasetNewBtn: document.getElementById("admin-dataset-new-btn"),
   adminDatasetPublishBtn: document.getElementById("admin-dataset-publish-btn"),
   adminDatasetStatus: document.getElementById("admin-dataset-status"),
+  adminDatasetBulk: document.getElementById("admin-dataset-bulk"),
   adminDatasetWorkflow: document.getElementById("admin-dataset-workflow"),
   adminDatasetVersionStatus: document.getElementById("admin-dataset-version-status"),
   adminDatasetVersionMeta: document.getElementById("admin-dataset-version-meta"),
@@ -3808,8 +3809,9 @@ function updateAdminUI() {
 
   const importEnabled = Boolean(state.admin.importEnabled);
   const importReady = allowed && importEnabled && !state.admin.importing;
+  const importHasPreview = Boolean(state.admin.importPreview);
   if (elements.adminImportBtn) {
-    elements.adminImportBtn.disabled = !importReady;
+    elements.adminImportBtn.disabled = !importReady || !importHasPreview;
   }
   if (elements.adminImportPreviewBtn) {
     elements.adminImportPreviewBtn.disabled = !importReady;
@@ -3874,6 +3876,10 @@ function updateAdminUI() {
   }
   if (elements.adminDatasetBulkApplyBtn) {
     elements.adminDatasetBulkApplyBtn.disabled = !datasetEnabled || !hasSelection;
+  }
+  if (elements.adminDatasetBulk) {
+    elements.adminDatasetBulk.classList.toggle("is-disabled", !hasSelection);
+    elements.adminDatasetBulk.setAttribute("aria-disabled", (!hasSelection).toString());
   }
   if (elements.adminDatasetSelectAllBtn) {
     elements.adminDatasetSelectAllBtn.disabled = !datasetEnabled || !hasItems;
@@ -6195,6 +6201,10 @@ async function handleAdminImport() {
   const content = getAdminImportContent();
   if (!content || !content.trim()) {
     setAdminImportStatus("Indsæt rådata først.", true);
+    return;
+  }
+  if (!state.admin.importPreview) {
+    setAdminImportStatus("Lav en forhåndsvisning først.", true);
     return;
   }
   const type = elements.adminImportType ? elements.adminImportType.value : "mcq";
